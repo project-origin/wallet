@@ -4,14 +4,17 @@ import "primitives.proto";
 
 package ProjectOrigin.Wallet.v1;
 
-service WalletService {
+service AnonymousService {
     rpc ReceiveSlice(ReceiveRequest) returns (ReceiveResponse);
-    rpc QueryGranularCertificates(QueryRequest) returns (QueryResponse);
+}
+
+service SubjectService {
+    rpc QueryGCs(QueryRequest) returns (QueryResponse);
 }
 
 message ReceiveRequest {
-    AccountReference AccountReference = 1; 
-    uint32 DepositIndex = 2; 
+    AccountReference AccountReference = 1;
+    uint32 DepositIndex = 2;
     ProjectOrigin.Register.v1.FederatedStreamId CertificateId = 3;
     uint32 Amount = 4;
     bytes RValue = 5;
@@ -25,12 +28,12 @@ message QueryRequest {
 
 }
 
-message QueryResponse {
+message QueryResponse {
 
 }
 
 message WalletReference {
-    int32 Version = 1; // The version of the Wallet API 
+    int32 Version = 1; // The version of the Wallet API
     string Endpoint = 2; // The url endpoint of the gRPC endpoint at which the wallet is hosted
     AccountReference AccountReference = 3; // The reference to the Account
     bytes PublicKey = 4; // The public key used to send the info
@@ -38,5 +41,5 @@ message WalletReference {
 
 message AccountReference {
     // to be determined, public-key could be used, but would the require the wallet to store public-key
-    // alternative could be another type of reference each, 
+    // alternative could be another type of reference each,
 }
