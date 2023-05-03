@@ -1,0 +1,43 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/dotnet
+{
+    "name": "C# (.NET)",
+    //"image": "mcr.microsoft.com/devcontainers/dotnet:7.0",
+    "build": {
+        "dockerfile": "Dockerfile"
+    },
+    // Features to add to the dev container. More info: https://containers.dev/features.
+    "features": {
+        "ghcr.io/devcontainers/features/docker-in-docker:1": {
+            "version": "latest",
+            "moby": true
+        },
+        "ghcr.io/devcontainers/features/rust:1": {
+            "version": "latest"
+        }
+    },
+    // Use 'forwardPorts' to make a list of ports inside the container available locally.
+    // "forwardPorts": [5000, 5001],
+    // Use 'postCreateCommand' to run commands after the container is created.
+    "postCreateCommand": "make restore",
+    // Configure tool-specific properties.
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "EditorConfig.EditorConfig",
+                "ms-dotnettools.csharp",
+                "formulahendry.dotnet-test-explorer",
+                "ryanluker.vscode-coverage-gutters",
+                "DotJoshJohnson.xml",
+                "zxh404.vscode-proto3",
+                "bierner.markdown-footnotes",
+                "bierner.markdown-mermaid"
+            ],
+            "settings": {
+                "editor.formatOnSave": true
+            }
+        }
+    },
+    // Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
+    "remoteUser": "vscode"
+}
