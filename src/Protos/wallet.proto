@@ -5,15 +5,16 @@ import "primitives.proto";
 
 package ProjectOrigin.Wallet.V1;
 
-service WalletService {
-    // Anonymously functions, Externally accessible
+// Anonymously functions, Externally accessible
+service ExternalWalletService {
     rpc ReceiveSlice(ReceiveRequest) returns (ReceiveResponse);
 
+}
 
-    // Requires authorization with a Bearer token JWT, sub field identifies the owner
-
-    // Could be internal only
-    rpc CreateWallet(CreateWalletRequest) returns (CreateWalletResponse);
+// Requires authorization with a Bearer token JWT, sub field identifies the owner
+// Could be internal only, up to the host to decide
+service WalletService {
+    rpc CreateWallet(CreateWalletRequest) returns (CreateWalletResponse); // Only allowed one per user for now, later multiple wallets per user will be allowed.
     rpc CreateWalletSection(CreateWalletSectionRequest) returns (WalletSectionReference);
 
     // Certificate functions, slices abstracted away and solved by wallet
@@ -22,7 +23,7 @@ service WalletService {
     rpc ClaimCertificates(ClaimRequest) returns (ClaimResponse);
 
     // Slice functions - more fine grained control to come
-    // rpc QuerySlice(QuerySliceRequest) returns (QuerySliceResponse);
+    // rpc QuerySlices(QuerySliceRequest) returns (QuerySliceResponse);
     // rpc SliceSlice(CreateSliceRequest) returns (CreateSliceResponse);
     // rpc ClaimSlice(ClaimSliceRequest) returns (ClaimSliceResponse);
     // rpc TransferSlice(TransferSliceRequest) returns (TransferSliceResponse);
@@ -30,11 +31,11 @@ service WalletService {
     // Events should also be able to be emitted.. RPC or event bus?
 }
 
-message CreateWalletRequest {
+message CreateWalletRequest {
     bytes PrivateKey = 1;
 }
 
-message CreateWalletResponse {}
+message CreateWalletResponse { }
 
 message ReceiveRequest {
     bytes WalletSectionPublicKey = 1;
@@ -91,4 +92,8 @@ message GranularCertificate {
 message Attribute {
     string Key = 1;
     string Value = 2;
+}
+
+message Uuid {
+    string value = 1;
 }

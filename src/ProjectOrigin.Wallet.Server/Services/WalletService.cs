@@ -4,10 +4,10 @@ using Microsoft.Extensions.Logging;
 
 namespace ProjectOrigin.Wallet.Server.Services;
 
-public class WalletService : ProjectOrigin.Wallet.V1.WalletService.WalletServiceBase
+public class ExternalWalletService : ProjectOrigin.Wallet.V1.ExternalWalletService.ExternalWalletServiceBase
 {
-    private readonly ILogger<WalletService> _logger;
-    public WalletService(ILogger<WalletService> logger)
+    private readonly ILogger<ExternalWalletService> _logger;
+    public ExternalWalletService(ILogger<ExternalWalletService> logger)
     {
         _logger = logger;
     }
