@@ -28,7 +28,7 @@ message QueryRequest {
 
 }
 
-message QueryResponse {
+message QueryResponse {
 
 }
 
