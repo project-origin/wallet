@@ -1,4 +1,4 @@
-# wallet
+# Project Origin - Wallet
 OpenSource project to create a Wallet to hold Granular Certificates in the registries.
 
 ## Patlet
@@ -49,7 +49,7 @@ It will give the users access to view and control their assets.
 
 Below is a C4 system diagram of an overview of the system landscape the wallet would be a part of.
 
-![C4 system diagram of the wallet](wallet-c4-system.drawio.svg)
+![C4 system diagram of the wallet](./doc/wallet-c4-system.drawio.svg)
 
 
 ## Resulting Context
