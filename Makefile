@@ -24,8 +24,8 @@ verify: build test lint
 
 ## Lint the dotnet code
 lint:
-    @echo "Verifying code formatting..."
-    dotnet format $(src_path) --verify-no-changes
+	@echo "Verifying code formatting..."
+	dotnet format $(src_path) --verify-no-changes
 
 ## Does a dotnet clean
 clean:
