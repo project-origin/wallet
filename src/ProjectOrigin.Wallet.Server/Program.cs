@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
 using ProjectOrigin.Wallet.Server.Services;
 
 var builder = WebApplication.CreateBuilder(args);

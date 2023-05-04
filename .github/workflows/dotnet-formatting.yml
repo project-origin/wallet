@@ -20,4 +20,4 @@ jobs:
           dotnet-version: "7.0"
 
       - name: Verify formatting
-        run: make verify
+        run: make lint

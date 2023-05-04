@@ -1,5 +1,6 @@
-using Grpc.Core;
-using ProjectOrigin.Wallet.Server;
+using System;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace ProjectOrigin.Wallet.Server.Services;
 

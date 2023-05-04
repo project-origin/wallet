@@ -8,7 +8,7 @@ formatting_command := \033[1;34m
 formatting_desc := \033[0;32m
 formatting_none := \033[0m
 
-.PHONY: help test clean build
+.PHONY: help test clean build lint
 
 .DEFAULT_GOAL := help
 
@@ -19,9 +19,13 @@ help:
 	@printf "\n"
 
 ## Verify code is ready for commit to branch, runs tests and verifies formatting.
-verify: test
-	@echo "Verifying code formatting..."
-	dotnet format $(src_path) --verify-no-changes
+verify: build test lint
+	@echo "Code is ready to commit."
+
+## Lint the dotnet code
+lint:
+    @echo "Verifying code formatting..."
+    dotnet format $(src_path) --verify-no-changes
 
 ## Does a dotnet clean
 clean:
