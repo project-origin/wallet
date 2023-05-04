@@ -34,6 +34,6 @@ issues
 - GET GC API for subject (38)
 - add filters.. (40)
 - CI/CD pipelines
-- BIP32 nøgle håndtering
-
+- BIP32 public and private key generation and handling
+- BIP39 mnemonic generation and handling
 - events
