@@ -18,7 +18,7 @@ jobs:
 
       - name: Set env
         id: output-version
-        run: echo "version=${GITHUB_REF#refs/*/v}" >> $GITHUB_OUTPUT
+        run: echo "version=${GITHUB_REF#refs/*/wallet-v}" >> $GITHUB_OUTPUT
 
   publish-server-container:
     name: Publish Wallet Server container
