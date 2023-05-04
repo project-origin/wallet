@@ -1,4 +1,4 @@
-name: Dotnet Unit Tests
+name: Verifies code formatting, builds, and runs unit tests
 
 on:
   pull_request:
@@ -24,3 +24,6 @@ jobs:
 
       - name: Run tests
         run: make test
+
+      - name: Verify formatting
+        run: make lint
