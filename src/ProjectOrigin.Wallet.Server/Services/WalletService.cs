@@ -15,5 +15,4 @@ public class WalletService : ProjectOrigin.Wallet.V1.WalletService.WalletService
     {
         throw new NotImplementedException("🌱");
     }
-
 }
