@@ -1,39 +1,50 @@
-# Wallet
+# Project Origin - Wallet
 
 ## Functionality
 
-### GC Commands
+The Wallet
 
 List of commands on a GC abstraction, all commands will be translated by the wallet to primitive slice commands.
 
-- Transfer (Transfer some part of a GC to someone else)
-- Claim (Claim between two of my GCs)
+### Public API
 
-### Slice Commands - primitives
+The public API allows anonymous access to deposit slices into wallets.
 
-List of commands on GC slices
+|  Name   | Description |
+| - | - | - |
+| ReceiveSlice | Enables a wallet to receive a slice from either an issuer or another wallet, the slice is verified based on data fromxw the registry. |
 
-- Receive (Receive slice, verify and insert)
-- Transfer (Transfer my slice too someone else)
-- Slice (Slice one of my slices into more slices) (could be )
-- Claim (Claim between two of my slices)
+### Granular Certificate API
 
-### Queries
+The granular certificate API allows a wallet to interact with a granular certificate (GC) abstraction.
+On this API the commands are translated to primitive slice commands.
 
-GetGCs (filter?)
+All commands require the request to be authenticated by a JWT token.
 
-### Events??
+| Name | Description |
+| ---- | ----------- |
+| CreateWallet | Creates a new wallet for a user. Only one wallet per user is currently allowed, but multiple wallets per user may be allowed in the future. |
+| CreateWalletSection | Creates a new section in a user's wallet. |
+| QueryGranularCertificates | List the certificates owned by the wallet, in time filters should be supported |
+| TransferCertificate | Transfers a number of Wh from ther certificate from one wallet to another. |
+| ClaimCertificates | Claims a number of Wh from a production certificate to a consumption certificate. |
 
-issues
+### Slice API
 
-## WalletService - PoC
+The slice API allows one to interact with slices directly,
+this will be implemented later.
 
-- Refine Arch diagrams and spec - define,
-- receive call and insert slice into slice table
-- pull and verify GC Header from registry (38)
-- GET GC API for subject (38)
-- add filters.. (40)
-- CI/CD pipelines
-- BIP32 public and private key generation and handling
-- BIP39 mnemonic generation and handling
-- events
+All commands require the request to be authenticated by a JWT token.
+
+| Name | Description |
+| ---- | ----------- |
+| QuerySlices | Queries a user's slices. |
+| CreateSlice | Creates a new slice. |
+| ClaimSlice | Claims ownership of a slice. |
+| TransferSlice | Transfers a slice from one wallet to another. |
+
+### Events
+
+The wallet service should expose events to enable other services
+to know what happens in the wallet as to enable them to react to it
+without falling back to a polling mechanism.
