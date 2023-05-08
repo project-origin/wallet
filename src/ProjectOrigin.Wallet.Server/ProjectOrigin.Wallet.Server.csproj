@@ -7,12 +7,21 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Scripts\0001-create-tables.sql" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Scripts\0001-create-tables.sql" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Protobuf Include="..\Protos\primitives.proto" />
     <Protobuf Include="..\Protos\wallet.proto" GrpcServices="Server" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Dapper" Version="2.0.123" />
+    <PackageReference Include="dbup-postgresql" Version="5.0.8" />
     <PackageReference Include="Grpc.AspNetCore" Version="2.49.0" />
     <PackageReference Include="Npgsql" Version="7.0.4" />
   </ItemGroup>

@@ -1,3 +1,6 @@
+using System;
+using System.Reflection;
+using DbUp;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using ProjectOrigin.Wallet.Server;
@@ -14,6 +17,20 @@ builder.Services.AddGrpc();
 builder.Services.AddHostedService<SomeBackgroundService>();
 
 var app = builder.Build();
+
+var upgrader = DeployChanges.To
+    .PostgresqlDatabase("Host=localhost; Port=5432; Database=postgres; Username=admin; Password=admin;")
+    .WithScriptsEmbeddedInAssembly(Assembly.GetExecutingAssembly())
+    .LogToConsole() //TODO: Proper logging
+    .Build();
+
+var databaseUpgradeResult = upgrader.PerformUpgrade();
+if (!databaseUpgradeResult.Successful)
+{
+    //TODO: Proper logging
+    Console.WriteLine(databaseUpgradeResult.Error);
+    throw databaseUpgradeResult.Error;
+}
 
 // Configure the HTTP request pipeline.
 app.MapGrpcService<WalletService>();

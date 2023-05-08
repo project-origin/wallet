@@ -21,6 +21,8 @@ public class SomeBackgroundService : BackgroundService
     {
         await using var connection = new NpgsqlConnection("Host=localhost; Port=5432; Database=postgres; Username=admin; Password=admin;");
 
+        await connection.ExecuteAsync(@"INSERT INTO MyTable(Foo) VALUES (@foo)", new { foo = Guid.NewGuid().ToString()});
+
         var myTables = await connection.QueryAsync<MyTable>("SELECT * FROM MyTable");
 
         _logger.LogInformation("Tables: {tables}", myTables);
@@ -29,6 +31,6 @@ public class SomeBackgroundService : BackgroundService
 
 public class MyTable
 {
-    public Guid Id { get; set; }
-    public string Foo { get; set; }
+    public int Id { get; set; }
+    public string Foo { get; set; } = "";
 }
