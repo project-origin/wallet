@@ -64,3 +64,6 @@ Temporary Items
 
 # End of https://www.toptal.com/developers/gitignore/api/dotnetcore,macos
 /src/.vs
+
+# Ignore Visual Studio user-specific files
+*.user
