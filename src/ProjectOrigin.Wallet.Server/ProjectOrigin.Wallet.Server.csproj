@@ -7,10 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Scripts\0001-create-tables.sql" />
-  </ItemGroup>
-
-  <ItemGroup>
     <EmbeddedResource Include="Scripts\0001-create-tables.sql" />
   </ItemGroup>
 
