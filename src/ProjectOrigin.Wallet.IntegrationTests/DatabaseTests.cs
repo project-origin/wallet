@@ -1,9 +1,10 @@
 using Dapper;
 using FluentAssertions;
-using Npgsql;
 using ProjectOrigin.Wallet.Server;
+using ProjectOrigin.Wallet.Server.Database;
 using System;
 using System.Threading.Tasks;
+using ProjectOrigin.Wallet.Server.Models;
 using Testcontainers.PostgreSql;
 using Xunit;
 
@@ -22,7 +23,8 @@ public class DatabaseTests
 
         DatabaseUpgrader.Upgrade(postgreSqlContainer.GetConnectionString());
 
-        await using var connection = new NpgsqlConnection(postgreSqlContainer.GetConnectionString());
+        var dapperContext = new DapperContext(postgreSqlContainer.GetConnectionString());
+        using var connection = dapperContext.CreateConnection();
 
         await connection.ExecuteAsync(@"INSERT INTO MyTable(Foo) VALUES (@foo)", new { foo = Guid.NewGuid().ToString() });
 

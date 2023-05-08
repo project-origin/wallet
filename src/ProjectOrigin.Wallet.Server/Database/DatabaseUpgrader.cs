@@ -1,7 +1,6 @@
-using System.Reflection;
 using DbUp;
 
-namespace ProjectOrigin.Wallet.Server;
+namespace ProjectOrigin.Wallet.Server.Database;
 
 public static class DatabaseUpgrader
 {
@@ -10,11 +9,11 @@ public static class DatabaseUpgrader
         var upgradeEngine = DeployChanges.To
             .PostgresqlDatabase(connectionString)
             .WithScriptsEmbeddedInAssembly(typeof(DatabaseUpgrader).Assembly)
-            //.WithScriptsEmbeddedInAssembly(Assembly.GetExecutingAssembly())
             .LogToAutodetectedLog()
             .Build();
 
         var databaseUpgradeResult = upgradeEngine.PerformUpgrade();
+
         if (!databaseUpgradeResult.Successful)
         {
             throw databaseUpgradeResult.Error;

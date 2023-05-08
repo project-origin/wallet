@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using ProjectOrigin.Wallet.Server;
+using ProjectOrigin.Wallet.Server.Database;
 using ProjectOrigin.Wallet.Server.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -12,7 +12,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddGrpc();
 
-builder.Services.AddHostedService<SomeBackgroundService>();
+builder.Services.AddSingleton<IDapperContext, DapperContext>();
 
 var app = builder.Build();
 
