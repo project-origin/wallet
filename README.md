@@ -1,9 +1,10 @@
 # Project Origin - Wallet
+
 OpenSource project to create a Wallet to hold Granular Certificates in the registries.
 
-## Patlet
+## Pat-Let
 
-In the Project-Origin implementation, a Granular Certificate (GC) and its Slices can never leave a registry (they have their lifecycle in one single registry). 
+In the Project-Origin implementation, a Granular Certificate (GC) and its Slices can never leave a registry (they have their lifecycle in one single registry).
 Since owners would want the ability to collect and store their ownership of all GC slices in one place, the concept of them **having a wallet to hold their ownership across registries** make sence.
 
 ## Problem
@@ -22,7 +23,7 @@ The users would also want the ability to transfer the ownership of said digital 
 
 Users might hold assets that generate GCs in multiple countries, and have been transferred GCs, which mean their GCs will be split among multiple registries, issuing bodies and service providers.
 
-Any actor could set up an instance of a Project Origin registry. 
+Any actor could set up an instance of a Project Origin registry.
 Registries are not necessarily tied to one exact area (country or bidding zone): A registry can span multiple areas, and multiple registries can exist in one area.
 
 ## Forces
@@ -50,7 +51,6 @@ It will give the users access to view and control their assets.
 Below is a C4 system diagram of an overview of the system landscape the wallet would be a part of.
 
 ![C4 system diagram of the wallet](./doc/wallet-c4-system.drawio.svg)
-
 
 ## Resulting Context
 
