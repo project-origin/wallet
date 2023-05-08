@@ -1,4 +1,5 @@
 # Wallet ADR
+
 | ADR   | Title                             | Status                                                                |
 |-------|-----------------------------------|-----------------------------------------------------------------------|
 | 0001  | Programming Language              | [Proposal](./0001-Programming-langauge.md)                            |
