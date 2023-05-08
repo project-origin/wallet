@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Dapper;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Npgsql;
@@ -11,15 +12,17 @@ namespace ProjectOrigin.Wallet.Server;
 public class SomeBackgroundService : BackgroundService
 {
     private readonly ILogger<SomeBackgroundService> _logger;
+    private readonly string? _connectionString;
 
-    public SomeBackgroundService(ILogger<SomeBackgroundService> logger)
+    public SomeBackgroundService(ILogger<SomeBackgroundService> logger, IConfiguration configuration)
     {
         _logger = logger;
+        _connectionString = configuration.GetConnectionString("Database");
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        await using var connection = new NpgsqlConnection("Host=localhost; Port=5432; Database=postgres; Username=admin; Password=admin;");
+        await using var connection = new NpgsqlConnection(_connectionString);
 
         await connection.ExecuteAsync(@"INSERT INTO MyTable(Foo) VALUES (@foo)", new { foo = Guid.NewGuid().ToString() });
 
@@ -29,8 +32,4 @@ public class SomeBackgroundService : BackgroundService
     }
 }
 
-public class MyTable
-{
-    public int Id { get; set; }
-    public string Foo { get; set; } = "";
-}
+public record MyTable(int Id, string Foo);

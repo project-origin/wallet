@@ -1,10 +1,10 @@
-using System;
-using System.Reflection;
 using DbUp;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using ProjectOrigin.Wallet.Server;
 using ProjectOrigin.Wallet.Server.Services;
+using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,17 +18,15 @@ builder.Services.AddHostedService<SomeBackgroundService>();
 
 var app = builder.Build();
 
-var upgrader = DeployChanges.To
-    .PostgresqlDatabase("Host=localhost; Port=5432; Database=postgres; Username=admin; Password=admin;")
+var upgradeEngine = DeployChanges.To
+    .PostgresqlDatabase(app.Configuration.GetConnectionString("Database"))
     .WithScriptsEmbeddedInAssembly(Assembly.GetExecutingAssembly())
-    .LogToConsole() //TODO: Proper logging
+    .LogToAutodetectedLog()
     .Build();
 
-var databaseUpgradeResult = upgrader.PerformUpgrade();
+var databaseUpgradeResult = upgradeEngine.PerformUpgrade();
 if (!databaseUpgradeResult.Successful)
 {
-    //TODO: Proper logging
-    Console.WriteLine(databaseUpgradeResult.Error);
     throw databaseUpgradeResult.Error;
 }
 
