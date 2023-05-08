@@ -1,10 +1,8 @@
-using DbUp;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using ProjectOrigin.Wallet.Server;
 using ProjectOrigin.Wallet.Server.Services;
-using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,17 +16,7 @@ builder.Services.AddHostedService<SomeBackgroundService>();
 
 var app = builder.Build();
 
-var upgradeEngine = DeployChanges.To
-    .PostgresqlDatabase(app.Configuration.GetConnectionString("Database"))
-    .WithScriptsEmbeddedInAssembly(Assembly.GetExecutingAssembly())
-    .LogToAutodetectedLog()
-    .Build();
-
-var databaseUpgradeResult = upgradeEngine.PerformUpgrade();
-if (!databaseUpgradeResult.Successful)
-{
-    throw databaseUpgradeResult.Error;
-}
+DatabaseUpgrader.Upgrade(app.Configuration.GetConnectionString("Database"));
 
 // Configure the HTTP request pipeline.
 app.MapGrpcService<WalletService>();

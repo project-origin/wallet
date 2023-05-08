@@ -1,9 +1,7 @@
 using Dapper;
-using DbUp;
 using FluentAssertions;
 using Npgsql;
 using ProjectOrigin.Wallet.Server;
-using ProjectOrigin.Wallet.V1;
 using System;
 using System.Threading.Tasks;
 using Testcontainers.PostgreSql;
@@ -17,21 +15,12 @@ public class DatabaseTests
     public async Task can_insert_and_query_after_migration()
     {
         var postgreSqlContainer = new PostgreSqlBuilder()
+            .WithImage("postgres:15")
             .Build();
 
         await postgreSqlContainer.StartAsync();
 
-        var upgradeEngine = DeployChanges.To
-            .PostgresqlDatabase(postgreSqlContainer.GetConnectionString())
-            .WithScriptsEmbeddedInAssembly(typeof(WalletService).Assembly)
-            .LogToAutodetectedLog()
-            .Build();
-
-        var databaseUpgradeResult = upgradeEngine.PerformUpgrade();
-        if (!databaseUpgradeResult.Successful)
-        {
-            throw databaseUpgradeResult.Error;
-        }
+        DatabaseUpgrader.Upgrade(postgreSqlContainer.GetConnectionString());
 
         await using var connection = new NpgsqlConnection(postgreSqlContainer.GetConnectionString());
 
