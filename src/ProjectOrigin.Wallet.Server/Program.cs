@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using ProjectOrigin.Wallet.Server.Database;
 using ProjectOrigin.Wallet.Server.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -10,7 +12,11 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddGrpc();
 
+builder.Services.AddSingleton<IDbConnectionFactory, DbConnectionFactory>();
+
 var app = builder.Build();
+
+DatabaseUpgrader.Upgrade(app.Configuration.GetConnectionString("Database"));
 
 // Configure the HTTP request pipeline.
 app.MapGrpcService<WalletService>();
