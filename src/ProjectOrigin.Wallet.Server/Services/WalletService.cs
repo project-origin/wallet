@@ -10,21 +10,19 @@ namespace ProjectOrigin.Wallet.Server.Services;
 public class WalletService : ProjectOrigin.Wallet.V1.WalletService.WalletServiceBase
 {
     private readonly ILogger<WalletService> _logger;
-    private readonly IDbConnectionFactory _connectionFactory;
+    private readonly UnitOfWork _unitOfWork;
 
-    public WalletService(ILogger<WalletService> logger, IDbConnectionFactory connectionFactory)
+    public WalletService(ILogger<WalletService> logger, UnitOfWork unitOfWork)
     {
         _logger = logger;
-        _connectionFactory = connectionFactory;
+        _unitOfWork = unitOfWork;
     }
 
     public override async Task<V1.ReceiveResponse> ReceiveSlice(V1.ReceiveRequest request, Grpc.Core.ServerCallContext context)
     {
-        using var connection = _connectionFactory.CreateConnection();
-
-        await connection.ExecuteAsync(@"INSERT INTO MyTable(Foo) VALUES (@foo)", new { foo = Guid.NewGuid().ToString() });
-
-        var myTables = await connection.QueryAsync<MyTable>("SELECT * FROM MyTable");
+        await _unitOfWork.WalletRepository.Create(new MyTable(0, Guid.NewGuid().ToString()));
+        _unitOfWork.Commit();
+        var tables = await _unitOfWork.WalletRepository.GetAll();
 
         throw new NotImplementedException("🌱");
     }
