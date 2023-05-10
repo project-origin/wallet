@@ -12,7 +12,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddGrpc();
 
-builder.Services.AddSingleton<IDapperContext, DapperContext>();
+builder.Services.AddSingleton<IDbConnectionFactory, DbConnectionFactory>();
 
 var app = builder.Build();
 

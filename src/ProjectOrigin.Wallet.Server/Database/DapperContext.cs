@@ -4,21 +4,21 @@ using Npgsql;
 
 namespace ProjectOrigin.Wallet.Server.Database;
 
-public interface IDapperContext
+public interface IDbConnectionFactory
 {
     IDbConnection CreateConnection();
 }
 
-public class DapperContext : IDapperContext
+public class DbConnectionFactory : IDbConnectionFactory
 {
     private readonly string? _connectionString;
 
-    public DapperContext(IConfiguration configuration)
+    public DbConnectionFactory(IConfiguration configuration)
         : this(configuration.GetConnectionString("Database"))
     {
     }
 
-    public DapperContext(string? connectionString)
+    public DbConnectionFactory(string? connectionString)
     {
         _connectionString = connectionString;
     }

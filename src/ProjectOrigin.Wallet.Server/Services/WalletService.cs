@@ -10,17 +10,17 @@ namespace ProjectOrigin.Wallet.Server.Services;
 public class WalletService : ProjectOrigin.Wallet.V1.WalletService.WalletServiceBase
 {
     private readonly ILogger<WalletService> _logger;
-    private readonly IDapperContext _context;
+    private readonly IDbConnectionFactory _connectionFactory;
 
-    public WalletService(ILogger<WalletService> logger, IDapperContext context)
+    public WalletService(ILogger<WalletService> logger, IDbConnectionFactory connectionFactory)
     {
         _logger = logger;
-        _context = context;
+        _connectionFactory = connectionFactory;
     }
 
     public override async Task<V1.ReceiveResponse> ReceiveSlice(V1.ReceiveRequest request, Grpc.Core.ServerCallContext context)
     {
-        using var connection = _context.CreateConnection();
+        using var connection = _connectionFactory.CreateConnection();
 
         await connection.ExecuteAsync(@"INSERT INTO MyTable(Foo) VALUES (@foo)", new { foo = Guid.NewGuid().ToString() });
 
