@@ -11,7 +11,7 @@ List of commands on a GC abstraction, all commands will be translated by the wal
 The public API allows anonymous access to deposit slices into wallets.
 
 |  Name   | Description |
-| - | - | - |
+| - | - |
 | ReceiveSlice | Enables a wallet to receive a slice from either an issuer or another wallet, the slice is verified based on data fromxw the registry. |
 
 ### Granular Certificate API
