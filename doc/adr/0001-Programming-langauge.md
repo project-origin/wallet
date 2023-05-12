@@ -29,4 +29,6 @@ The decision to use C#/.NET as our programming language will have the following 
 
 - The project will be easier to integrate and maintain because it uses the same programming language as the existing services in the system.
 
-- Community members who are not familiar with C#/.NET will need to learn the language
+- Community members who are not familiar with C#/.NET will need to learn the language.
+
+- Community members that wishes to implement the wallet features in a different language may wish to do so by using the provided .proto files and implement the features of the wallet and contribute the code if they wish to do so.
