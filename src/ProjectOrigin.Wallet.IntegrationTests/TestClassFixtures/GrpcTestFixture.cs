@@ -22,15 +22,11 @@ using System.Net.Http;
 using Grpc.Net.Client;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Configuration.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Primitives;
 using ProjectOrigin.Wallet.IntegrationTests.TestClassFixtures.GrpcHelpers;
-using ProjectOrigin.Wallet.Server.Database;
-using Xunit;
 using Xunit.Abstractions;
 
 namespace ProjectOrigin.Wallet.IntegrationTests.TestClassFixtures
@@ -44,18 +40,13 @@ namespace ProjectOrigin.Wallet.IntegrationTests.TestClassFixtures
         private HttpMessageHandler? _handler;
         private Action<IWebHostBuilder>? _configureWebHost;
         private GrpcChannel? _channel;
-        private PostgresDatabaseFixture _dbFixture;
-        public PostgresDatabaseFixture DbFixture => _dbFixture;
+        private Dictionary<string, string?>? _configurationDictionary;
 
         public event LogMessage? LoggedMessage;
         public GrpcChannel Channel => _channel ??= CreateChannel();
 
         public GrpcTestFixture()
         {
-            _dbFixture = new PostgresDatabaseFixture();
-            _dbFixture.InitializeAsync().Wait();
-            DatabaseUpgrader.Upgrade(_dbFixture.ConnectionString);
-
             LoggerFactory = new LoggerFactory();
             LoggerFactory.AddProvider(new ForwardingLoggerProvider((logLevel, category, eventId, message, exception) =>
             {
@@ -66,6 +57,11 @@ namespace ProjectOrigin.Wallet.IntegrationTests.TestClassFixtures
         public void ConfigureWebHost(Action<IWebHostBuilder> configure)
         {
             _configureWebHost = configure;
+        }
+
+        public void ConfigureHostConfiguration(Dictionary<string, string?> configuration)
+        {
+            _configurationDictionary = configuration;
         }
 
         private void EnsureServer()
@@ -85,17 +81,18 @@ namespace ProjectOrigin.Wallet.IntegrationTests.TestClassFixtures
                             .UseStartup<TStartup>();
 
                         _configureWebHost?.Invoke(webHost);
-                    })
-                    .ConfigureHostConfiguration(config =>
-                    {
-                        config.Add(new MemoryConfigurationSource()
-                        {
-                            InitialData = new Dictionary<string, string?>()
-                            {
-                                {"ConnectionStrings:Database", _dbFixture.ConnectionString}
-                            }
-                        });
                     });
+
+                if (_configurationDictionary != null)
+                {
+                    builder.ConfigureHostConfiguration(config =>
+                        {
+                            config.Add(new MemoryConfigurationSource()
+                            {
+                                InitialData = _configurationDictionary
+                            });
+                        });
+                }
 
                 _host = builder.Start();
                 _server = _host.GetTestServer();

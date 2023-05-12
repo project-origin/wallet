@@ -1,7 +1,8 @@
 using ProjectOrigin.Wallet.IntegrationTests.TestClassFixtures;
 using ProjectOrigin.Wallet.Server;
+using ProjectOrigin.Wallet.Server.Database;
 using ProjectOrigin.Wallet.V1;
-using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -9,17 +10,25 @@ namespace ProjectOrigin.Wallet.IntegrationTests;
 
 public class GrpcTests : IClassFixture<GrpcTestFixture<Startup>>, IClassFixture<PostgresDatabaseFixture>
 {
-    private GrpcTestFixture<Startup> grpcFixture;
+    private GrpcTestFixture<Startup> _grpcFixture;
+    private PostgresDatabaseFixture _dbFixture;
 
-    public GrpcTests(GrpcTestFixture<Startup> grpcFixture)
+    public GrpcTests(GrpcTestFixture<Startup> grpcFixture, PostgresDatabaseFixture dbFixture)
     {
-        this.grpcFixture = grpcFixture;
+        this._grpcFixture = grpcFixture;
+        this._dbFixture = dbFixture;
+
+        DatabaseUpgrader.Upgrade(dbFixture.ConnectionString);
+        grpcFixture.ConfigureHostConfiguration(new Dictionary<string, string?>()
+            {
+                {"ConnectionStrings:Database", dbFixture.ConnectionString}
+            });
     }
 
     [Fact]
     public async Task CreateWalletSection_NonEmptyResponse()
     {
-        var client = new WalletService.WalletServiceClient(grpcFixture.Channel);
+        var client = new WalletService.WalletServiceClient(_grpcFixture.Channel);
 
         var createRequest = new CreateWalletSectionRequest();
         var walletSection = await client.CreateWalletSectionAsync(createRequest);
