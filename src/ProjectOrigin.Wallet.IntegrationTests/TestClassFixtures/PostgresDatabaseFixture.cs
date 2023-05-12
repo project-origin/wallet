@@ -15,14 +15,11 @@ public class PostgresDatabaseFixture : IAsyncLifetime
         _postgreSqlContainer = new PostgreSqlBuilder()
             .WithImage("postgres:15")
             .Build();
-
-        _postgreSqlContainer.StartAsync().Wait();
     }
 
-    public virtual async Task InitializeAsync()
+    public virtual Task InitializeAsync()
     {
-        await _postgreSqlContainer.StartAsync();
-
+        return _postgreSqlContainer.StartAsync();
     }
 
     public virtual Task DisposeAsync()

@@ -9,7 +9,7 @@ env:
   compose_folder: src/ProjectOrigin.VerifiableEventStore.Tests
 
 jobs:
-  unit-tests:
+  verify:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
