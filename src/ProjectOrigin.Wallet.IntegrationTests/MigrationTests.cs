@@ -8,14 +8,21 @@ using Xunit;
 
 namespace ProjectOrigin.Wallet.IntegrationTests;
 
-public class MigrationTests : AbstractPostgresTests
+public class MigrationTest : IClassFixture<PostgresDatabaseFixture>
 {
+    private PostgresDatabaseFixture _dbFixture;
+
+    public MigrationTest(PostgresDatabaseFixture fixture)
+    {
+        this._dbFixture = fixture;
+    }
+
     [Fact]
     public async Task can_insert_and_query_after_migration()
     {
-        DatabaseUpgrader.Upgrade(_postgreSqlContainer.GetConnectionString());
+        DatabaseUpgrader.Upgrade(_dbFixture.ConnectionString);
 
-        using var connection = new DbConnectionFactory(_postgreSqlContainer.GetConnectionString()).CreateConnection();
+        using var connection = new DbConnectionFactory(_dbFixture.ConnectionString).CreateConnection();
 
         await connection.ExecuteAsync(@"INSERT INTO MyTable(Foo) VALUES (@foo)", new { foo = Guid.NewGuid().ToString() });
 

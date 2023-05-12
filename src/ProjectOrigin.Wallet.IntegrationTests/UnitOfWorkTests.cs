@@ -8,12 +8,14 @@ using Xunit;
 
 namespace ProjectOrigin.Wallet.IntegrationTests;
 
-public class UnitOfWorkTests : AbstractPostgresTests
+public class UnitOfWorkTests : IClassFixture<PostgresDatabaseFixture>
 {
-    public override async Task InitializeAsync()
+    private PostgresDatabaseFixture _dbFixture;
+
+    public UnitOfWorkTests(PostgresDatabaseFixture fixture)
     {
-        await base.InitializeAsync();
-        DatabaseUpgrader.Upgrade(_postgreSqlContainer.GetConnectionString());
+        this._dbFixture = fixture;
+        DatabaseUpgrader.Upgrade(fixture.ConnectionString);
     }
 
     [Fact]
@@ -21,7 +23,7 @@ public class UnitOfWorkTests : AbstractPostgresTests
     {
         var model = new MyTable(0, Guid.NewGuid().ToString());
 
-        var dbConnectionFactory = new DbConnectionFactory(_postgreSqlContainer.GetConnectionString());
+        var dbConnectionFactory = new DbConnectionFactory(_dbFixture.ConnectionString);
 
         using (var uof = new UnitOfWork(dbConnectionFactory))
         {
@@ -40,31 +42,32 @@ public class UnitOfWorkTests : AbstractPostgresTests
     }
 
     [Fact]
-    public async Task Create_Rollback_Expect0()
+    public async Task Create_Rollback_Still_Expect1()
     {
         var model = new MyTable(0, Guid.NewGuid().ToString());
 
-        var dbConnectionFactory = new DbConnectionFactory(_postgreSqlContainer.GetConnectionString());
+        var dbConnectionFactory = new DbConnectionFactory(_dbFixture.ConnectionString);
 
         using (var uof = new UnitOfWork(dbConnectionFactory))
         {
-            await uof.WalletRepository.Create(model);
-
             var data = await uof.WalletRepository.GetAll();
             data.Should().HaveCount(1);
+
+            await uof.WalletRepository.Create(model);
+
+            data = await uof.WalletRepository.GetAll();
+            data.Should().HaveCount(2);
 
             uof.Rollback();
 
             data = await uof.WalletRepository.GetAll();
-            data.Should().HaveCount(0);
+            data.Should().HaveCount(1);
         };
 
         using (var uof = new UnitOfWork(dbConnectionFactory))
         {
             var data = await uof.WalletRepository.GetAll();
-            data.Should().HaveCount(0);
+            data.Should().HaveCount(1);
         }
     }
-
-
 }

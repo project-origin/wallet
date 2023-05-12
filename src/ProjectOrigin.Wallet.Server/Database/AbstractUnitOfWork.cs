@@ -1,11 +1,14 @@
+using System;
+using System.Collections.Generic;
 using System.Data;
 
 namespace ProjectOrigin.Wallet.Server.Database;
 
 public abstract class AbstractUnitOfWork : IUnitOfWork
 {
-    private IDbConnection? _connection;
-    protected IDbTransaction? _transaction;
+    private IDbConnection _connection;
+    protected IDbTransaction _transaction;
+    protected Dictionary<Type, object> _repositories = new Dictionary<Type, object>();
 
     public AbstractUnitOfWork(IDbConnectionFactory connectionFactory)
     {
@@ -27,16 +30,14 @@ public abstract class AbstractUnitOfWork : IUnitOfWork
         }
         finally
         {
-            _transaction.Dispose();
-            _transaction = _connection.BeginTransaction();
+            ResetUnitOfWork();
         }
     }
 
     public void Rollback()
     {
         _transaction.Rollback();
-        _transaction.Dispose();
-        _transaction = _connection.BeginTransaction();
+        ResetUnitOfWork();
     }
 
     public void Dispose()
@@ -44,15 +45,32 @@ public abstract class AbstractUnitOfWork : IUnitOfWork
         if (_transaction != null)
         {
             _transaction.Dispose();
-            _transaction = null;
         }
 
         if (_connection != null)
         {
             _connection.Dispose();
-            _connection = null;
         }
     }
 
-    protected abstract void ResetUnitOfWork();
+    public T GetRepository<T>(Func<IDbTransaction, T> factory) where T : class
+    {
+        if (_repositories.TryGetValue(typeof(T), out var foundRepository))
+        {
+            return (T)foundRepository;
+        }
+        else
+        {
+            var newRepository = factory(_transaction);
+            _repositories.Add(typeof(T), newRepository);
+            return newRepository;
+        }
+    }
+
+    private void ResetUnitOfWork()
+    {
+        _transaction.Dispose();
+        _transaction = _connection.BeginTransaction();
+        _repositories.Clear();
+    }
 }

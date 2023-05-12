@@ -4,11 +4,13 @@ using Xunit;
 
 namespace ProjectOrigin.Wallet.IntegrationTests;
 
-public abstract class AbstractPostgresTests : IAsyncLifetime
+public class PostgresDatabaseFixture : IAsyncLifetime
 {
-    internal PostgreSqlContainer _postgreSqlContainer;
+    public string ConnectionString => _postgreSqlContainer.GetConnectionString();
 
-    public AbstractPostgresTests()
+    private PostgreSqlContainer _postgreSqlContainer;
+
+    public PostgresDatabaseFixture()
     {
         _postgreSqlContainer = new PostgreSqlBuilder()
             .WithImage("postgres:15")
@@ -20,6 +22,7 @@ public abstract class AbstractPostgresTests : IAsyncLifetime
     public virtual async Task InitializeAsync()
     {
         await _postgreSqlContainer.StartAsync();
+
     }
 
     public virtual Task DisposeAsync()

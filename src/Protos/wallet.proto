@@ -1,25 +1,33 @@
 syntax = "proto3";
 
+import "google/protobuf/timestamp.proto";
 import "primitives.proto";
 
-package ProjectOrigin.Wallet.v1;
+package ProjectOrigin.Wallet.V1;
 
 service WalletService {
+    rpc CreateWalletSection(CreateWalletSectionRequest) returns (WalletSectionReference);
     rpc ReceiveSlice(ReceiveRequest) returns (ReceiveResponse);
     rpc QueryGranularCertificates(QueryRequest) returns (QueryResponse);
 }
 
+message CreateWalletSectionRequest {} // not yet sure
+
+message WalletSectionReference {
+    int32 Version = 1; // The version of the Wallet protobuf API.
+    string Endpoint = 2; // The url endpoint of the gRPC endpoint at which the wallet is hosted.
+    bytes SectionPublicKey = 3; // The public key used to generate sub-public-keys for each slice.
+}
+
 message ReceiveRequest {
-    AccountReference AccountReference = 1; 
-    uint32 DepositIndex = 2; 
-    ProjectOrigin.Register.v1.FederatedStreamId CertificateId = 3;
-    uint32 Amount = 4;
-    bytes RValue = 5;
+    bytes WalletSectionPublicKey = 1;
+    uint32 WalletSectionPosition = 2;
+    ProjectOrigin.Register.V1.FederatedStreamId CertificateId = 3;
+    uint32 Quantity = 4;
+    bytes RandomR = 5;
 }
 
-message ReceiveResponse {
-
-}
+message ReceiveResponse {} // not yet sure what to return
 
 message QueryRequest {
 
@@ -27,16 +35,4 @@ message QueryRequest {
 
 message QueryResponse {
 
-}
-
-message WalletReference {
-    int32 Version = 1; // The version of the Wallet API 
-    string Endpoint = 2; // The url endpoint of the gRPC endpoint at which the wallet is hosted
-    AccountReference AccountReference = 3; // The reference to the Account
-    bytes PublicKey = 4; // The public key used to send the info
-}
-
-message AccountReference {
-    // to be determined, public-key could be used, but would the require the wallet to store public-key
-    // alternative could be another type of reference each, 
 }
