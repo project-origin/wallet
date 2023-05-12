@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Data;
 using System.Threading.Tasks;
 using Dapper;
@@ -18,17 +17,23 @@ public class WalletRepository
         this._transaction = transaction;
     }
 
-    public async Task<int> Create(MyTable table)
+    public async Task<int> Create(WalletA wallet)
     {
-        var result = await _connection.ExecuteAsync(@"INSERT INTO MyTable(Foo) VALUES (@foo)", table);
-
-        return result;
+        return await _connection.ExecuteAsync(@"INSERT INTO Wallets(Id, Owner, PrivateKey) VALUES (@id, @owner, @privateKey)", new { wallet.Id, wallet.Owner, wallet.PrivateKey });
     }
 
-    public async Task<IEnumerable<MyTable>> GetAll()
+    public async Task<WalletA?> GetWallet(string owner)
     {
-        var result = await _connection.QueryAsync<MyTable>("SELECT * FROM MyTable");
+        return await _connection.QuerySingleOrDefaultAsync<WalletA>("SELECT * FROM Wallets WHERE Owner = @owner", new { owner });
+    }
 
-        return result;
+    public async Task<int> GetNextWalletPosition(Guid id)
+    {
+        return await _connection.ExecuteScalarAsync<int>("SELECT MAX(WalletPosition) FROM WalletSections WHERE WalletId = @id", new { id }) + 1;
+    }
+
+    public async Task CreateSection(WalletSection section)
+    {
+        await _connection.ExecuteAsync(@"INSERT INTO WalletSections(Id, WalletId, WalletPosition, PublicKey) VALUES (@id, @walletId, @walletPosition, @publicKey)", new { section.Id, section.WalletId, section.WalletPosition, section.PublicKey });
     }
 }

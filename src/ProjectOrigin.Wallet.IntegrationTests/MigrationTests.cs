@@ -1,7 +1,6 @@
 using Dapper;
 using FluentAssertions;
 using ProjectOrigin.Wallet.Server.Database;
-using ProjectOrigin.Wallet.Server.Models;
 using System;
 using System.Threading.Tasks;
 using Xunit;
@@ -14,20 +13,32 @@ public class MigrationTest : IClassFixture<PostgresDatabaseFixture>
 
     public MigrationTest(PostgresDatabaseFixture fixture)
     {
-        this._dbFixture = fixture;
+        _dbFixture = fixture;
     }
 
     [Fact]
     public async Task can_insert_and_query_after_migration()
     {
+        // Arrange
         DatabaseUpgrader.Upgrade(_dbFixture.ConnectionString);
+
+        var wallet = new
+        {
+            Id = Guid.NewGuid(),
+            Owner = Guid.NewGuid().ToString(),
+            PrivateKey = new byte[] { 1, 2, 3 }
+        };
 
         using var connection = new DbConnectionFactory(_dbFixture.ConnectionString).CreateConnection();
 
-        await connection.ExecuteAsync(@"INSERT INTO MyTable(Foo) VALUES (@foo)", new { foo = Guid.NewGuid().ToString() });
+        // Act
+        await connection.ExecuteAsync(
+            "INSERT INTO Wallets(Id, Owner, PrivateKey) VALUES (@Id, @Owner, @PrivateKey)",
+            wallet);
 
-        var myTables = await connection.QueryAsync<MyTable>("SELECT * FROM MyTable");
+        var count = await connection.ExecuteScalarAsync("SELECT count(*) FROM Wallets");
 
-        myTables.Should().HaveCount(1);
+        // Assert
+        count.Should().Be(1);
     }
 }
