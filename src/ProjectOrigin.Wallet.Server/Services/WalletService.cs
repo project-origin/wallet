@@ -9,7 +9,7 @@ namespace ProjectOrigin.Wallet.Server.Services;
 
 public class ExternalWalletService : ProjectOrigin.Wallet.V1.ExternalWalletService.ExternalWalletServiceBase
 {
-    private readonly ILogger<WalletService> _logger;
+    private readonly ILogger<ExternalWalletService> _logger;
     private readonly IDbConnectionFactory _connectionFactory;
 
     public ExternalWalletService(ILogger<ExternalWalletService> logger, IDbConnectionFactory connectionFactory)
