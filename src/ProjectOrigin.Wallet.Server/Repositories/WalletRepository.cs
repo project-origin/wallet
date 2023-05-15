@@ -8,13 +8,11 @@ namespace ProjectOrigin.Wallet.Server.Repositories;
 
 public class WalletRepository
 {
-    private IDbTransaction _transaction;
+    private IDbConnection _connection;
 
-    private IDbConnection _connection => _transaction.Connection ?? throw new InvalidOperationException("No connection.");
-
-    public WalletRepository(IDbTransaction transaction)
+    public WalletRepository(IDbConnection connection)
     {
-        this._transaction = transaction;
+        this._connection = connection;
     }
 
     public async Task<int> Create(WalletA wallet)
