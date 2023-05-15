@@ -15,15 +15,6 @@ using Xunit;
 
 namespace ProjectOrigin.Wallet.IntegrationTests;
 
-public static class test
-{
-    internal static NonGenericAsyncFunctionAssertions Gris<T>(this AsyncUnaryCall<WalletSectionReference> call)
-    {
-        Func<Task> sutMethod = async () => await call;
-        return sutMethod.Should();
-    }
-}
-
 public class GrpcTests : IClassFixture<GrpcTestFixture<Startup>>, IClassFixture<PostgresDatabaseFixture>
 {
     private readonly string endpoint = "http://my-endpoint:80/";
