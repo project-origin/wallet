@@ -22,6 +22,8 @@
     <PackageReference Include="Npgsql" Version="7.0.4" />
     <PackageReference Include="NSec.Cryptography" Version="22.4.0" />
     <PackageReference Include="NBitcoin" Version="7.0.25" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="7.0.4" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="7.0.0" />
   </ItemGroup>
 
 </Project>

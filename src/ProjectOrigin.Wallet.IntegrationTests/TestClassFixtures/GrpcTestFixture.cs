@@ -38,7 +38,6 @@ namespace ProjectOrigin.Wallet.IntegrationTests.TestClassFixtures
         private TestServer? _server;
         private IHost? _host;
         private HttpMessageHandler? _handler;
-        private Action<IWebHostBuilder>? _configureWebHost;
         private GrpcChannel? _channel;
         private Dictionary<string, string?>? _configurationDictionary;
 
@@ -54,11 +53,6 @@ namespace ProjectOrigin.Wallet.IntegrationTests.TestClassFixtures
             }));
         }
 
-        public void ConfigureWebHost(Action<IWebHostBuilder> configure)
-        {
-            _configureWebHost = configure;
-        }
-
         public void ConfigureHostConfiguration(Dictionary<string, string?> configuration)
         {
             _configurationDictionary = configuration;
@@ -68,20 +62,7 @@ namespace ProjectOrigin.Wallet.IntegrationTests.TestClassFixtures
         {
             if (_host == null)
             {
-                var builder = new HostBuilder()
-                    .ConfigureServices(services =>
-                    {
-                        services.AddSingleton<ILoggerFactory>(LoggerFactory);
-                    })
-                    .ConfigureWebHostDefaults(webHost =>
-                    {
-                        webHost
-                            .UseTestServer()
-                            .UseEnvironment("Development")
-                            .UseStartup<TStartup>();
-
-                        _configureWebHost?.Invoke(webHost);
-                    });
+                var builder = new HostBuilder();
 
                 if (_configurationDictionary != null)
                 {
@@ -93,6 +74,19 @@ namespace ProjectOrigin.Wallet.IntegrationTests.TestClassFixtures
                             });
                         });
                 }
+
+                builder
+                    .ConfigureServices(services =>
+                    {
+                        services.AddSingleton<ILoggerFactory>(LoggerFactory);
+                    })
+                    .ConfigureWebHostDefaults(webHost =>
+                    {
+                        webHost
+                            .UseTestServer()
+                            .UseEnvironment("Development")
+                            .UseStartup<TStartup>();
+                    });
 
                 _host = builder.Start();
                 _server = _host.GetTestServer();

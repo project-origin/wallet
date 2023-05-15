@@ -4,9 +4,9 @@ using ProjectOrigin.Wallet.Server;
 using ProjectOrigin.Wallet.Server.Database;
 using ProjectOrigin.Wallet.Server.Services;
 
-var startup = new Startup();
-
 var builder = WebApplication.CreateBuilder(args);
+
+var startup = new Startup(builder.Configuration);
 
 startup.ConfigureServices(builder.Services);
 
