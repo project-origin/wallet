@@ -7,12 +7,12 @@ using ProjectOrigin.Wallet.Server.Models;
 
 namespace ProjectOrigin.Wallet.Server.Services;
 
-public class WalletService : ProjectOrigin.Wallet.V1.WalletService.WalletServiceBase
+public class ExternalWalletService : ProjectOrigin.Wallet.V1.ExternalWalletService.ExternalWalletServiceBase
 {
-    private readonly ILogger<WalletService> _logger;
+    private readonly ILogger<ExternalWalletService> _logger;
     private readonly IDbConnectionFactory _connectionFactory;
 
-    public WalletService(ILogger<WalletService> logger, IDbConnectionFactory connectionFactory)
+    public ExternalWalletService(ILogger<ExternalWalletService> logger, IDbConnectionFactory connectionFactory)
     {
         _logger = logger;
         _connectionFactory = connectionFactory;

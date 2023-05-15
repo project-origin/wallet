@@ -1,4 +1,10 @@
-# Wallet ADR
+# Wallet Architectural Decision records
+
+This folder holds all ADRs that are relevant for the Wallet application.
+
+These ADRs are in regard to **HOW the code is implemented**,
+NOT why the business logic decisions are the way they are,
+this happens in **RFCs**.
 
 | ADR   | Title                             | Status                                                                |
 |-------|-----------------------------------|-----------------------------------------------------------------------|
