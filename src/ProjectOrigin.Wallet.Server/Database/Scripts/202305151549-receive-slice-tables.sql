@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS Registries (
 );
 
 CREATE TABLE IF NOT EXISTS Certificates (
-    Id uuid NOT NULL PRIMARY KEY,
+    Id uuid NOT NULL,
     RegistryId uuid NOT NULL,
     TechCode VARCHAR(64) NOT NULL,
     FuelCode VARCHAR(64) NOT NULL,
@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS Certificates (
     EndDate TIMESTAMP with time zone NOT NULL,
     GridArea VARCHAR(128) NOT NULL,
     Loaded BIT NOT NULL,
+    PRIMARY KEY(Id, RegistryId),
     FOREIGN KEY (RegistryId)
         REFERENCES Registries (Id) MATCH SIMPLE
         ON UPDATE NO ACTION
@@ -25,7 +26,7 @@ CREATE TABLE IF NOT EXISTS Slices (
     SectionPosition integer NOT NULL,
     CertificateId uuid NOT NULL,
     Quantity bigint NOT NULL,
-    RandomR bigint NOT NULL,
+    RandomR bytea NOT NULL,
     Verified BIT NOT NULL,
     FOREIGN KEY (WalletSectionId)
         REFERENCES WalletSections (Id) MATCH SIMPLE
