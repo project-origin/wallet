@@ -1,16 +1,16 @@
 CREATE TABLE IF NOT EXISTS Registries (
     Id uuid NOT NULL PRIMARY KEY,
-    Name NVARCHAR(128) NOT NULL UNIQUE
+    Name VARCHAR(128) NOT NULL UNIQUE
 );
 
 CREATE TABLE IF NOT EXISTS Certificates (
     Id uuid NOT NULL PRIMARY KEY,
     RegistryId uuid NOT NULL,
-    TechCode NVARCHAR(64) NOT NULL,
-    FuelCode NVARCHAR(64) NOT NULL,
-    StartDate DATETIME NOT NULL,
-    EndDate DATETIME NOT NULL,
-    GridArea NVARCHAR(128) NOT NULL,
+    TechCode VARCHAR(64) NOT NULL,
+    FuelCode VARCHAR(64) NOT NULL,
+    StartDate TIMESTAMP with time zone NOT NULL,
+    EndDate TIMESTAMP with time zone NOT NULL,
+    GridArea VARCHAR(128) NOT NULL,
     Loaded BIT NOT NULL,
     FOREIGN KEY (RegistryId)
         REFERENCES Registries (Id) MATCH SIMPLE
@@ -38,3 +38,4 @@ CREATE TABLE IF NOT EXISTS Slices (
         ON DELETE NO ACTION
         NOT VALID
 );
+

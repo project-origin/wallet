@@ -11,7 +11,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="Database\Scripts\202305151549-receive-slice-tables.sql" />
+    <EmbeddedResource Include="Database\Scripts\202305151549-receive-slice-tables.sql" />
   </ItemGroup>
 
   <ItemGroup>
