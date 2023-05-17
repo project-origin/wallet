@@ -34,7 +34,7 @@ public class WalletRepositoryTests : IClassFixture<PostgresDatabaseFixture>
         var subject = Guid.NewGuid().ToString();
 
         // Arrange
-        var wallet = new WalletA(
+        var wallet = new OwnerWallet(
             Guid.NewGuid(),
             subject,
             _algorithm.GenerateNewPrivateKey()
@@ -48,7 +48,7 @@ public class WalletRepositoryTests : IClassFixture<PostgresDatabaseFixture>
         await repository.Create(wallet);
 
         // Assert
-        var walletDb = await connection.QueryAsync<WalletA>("SELECT * FROM Wallets where Owner = @Owner", new { Owner = subject });
+        var walletDb = await connection.QueryAsync<OwnerWallet>("SELECT * FROM Wallets where Owner = @Owner", new { Owner = subject });
         walletDb.Should().HaveCount(1);
         walletDb.Single().Owner.Should().Be(subject);
     }
@@ -59,7 +59,7 @@ public class WalletRepositoryTests : IClassFixture<PostgresDatabaseFixture>
         // Arrange
 
         var subject = Guid.NewGuid().ToString();
-        var wallet = new WalletA(
+        var wallet = new OwnerWallet(
             Guid.NewGuid(),
             subject,
             _algorithm.GenerateNewPrivateKey()
@@ -85,7 +85,7 @@ public class WalletRepositoryTests : IClassFixture<PostgresDatabaseFixture>
     {
         // Arrange
         var subject = Guid.NewGuid().ToString();
-        var wallet = new WalletA(
+        var wallet = new OwnerWallet(
             Guid.NewGuid(),
             subject,
             _algorithm.GenerateNewPrivateKey()

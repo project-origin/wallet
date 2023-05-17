@@ -1,6 +1,5 @@
 using Dapper;
 using FluentAssertions;
-using FluentAssertions.Specialized;
 using Grpc.Core;
 using ProjectOrigin.Wallet.IntegrationTests.TestClassFixtures;
 using ProjectOrigin.Wallet.Server;
@@ -64,7 +63,7 @@ public class GrpcTests : IClassFixture<GrpcTestFixture<Startup>>, IClassFixture<
             var foundSection = connection.QuerySingle<WalletSection>("SELECT * FROM WalletSections");
             Assert.True(Enumerable.SequenceEqual(foundSection.PublicKey.Export().ToArray(), walletSection.SectionPublicKey));
 
-            var foundWallet = connection.QuerySingle<WalletA>("SELECT * FROM Wallets where owner = @owner", new { owner = subject });
+            var foundWallet = connection.QuerySingle<OwnerWallet>("SELECT * FROM Wallets where owner = @owner", new { owner = subject });
             // Wallet should be implicitly created
             foundWallet.Should().NotBeNull();
         }

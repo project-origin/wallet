@@ -11,7 +11,8 @@ using ProjectOrigin.Wallet.Server.Models;
 
 namespace ProjectOrigin.Wallet.Server.Services;
 
-internal class WalletService : ProjectOrigin.Wallet.V1.WalletService.WalletServiceBase
+[Authorize]
+public class WalletService : ProjectOrigin.Wallet.V1.WalletService.WalletServiceBase
 {
     private readonly string _endpointAddress;
     private readonly ILogger<WalletService> _logger;
@@ -26,7 +27,6 @@ internal class WalletService : ProjectOrigin.Wallet.V1.WalletService.WalletServi
         _hdAlgorithm = hdAlgorithm;
     }
 
-    [Authorize]
     public override async Task<V1.WalletSectionReference> CreateWalletSection(V1.CreateWalletSectionRequest request, ServerCallContext context)
     {
         var subject = context.GetSubject();
@@ -36,7 +36,7 @@ internal class WalletService : ProjectOrigin.Wallet.V1.WalletService.WalletServi
         if (wallet is null)
         {
             var key = _hdAlgorithm.GenerateNewPrivateKey();
-            wallet = new WalletA(Guid.NewGuid(), subject, key);
+            wallet = new OwnerWallet(Guid.NewGuid(), subject, key);
             await _unitOfWork.WalletRepository.Create(wallet);
         }
 

@@ -30,7 +30,7 @@ public class UnitOfWorkTests : IClassFixture<PostgresDatabaseFixture>
     public async Task Create_Commit_Expect1()
     {
         var owner = Guid.NewGuid().ToString();
-        var model = new WalletA(Guid.NewGuid(), owner, this._algorithm.GenerateNewPrivateKey());
+        var model = new OwnerWallet(Guid.NewGuid(), owner, this._algorithm.GenerateNewPrivateKey());
 
         var dbConnectionFactory = new DbConnectionFactory(_dbFixture.ConnectionString);
 
@@ -52,7 +52,7 @@ public class UnitOfWorkTests : IClassFixture<PostgresDatabaseFixture>
     public async Task Create_Rollback_Still_Expect1()
     {
         var owner = Guid.NewGuid().ToString();
-        var model = new WalletA(Guid.NewGuid(), owner, this._algorithm.GenerateNewPrivateKey());
+        var model = new OwnerWallet(Guid.NewGuid(), owner, this._algorithm.GenerateNewPrivateKey());
 
         var dbConnectionFactory = new DbConnectionFactory(_dbFixture.ConnectionString);
 

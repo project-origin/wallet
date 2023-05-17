@@ -11,8 +11,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Protobuf Include="..\Protos\primitives.proto" Access="internal"/>
-    <Protobuf Include="..\Protos\wallet.proto" GrpcServices="Server" Access="internal"/>
+    <Protobuf Include="..\Protos\primitives.proto" />
+    <Protobuf Include="..\Protos\wallet.proto" GrpcServices="Both" />
   </ItemGroup>
 
   <ItemGroup>
