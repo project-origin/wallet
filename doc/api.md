@@ -24,7 +24,7 @@ All commands require the request to be authenticated by a JWT token.
 | Name | Description |
 | ---- | ----------- |
 | CreateWallet | Creates a new wallet for a user. Only one wallet per user is currently allowed, but multiple wallets per user may be allowed in the future. |
-| CreateWalletSection | Creates a new section in a user's wallet. |
+| CreateWalletSection | Creates a new section in a user's [wallet](concepts/wallet.md). |
 | QueryGranularCertificates | List the certificates owned by the wallet, in time filters should be supported |
 | TransferCertificate | Transfers a number of Wh from ther certificate from one wallet to another. |
 | ClaimCertificates | Claims a number of Wh from a production certificate to a consumption certificate. |

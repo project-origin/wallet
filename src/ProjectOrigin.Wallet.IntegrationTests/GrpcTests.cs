@@ -1,6 +1,5 @@
 using Dapper;
 using FluentAssertions;
-using FluentAssertions.Specialized;
 using Grpc.Core;
 using ProjectOrigin.Wallet.IntegrationTests.TestClassFixtures;
 using ProjectOrigin.Wallet.Server;
@@ -14,15 +13,6 @@ using System.Threading.Tasks;
 using Xunit;
 
 namespace ProjectOrigin.Wallet.IntegrationTests;
-
-public static class test
-{
-    internal static NonGenericAsyncFunctionAssertions Gris<T>(this AsyncUnaryCall<WalletSectionReference> call)
-    {
-        Func<Task> sutMethod = async () => await call;
-        return sutMethod.Should();
-    }
-}
 
 public class GrpcTests : IClassFixture<GrpcTestFixture<Startup>>, IClassFixture<PostgresDatabaseFixture>
 {
@@ -73,7 +63,7 @@ public class GrpcTests : IClassFixture<GrpcTestFixture<Startup>>, IClassFixture<
             var foundSection = connection.QuerySingle<WalletSection>("SELECT * FROM WalletSections");
             Assert.True(Enumerable.SequenceEqual(foundSection.PublicKey.Export().ToArray(), walletSection.SectionPublicKey));
 
-            var foundWallet = connection.QuerySingle<WalletA>("SELECT * FROM Wallets where owner = @owner", new { owner = subject });
+            var foundWallet = connection.QuerySingle<OwnerWallet>("SELECT * FROM Wallets where owner = @owner", new { owner = subject });
             // Wallet should be implicitly created
             foundWallet.Should().NotBeNull();
         }
