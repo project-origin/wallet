@@ -27,7 +27,6 @@ public class WalletRepositoryTests : IClassFixture<PostgresDatabaseFixture>
         SqlMapper.AddTypeHandler<IHDPublicKey>(new HDPublicKeyTypeHandler(this._algorithm));
     }
 
-
     [Fact]
     public async Task Create_InsertsWallet()
     {
@@ -57,7 +56,6 @@ public class WalletRepositoryTests : IClassFixture<PostgresDatabaseFixture>
     public async Task Query_GetWallet()
     {
         // Arrange
-
         var subject = Guid.NewGuid().ToString();
         var wallet = new OwnerWallet(
             Guid.NewGuid(),
@@ -105,5 +103,34 @@ public class WalletRepositoryTests : IClassFixture<PostgresDatabaseFixture>
 
         // Assert
         walletResponse.Should().Be(next);
+    }
+
+    [Fact]
+    public async Task Query_GetSectionPublicKey_Success()
+    {
+        // Arrange
+        var subject = Guid.NewGuid().ToString();
+        var wallet = new OwnerWallet(
+            Guid.NewGuid(),
+            subject,
+            _algorithm.GenerateNewPrivateKey()
+            );
+        var targetSectionId = Guid.NewGuid();
+
+        using var connection = new DbConnectionFactory(_dbFixture.ConnectionString).CreateConnection();
+        connection.Open();
+        WalletRepository repository = new WalletRepository(connection);
+        await repository.Create(wallet);
+        await repository.CreateSection(new WalletSection(Guid.NewGuid(), wallet.Id, 1, wallet.PrivateKey.Derive(1).PublicKey));
+        await repository.CreateSection(new WalletSection(targetSectionId, wallet.Id, 2, wallet.PrivateKey.Derive(2).PublicKey));
+        await repository.CreateSection(new WalletSection(Guid.NewGuid(), wallet.Id, 3, wallet.PrivateKey.Derive(3).PublicKey));
+
+        // Act
+        var publicKey = wallet.PrivateKey.Derive(2).PublicKey;
+        var section = await repository.GetWalletSection(publicKey);
+
+        // Assert
+        section.Should().NotBeNull();
+        section!.Id.Should().Be(targetSectionId);
     }
 }
