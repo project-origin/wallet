@@ -50,7 +50,7 @@ public class ExternalWalletService : ProjectOrigin.Wallet.V1.ExternalWalletServi
     private async Task<WalletSection> GetWalletSection(ReceiveRequest request)
     {
         var publicKey = _hdAlgorithm.ImportPublicKey(request.WalletSectionPublicKey.Span);
-        var walletSection = await _unitOfWork.WalletRepository.GetWalletSection(publicKey);
+        var walletSection = await _unitOfWork.WalletRepository.GetWalletSectionFromPublicKey(publicKey);
 
         if (walletSection == null)
             throw new RpcException(new Status(StatusCode.InvalidArgument, "WalletSection not found."));
@@ -61,7 +61,7 @@ public class ExternalWalletService : ProjectOrigin.Wallet.V1.ExternalWalletServi
     private async Task<(Guid RegistryId, Guid CertificateId)> GetOrInsertCertificate(FederatedStreamId federatedStreamId)
     {
         var certId = Guid.Parse(federatedStreamId.StreamId.Value);
-        Registry? registry = await _unitOfWork.CertficateRepository.GetRegistry(federatedStreamId.Registry);
+        Registry? registry = await _unitOfWork.CertficateRepository.GetRegistryFromName(federatedStreamId.Registry);
 
         if (registry == null)
         {

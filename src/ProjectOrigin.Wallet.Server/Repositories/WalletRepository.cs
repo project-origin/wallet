@@ -21,7 +21,7 @@ public class WalletRepository
         return _connection.ExecuteAsync(@"INSERT INTO Wallets(Id, Owner, PrivateKey) VALUES (@id, @owner, @privateKey)", new { wallet.Id, wallet.Owner, wallet.PrivateKey });
     }
 
-    public Task<OwnerWallet?> GetWallet(string owner)
+    public Task<OwnerWallet?> GetWalletFromOwner(string owner)
     {
         return _connection.QuerySingleOrDefaultAsync<OwnerWallet?>("SELECT * FROM Wallets WHERE Owner = @owner", new { owner });
     }
@@ -36,7 +36,7 @@ public class WalletRepository
         return _connection.ExecuteAsync(@"INSERT INTO WalletSections(Id, WalletId, WalletPosition, PublicKey) VALUES (@id, @walletId, @walletPosition, @publicKey)", new { section.Id, section.WalletId, section.WalletPosition, section.PublicKey });
     }
 
-    public async Task<WalletSection?> GetWalletSection(IHDPublicKey publicKey)
+    public async Task<WalletSection?> GetWalletSectionFromPublicKey(IHDPublicKey publicKey)
     {
         var publicKeyBytes = publicKey.Export().ToArray();
         return await _connection.QuerySingleOrDefaultAsync<WalletSection>("SELECT * FROM WalletSections WHERE PublicKey = @publicKeyBytes", new { publicKeyBytes });
