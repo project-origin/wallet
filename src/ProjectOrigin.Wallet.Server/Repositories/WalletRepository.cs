@@ -36,8 +36,9 @@ public class WalletRepository
         return _connection.ExecuteAsync(@"INSERT INTO WalletSections(Id, WalletId, WalletPosition, PublicKey) VALUES (@id, @walletId, @walletPosition, @publicKey)", new { section.Id, section.WalletId, section.WalletPosition, section.PublicKey });
     }
 
-    public async Task<WalletSection> GetWalletSection(Guid walletId, uint walletSectionPosition)
+    public async Task<WalletSection?> GetWalletSection(IHDPublicKey publicKey)
     {
-        return await _connection.QuerySingleOrDefaultAsync<WalletSection>("SELECT * FROM WalletSection WHERE WalletId = @walletId AND WalletPosition = @walletSectionPosition", new { walletId, walletSectionPosition });
+        var publicKeyBytes = publicKey.Export().ToArray();
+        return await _connection.QuerySingleOrDefaultAsync<WalletSection>("SELECT * FROM WalletSections WHERE PublicKey = @publicKeyBytes", new { publicKeyBytes });
     }
 }

@@ -53,7 +53,7 @@ public abstract class AbstractUnitOfWork : IUnitOfWork
         }
     }
 
-    public T GetRepository<T>(Func<IDbTransaction, T> factory) where T : class
+    public T GetRepository<T>(Func<IDbConnection, T> factory) where T : class
     {
         if (_repositories.TryGetValue(typeof(T), out var foundRepository))
         {
@@ -61,7 +61,7 @@ public abstract class AbstractUnitOfWork : IUnitOfWork
         }
         else
         {
-            var newRepository = factory(_transaction);
+            var newRepository = factory(_transaction.Connection ?? throw new InvalidOperationException("Transaction is null."));
             _repositories.Add(typeof(T), newRepository);
             return newRepository;
         }

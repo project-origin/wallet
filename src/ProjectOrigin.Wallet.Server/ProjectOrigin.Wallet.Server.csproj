@@ -7,15 +7,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Database\Scripts\202305151549-receive-slice-tables.sql" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Include="Database\Scripts\202305151549-receive-slice-tables.sql" />
-  </ItemGroup>
-
-  <ItemGroup>
     <EmbeddedResource Include="Database\Scripts\202305101334-create-wallet-tables.sql" />
+    <EmbeddedResource Include="Database\Scripts\202305151549-receive-slice-tables.sql" />
   </ItemGroup>
 
   <ItemGroup>

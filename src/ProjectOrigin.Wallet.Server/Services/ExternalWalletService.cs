@@ -1,36 +1,81 @@
 using System;
 using System.Threading.Tasks;
 using Grpc.Core;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
+using ProjectOrigin.Register.V1;
 using ProjectOrigin.Wallet.Server.Database;
+using ProjectOrigin.Wallet.Server.HDWallet;
+using ProjectOrigin.Wallet.Server.Models;
 using ProjectOrigin.Wallet.V1;
 
 namespace ProjectOrigin.Wallet.Server.Services;
 
-internal class ExternalWalletService : ProjectOrigin.Wallet.V1.ExternalWalletService.ExternalWalletServiceBase
+[AllowAnonymous]
+public class ExternalWalletService : ProjectOrigin.Wallet.V1.ExternalWalletService.ExternalWalletServiceBase
 {
     private readonly ILogger<ExternalWalletService> _logger;
     private readonly UnitOfWork _unitOfWork;
+    private readonly IHDAlgorithm _hdAlgorithm;
 
-    public ExternalWalletService(ILogger<ExternalWalletService> logger, UnitOfWork unitOfWork)
+    public ExternalWalletService(ILogger<ExternalWalletService> logger, UnitOfWork unitOfWork, IHDAlgorithm hdAlgorithm)
     {
         _logger = logger;
         _unitOfWork = unitOfWork;
+        _hdAlgorithm = hdAlgorithm;
     }
 
     public override async Task<ReceiveResponse> ReceiveSlice(ReceiveRequest request, ServerCallContext context)
     {
-        //TODO get registry
-        var subject = context.GetSubject();
-        var wallet = await _unitOfWork.WalletRepository.GetWallet(subject);
+        WalletSection walletSection = await GetWalletSection(request);
 
-        if (wallet == null)
-            throw new ArgumentException("You don't have a wallet. Create a wallet before receiving slices.");
-        
-        var walletSection = await _unitOfWork.WalletRepository.GetWalletSection(wallet.Id, request.WalletSectionPosition);
+        var (registryId, certificateId) = await GetOrInsertCertificate(request.CertificateId);
 
-        //TODO purpose of request.WalletSectionPublicKey?
+        var newSlice = new Slice(Guid.NewGuid(),
+                                 walletSection.Id,
+                                 (int)request.WalletSectionPosition,
+                                 registryId,
+                                 certificateId,
+                                 request.Quantity,
+                                 request.RandomR.ToByteArray(),
+                                 false);
+
+        await _unitOfWork.CertficateRepository.CreateSlice(newSlice);
+
+        _unitOfWork.Commit();
 
         return new ReceiveResponse();
+    }
+
+    private async Task<WalletSection> GetWalletSection(ReceiveRequest request)
+    {
+        var publicKey = _hdAlgorithm.ImportPublicKey(request.WalletSectionPublicKey.Span);
+        var walletSection = await _unitOfWork.WalletRepository.GetWalletSection(publicKey);
+
+        if (walletSection == null)
+            throw new RpcException(new Status(StatusCode.InvalidArgument, "WalletSection not found."));
+
+        return walletSection;
+    }
+
+    private async Task<(Guid RegistryId, Guid CertificateId)> GetOrInsertCertificate(FederatedStreamId federatedStreamId)
+    {
+        var certId = Guid.Parse(federatedStreamId.StreamId.Value);
+        Registry? registry = await _unitOfWork.CertficateRepository.GetRegistry(federatedStreamId.Registry);
+
+        if (registry == null)
+        {
+            registry = new Registry(Guid.NewGuid(), federatedStreamId.Registry);
+            await _unitOfWork.CertficateRepository.InsertRegistry(registry);
+        }
+
+        Certificate? certificate = await _unitOfWork.CertficateRepository.GetCertificate(registry.Id, certId);
+        if (certificate == null)
+        {
+            certificate = new Certificate(certId, registry.Id, false);
+            await _unitOfWork.CertficateRepository.InsertCertificate(certificate);
+        }
+
+        return (registry.Id, certificate.Id);
     }
 }

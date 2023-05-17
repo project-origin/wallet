@@ -1,26 +1,5 @@
 using System;
 
-namespace ProjectOrigin.Wallet.Server.Models
-{
-    public class Slice
-    {
-        public Guid Id { get; }
-        public Guid WalletSectionId { get; }
-        public int SectionPosition { get; }
-        public Guid CertificateId { get; }
-        public long Quantity { get; }
-        public long RandomR { get; }
-        public bool Verified { get; }
+namespace ProjectOrigin.Wallet.Server.Models;
 
-        public Slice(Guid id, Guid walletSectionId, int sectionPosition, Guid certificateId, long quantity, long randomR)
-        {
-            Id = id;
-            WalletSectionId = walletSectionId;
-            SectionPosition = sectionPosition;
-            CertificateId = certificateId;
-            Quantity = quantity;
-            RandomR = randomR;
-            Verified = false;
-        }
-    }
-}
+public record Slice(Guid Id, Guid WalletSectionId, int WalletSectionPosition, Guid RegistryId, Guid CertificateId, long Quantity, byte[] RandomR, bool Verified);
