@@ -12,7 +12,7 @@ The public API allows anonymous access to deposit slices into wallets.
 
 |  Name   | Description |
 | - | - |
-| ReceiveSlice | Enables a wallet to receive a slice from either an issuer or another wallet, the slice is verified based on data from the registry. |
+| [ReceiveSlice](flows/receive_slice.md) | Enables a wallet to receive a slice from either an issuer or another wallet, the slice is verified based on data from the registry. |
 
 ### Granular Certificate API
 

@@ -78,17 +78,15 @@ public abstract class AbstractRepositoryTests : IClassFixture<PostgresDatabaseFi
         return walletSection;
     }
 
-    protected async Task<Certificate> CreateCertificate(Guid registryId, bool loaded)
+    protected async Task<Certificate> CreateCertificate(Guid registryId, CertificateState state)
     {
-        var certificate = new Certificate(Guid.NewGuid(), registryId, loaded);
+        var certificate = new Certificate(Guid.NewGuid(), registryId, state);
 
         using (var connection = CreateConnection())
         {
-            await connection.ExecuteAsync("INSERT INTO Certificates(Id, RegistryId, Loaded) VALUES (@id, @registryId, @loaded)", certificate);
+            await connection.ExecuteAsync("INSERT INTO Certificates(Id, RegistryId, State) VALUES (@id, @registryId, @state)", certificate);
         }
 
         return certificate;
     }
-
-
 }

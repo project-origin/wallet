@@ -7,13 +7,13 @@ But, if the Owner has multiple issuers, he must give a different walletSection t
 
 ```mermaid
 sequenceDiagram
-    actor reciever as Owner
+    actor receiver as Owner
     participant issuer as Issuer
     participant reg as Registry
     participant wallet as Owner Wallet
     participant datahub as Issuer data provider
 
-    reciever ->> issuer: ConfigureWallet(WalletSectionReference)
+    receiver ->> issuer: ConfigureWallet(WalletSectionReference)
     Note over issuer: Later...
 
     datahub ->> issuer: New GC for Owner
