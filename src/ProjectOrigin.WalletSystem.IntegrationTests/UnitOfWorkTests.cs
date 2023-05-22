@@ -12,24 +12,24 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests;
 
 public class UnitOfWorkTests : IClassFixture<PostgresDatabaseFixture>
 {
-    private PostgresDatabaseFixture _dbFixture;
-    private IHDAlgorithm _algorithm;
+    private readonly PostgresDatabaseFixture _dbFixture;
+    private readonly IHDAlgorithm _algorithm;
 
     public UnitOfWorkTests(PostgresDatabaseFixture fixture)
     {
-        this._algorithm = new Secp256k1Algorithm();
-        this._dbFixture = fixture;
+        _algorithm = new Secp256k1Algorithm();
+        _dbFixture = fixture;
         DatabaseUpgrader.Upgrade(fixture.ConnectionString);
 
-        SqlMapper.AddTypeHandler<IHDPrivateKey>(new HDPrivateKeyTypeHandler(this._algorithm));
-        SqlMapper.AddTypeHandler<IHDPublicKey>(new HDPublicKeyTypeHandler(this._algorithm));
+        SqlMapper.AddTypeHandler(new HDPrivateKeyTypeHandler(_algorithm));
+        SqlMapper.AddTypeHandler(new HDPublicKeyTypeHandler(_algorithm));
     }
 
     [Fact]
     public async Task Create_Commit_Expect1()
     {
         var owner = Guid.NewGuid().ToString();
-        var model = new Wallet(Guid.NewGuid(), owner, this._algorithm.GenerateNewPrivateKey());
+        var model = new Wallet(Guid.NewGuid(), owner, _algorithm.GenerateNewPrivateKey());
 
         var dbConnectionFactory = new DbConnectionFactory(_dbFixture.ConnectionString);
 
@@ -51,7 +51,7 @@ public class UnitOfWorkTests : IClassFixture<PostgresDatabaseFixture>
     public async Task Create_Rollback_Still_Expect1()
     {
         var owner = Guid.NewGuid().ToString();
-        var model = new Wallet(Guid.NewGuid(), owner, this._algorithm.GenerateNewPrivateKey());
+        var model = new Wallet(Guid.NewGuid(), owner, _algorithm.GenerateNewPrivateKey());
 
         var dbConnectionFactory = new DbConnectionFactory(_dbFixture.ConnectionString);
 

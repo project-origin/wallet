@@ -16,7 +16,7 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests;
 
 public class GrpcTests : GrpcTestsBase
 {
-    private JwtGenerator _tokenGenerator;
+    private readonly JwtGenerator _tokenGenerator;
 
     public GrpcTests(GrpcTestFixture<Startup> grpcFixture, PostgresDatabaseFixture dbFixture, ITestOutputHelper outputHelper) : base(grpcFixture, dbFixture, outputHelper)
     {
