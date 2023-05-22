@@ -17,9 +17,15 @@ Each wallet section is uniquely identified by a SectionId and is associated with
 
 ### Purpose of Wallet Sections
 
-Wallet sections are designed to facilitate secure asset transfers. By sharing the public key of a specific wallet section, the owner can enable other entities to transfer assets to that section.
+The registries use public-private key-pairs to represent the ownership of GCs. The public key is used to verify the ownership of a slice, while the private key is used to sign transactions.
+To ensure privacy and security each slice must be associated with a unique public key.
+
+To enable the transfer of slices without having to query the wallet before each insert to get unique public keys, the wallet is divided into sections that use hierarchical deterministic keys (HD Keys) to generate unique public keys for each slice.
+
+This way a public-key for a section can be shared to other parties, and they can generate unique public keys for each slice within that section without having to query the wallet.
+
+The owner of the wallet can generate the corresponding private keys for each slice within the section using their private key stored in their wallet.
 This approach provides a level of privacy and control as the other party only knows the public key of the section.
-The owner can generate the corresponding private keys for each GC within the section using their private key stored in their wallet.
 
 ## Hierarchical Deterministic Keys (HD Keys)
 
