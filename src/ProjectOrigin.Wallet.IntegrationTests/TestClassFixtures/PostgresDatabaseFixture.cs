@@ -17,12 +17,12 @@ public class PostgresDatabaseFixture : IAsyncLifetime
             .Build();
     }
 
-    public virtual Task InitializeAsync()
+    public Task InitializeAsync()
     {
         return _postgreSqlContainer.StartAsync();
     }
 
-    public virtual Task DisposeAsync()
+    public Task DisposeAsync()
     {
         return _postgreSqlContainer.StopAsync();
     }
