@@ -1,0 +1,25 @@
+# Default values for project-origin-wallet.
+
+# persistence defines the persistence configuration for the wallet server
+persistance:
+
+  # cloudNativePG determines if the database is created as a cloud native postgresql instance
+  cloudNativePG:
+
+    # enabled determines if the cloud native postgresql instance is enabled
+    enabled: true
+
+    # name defines the name of the cloud native postgresql instance
+    name: cnpg-wallet-db
+
+    # owner defines the owner of the database
+    owner: app
+
+    # database defines the name of the database to create
+    database: wallet-database
+
+    # replicas defines the number of database instances to run
+    replicas: 3
+
+    # storage defines the storage configuration for the database
+    size: 10Gi

@@ -1,0 +1,46 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: po-wallet-deployment
+  labels:
+    app: po-wallet
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: po-wallet
+  template:
+    metadata:
+      labels:
+        app: po-wallet
+    spec:
+      containers:
+        - name: po-wallet
+          image: ghcr.io/project-origin/wallet-server:0.1.0-alpha.1
+          env:
+          {{ if .Values.database.cloudNativePg.enabled }}
+            - name: DB_HOST
+              value: {{ .Values.persistance.cloudNativePG.name }}-rw
+
+            - name: DB_PORT
+              value: "5432"
+
+            - name: DB_DATABASE
+              value: {{ .Values.persistance.cloudNativePG.size }}
+
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.persistance.cloudNativePG.name }}-app
+                  key: username
+
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.persistance.cloudNativePG.name }}-app
+                  key: password
+
+            - name: ConnectionStrings__Database
+              value: Host=$(DB_HOST); Port=$(DB_PORT); Database=$(DB_DATABASE); Username=$(DB_USERNAME); Password=$(DB_PASSWORD);
+          {{ end }}
