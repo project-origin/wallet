@@ -1,5 +1,3 @@
-
-using System;
 using ProjectOrigin.Wallet.Server.Repositories;
 
 namespace ProjectOrigin.Wallet.Server.Database;
