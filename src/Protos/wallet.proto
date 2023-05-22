@@ -3,7 +3,7 @@ syntax = "proto3";
 import "google/protobuf/timestamp.proto";
 import "primitives.proto";
 
-package ProjectOrigin.Wallet.V1;
+package ProjectOrigin.WalletSystem.V1;
 
 // Anonymously functions, Externally accessible
 service ExternalWalletService {
