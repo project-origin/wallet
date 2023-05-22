@@ -14,19 +14,17 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests.Repositories;
 
 public class WalletRepositoryTests : IClassFixture<PostgresDatabaseFixture>
 {
-    private PostgresDatabaseFixture _dbFixture;
-    private Secp256k1Algorithm _algorithm;
+    private readonly PostgresDatabaseFixture _dbFixture;
+    private readonly Secp256k1Algorithm _algorithm;
 
     public WalletRepositoryTests(PostgresDatabaseFixture dbFixture)
     {
-        this._algorithm = new Secp256k1Algorithm();
-        this._dbFixture = dbFixture;
-        DatabaseUpgrader.Upgrade(dbFixture.ConnectionString);
+        _algorithm = new Secp256k1Algorithm();
+        _dbFixture = dbFixture;
 
-        SqlMapper.AddTypeHandler<IHDPrivateKey>(new HDPrivateKeyTypeHandler(this._algorithm));
-        SqlMapper.AddTypeHandler<IHDPublicKey>(new HDPublicKeyTypeHandler(this._algorithm));
+        SqlMapper.AddTypeHandler(new HDPrivateKeyTypeHandler(_algorithm));
+        SqlMapper.AddTypeHandler(new HDPublicKeyTypeHandler(_algorithm));
     }
-
 
     [Fact]
     public async Task Create_InsertsWallet()
@@ -42,7 +40,7 @@ public class WalletRepositoryTests : IClassFixture<PostgresDatabaseFixture>
 
         using var connection = new DbConnectionFactory(_dbFixture.ConnectionString).CreateConnection();
         connection.Open();
-        WalletRepository repository = new WalletRepository(connection);
+        var repository = new WalletRepository(connection);
 
         // Act
         await repository.Create(wallet);
@@ -57,7 +55,6 @@ public class WalletRepositoryTests : IClassFixture<PostgresDatabaseFixture>
     public async Task Query_GetWallet()
     {
         // Arrange
-
         var subject = Guid.NewGuid().ToString();
         var wallet = new Wallet(
             Guid.NewGuid(),
@@ -66,7 +63,7 @@ public class WalletRepositoryTests : IClassFixture<PostgresDatabaseFixture>
             );
         using var connection = new DbConnectionFactory(_dbFixture.ConnectionString).CreateConnection();
         connection.Open();
-        WalletRepository repository = new WalletRepository(connection);
+        var repository = new WalletRepository(connection);
         await repository.Create(wallet);
 
         // Act
@@ -92,7 +89,7 @@ public class WalletRepositoryTests : IClassFixture<PostgresDatabaseFixture>
             );
         using var connection = new DbConnectionFactory(_dbFixture.ConnectionString).CreateConnection();
         connection.Open();
-        WalletRepository repository = new WalletRepository(connection);
+        var repository = new WalletRepository(connection);
         await repository.Create(wallet);
 
         for (int position = 1; position <= sections; position++)
