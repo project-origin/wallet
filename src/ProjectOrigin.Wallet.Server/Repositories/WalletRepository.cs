@@ -23,10 +23,8 @@ public class WalletRepository
         return result;
     }
 
-    public async Task<IEnumerable<MyTable>> GetAll()
+    public async Task<MyTable?> Get(int id)
     {
-        var result = await _connection.QueryAsync<MyTable>("SELECT * FROM MyTable");
-
-        return result;
+        return await _connection.QuerySingleOrDefaultAsync<MyTable>("SELECT * FROM MyTable where id = @id", new { id = id });
     }
 }

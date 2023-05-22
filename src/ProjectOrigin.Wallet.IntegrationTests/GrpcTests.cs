@@ -1,6 +1,5 @@
 using ProjectOrigin.Wallet.IntegrationTests.TestClassFixtures;
 using ProjectOrigin.Wallet.Server;
-using ProjectOrigin.Wallet.Server.Database;
 using ProjectOrigin.Wallet.V1;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -18,7 +17,6 @@ public class GrpcTests : IClassFixture<GrpcTestFixture<Startup>>, IClassFixture<
         this._grpcFixture = grpcFixture;
         this._dbFixture = dbFixture;
 
-        DatabaseUpgrader.Upgrade(dbFixture.ConnectionString);
         grpcFixture.ConfigureHostConfiguration(new Dictionary<string, string?>()
             {
                 {"ConnectionStrings:Database", dbFixture.ConnectionString}

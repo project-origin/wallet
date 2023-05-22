@@ -10,5 +10,5 @@ public class UnitOfWork : AbstractUnitOfWork
     {
     }
 
-    public WalletRepository WalletRepository => GetRepository<WalletRepository>(transaction => new WalletRepository(_transaction?.Connection ?? throw new InvalidOperationException("Transaction is null.")));
+    public WalletRepository WalletRepository => GetRepository<WalletRepository>(connection => new WalletRepository(connection));
 }

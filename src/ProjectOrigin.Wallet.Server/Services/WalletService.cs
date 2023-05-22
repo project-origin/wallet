@@ -22,7 +22,7 @@ internal class WalletService : ProjectOrigin.Wallet.V1.WalletService.WalletServi
     {
         await _unitOfWork.WalletRepository.Create(new MyTable(0, Guid.NewGuid().ToString()));
         _unitOfWork.Commit();
-        var tables = await _unitOfWork.WalletRepository.GetAll();
+        var tables = await _unitOfWork.WalletRepository.Get(0);
 
         return new V1.WalletSectionReference();
     }
