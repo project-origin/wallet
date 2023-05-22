@@ -23,6 +23,7 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="6.0.0" />
+    <PackageReference Include="Grpc.AspNetCore" Version="2.49.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -32,10 +33,6 @@
   <ItemGroup>
     <Protobuf Include="..\Protos\primitives.proto" Access="internal"/>
     <Protobuf Include="..\Protos\wallet.proto" GrpcServices="Client" Access="internal"/>
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Grpc.AspNetCore" Version="2.49.0" />
   </ItemGroup>
 
 </Project>
