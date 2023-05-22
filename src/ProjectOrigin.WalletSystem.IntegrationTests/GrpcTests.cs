@@ -7,7 +7,6 @@ using ProjectOrigin.WalletSystem.Server.Database;
 using ProjectOrigin.WalletSystem.Server.Models;
 using ProjectOrigin.WalletSystem.V1;
 using System;
-using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
@@ -30,8 +29,7 @@ public class GrpcTests : GrpcTestsBase
         var subject = Guid.NewGuid().ToString();
         var token = _tokenGenerator.GenerateToken(subject, "John Doe");
 
-        var headers = new Metadata();
-        headers.Add("Authorization", $"Bearer {token}");
+        var headers = new Metadata { { "Authorization", $"Bearer {token}" } };
 
         var client = new WalletService.WalletServiceClient(_grpcFixture.Channel);
         var request = new CreateWalletSectionRequest();
@@ -40,7 +38,7 @@ public class GrpcTests : GrpcTestsBase
         var walletSection = await client.CreateWalletSectionAsync(request, headers);
 
         // Assert
-        Assert.NotNull(walletSection);
+        walletSection.Should().NotBeNull();
         walletSection.Version.Should().Be(1);
         walletSection.Endpoint.Should().Be(endpoint);
         walletSection.SectionPublicKey.Should().NotBeNullOrEmpty();
@@ -48,7 +46,8 @@ public class GrpcTests : GrpcTestsBase
         using (var connection = new DbConnectionFactory(_dbFixture.ConnectionString).CreateConnection())
         {
             var foundSection = connection.QuerySingle<WalletSection>("SELECT * FROM WalletSections");
-            Assert.True(Enumerable.SequenceEqual(foundSection.PublicKey.Export().ToArray(), walletSection.SectionPublicKey));
+
+            walletSection.SectionPublicKey.Should().Equal(foundSection.PublicKey.Export().ToArray());
 
             var foundWallet = connection.QuerySingle<Wallet>("SELECT * FROM Wallets where owner = @owner", new { owner = subject });
             // Wallet should be implicitly created
