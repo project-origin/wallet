@@ -27,7 +27,8 @@ public class ExternalWalletService : ProjectOrigin.Wallet.V1.ExternalWalletServi
 
     public override async Task<ReceiveResponse> ReceiveSlice(ReceiveRequest request, ServerCallContext context)
     {
-        WalletSection walletSection = await GetWalletSection(request);
+        var publicKey = _hdAlgorithm.ImportPublicKey(request.WalletSectionPublicKey.Span);
+        var walletSection = await GetWalletSectionFromPublicKey(publicKey);
 
         var (registryId, certificateId) = await GetOrInsertCertificate(request.CertificateId);
 
@@ -40,20 +41,19 @@ public class ExternalWalletService : ProjectOrigin.Wallet.V1.ExternalWalletServi
                                  request.RandomR.ToByteArray(),
                                  false);
 
-        await _unitOfWork.CertficateRepository.CreateSlice(newSlice);
+        await _unitOfWork.CertficateRepository.InsertSlice(newSlice);
 
         _unitOfWork.Commit();
 
         return new ReceiveResponse();
     }
 
-    private async Task<WalletSection> GetWalletSection(ReceiveRequest request)
+    private async Task<WalletSection> GetWalletSectionFromPublicKey(IHDPublicKey publicKey)
     {
-        var publicKey = _hdAlgorithm.ImportPublicKey(request.WalletSectionPublicKey.Span);
         var walletSection = await _unitOfWork.WalletRepository.GetWalletSectionFromPublicKey(publicKey);
 
         if (walletSection == null)
-            throw new RpcException(new Status(StatusCode.InvalidArgument, "WalletSection not found."));
+            throw new RpcException(new Status(StatusCode.InvalidArgument, "WalletSection not found for public key."));
 
         return walletSection;
     }

@@ -15,7 +15,7 @@ public class CertificateRepository
         this._connection = connection;
     }
 
-    public Task CreateSlice(Slice newSlice)
+    public Task InsertSlice(Slice newSlice)
     {
         return _connection.ExecuteAsync(@"INSERT INTO Slices(Id, WalletSectionId, WalletSectionPosition, RegistryId, CertificateId, Quantity, RandomR, Verified) VALUES (@id, @walletSectionId, @walletSectionPosition, @registryId, @certificateId, @quantity, @randomR, @verified)", new { newSlice.Id, newSlice.WalletSectionId, newSlice.WalletSectionPosition, newSlice.RegistryId, newSlice.CertificateId, newSlice.Quantity, newSlice.RandomR, newSlice.Verified });
     }

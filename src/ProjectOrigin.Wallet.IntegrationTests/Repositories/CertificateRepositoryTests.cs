@@ -98,7 +98,7 @@ public class CertificateRepositoryTest : AbstractRepositoryTests
         var slice = new Slice(Guid.NewGuid(), walletSection.Id, sectionPosition, registry.Id, certificate.Id, _fixture.Create<int>(), _fixture.Create<byte[]>(), false);
 
         // Act
-        await _repository.CreateSlice(slice);
+        await _repository.InsertSlice(slice);
 
         // Assert
         var insertedSlice = await _connection.QueryFirstOrDefaultAsync<Slice>("SELECT * FROM Slices WHERE Id = @id", new { slice.Id });
