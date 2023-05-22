@@ -46,17 +46,18 @@ public class CertificateRepository
 
     public Task<IEnumerable<CertificateEntity>> GetAllOwnedCertificates(string owner)
     {
-        var sql = @"SELECT c, s.Id as sliceId, s
+        var sql = @"SELECT c.Id, c.RegistryId, c.State, SUM(s.Quantity) as Quantity
                     FROM Wallets w
-                    LEFT JOIN WalletSections ws ON w.WalletId = ws.WalletId
-                    LEFT JOIN Slices s ON ws.SectionId = s.SectionId
-                    LEFT JOIN Certificates c ON s.CertificateId = c.CertificateId
-                    WHERE w.Owner = @owner";
-
-        return _connection.QueryAsync<CertificateEntity, Slice[], CertificateEntity>(sql, (cert, slices) =>
+                    LEFT JOIN WalletSections ws ON w.Id = ws.WalletId
+                    LEFT JOIN Slices s ON ws.Id = s.WalletSectionId
+                    LEFT JOIN Certificates c ON s.CertificateId = c.Id
+                    WHERE w.Owner = @owner
+                    GROUP BY c.Id, c.RegistryId, c.State
+                    ";
+        return _connection.QueryAsync<CertificateEntity, decimal, CertificateEntity>(sql, (cert, quantity) =>
         {
-            cert.Slices = slices;
+            cert.Quantity = (long)quantity;
             return cert;
-        }, splitOn: "sliceId", param:new { owner });
+        }, splitOn: "Quantity", param:new { owner });
     }
 }

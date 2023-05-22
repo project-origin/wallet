@@ -131,13 +131,17 @@ public class CertificateRepositoryTest : AbstractRepositoryTests
         var owner2 = _fixture.Create<string>();
         var wallet3 = await CreateWallet(owner2);
         var walletSection4 = await CreateWalletSection(wallet3, walletPosition);
-        //Wallet1 
-        var slice1 = new Slice(Guid.NewGuid(), walletSection1.Id, sectionPosition, registry.Id, certificate1.Id, _fixture.Create<int>(), _fixture.Create<byte[]>(), SliceState.Unverified);
-        var slice2 = new Slice(Guid.NewGuid(), walletSection1.Id, sectionPosition+1, registry.Id, certificate1.Id, _fixture.Create<int>(), _fixture.Create<byte[]>(), SliceState.Unverified);
+        //Wallet1
+        var slice1 = new Slice(Guid.NewGuid(), walletSection1.Id, sectionPosition, registry.Id, certificate1.Id, _fixture.Create<int>(),
+            _fixture.Create<byte[]>(), SliceState.Unverified);
+        var slice2 = new Slice(Guid.NewGuid(), walletSection1.Id, sectionPosition + 1, registry.Id, certificate1.Id, _fixture.Create<int>(),
+            _fixture.Create<byte[]>(), SliceState.Unverified);
         //Certficiate2
-        var slice3 = new Slice(Guid.NewGuid(), walletSection2.Id, sectionPosition, registry.Id, certificate2.Id, _fixture.Create<int>(), _fixture.Create<byte[]>(), SliceState.Unverified);
+        var slice3 = new Slice(Guid.NewGuid(), walletSection2.Id, sectionPosition, registry.Id, certificate2.Id, _fixture.Create<int>(),
+            _fixture.Create<byte[]>(), SliceState.Unverified);
 
-        var sliceWithDifferentOwner = new Slice(Guid.NewGuid(), walletSection4.Id, sectionPosition, registry.Id, certificate4.Id, _fixture.Create<int>(), _fixture.Create<byte[]>(), SliceState.Unverified);
+        var sliceWithDifferentOwner = new Slice(Guid.NewGuid(), walletSection4.Id, sectionPosition, registry.Id, certificate4.Id,
+            _fixture.Create<int>(), _fixture.Create<byte[]>(), SliceState.Unverified);
 
         await _repository.InsertSlice(slice1);
         await _repository.InsertSlice(slice2);
@@ -146,6 +150,9 @@ public class CertificateRepositoryTest : AbstractRepositoryTests
 
         var certificates = await _repository.GetAllOwnedCertificates(owner1);
 
-        Assert.Equal(3, certificates.Count());
+        certificates.Should().HaveCount(2).And.Satisfy(
+            c => c.Id == certificate1.Id && c.Quantity == slice1.Quantity + slice2.Quantity,
+            c => c.Id == certificate2.Id && c.Quantity == slice3.Quantity
+        );
     }
 }
