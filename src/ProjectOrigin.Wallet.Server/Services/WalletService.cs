@@ -8,6 +8,7 @@ using Microsoft.Extensions.Options;
 using ProjectOrigin.Wallet.Server.Database;
 using ProjectOrigin.Wallet.Server.HDWallet;
 using ProjectOrigin.Wallet.Server.Models;
+using ProjectOrigin.Wallet.V1;
 
 namespace ProjectOrigin.Wallet.Server.Services;
 
@@ -52,5 +53,11 @@ public class WalletService : ProjectOrigin.Wallet.V1.WalletService.WalletService
             Endpoint = _endpointAddress,
             SectionPublicKey = ByteString.CopyFrom(section.PublicKey.Export())
         };
+    }
+
+    public override Task<QueryResponse> QueryGranularCertificates(QueryRequest request, ServerCallContext context)
+    {
+        var subject = context.GetSubject();
+
     }
 }

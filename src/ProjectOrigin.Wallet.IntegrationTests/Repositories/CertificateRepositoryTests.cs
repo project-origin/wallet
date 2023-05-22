@@ -112,4 +112,32 @@ public class CertificateRepositoryTest : AbstractRepositoryTests
         Assert.True(slice.RandomR.SequenceEqual(insertedSlice.RandomR));
         insertedSlice.Verified.Should().Be(slice.Verified);
     }
+
+    [Fact]
+    public async Task GetAllOwnedCertificates()
+    {
+        // Arrange
+        var walletPosition = 1;
+        var sectionPosition = 1;
+        var registry = await CreateRegistry();
+        var certificate1 = await CreateCertificate(registry.Id, false);
+        var certificate2 = await CreateCertificate(registry.Id, false);
+        var certificate3 = await CreateCertificate(registry.Id, false);
+        var wallet1 = await CreateWallet(_fixture.Create<string>());
+        var wallet2 = await CreateWallet(_fixture.Create<string>());
+        var walletSection1 = await CreateWalletSection(wallet1, walletPosition);
+        var walletSection2 = await CreateWalletSection(wallet1, walletPosition + 1);
+        var walletSection3 = await CreateWalletSection(wallet2, walletPosition);
+        //Wallet1 
+        var slice1 = new Slice(Guid.NewGuid(), walletSection1.Id, sectionPosition, registry.Id, certificate1.Id, _fixture.Create<int>(), _fixture.Create<byte[]>(), false);
+        var slice2 = new Slice(Guid.NewGuid(), walletSection1.Id, sectionPosition+1, registry.Id, certificate1.Id, _fixture.Create<int>(), _fixture.Create<byte[]>(), false);
+        //Certficiate2
+        var slice3 = new Slice(Guid.NewGuid(), walletSection2.Id, sectionPosition, registry.Id, certificate2.Id, _fixture.Create<int>(), _fixture.Create<byte[]>(), false);
+
+        //Wallet2
+        var slice4 = new Slice(Guid.NewGuid(), walletSection3.Id, sectionPosition, registry.Id, certificate3.Id, _fixture.Create<int>(), _fixture.Create<byte[]>(), false);
+
+
+
+    }
 }
