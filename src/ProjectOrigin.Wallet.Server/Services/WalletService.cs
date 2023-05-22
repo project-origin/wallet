@@ -1,31 +1,29 @@
 using System;
 using System.Threading.Tasks;
-using Dapper;
+using Grpc.Core;
 using Microsoft.Extensions.Logging;
 using ProjectOrigin.Wallet.Server.Database;
 using ProjectOrigin.Wallet.Server.Models;
 
 namespace ProjectOrigin.Wallet.Server.Services;
 
-public class ExternalWalletService : ProjectOrigin.Wallet.V1.ExternalWalletService.ExternalWalletServiceBase
+internal class WalletService : ProjectOrigin.Wallet.V1.WalletService.WalletServiceBase
 {
-    private readonly ILogger<ExternalWalletService> _logger;
-    private readonly IDbConnectionFactory _connectionFactory;
+    private readonly ILogger<WalletService> _logger;
+    private readonly UnitOfWork _unitOfWork;
 
-    public ExternalWalletService(ILogger<ExternalWalletService> logger, IDbConnectionFactory connectionFactory)
+    public WalletService(ILogger<WalletService> logger, UnitOfWork unitOfWork)
     {
         _logger = logger;
-        _connectionFactory = connectionFactory;
+        _unitOfWork = unitOfWork;
     }
 
-    public override async Task<V1.ReceiveResponse> ReceiveSlice(V1.ReceiveRequest request, Grpc.Core.ServerCallContext context)
+    public override async Task<V1.WalletSectionReference> CreateWalletSection(V1.CreateWalletSectionRequest request, ServerCallContext context)
     {
-        using var connection = _connectionFactory.CreateConnection();
+        await _unitOfWork.WalletRepository.Create(new MyTable(0, Guid.NewGuid().ToString()));
+        _unitOfWork.Commit();
+        var tables = await _unitOfWork.WalletRepository.Get(0);
 
-        await connection.ExecuteAsync(@"INSERT INTO MyTable(Foo) VALUES (@foo)", new { foo = Guid.NewGuid().ToString() });
-
-        var myTables = await connection.QueryAsync<MyTable>("SELECT * FROM MyTable");
-
-        throw new NotImplementedException("🌱");
+        return new V1.WalletSectionReference();
     }
 }
