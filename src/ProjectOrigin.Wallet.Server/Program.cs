@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using ProjectOrigin.Wallet.Server;
 using ProjectOrigin.Wallet.Server.Database;
-using ProjectOrigin.Wallet.Server.Services;
 
 var startup = new Startup();
 
