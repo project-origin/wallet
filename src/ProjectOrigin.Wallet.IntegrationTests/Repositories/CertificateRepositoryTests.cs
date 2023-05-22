@@ -123,14 +123,14 @@ public class CertificateRepositoryTest : AbstractRepositoryTests
         var registry = await CreateRegistry();
         var certificate1 = await CreateCertificate(registry.Id, CertificateState.Inserted);
         var certificate2 = await CreateCertificate(registry.Id, CertificateState.Inserted);
-        var certificate4 = await CreateCertificate(registry.Id, CertificateState.Inserted);
+        var certificate3 = await CreateCertificate(registry.Id, CertificateState.Inserted);
         var owner1 = _fixture.Create<string>();
         var wallet1 = await CreateWallet(owner1);
         var walletSection1 = await CreateWalletSection(wallet1, walletPosition);
         var walletSection2 = await CreateWalletSection(wallet1, walletPosition + 1);
         var owner2 = _fixture.Create<string>();
-        var wallet3 = await CreateWallet(owner2);
-        var walletSection4 = await CreateWalletSection(wallet3, walletPosition);
+        var wallet2 = await CreateWallet(owner2);
+        var walletSection3 = await CreateWalletSection(wallet2, walletPosition);
         //Wallet1
         var slice1 = new Slice(Guid.NewGuid(), walletSection1.Id, sectionPosition, registry.Id, certificate1.Id, _fixture.Create<int>(),
             _fixture.Create<byte[]>(), SliceState.Unverified);
@@ -140,7 +140,7 @@ public class CertificateRepositoryTest : AbstractRepositoryTests
         var slice3 = new Slice(Guid.NewGuid(), walletSection2.Id, sectionPosition, registry.Id, certificate2.Id, _fixture.Create<int>(),
             _fixture.Create<byte[]>(), SliceState.Unverified);
 
-        var sliceWithDifferentOwner = new Slice(Guid.NewGuid(), walletSection4.Id, sectionPosition, registry.Id, certificate4.Id,
+        var sliceWithDifferentOwner = new Slice(Guid.NewGuid(), walletSection3.Id, sectionPosition, registry.Id, certificate3.Id,
             _fixture.Create<int>(), _fixture.Create<byte[]>(), SliceState.Unverified);
 
         await _repository.InsertSlice(slice1);

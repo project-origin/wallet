@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Google.Protobuf;
 using Google.Protobuf.Collections;
@@ -9,6 +10,7 @@ using Microsoft.Extensions.Options;
 using ProjectOrigin.Register.V1;
 using ProjectOrigin.Wallet.Server.Database;
 using ProjectOrigin.Wallet.Server.HDWallet;
+using ProjectOrigin.Wallet.Server.Mappers;
 using ProjectOrigin.Wallet.Server.Models;
 using ProjectOrigin.Wallet.V1;
 
@@ -57,24 +59,18 @@ public class WalletService : ProjectOrigin.Wallet.V1.WalletService.WalletService
         };
     }
 
-    public override Task<QueryResponse> QueryGranularCertificates(QueryRequest request, ServerCallContext context)
+    public override async Task<QueryResponse> QueryGranularCertificates(QueryRequest request, ServerCallContext context)
     {
         var subject = context.GetSubject();
 
-        var response = new QueryResponse
+        var certificates = await _unitOfWork.CertficateRepository.GetAllOwnedCertificates(subject);
+
+        var response = new QueryResponse();
+        foreach (var gc in certificates)
         {
-            GranularCertificates =
-            {
-                new GranularCertificate
-                {
-                    FederatedId = new FederatedStreamId
-                    {
+            response.GranularCertificates.Add(CertificateEntityMapper.ToDto(gc));
+        }
 
-                    }
-                }
-            }
-        };
-
-        return base.QueryGranularCertificates(request, context);
+        return response;
     }
 }

@@ -16,13 +16,9 @@ namespace ProjectOrigin.Wallet.IntegrationTests
 {
     public class ReceiveSliceTests : GrpcTestsBase
     {
-        const string RegistryName = "RegistryA";
-        private IHDAlgorithm _algorithm;
-
         public ReceiveSliceTests(GrpcTestFixture<Startup> grpcFixture, PostgresDatabaseFixture dbFixture)
             : base(grpcFixture, dbFixture)
         {
-            _algorithm = new Secp256k1Algorithm();
         }
 
         private async Task<WalletSection> CreateWalletSection(string owner)
