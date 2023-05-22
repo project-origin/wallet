@@ -115,7 +115,7 @@ namespace ProjectOrigin.Wallet.IntegrationTests.TestClassFixtures
             _server?.Dispose();
         }
 
-        public IDisposable GetTestContext(ITestOutputHelper outputHelper)
+        public IDisposable GetTestLogger(ITestOutputHelper outputHelper)
         {
             return new GrpcTestContext<TStartup>(this, outputHelper);
         }

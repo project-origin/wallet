@@ -7,33 +7,20 @@ using ProjectOrigin.Wallet.Server.Database;
 using ProjectOrigin.Wallet.Server.Models;
 using ProjectOrigin.Wallet.V1;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace ProjectOrigin.Wallet.IntegrationTests;
 
-public class GrpcTests : IClassFixture<GrpcTestFixture<Startup>>, IClassFixture<PostgresDatabaseFixture>
+public class GrpcTests : GrpcTestsBase
 {
-    private readonly string endpoint = "http://my-endpoint:80/";
-
-    private GrpcTestFixture<Startup> _grpcFixture;
-    private PostgresDatabaseFixture _dbFixture;
     private JwtGenerator _tokenGenerator;
 
-    public GrpcTests(GrpcTestFixture<Startup> grpcFixture, PostgresDatabaseFixture dbFixture)
+    public GrpcTests(GrpcTestFixture<Startup> grpcFixture, PostgresDatabaseFixture dbFixture, ITestOutputHelper outputHelper) : base(grpcFixture, dbFixture, outputHelper)
     {
-        this._grpcFixture = grpcFixture;
-        this._dbFixture = dbFixture;
-        this._tokenGenerator = new JwtGenerator();
-
-        DatabaseUpgrader.Upgrade(dbFixture.ConnectionString);
-        grpcFixture.ConfigureHostConfiguration(new Dictionary<string, string?>()
-            {
-                {"ConnectionStrings:Database", dbFixture.ConnectionString},
-                {"ServiceOptions:EndpointAddress", endpoint}
-            });
+        _tokenGenerator = new JwtGenerator();
     }
 
     [Fact]

@@ -29,7 +29,6 @@ namespace ProjectOrigin.Wallet.IntegrationTests.TestClassFixtures.GrpcHelpers
         private readonly GrpcTestFixture<TStartup> _fixture;
         private readonly ITestOutputHelper _outputHelper;
 
-
         public GrpcTestContext(GrpcTestFixture<TStartup> fixture, ITestOutputHelper outputHelper)
         {
             _stopwatch = Stopwatch.StartNew();

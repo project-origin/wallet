@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using ProjectOrigin.Wallet.Server.Database;
 using Testcontainers.PostgreSql;
 using Xunit;
 
@@ -17,9 +18,10 @@ public class PostgresDatabaseFixture : IAsyncLifetime
             .Build();
     }
 
-    public Task InitializeAsync()
+    public async Task InitializeAsync()
     {
-        return _postgreSqlContainer.StartAsync();
+        await _postgreSqlContainer.StartAsync();
+        DatabaseUpgrader.Upgrade(_postgreSqlContainer.GetConnectionString());
     }
 
     public Task DisposeAsync()

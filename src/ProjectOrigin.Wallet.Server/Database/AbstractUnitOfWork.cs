@@ -6,26 +6,36 @@ namespace ProjectOrigin.Wallet.Server.Database;
 
 public abstract class AbstractUnitOfWork : IUnitOfWork
 {
-    private IDbConnection _connection;
-    protected IDbTransaction _transaction;
+    private Lazy<IDbConnection> _lazyConnection;
+    private Lazy<IDbTransaction> _lazyTransaction;
     protected Dictionary<Type, object> _repositories = new Dictionary<Type, object>();
 
     public AbstractUnitOfWork(IDbConnectionFactory connectionFactory)
     {
-        _connection = connectionFactory.CreateConnection();
-        _connection.Open();
-        _transaction = _connection.BeginTransaction();
+        _lazyConnection = new Lazy<IDbConnection>(() =>
+        {
+            var connection = connectionFactory.CreateConnection();
+            connection.Open();
+            return connection;
+        });
+        _lazyTransaction = new Lazy<IDbTransaction>(() =>
+        {
+            return _lazyConnection.Value.BeginTransaction();
+        });
     }
 
     public void Commit()
     {
+        if (!_lazyTransaction.IsValueCreated)
+            return;
+
         try
         {
-            _transaction.Commit();
+            _lazyTransaction.Value.Commit();
         }
         catch
         {
-            _transaction.Rollback();
+            _lazyTransaction.Value.Rollback();
             throw;
         }
         finally
@@ -36,24 +46,28 @@ public abstract class AbstractUnitOfWork : IUnitOfWork
 
     public void Rollback()
     {
-        _transaction.Rollback();
+        if (!_lazyTransaction.IsValueCreated)
+            return;
+
+        _lazyTransaction.Value.Rollback();
+
         ResetUnitOfWork();
     }
 
     public void Dispose()
     {
-        if (_transaction != null)
+        if (_lazyTransaction.IsValueCreated)
         {
-            _transaction.Dispose();
+            _lazyTransaction.Value.Dispose();
         }
 
-        if (_connection != null)
+        if (_lazyConnection.IsValueCreated)
         {
-            _connection.Dispose();
+            _lazyConnection.Value.Dispose();
         }
     }
 
-    public T GetRepository<T>(Func<IDbTransaction, T> factory) where T : class
+    public T GetRepository<T>(Func<IDbConnection, T> factory) where T : class
     {
         if (_repositories.TryGetValue(typeof(T), out var foundRepository))
         {
@@ -61,7 +75,7 @@ public abstract class AbstractUnitOfWork : IUnitOfWork
         }
         else
         {
-            var newRepository = factory(_transaction);
+            var newRepository = factory(_lazyTransaction.Value.Connection ?? throw new InvalidOperationException("Transaction is null."));
             _repositories.Add(typeof(T), newRepository);
             return newRepository;
         }
@@ -69,8 +83,14 @@ public abstract class AbstractUnitOfWork : IUnitOfWork
 
     private void ResetUnitOfWork()
     {
-        _transaction.Dispose();
-        _transaction = _connection.BeginTransaction();
+        if (_lazyTransaction.IsValueCreated)
+            _lazyTransaction.Value.Dispose();
+
+        _lazyTransaction = new Lazy<IDbTransaction>(() =>
+        {
+            return _lazyConnection.Value.BeginTransaction();
+        });
+
         _repositories.Clear();
     }
 }

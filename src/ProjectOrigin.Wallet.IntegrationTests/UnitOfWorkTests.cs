@@ -13,7 +13,7 @@ namespace ProjectOrigin.Wallet.IntegrationTests;
 public class UnitOfWorkTests : IClassFixture<PostgresDatabaseFixture>
 {
     private PostgresDatabaseFixture _dbFixture;
-    private Secp256k1Algorithm _algorithm;
+    private IHDAlgorithm _algorithm;
 
     public UnitOfWorkTests(PostgresDatabaseFixture fixture)
     {
@@ -23,7 +23,6 @@ public class UnitOfWorkTests : IClassFixture<PostgresDatabaseFixture>
 
         SqlMapper.AddTypeHandler<IHDPrivateKey>(new HDPrivateKeyTypeHandler(this._algorithm));
         SqlMapper.AddTypeHandler<IHDPublicKey>(new HDPublicKeyTypeHandler(this._algorithm));
-
     }
 
     [Fact]
