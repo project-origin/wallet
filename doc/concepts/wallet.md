@@ -5,10 +5,10 @@ A wallet is a fundamental component within the system that enables users to stor
 
 ## Wallets
 
-A wallet is uniquely identified by a WalletId and is associated with a specific owner. The owner's identity is represented by the Owner field,
-the wallet also holds the private key of the wallet.
-All calls to the system are done with a JWT (Json Web Token) and enabled the system to identify the current user.
+A wallet is uniquely identified by a WalletId and is associated with a specific owner. The owner's identity is represented by the Owner field. The wallet also holds the private key of the wallet.
 The private key is used for cryptographic operations related to ownership verification and transaction signing.
+
+All calls to the system are done with a JWT (Json Web Token) and enables the system to identify the current user.
 
 ## Wallet Sections
 
