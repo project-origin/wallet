@@ -1,10 +1,12 @@
 using System;
 using System.Threading.Tasks;
 using Google.Protobuf;
+using Google.Protobuf.Collections;
 using Grpc.Core;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using ProjectOrigin.Register.V1;
 using ProjectOrigin.Wallet.Server.Database;
 using ProjectOrigin.Wallet.Server.HDWallet;
 using ProjectOrigin.Wallet.Server.Models;
@@ -59,5 +61,20 @@ public class WalletService : ProjectOrigin.Wallet.V1.WalletService.WalletService
     {
         var subject = context.GetSubject();
 
+        var response = new QueryResponse
+        {
+            GranularCertificates =
+            {
+                new GranularCertificate
+                {
+                    FederatedId = new FederatedStreamId
+                    {
+
+                    }
+                }
+            }
+        };
+
+        return base.QueryGranularCertificates(request, context);
     }
 }

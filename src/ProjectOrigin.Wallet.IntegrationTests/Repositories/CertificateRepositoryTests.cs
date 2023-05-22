@@ -4,6 +4,7 @@ using FluentAssertions;
 using ProjectOrigin.Wallet.Server.Models;
 using ProjectOrigin.Wallet.Server.Repositories;
 using System;
+using System.Drawing;
 using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
@@ -120,24 +121,31 @@ public class CertificateRepositoryTest : AbstractRepositoryTests
         var walletPosition = 1;
         var sectionPosition = 1;
         var registry = await CreateRegistry();
-        var certificate1 = await CreateCertificate(registry.Id, false);
-        var certificate2 = await CreateCertificate(registry.Id, false);
-        var certificate3 = await CreateCertificate(registry.Id, false);
-        var wallet1 = await CreateWallet(_fixture.Create<string>());
-        var wallet2 = await CreateWallet(_fixture.Create<string>());
+        var certificate1 = await CreateCertificate(registry.Id, CertificateState.Inserted);
+        var certificate2 = await CreateCertificate(registry.Id, CertificateState.Inserted);
+        var certificate4 = await CreateCertificate(registry.Id, CertificateState.Inserted);
+        var owner1 = _fixture.Create<string>();
+        var wallet1 = await CreateWallet(owner1);
         var walletSection1 = await CreateWalletSection(wallet1, walletPosition);
         var walletSection2 = await CreateWalletSection(wallet1, walletPosition + 1);
-        var walletSection3 = await CreateWalletSection(wallet2, walletPosition);
+        var owner2 = _fixture.Create<string>();
+        var wallet3 = await CreateWallet(owner2);
+        var walletSection4 = await CreateWalletSection(wallet3, walletPosition);
         //Wallet1 
-        var slice1 = new Slice(Guid.NewGuid(), walletSection1.Id, sectionPosition, registry.Id, certificate1.Id, _fixture.Create<int>(), _fixture.Create<byte[]>(), false);
-        var slice2 = new Slice(Guid.NewGuid(), walletSection1.Id, sectionPosition+1, registry.Id, certificate1.Id, _fixture.Create<int>(), _fixture.Create<byte[]>(), false);
+        var slice1 = new Slice(Guid.NewGuid(), walletSection1.Id, sectionPosition, registry.Id, certificate1.Id, _fixture.Create<int>(), _fixture.Create<byte[]>(), SliceState.Unverified);
+        var slice2 = new Slice(Guid.NewGuid(), walletSection1.Id, sectionPosition+1, registry.Id, certificate1.Id, _fixture.Create<int>(), _fixture.Create<byte[]>(), SliceState.Unverified);
         //Certficiate2
-        var slice3 = new Slice(Guid.NewGuid(), walletSection2.Id, sectionPosition, registry.Id, certificate2.Id, _fixture.Create<int>(), _fixture.Create<byte[]>(), false);
+        var slice3 = new Slice(Guid.NewGuid(), walletSection2.Id, sectionPosition, registry.Id, certificate2.Id, _fixture.Create<int>(), _fixture.Create<byte[]>(), SliceState.Unverified);
 
-        //Wallet2
-        var slice4 = new Slice(Guid.NewGuid(), walletSection3.Id, sectionPosition, registry.Id, certificate3.Id, _fixture.Create<int>(), _fixture.Create<byte[]>(), false);
+        var sliceWithDifferentOwner = new Slice(Guid.NewGuid(), walletSection4.Id, sectionPosition, registry.Id, certificate4.Id, _fixture.Create<int>(), _fixture.Create<byte[]>(), SliceState.Unverified);
 
+        await _repository.InsertSlice(slice1);
+        await _repository.InsertSlice(slice2);
+        await _repository.InsertSlice(slice3);
+        await _repository.InsertSlice(sliceWithDifferentOwner);
 
+        var certificates = await _repository.GetAllOwnedCertificates(owner1);
 
+        Assert.Equal(3, certificates.Count());
     }
 }

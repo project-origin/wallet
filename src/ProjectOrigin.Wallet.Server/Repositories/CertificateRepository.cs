@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Dapper;
 using ProjectOrigin.Wallet.Server.Models;
+using ProjectOrigin.Wallet.Server.Models.Database;
 
 namespace ProjectOrigin.Wallet.Server.Repositories;
 
@@ -43,8 +44,19 @@ public class CertificateRepository
         return _connection.QueryFirstOrDefaultAsync<Certificate?>("SELECT * FROM Certificates WHERE Id = @certificateId AND RegistryId = @registryId", new { certificateId, registryId });
     }
 
-    public Task<IEnumerable<Certificate>> GetAllOwnedCertificates(string owner)
+    public Task<IEnumerable<CertificateEntity>> GetAllOwnedCertificates(string owner)
     {
-        return _connection.QueryAsync<Certificate>("SELECT * FROM ", new { owner });
+        var sql = @"SELECT c, s.Id as sliceId, s
+                    FROM Wallets w
+                    LEFT JOIN WalletSections ws ON w.WalletId = ws.WalletId
+                    LEFT JOIN Slices s ON ws.SectionId = s.SectionId
+                    LEFT JOIN Certificates c ON s.CertificateId = c.CertificateId
+                    WHERE w.Owner = @owner";
+
+        return _connection.QueryAsync<CertificateEntity, Slice[], CertificateEntity>(sql, (cert, slices) =>
+        {
+            cert.Slices = slices;
+            return cert;
+        }, splitOn: "sliceId", param:new { owner });
     }
 }
