@@ -55,7 +55,7 @@ public class CertificateRepositoryTest : AbstractRepositoryTests
     {
         // Arrange
         var registry = await CreateRegistry();
-        var certificate = new Certificate(Guid.NewGuid(), registry.Id, false);
+        var certificate = new Certificate(Guid.NewGuid(), registry.Id, CertificateState.Invalid);
 
         // Act
         await _repository.InsertCertificate(certificate);
@@ -65,7 +65,7 @@ public class CertificateRepositoryTest : AbstractRepositoryTests
         insertedCertificate.Should().NotBeNull();
         insertedCertificate.Id.Should().Be(certificate.Id);
         insertedCertificate.RegistryId.Should().Be(certificate.RegistryId);
-        insertedCertificate.Loaded.Should().Be(certificate.Loaded);
+        insertedCertificate.State.Should().Be(certificate.State);
     }
 
     [Fact]
@@ -73,7 +73,7 @@ public class CertificateRepositoryTest : AbstractRepositoryTests
     {
         // Arrange
         var registry = await CreateRegistry();
-        var certificate = await CreateCertificate(registry.Id, false);
+        var certificate = await CreateCertificate(registry.Id, CertificateState.Inserted);
 
         // Act
         var result = await _repository.GetCertificate(registry.Id, certificate.Id);
@@ -82,7 +82,7 @@ public class CertificateRepositoryTest : AbstractRepositoryTests
         result.Should().NotBeNull();
         result!.Id.Should().Be(certificate.Id);
         result.RegistryId.Should().Be(certificate.RegistryId);
-        result.Loaded.Should().Be(certificate.Loaded);
+        result.State.Should().Be(certificate.State);
     }
 
     [Fact]
@@ -92,10 +92,10 @@ public class CertificateRepositoryTest : AbstractRepositoryTests
         var walletPosition = 1;
         var sectionPosition = 1;
         var registry = await CreateRegistry();
-        var certificate = await CreateCertificate(registry.Id, false);
+        var certificate = await CreateCertificate(registry.Id, CertificateState.Inserted);
         var wallet = await CreateWallet(_fixture.Create<string>());
         var walletSection = await CreateWalletSection(wallet, walletPosition);
-        var slice = new Slice(Guid.NewGuid(), walletSection.Id, sectionPosition, registry.Id, certificate.Id, _fixture.Create<int>(), _fixture.Create<byte[]>(), false);
+        var slice = new Slice(Guid.NewGuid(), walletSection.Id, sectionPosition, registry.Id, certificate.Id, _fixture.Create<int>(), _fixture.Create<byte[]>(), SliceState.Unverified);
 
         // Act
         await _repository.InsertSlice(slice);
@@ -110,6 +110,6 @@ public class CertificateRepositoryTest : AbstractRepositoryTests
         insertedSlice.CertificateId.Should().Be(slice.CertificateId);
         insertedSlice.Quantity.Should().Be(slice.Quantity);
         Assert.True(slice.RandomR.SequenceEqual(insertedSlice.RandomR));
-        insertedSlice.Verified.Should().Be(slice.Verified);
+        insertedSlice.State.Should().Be(slice.State);
     }
 }

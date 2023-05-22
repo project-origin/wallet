@@ -39,7 +39,7 @@ public class ExternalWalletService : ProjectOrigin.Wallet.V1.ExternalWalletServi
                                  certificateId,
                                  request.Quantity,
                                  request.RandomR.ToByteArray(),
-                                 false);
+                                 SliceState.Unverified);
 
         await _unitOfWork.CertficateRepository.InsertSlice(newSlice);
 
@@ -72,7 +72,7 @@ public class ExternalWalletService : ProjectOrigin.Wallet.V1.ExternalWalletServi
         Certificate? certificate = await _unitOfWork.CertficateRepository.GetCertificate(registry.Id, certId);
         if (certificate == null)
         {
-            certificate = new Certificate(certId, registry.Id, false);
+            certificate = new Certificate(certId, registry.Id, CertificateState.Inserted);
             await _unitOfWork.CertficateRepository.InsertCertificate(certificate);
         }
 

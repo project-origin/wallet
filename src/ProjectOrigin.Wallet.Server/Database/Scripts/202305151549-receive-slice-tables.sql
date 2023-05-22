@@ -6,12 +6,7 @@ CREATE TABLE IF NOT EXISTS Registries (
 CREATE TABLE IF NOT EXISTS Certificates (
     Id uuid NOT NULL,
     RegistryId uuid NOT NULL,
-    Loaded BOOLEAN NOT NULL,
-    -- TechCode VARCHAR(64),
-    -- FuelCode VARCHAR(64),
-    -- StartDate TIMESTAMP with time zone,
-    -- EndDate TIMESTAMP with time zone,
-    -- GridArea VARCHAR(128),
+    state integer NOT NULL,
     PRIMARY KEY(Id, RegistryId),
     FOREIGN KEY (RegistryId)
         REFERENCES Registries (Id) MATCH SIMPLE
@@ -28,7 +23,7 @@ CREATE TABLE IF NOT EXISTS Slices (
     CertificateId uuid NOT NULL,
     Quantity bigint NOT NULL,
     RandomR bytea NOT NULL,
-    Verified BOOLEAN NOT NULL,
+    State integer NOT NULL,
     FOREIGN KEY (WalletSectionId)
         REFERENCES WalletSections (Id) MATCH SIMPLE
         ON UPDATE NO ACTION
