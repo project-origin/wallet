@@ -6,7 +6,6 @@ CREATE TABLE IF NOT EXISTS Registries (
 CREATE TABLE IF NOT EXISTS Certificates (
     Id uuid NOT NULL,
     RegistryId uuid NOT NULL,
-    state integer NOT NULL,
     PRIMARY KEY(Id, RegistryId),
     FOREIGN KEY (RegistryId)
         REFERENCES Registries (Id) MATCH SIMPLE
@@ -23,7 +22,6 @@ CREATE TABLE IF NOT EXISTS Slices (
     CertificateId uuid NOT NULL,
     Quantity bigint NOT NULL,
     RandomR bytea NOT NULL,
-    State integer NOT NULL,
     FOREIGN KEY (WalletSectionId)
         REFERENCES WalletSections (Id) MATCH SIMPLE
         ON UPDATE NO ACTION
@@ -36,3 +34,17 @@ CREATE TABLE IF NOT EXISTS Slices (
         NOT VALID
 );
 
+CREATE TABLE IF NOT EXISTS ReceivedSlices (
+    Id uuid NOT NULL PRIMARY KEY,
+    WalletSectionId uuid NOT NULL,
+    WalletSectionPosition integer NOT NULL,
+    Registry VARCHAR(128) NOT NULL,
+    CertificateId uuid NOT NULL,
+    Quantity bigint NOT NULL,
+    RandomR bytea NOT NULL,
+    FOREIGN KEY (WalletSectionId)
+        REFERENCES WalletSections (Id) MATCH SIMPLE
+        ON UPDATE NO ACTION
+        ON DELETE NO ACTION
+        NOT VALID
+);

@@ -16,14 +16,14 @@ public class WalletRepository
         this._connection = connection;
     }
 
-    public Task<int> Create(OwnerWallet wallet)
+    public Task<int> Create(Wallet wallet)
     {
         return _connection.ExecuteAsync(@"INSERT INTO Wallets(Id, Owner, PrivateKey) VALUES (@id, @owner, @privateKey)", new { wallet.Id, wallet.Owner, wallet.PrivateKey });
     }
 
-    public Task<OwnerWallet?> GetWalletFromOwner(string owner)
+    public Task<Wallet?> GetWalletByOwner(string owner)
     {
-        return _connection.QuerySingleOrDefaultAsync<OwnerWallet?>("SELECT * FROM Wallets WHERE Owner = @owner", new { owner });
+        return _connection.QuerySingleOrDefaultAsync<Wallet?>("SELECT * FROM Wallets WHERE Owner = @owner", new { owner });
     }
 
     public async Task<int> GetNextWalletPosition(Guid id)

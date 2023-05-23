@@ -53,6 +53,12 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures
             }));
         }
 
+        public T GetRequiredService<T>() where T : class
+        {
+            EnsureServer();
+            return _host!.Services.GetRequiredService<T>();
+        }
+
         public void ConfigureHostConfiguration(Dictionary<string, string?> configuration)
         {
             _configurationDictionary = configuration;
@@ -115,7 +121,7 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures
             _server?.Dispose();
         }
 
-        public IDisposable GetTestContext(ITestOutputHelper outputHelper)
+        public IDisposable GetTestLogger(ITestOutputHelper outputHelper)
         {
             return new GrpcTestContext<TStartup>(this, outputHelper);
         }

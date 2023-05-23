@@ -6,7 +6,7 @@ import "primitives.proto";
 package ProjectOrigin.WalletSystem.V1;
 
 // Anonymously functions, Externally accessible
-service ExternalWalletService {
+service ReceiveSliceService {
     rpc ReceiveSlice(ReceiveRequest) returns (ReceiveResponse);
 }
 

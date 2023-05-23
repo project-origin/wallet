@@ -5,10 +5,10 @@ A wallet is a fundamental component within the system that enables users to stor
 
 ## Wallets
 
-A wallet is uniquely identified by a WalletId and is associated with a specific owner. The owner's identity is represented by the Owner field,
-the wallet also holds the private key of the wallet.
-All calls to the system are done with a JWT (Json Web Token) and enabled the system to identify the current user.
+A wallet is uniquely identified by a WalletId and is associated with a specific owner. The owner's identity is represented by the Owner field. The wallet also holds the private key of the wallet.
 The private key is used for cryptographic operations related to ownership verification and transaction signing.
+
+All calls to the system are done with a JWT (Json Web Token) and enables the system to identify the current user.
 
 ## Wallet Sections
 
@@ -17,9 +17,15 @@ Each wallet section is uniquely identified by a SectionId and is associated with
 
 ### Purpose of Wallet Sections
 
-Wallet sections are designed to facilitate secure asset transfers. By sharing the public key of a specific wallet section, the owner can enable other entities to transfer assets to that section.
+The registries use public-private key-pairs to represent the ownership of GCs. The public key is used to verify the ownership of a slice, while the private key is used to sign transactions.
+To ensure privacy and security each slice must be associated with a unique public key.
+
+To enable the transfer of slices without having to query the wallet before each insert to get unique public keys, the wallet is divided into sections that use hierarchical deterministic keys (HD Keys) to generate unique public keys for each slice.
+
+This way a public-key for a section can be shared to other parties, and they can generate unique public keys for each slice within that section without having to query the wallet.
+
+The owner of the wallet can generate the corresponding private keys for each slice within the section using their private key stored in their wallet.
 This approach provides a level of privacy and control as the other party only knows the public key of the section.
-The owner can generate the corresponding private keys for each GC within the section using their private key stored in their wallet.
 
 ## Hierarchical Deterministic Keys (HD Keys)
 

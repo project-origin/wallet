@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using ProjectOrigin.WalletSystem.Server;
 using ProjectOrigin.WalletSystem.Server.Database;
-using ProjectOrigin.WalletSystem.Server.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 

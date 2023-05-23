@@ -2,10 +2,10 @@ using System;
 
 namespace ProjectOrigin.WalletSystem.Server.Models;
 
-public record Slice(Guid Id,
+public record ReceivedSlice(Guid Id,
                     Guid WalletSectionId,
                     int WalletSectionPosition,
-                    Guid RegistryId,
+                    string Registry,
                     Guid CertificateId,
                     long Quantity,
                     byte[] RandomR);

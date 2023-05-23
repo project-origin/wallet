@@ -11,7 +11,7 @@ public static class ApplicationBuilderExtension
     {
         var algorithm = app.ApplicationServices.GetRequiredService<IHDAlgorithm>();
 
-        SqlMapper.AddTypeHandler<IHDPrivateKey>(new HDPrivateKeyTypeHandler(algorithm));
-        SqlMapper.AddTypeHandler<IHDPublicKey>(new HDPublicKeyTypeHandler(algorithm));
+        SqlMapper.AddTypeHandler(new HDPrivateKeyTypeHandler(algorithm));
+        SqlMapper.AddTypeHandler(new HDPublicKeyTypeHandler(algorithm));
     }
 }

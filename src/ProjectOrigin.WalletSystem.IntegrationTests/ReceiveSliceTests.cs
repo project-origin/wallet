@@ -5,31 +5,28 @@ using System.Threading.Tasks;
 using ProjectOrigin.WalletSystem.V1;
 using Xunit;
 using Google.Protobuf;
-using ProjectOrigin.WalletSystem.Server.HDWallet;
 using Npgsql;
 using Dapper;
 using ProjectOrigin.WalletSystem.Server.Repositories;
 using ProjectOrigin.WalletSystem.Server.Models;
-using ProjectOrigin.WalletSystem.Server.Database.Mapping;
+using Xunit.Abstractions;
+using AutoFixture;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests
 {
     public class ReceiveSliceTests : GrpcTestsBase
     {
-        public ReceiveSliceTests(GrpcTestFixture<Startup> grpcFixture, PostgresDatabaseFixture dbFixture)
-            : base(grpcFixture, dbFixture)
+        public ReceiveSliceTests(GrpcTestFixture<Startup> grpcFixture, PostgresDatabaseFixture dbFixture, ITestOutputHelper outputHelper)
+            : base(grpcFixture, dbFixture, outputHelper)
         {
         }
 
         private async Task<WalletSection> CreateWalletSection(string owner)
         {
-            SqlMapper.AddTypeHandler<IHDPrivateKey>(new HDPrivateKeyTypeHandler(_algorithm));
-            SqlMapper.AddTypeHandler<IHDPublicKey>(new HDPublicKeyTypeHandler(_algorithm));
-
             using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
             {
                 var walletRepository = new WalletRepository(connection);
-                var wallet = new OwnerWallet(Guid.NewGuid(), owner, _algorithm.GenerateNewPrivateKey());
+                var wallet = new Wallet(Guid.NewGuid(), owner, Algorithm.GenerateNewPrivateKey());
                 await walletRepository.Create(wallet);
 
                 var section = new WalletSection(Guid.NewGuid(), wallet.Id, 1, wallet.PrivateKey.Derive(1).PublicKey);
@@ -45,13 +42,14 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
             //Arrange
             var certId = Guid.NewGuid();
             var owner = "John";
+            var registryName = new Fixture().Create<string>();
             var section = await CreateWalletSection(owner);
-            var client = new ExternalWalletService.ExternalWalletServiceClient(_grpcFixture.Channel);
+            var client = new ReceiveSliceService.ReceiveSliceServiceClient(_grpcFixture.Channel);
             var request = new ReceiveRequest()
             {
                 CertificateId = new Register.V1.FederatedStreamId()
                 {
-                    Registry = RegistryName,
+                    Registry = registryName,
                     StreamId = new Register.V1.Uuid() { Value = certId.ToString() },
                 },
                 WalletSectionPublicKey = ByteString.CopyFrom(section.PublicKey.Export()),
@@ -66,16 +64,8 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
             //Assert
             using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
             {
-                // Verify Registry created in database
-                var registry = await connection.QueryFirstOrDefaultAsync<Registry>("SELECT * FROM registries WHERE name = @name", new { name = RegistryName });
-                Assert.NotNull(registry);
-
-                // Verify Certificate created in database
-                var certificate = await connection.QueryFirstOrDefaultAsync<Certificate>("SELECT * FROM certificates WHERE id = @id", new { id = certId });
-                Assert.NotNull(certificate);
-
                 // Verify slice created in database
-                var slice = await connection.QueryFirstOrDefaultAsync<Slice>("SELECT * FROM slices WHERE certificateId = @id", new { id = certId });
+                var slice = await connection.QueryFirstOrDefaultAsync<ReceivedSlice>("SELECT * FROM ReceivedSlices WHERE certificateId = @id", new { id = certId });
                 Assert.NotNull(slice);
             }
         }

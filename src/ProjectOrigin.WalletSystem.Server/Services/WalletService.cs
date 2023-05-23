@@ -1,13 +1,10 @@
 using System;
-using System.Linq;
 using System.Threading.Tasks;
 using Google.Protobuf;
-using Google.Protobuf.Collections;
 using Grpc.Core;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using ProjectOrigin.Register.V1;
 using ProjectOrigin.WalletSystem.Server.Database;
 using ProjectOrigin.WalletSystem.Server.HDWallet;
 using ProjectOrigin.WalletSystem.Server.Mappers;
@@ -36,12 +33,12 @@ public class WalletService : ProjectOrigin.WalletSystem.V1.WalletService.WalletS
     {
         var subject = context.GetSubject();
 
-        var wallet = await _unitOfWork.WalletRepository.GetWalletFromOwner(subject);
+        var wallet = await _unitOfWork.WalletRepository.GetWalletByOwner(subject);
 
         if (wallet is null)
         {
             var key = _hdAlgorithm.GenerateNewPrivateKey();
-            wallet = new OwnerWallet(Guid.NewGuid(), subject, key);
+            wallet = new Wallet(Guid.NewGuid(), subject, key);
             await _unitOfWork.WalletRepository.Create(wallet);
         }
 
@@ -63,7 +60,7 @@ public class WalletService : ProjectOrigin.WalletSystem.V1.WalletService.WalletS
     {
         var subject = context.GetSubject();
 
-        var certificates = await _unitOfWork.CertficateRepository.GetAllOwnedCertificates(subject);
+        var certificates = await _unitOfWork.CertificateRepository.GetAllOwnedCertificates(subject);
 
         var response = new QueryResponse();
         foreach (var gc in certificates)

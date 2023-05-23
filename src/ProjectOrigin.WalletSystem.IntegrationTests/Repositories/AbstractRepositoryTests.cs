@@ -20,17 +20,15 @@ public abstract class AbstractRepositoryTests : IClassFixture<PostgresDatabaseFi
     protected IDbConnection _connection;
     protected Fixture _fixture;
 
-    public AbstractRepositoryTests(PostgresDatabaseFixture dbFixture)
+    protected AbstractRepositoryTests(PostgresDatabaseFixture dbFixture)
     {
-        DatabaseUpgrader.Upgrade(dbFixture.ConnectionString);
+        _dbFixture = dbFixture;
+        _algorithm = new Secp256k1Algorithm();
+        _connection = CreateConnection();
+        _fixture = new Fixture();
 
-        this._dbFixture = dbFixture;
-        this._algorithm = new Secp256k1Algorithm();
-        this._connection = CreateConnection();
-        this._fixture = new Fixture();
-
-        SqlMapper.AddTypeHandler<IHDPrivateKey>(new HDPrivateKeyTypeHandler(this._algorithm));
-        SqlMapper.AddTypeHandler<IHDPublicKey>(new HDPublicKeyTypeHandler(this._algorithm));
+        SqlMapper.AddTypeHandler(new HDPrivateKeyTypeHandler(_algorithm));
+        SqlMapper.AddTypeHandler(new HDPublicKeyTypeHandler(_algorithm));
     }
 
     public void Dispose()
@@ -47,29 +45,30 @@ public abstract class AbstractRepositoryTests : IClassFixture<PostgresDatabaseFi
 
     protected async Task<Registry> CreateRegistry()
     {
-        var registry = new Registry(Guid.NewGuid(), _fixture.Create<string>());
+        using var connection = CreateConnection();
+        var registryRepository = new RegistryRepository(connection);
 
-        using (var connection = CreateConnection())
-        {
-            await connection.ExecuteAsync("INSERT INTO Registries(Id, Name) VALUES (@id, @name)", registry);
-        }
+        var registry = new Registry(Guid.NewGuid(), _fixture.Create<string>());
+        await registryRepository.InsertRegistry(registry);
 
         return registry;
     }
 
-    protected async Task<OwnerWallet> CreateWallet(string owner)
+    protected async Task<Wallet> CreateWallet(string owner)
     {
-        var walletRepository = new WalletRepository(CreateConnection());
+        using var connection = CreateConnection();
+        var walletRepository = new WalletRepository(connection);
 
-        var wallet = new OwnerWallet(Guid.NewGuid(), owner, _algorithm.GenerateNewPrivateKey());
+        var wallet = new Wallet(Guid.NewGuid(), owner, _algorithm.GenerateNewPrivateKey());
         await walletRepository.Create(wallet);
 
         return wallet;
     }
 
-    protected async Task<WalletSection> CreateWalletSection(OwnerWallet wallet, int position)
+    protected async Task<WalletSection> CreateWalletSection(Wallet wallet, int position)
     {
-        var walletRepository = new WalletRepository(CreateConnection());
+        using var connection = CreateConnection();
+        var walletRepository = new WalletRepository(connection);
 
         var publicKey = wallet.PrivateKey.Derive(position).PublicKey;
         var walletSection = new WalletSection(Guid.NewGuid(), wallet.Id, position, publicKey);
@@ -78,14 +77,13 @@ public abstract class AbstractRepositoryTests : IClassFixture<PostgresDatabaseFi
         return walletSection;
     }
 
-    protected async Task<Certificate> CreateCertificate(Guid registryId, CertificateState state)
+    protected async Task<Certificate> CreateCertificate(Guid registryId)
     {
-        var certificate = new Certificate(Guid.NewGuid(), registryId, state);
+        using var connection = CreateConnection();
+        var certificateRepository = new CertificateRepository(connection);
 
-        using (var connection = CreateConnection())
-        {
-            await connection.ExecuteAsync("INSERT INTO Certificates(Id, RegistryId, State) VALUES (@id, @registryId, @state)", certificate);
-        }
+        var certificate = new Certificate(Guid.NewGuid(), registryId);
+        await certificateRepository.InsertCertificate(certificate);
 
         return certificate;
     }

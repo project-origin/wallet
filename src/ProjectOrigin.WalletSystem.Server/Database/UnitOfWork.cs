@@ -1,5 +1,3 @@
-
-using System;
 using ProjectOrigin.WalletSystem.Server.Repositories;
 
 namespace ProjectOrigin.WalletSystem.Server.Database;
@@ -10,6 +8,7 @@ public class UnitOfWork : AbstractUnitOfWork
     {
     }
 
-    public WalletRepository WalletRepository => GetRepository<WalletRepository>(connection => new WalletRepository(connection));
-    public CertificateRepository CertficateRepository => GetRepository<CertificateRepository>(connection => new CertificateRepository(connection));
+    public WalletRepository WalletRepository => GetRepository(connection => new WalletRepository(connection));
+    public CertificateRepository CertificateRepository => GetRepository(connection => new CertificateRepository(connection));
+    public RegistryRepository RegistryRepository => GetRepository(connection => new RegistryRepository(connection));
 }
