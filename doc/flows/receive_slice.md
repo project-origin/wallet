@@ -54,8 +54,6 @@ sequenceDiagram
     participant wallet as Wallet
     participant reg as Registry
 
-    link wallet: Dashboard @ https://dashboard.contoso.com/alice
-
     loop Every minute
         sche -->>+ wallet: VerifySlices
 
