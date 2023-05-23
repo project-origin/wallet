@@ -30,9 +30,7 @@ public class RegistryRepositoryTests : AbstractRepositoryTests
 
         // Assert
         var insertedRegistry = await Connection.QueryFirstOrDefaultAsync<Registry>("SELECT * FROM Registries WHERE Id = @id", new { registry.Id });
-        insertedRegistry.Should().NotBeNull();
-        insertedRegistry.Id.Should().Be(registry.Id);
-        insertedRegistry.Name.Should().Be(registry.Name);
+        insertedRegistry.Should().BeEquivalentTo(registry);
     }
 
     [Fact]
@@ -46,7 +44,6 @@ public class RegistryRepositoryTests : AbstractRepositoryTests
 
         // Assert
         result.Should().NotBeNull();
-        result!.Id.Should().Be(registry.Id);
-        result.Name.Should().Be(registry.Name);
+        result.Should().BeEquivalentTo(registry);
     }
 }
