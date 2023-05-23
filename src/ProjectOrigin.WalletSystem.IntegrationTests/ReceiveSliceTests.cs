@@ -10,7 +10,6 @@ using Npgsql;
 using Dapper;
 using ProjectOrigin.WalletSystem.Server.Repositories;
 using ProjectOrigin.WalletSystem.Server.Models;
-using ProjectOrigin.WalletSystem.Server.Database.Mapping;
 using Xunit.Abstractions;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests
@@ -65,16 +64,8 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
             //Assert
             using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
             {
-                // Verify Registry created in database
-                var registry = await connection.QueryFirstOrDefaultAsync<Registry>("SELECT * FROM registries WHERE name = @name", new { name = RegistryName });
-                Assert.NotNull(registry);
-
-                // Verify Certificate created in database
-                var certificate = await connection.QueryFirstOrDefaultAsync<Certificate>("SELECT * FROM certificates WHERE id = @id", new { id = certId });
-                Assert.NotNull(certificate);
-
                 // Verify slice created in database
-                var slice = await connection.QueryFirstOrDefaultAsync<Slice>("SELECT * FROM slices WHERE certificateId = @id", new { id = certId });
+                var slice = await connection.QueryFirstOrDefaultAsync<ReceivedSlice>("SELECT * FROM ReceivedSlices WHERE certificateId = @id", new { id = certId });
                 Assert.NotNull(slice);
             }
         }

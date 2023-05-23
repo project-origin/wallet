@@ -53,7 +53,11 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures
             }));
         }
 
-        public T GetRequiredService<T>() where T : class => _host!.Services.GetRequiredService<T>();
+        public T GetRequiredService<T>() where T : class
+        {
+            EnsureServer();
+            return _host!.Services.GetRequiredService<T>();
+        }
 
         public void ConfigureHostConfiguration(Dictionary<string, string?> configuration)
         {

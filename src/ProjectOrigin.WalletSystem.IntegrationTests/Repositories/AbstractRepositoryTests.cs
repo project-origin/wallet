@@ -77,12 +77,12 @@ public abstract class AbstractRepositoryTests : IClassFixture<PostgresDatabaseFi
         return walletSection;
     }
 
-    protected async Task<Certificate> CreateCertificate(Guid registryId, CertificateState state)
+    protected async Task<Certificate> CreateCertificate(Guid registryId)
     {
         using var connection = CreateConnection();
         var certificateRepository = new CertificateRepository(connection);
 
-        var certificate = new Certificate(Guid.NewGuid(), registryId, state);
+        var certificate = new Certificate(Guid.NewGuid(), registryId);
         await certificateRepository.InsertCertificate(certificate);
 
         return certificate;

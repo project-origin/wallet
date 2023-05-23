@@ -17,12 +17,17 @@ public class CertificateRepository
 
     public Task InsertSlice(Slice newSlice)
     {
-        return _connection.ExecuteAsync(@"INSERT INTO Slices(Id, WalletSectionId, WalletSectionPosition, RegistryId, CertificateId, Quantity, RandomR, State) VALUES (@id, @walletSectionId, @walletSectionPosition, @registryId, @certificateId, @quantity, @randomR, @state)", new { newSlice.Id, newSlice.WalletSectionId, newSlice.WalletSectionPosition, newSlice.RegistryId, newSlice.CertificateId, newSlice.Quantity, newSlice.RandomR, newSlice.State });
+        return _connection.ExecuteAsync(@"INSERT INTO Slices(Id, WalletSectionId, WalletSectionPosition, RegistryId, CertificateId, Quantity, RandomR) VALUES (@id, @walletSectionId, @walletSectionPosition, @registryId, @certificateId, @quantity, @randomR)", new { newSlice.Id, newSlice.WalletSectionId, newSlice.WalletSectionPosition, newSlice.RegistryId, newSlice.CertificateId, newSlice.Quantity, newSlice.RandomR, });
+    }
+
+    public Task InsertReceivedSlice(ReceivedSlice receivedSlice)
+    {
+        return _connection.ExecuteAsync(@"INSERT INTO ReceivedSlices(Id, WalletSectionId, WalletSectionPosition, Registry, CertificateId, Quantity, RandomR) VALUES (@id, @walletSectionId, @walletSectionPosition, @registry, @certificateId, @quantity, @randomR)", new { receivedSlice.Id, receivedSlice.WalletSectionId, receivedSlice.WalletSectionPosition, receivedSlice.Registry, receivedSlice.CertificateId, receivedSlice.Quantity, receivedSlice.RandomR });
     }
 
     public Task InsertCertificate(Certificate certificate)
     {
-        return _connection.ExecuteAsync(@"INSERT INTO Certificates(Id, RegistryId, State) VALUES (@id, @registryId, @state)", new { certificate.Id, certificate.RegistryId, certificate.State });
+        return _connection.ExecuteAsync(@"INSERT INTO Certificates(Id, RegistryId) VALUES (@id, @registryId)", new { certificate.Id, certificate.RegistryId });
     }
 
     public Task<Certificate?> GetCertificate(Guid registryId, Guid certificateId)
