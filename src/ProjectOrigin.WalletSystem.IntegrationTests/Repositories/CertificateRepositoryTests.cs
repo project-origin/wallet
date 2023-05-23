@@ -30,9 +30,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
 
         // Assert
         var insertedRegistry = await Connection.QueryFirstOrDefaultAsync<Registry>("SELECT * FROM Registries WHERE Id = @id", new { registry.Id });
-        insertedRegistry.Should().NotBeNull();
-        insertedRegistry.Id.Should().Be(registry.Id);
-        insertedRegistry.Name.Should().Be(registry.Name);
+        insertedRegistry.Should().BeEquivalentTo(registry);
     }
 
     [Fact]
@@ -45,9 +43,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         var result = await _repository.GetRegistryFromName(registry.Name);
 
         // Assert
-        result.Should().NotBeNull();
-        result!.Id.Should().Be(registry.Id);
-        result.Name.Should().Be(registry.Name);
+        result.Should().BeEquivalentTo(registry);
     }
 
     [Fact]
@@ -62,10 +58,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
 
         // Assert
         var insertedCertificate = await Connection.QueryFirstOrDefaultAsync<Certificate>("SELECT * FROM Certificates WHERE Id = @id", new { certificate.Id });
-        insertedCertificate.Should().NotBeNull();
-        insertedCertificate.Id.Should().Be(certificate.Id);
-        insertedCertificate.RegistryId.Should().Be(certificate.RegistryId);
-        insertedCertificate.State.Should().Be(certificate.State);
+        insertedCertificate.Should().BeEquivalentTo(certificate);
     }
 
     [Fact]
@@ -79,10 +72,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         var result = await _repository.GetCertificate(registry.Id, certificate.Id);
 
         // Assert
-        result.Should().NotBeNull();
-        result!.Id.Should().Be(certificate.Id);
-        result.RegistryId.Should().Be(certificate.RegistryId);
-        result.State.Should().Be(certificate.State);
+        result.Should().BeEquivalentTo(certificate);
     }
 
     [Fact]
@@ -102,14 +92,6 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
 
         // Assert
         var insertedSlice = await Connection.QueryFirstOrDefaultAsync<Slice>("SELECT * FROM Slices WHERE Id = @id", new { slice.Id });
-        insertedSlice.Should().NotBeNull();
-        insertedSlice.Id.Should().Be(slice.Id);
-        insertedSlice.WalletSectionId.Should().Be(slice.WalletSectionId);
-        insertedSlice.WalletSectionPosition.Should().Be(slice.WalletSectionPosition);
-        insertedSlice.RegistryId.Should().Be(slice.RegistryId);
-        insertedSlice.CertificateId.Should().Be(slice.CertificateId);
-        insertedSlice.Quantity.Should().Be(slice.Quantity);
-        Assert.True(slice.RandomR.SequenceEqual(insertedSlice.RandomR));
-        insertedSlice.State.Should().Be(slice.State);
+        insertedSlice.Should().BeEquivalentTo(slice);
     }
 }
