@@ -6,7 +6,7 @@ the necessary information to prove ownership and act on the slice is transferred
 
 1. A source sends a slice to a recipient wallet.
 2. The wallet will try to look-up the wallet-section based on the public-key.
-3. If the certificate is not already know by the wallet, then an reference to it is inserted into the datastore
+3. If the certificate is not already known by the wallet, then a reference to the certificate is inserted into the datastore
 4. Next the slice itself is inserted with reference to the wallet-section and certificate
 5. And finally a success is returned
 6. If the wallet-section could not be found then an error is returned.
@@ -32,7 +32,7 @@ sequenceDiagram
 
         wallet -->> source: Success
     else wallet-section not found
-        wallet -->>- source: Success
+        wallet -->>- source: Error
     end
 
 ```
@@ -52,7 +52,7 @@ sequenceDiagram
 
     actor sche as Scheduler
     participant wallet as Wallet
-    participant reg as Register
+    participant reg as Registry
 
     link wallet: Dashboard @ https://dashboard.contoso.com/alice
 
@@ -63,7 +63,7 @@ sequenceDiagram
 
         wallet ->> reg: Get Cert and Slice Info
         reg ->> wallet: slice info
-        wallet ->> wallet: Verify Certificate inssuer
+        wallet ->> wallet: Verify Certificate issuer
         wallet ->> wallet: Verify Slice ownership
         wallet ->> wallet: Update wallet datastore
         deactivate wallet
