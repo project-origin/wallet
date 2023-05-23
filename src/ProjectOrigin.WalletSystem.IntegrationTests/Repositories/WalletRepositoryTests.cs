@@ -1,8 +1,7 @@
+using AutoFixture;
 using Dapper;
 using FluentAssertions;
 using ProjectOrigin.WalletSystem.Server.Database;
-using ProjectOrigin.WalletSystem.Server.Database.Mapping;
-using ProjectOrigin.WalletSystem.Server.HDWallet;
 using ProjectOrigin.WalletSystem.Server.Models;
 using ProjectOrigin.WalletSystem.Server.Repositories;
 using System;
@@ -12,18 +11,13 @@ using Xunit;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests.Repositories;
 
-public class WalletRepositoryTests : IClassFixture<PostgresDatabaseFixture>
+public class WalletRepositoryTests : AbstractRepositoryTests
 {
-    private readonly PostgresDatabaseFixture _dbFixture;
-    private readonly Secp256k1Algorithm _algorithm;
+    private readonly WalletRepository _repository;
 
-    public WalletRepositoryTests(PostgresDatabaseFixture dbFixture)
+    public WalletRepositoryTests(PostgresDatabaseFixture dbFixture) : base(dbFixture)
     {
-        _algorithm = new Secp256k1Algorithm();
-        _dbFixture = dbFixture;
-
-        SqlMapper.AddTypeHandler(new HDPrivateKeyTypeHandler(_algorithm));
-        SqlMapper.AddTypeHandler(new HDPublicKeyTypeHandler(_algorithm));
+        _repository = new WalletRepository(Connection);
     }
 
     [Fact]
@@ -35,10 +29,10 @@ public class WalletRepositoryTests : IClassFixture<PostgresDatabaseFixture>
         var wallet = new Wallet(
             Guid.NewGuid(),
             subject,
-            _algorithm.GenerateNewPrivateKey()
+            Algorithm.GenerateNewPrivateKey()
             );
 
-        using var connection = new DbConnectionFactory(_dbFixture.ConnectionString).CreateConnection();
+        using var connection = new DbConnectionFactory(DbFixture.ConnectionString).CreateConnection();
         connection.Open();
         var repository = new WalletRepository(connection);
 
@@ -46,9 +40,8 @@ public class WalletRepositoryTests : IClassFixture<PostgresDatabaseFixture>
         await repository.Create(wallet);
 
         // Assert
-        var walletDb = await connection.QueryAsync<Wallet>("SELECT * FROM Wallets where Owner = @Owner", new { Owner = subject });
-        walletDb.Should().HaveCount(1);
-        walletDb.Single().Owner.Should().Be(subject);
+        var walletDb = await repository.GetWalletByOwner(subject);
+        walletDb.Should().BeEquivalentTo(wallet);
     }
 
     [Fact]
@@ -59,9 +52,9 @@ public class WalletRepositoryTests : IClassFixture<PostgresDatabaseFixture>
         var wallet = new Wallet(
             Guid.NewGuid(),
             subject,
-            _algorithm.GenerateNewPrivateKey()
+            Algorithm.GenerateNewPrivateKey()
             );
-        using var connection = new DbConnectionFactory(_dbFixture.ConnectionString).CreateConnection();
+        using var connection = new DbConnectionFactory(DbFixture.ConnectionString).CreateConnection();
         connection.Open();
         var repository = new WalletRepository(connection);
         await repository.Create(wallet);
@@ -85,9 +78,9 @@ public class WalletRepositoryTests : IClassFixture<PostgresDatabaseFixture>
         var wallet = new Wallet(
             Guid.NewGuid(),
             subject,
-            _algorithm.GenerateNewPrivateKey()
+            Algorithm.GenerateNewPrivateKey()
             );
-        using var connection = new DbConnectionFactory(_dbFixture.ConnectionString).CreateConnection();
+        using var connection = new DbConnectionFactory(DbFixture.ConnectionString).CreateConnection();
         connection.Open();
         var repository = new WalletRepository(connection);
         await repository.Create(wallet);
@@ -102,5 +95,37 @@ public class WalletRepositoryTests : IClassFixture<PostgresDatabaseFixture>
 
         // Assert
         walletResponse.Should().Be(next);
+    }
+
+    [Fact]
+    public async Task GetWalletSectionFromPublicKey_Success()
+    {
+        // Arrange
+        var subject = Fixture.Create<string>();
+        var wallet = await CreateWallet(subject);
+        var section1 = await CreateWalletSection(wallet, 1);
+        var section2 = await CreateWalletSection(wallet, 2);
+        var section3 = await CreateWalletSection(wallet, 3);
+
+        // Act
+        var publicKey = wallet.PrivateKey.Derive(2).PublicKey;
+        var section = await _repository.GetWalletSectionFromPublicKey(publicKey);
+
+        // Assert
+        section.Should().NotBeNull();
+        section!.Id.Should().Be(section2.Id);
+    }
+
+    [Fact]
+    public async Task GetWalletSectionFromPublicKey_ReturnNull()
+    {
+        // Arrange
+        var publicKey = Algorithm.GenerateNewPrivateKey().Derive(1).PublicKey;
+
+        // Act
+        var section = await _repository.GetWalletSectionFromPublicKey(publicKey);
+
+        // Assert
+        section.Should().BeNull();
     }
 }

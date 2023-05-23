@@ -2,14 +2,14 @@
 
 ```mermaid
 sequenceDiagram
-    actor reciever as Reciever
+    actor receiver as receiver
     actor sender as Sender
     participant reg as Registry
     participant senderWallet as Sender Wallet
-    participant wallet as Reciever Wallet
+    participant wallet as receiver Wallet
 
-    Note over sender,reciever: Out of bounds agreement for transfer
-    reciever ->> sender: WalletSectionReference
+    Note over sender,receiver: Out of bounds agreement for transfer
+    receiver ->> sender: WalletSectionReference
     Note over senderWallet: Slice is expected to exist
 
     sender ->> senderWallet: TransferSlice(WalletSectionReference,...)
