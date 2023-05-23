@@ -31,7 +31,7 @@ public class WalletService : ProjectOrigin.WalletSystem.V1.WalletService.WalletS
     {
         var subject = context.GetSubject();
 
-        var wallet = await _unitOfWork.WalletRepository.GetWallet(subject);
+        var wallet = await _unitOfWork.WalletRepository.GetWalletByOwner(subject);
 
         if (wallet is null)
         {

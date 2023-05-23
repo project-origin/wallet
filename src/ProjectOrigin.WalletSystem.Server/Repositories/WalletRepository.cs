@@ -21,7 +21,7 @@ public class WalletRepository
         return _connection.ExecuteAsync(@"INSERT INTO Wallets(Id, Owner, PrivateKey) VALUES (@id, @owner, @privateKey)", new { wallet.Id, wallet.Owner, wallet.PrivateKey });
     }
 
-    public Task<Wallet?> GetWallet(string owner)
+    public Task<Wallet?> GetWalletByOwner(string owner)
     {
         return _connection.QuerySingleOrDefaultAsync<Wallet?>("SELECT * FROM Wallets WHERE Owner = @owner", new { owner });
     }

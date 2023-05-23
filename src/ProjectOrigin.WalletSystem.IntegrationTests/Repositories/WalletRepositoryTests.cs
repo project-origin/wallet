@@ -67,7 +67,7 @@ public class WalletRepositoryTests : IClassFixture<PostgresDatabaseFixture>
         await repository.Create(wallet);
 
         // Act
-        var walletResponse = await repository.GetWallet(subject);
+        var walletResponse = await repository.GetWalletByOwner(subject);
 
         // Assert
         walletResponse.Should().NotBeNull();
