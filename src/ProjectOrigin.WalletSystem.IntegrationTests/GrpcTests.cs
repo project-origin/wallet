@@ -23,7 +23,7 @@ public class GrpcTests : GrpcTestsBase
     }
 
     [Fact]
-    public async Task CreateWalletSection_ValidResponse_InDatabase()
+    public async Task can_create_wallet_section_when_authenticated()
     {
         // Arrange
         var subject = Guid.NewGuid().ToString();
@@ -56,7 +56,7 @@ public class GrpcTests : GrpcTestsBase
     }
 
     [Fact]
-    public async Task CreateWalletSection_InvalidRequest_Unauthenticated()
+    public async Task throw_unauthenticated_when_no_jwt()
     {
         // Arrange
         var client = new WalletService.WalletServiceClient(_grpcFixture.Channel);
