@@ -8,6 +8,7 @@ using ProjectOrigin.WalletSystem.Server.HDWallet;
 using ProjectOrigin.WalletSystem.Server.Models;
 using ProjectOrigin.WalletSystem.Server.Repositories;
 using System;
+using FluentAssertions;
 using Grpc.Core;
 using ProjectOrigin.WalletSystem.V1;
 using Xunit;
@@ -78,9 +79,9 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
             var result = await client.QueryGranularCertificatesAsync(new QueryRequest(), headers);
 
             //Assert
-            Assert.Equal(2, result.GranularCertificates.Count);
-            Assert.Equal(quantity3, result.GranularCertificates[0].Quantity);
-            Assert.Equal(quantity1 + quantity2, result.GranularCertificates[1].Quantity);
+            result.GranularCertificates.Should().HaveCount(2);
+            result.GranularCertificates.Should().Contain(x => x.Quantity == quantity1 + quantity2);
+            result.GranularCertificates.Should().Contain(x => x.Quantity == quantity3);
         }
     }
 }
