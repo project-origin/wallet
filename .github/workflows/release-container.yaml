@@ -26,7 +26,7 @@ jobs:
     needs:
       - define-version
     env:
-      project: src/ProjectOrigin.Wallet.Server
+      project: src/ProjectOrigin.WalletSystem.Server
 
     steps:
       - uses: actions/checkout@v3
@@ -42,7 +42,7 @@ jobs:
         uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
         with:
           context: ./src
-          file: ./src/ProjectOrigin.Wallet.Server/Dockerfile
+          file: ./src/ProjectOrigin.WalletSystem.Server/Dockerfile
           push: true
           tags: ghcr.io/project-origin/wallet-server:${{ needs.define-version.outputs.version }}
 
