@@ -45,19 +45,19 @@ public abstract class AbstractRepositoryTests : IClassFixture<PostgresDatabaseFi
 
     protected async Task<Registry> CreateRegistry()
     {
-        var registry = new Registry(Guid.NewGuid(), Fixture.Create<string>());
+        using var connection = CreateConnection();
+        var registryRepository = new RegistryRepository(connection);
 
-        using (var connection = CreateConnection())
-        {
-            await connection.ExecuteAsync("INSERT INTO Registries(Id, Name) VALUES (@id, @name)", registry);
-        }
+        var registry = new Registry(Guid.NewGuid(), Fixture.Create<string>());
+        await registryRepository.InsertRegistry(registry);
 
         return registry;
     }
 
     protected async Task<Wallet> CreateWallet(string owner)
     {
-        var walletRepository = new WalletRepository(CreateConnection());
+        using var connection = CreateConnection();
+        var walletRepository = new WalletRepository(connection);
 
         var wallet = new Wallet(Guid.NewGuid(), owner, Algorithm.GenerateNewPrivateKey());
         await walletRepository.Create(wallet);
@@ -67,7 +67,8 @@ public abstract class AbstractRepositoryTests : IClassFixture<PostgresDatabaseFi
 
     protected async Task<WalletSection> CreateWalletSection(Wallet wallet, int position)
     {
-        var walletRepository = new WalletRepository(CreateConnection());
+        using var connection = CreateConnection();
+        var walletRepository = new WalletRepository(connection);
 
         var publicKey = wallet.PrivateKey.Derive(position).PublicKey;
         var walletSection = new WalletSection(Guid.NewGuid(), wallet.Id, position, publicKey);
@@ -78,12 +79,11 @@ public abstract class AbstractRepositoryTests : IClassFixture<PostgresDatabaseFi
 
     protected async Task<Certificate> CreateCertificate(Guid registryId, CertificateState state)
     {
-        var certificate = new Certificate(Guid.NewGuid(), registryId, state);
+        using var connection = CreateConnection();
+        var certificateRepository = new CertificateRepository(connection);
 
-        using (var connection = CreateConnection())
-        {
-            await connection.ExecuteAsync("INSERT INTO Certificates(Id, RegistryId, State) VALUES (@id, @registryId, @state)", certificate);
-        }
+        var certificate = new Certificate(Guid.NewGuid(), registryId, state);
+        await certificateRepository.InsertCertificate(certificate);
 
         return certificate;
     }
