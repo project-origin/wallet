@@ -29,7 +29,7 @@ public class RegistryRepositoryTests : AbstractRepositoryTests
         await _repository.InsertRegistry(registry);
 
         // Assert
-        var insertedRegistry = await Connection.QueryFirstOrDefaultAsync<Registry>("SELECT * FROM Registries WHERE Id = @id", new { registry.Id });
+        var insertedRegistry = await _repository.GetRegistryFromName(registry.Name);
         insertedRegistry.Should().BeEquivalentTo(registry);
     }
 
