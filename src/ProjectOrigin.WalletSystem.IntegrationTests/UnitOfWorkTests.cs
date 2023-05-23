@@ -12,25 +12,23 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests;
 
 public class UnitOfWorkTests : IClassFixture<PostgresDatabaseFixture>
 {
-    private PostgresDatabaseFixture _dbFixture;
-    private Secp256k1Algorithm _algorithm;
+    private readonly PostgresDatabaseFixture _dbFixture;
+    private readonly IHDAlgorithm _algorithm;
 
     public UnitOfWorkTests(PostgresDatabaseFixture fixture)
     {
-        this._algorithm = new Secp256k1Algorithm();
-        this._dbFixture = fixture;
-        DatabaseUpgrader.Upgrade(fixture.ConnectionString);
+        _algorithm = new Secp256k1Algorithm();
+        _dbFixture = fixture;
 
-        SqlMapper.AddTypeHandler<IHDPrivateKey>(new HDPrivateKeyTypeHandler(this._algorithm));
-        SqlMapper.AddTypeHandler<IHDPublicKey>(new HDPublicKeyTypeHandler(this._algorithm));
-
+        SqlMapper.AddTypeHandler(new HDPrivateKeyTypeHandler(_algorithm));
+        SqlMapper.AddTypeHandler(new HDPublicKeyTypeHandler(_algorithm));
     }
 
     [Fact]
     public async Task Create_Commit_Expect1()
     {
         var owner = Guid.NewGuid().ToString();
-        var model = new OwnerWallet(Guid.NewGuid(), owner, this._algorithm.GenerateNewPrivateKey());
+        var model = new Wallet(Guid.NewGuid(), owner, _algorithm.GenerateNewPrivateKey());
 
         var dbConnectionFactory = new DbConnectionFactory(_dbFixture.ConnectionString);
 
@@ -42,7 +40,7 @@ public class UnitOfWorkTests : IClassFixture<PostgresDatabaseFixture>
 
         using (var uof = new UnitOfWork(dbConnectionFactory))
         {
-            var data = await uof.WalletRepository.GetWalletFromOwner(owner);
+            var data = await uof.WalletRepository.GetWalletByOwner(owner);
             data.Should().NotBeNull();
             data!.Owner.Should().Be(owner);
         }
@@ -52,29 +50,29 @@ public class UnitOfWorkTests : IClassFixture<PostgresDatabaseFixture>
     public async Task Create_Rollback_Still_Expect1()
     {
         var owner = Guid.NewGuid().ToString();
-        var model = new OwnerWallet(Guid.NewGuid(), owner, this._algorithm.GenerateNewPrivateKey());
+        var model = new Wallet(Guid.NewGuid(), owner, _algorithm.GenerateNewPrivateKey());
 
         var dbConnectionFactory = new DbConnectionFactory(_dbFixture.ConnectionString);
 
         using (var uof = new UnitOfWork(dbConnectionFactory))
         {
-            var wallet = await uof.WalletRepository.GetWalletFromOwner(owner);
+            var wallet = await uof.WalletRepository.GetWalletByOwner(owner);
             wallet.Should().BeNull();
 
             await uof.WalletRepository.Create(model);
 
-            wallet = await uof.WalletRepository.GetWalletFromOwner(owner);
+            wallet = await uof.WalletRepository.GetWalletByOwner(owner);
             wallet.Should().NotBeNull();
 
             uof.Rollback();
 
-            wallet = await uof.WalletRepository.GetWalletFromOwner(owner);
+            wallet = await uof.WalletRepository.GetWalletByOwner(owner);
             wallet.Should().BeNull();
         };
 
         using (var uof = new UnitOfWork(dbConnectionFactory))
         {
-            var data = await uof.WalletRepository.GetWalletFromOwner(owner);
+            var data = await uof.WalletRepository.GetWalletByOwner(owner);
             data.Should().BeNull();
         }
     }

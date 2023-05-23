@@ -43,7 +43,6 @@ erDiagram
     WalletSection ||--o{ Slice : contains
     Registry ||--o{ Certficate : holds
 
-
     Registry {
         uuid Id PK "Unique id of a registry"
         string Name UK "The name of the registry"

@@ -9,7 +9,7 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests;
 
 public class MigrationTest : IClassFixture<PostgresDatabaseFixture>
 {
-    private PostgresDatabaseFixture _dbFixture;
+    private readonly PostgresDatabaseFixture _dbFixture;
 
     public MigrationTest(PostgresDatabaseFixture fixture)
     {

@@ -57,17 +57,17 @@ public abstract class AbstractRepositoryTests : IClassFixture<PostgresDatabaseFi
         return registry;
     }
 
-    protected async Task<OwnerWallet> CreateWallet(string owner)
+    protected async Task<Wallet> CreateWallet(string owner)
     {
         var walletRepository = new WalletRepository(CreateConnection());
 
-        var wallet = new OwnerWallet(Guid.NewGuid(), owner, _algorithm.GenerateNewPrivateKey());
+        var wallet = new Wallet(Guid.NewGuid(), owner, _algorithm.GenerateNewPrivateKey());
         await walletRepository.Create(wallet);
 
         return wallet;
     }
 
-    protected async Task<WalletSection> CreateWalletSection(OwnerWallet wallet, int position)
+    protected async Task<WalletSection> CreateWalletSection(Wallet wallet, int position)
     {
         var walletRepository = new WalletRepository(CreateConnection());
 

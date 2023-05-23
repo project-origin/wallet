@@ -11,6 +11,7 @@ using Dapper;
 using ProjectOrigin.WalletSystem.Server.Repositories;
 using ProjectOrigin.WalletSystem.Server.Models;
 using ProjectOrigin.WalletSystem.Server.Database.Mapping;
+using Xunit.Abstractions;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests
 {
@@ -19,8 +20,8 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
         const string RegistryName = "RegistryA";
         private IHDAlgorithm _algorithm;
 
-        public ReceiveSliceTests(GrpcTestFixture<Startup> grpcFixture, PostgresDatabaseFixture dbFixture)
-            : base(grpcFixture, dbFixture)
+        public ReceiveSliceTests(GrpcTestFixture<Startup> grpcFixture, PostgresDatabaseFixture dbFixture, ITestOutputHelper outputHelper)
+            : base(grpcFixture, dbFixture, outputHelper)
         {
             _algorithm = new Secp256k1Algorithm();
         }
@@ -33,7 +34,7 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
             using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
             {
                 var walletRepository = new WalletRepository(connection);
-                var wallet = new OwnerWallet(Guid.NewGuid(), owner, _algorithm.GenerateNewPrivateKey());
+                var wallet = new Wallet(Guid.NewGuid(), owner, _algorithm.GenerateNewPrivateKey());
                 await walletRepository.Create(wallet);
 
                 var section = new WalletSection(Guid.NewGuid(), wallet.Id, 1, wallet.PrivateKey.Derive(1).PublicKey);
