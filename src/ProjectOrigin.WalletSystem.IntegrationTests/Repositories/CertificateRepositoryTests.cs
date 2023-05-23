@@ -10,26 +10,26 @@ using Xunit;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests.Repositories;
 
-public class CertificateRepositoryTest : AbstractRepositoryTests
+public class CertificateRepositoryTests : AbstractRepositoryTests
 {
-    private CertificateRepository _repository;
+    private readonly CertificateRepository _repository;
 
-    public CertificateRepositoryTest(PostgresDatabaseFixture dbFixture) : base(dbFixture)
+    public CertificateRepositoryTests(PostgresDatabaseFixture dbFixture) : base(dbFixture)
     {
-        _repository = new CertificateRepository(_connection);
+        _repository = new CertificateRepository(Connection);
     }
 
     [Fact]
     public async Task InsertRegistry_InsertsRegistry()
     {
         // Arrange
-        var registry = _fixture.Create<Registry>();
+        var registry = Fixture.Create<Registry>();
 
         // Act
         await _repository.InsertRegistry(registry);
 
         // Assert
-        var insertedRegistry = await _connection.QueryFirstOrDefaultAsync<Registry>("SELECT * FROM Registries WHERE Id = @id", new { registry.Id });
+        var insertedRegistry = await Connection.QueryFirstOrDefaultAsync<Registry>("SELECT * FROM Registries WHERE Id = @id", new { registry.Id });
         insertedRegistry.Should().NotBeNull();
         insertedRegistry.Id.Should().Be(registry.Id);
         insertedRegistry.Name.Should().Be(registry.Name);
@@ -61,7 +61,7 @@ public class CertificateRepositoryTest : AbstractRepositoryTests
         await _repository.InsertCertificate(certificate);
 
         // Assert
-        var insertedCertificate = await _connection.QueryFirstOrDefaultAsync<Certificate>("SELECT * FROM Certificates WHERE Id = @id", new { certificate.Id });
+        var insertedCertificate = await Connection.QueryFirstOrDefaultAsync<Certificate>("SELECT * FROM Certificates WHERE Id = @id", new { certificate.Id });
         insertedCertificate.Should().NotBeNull();
         insertedCertificate.Id.Should().Be(certificate.Id);
         insertedCertificate.RegistryId.Should().Be(certificate.RegistryId);
@@ -93,15 +93,15 @@ public class CertificateRepositoryTest : AbstractRepositoryTests
         var sectionPosition = 1;
         var registry = await CreateRegistry();
         var certificate = await CreateCertificate(registry.Id, CertificateState.Inserted);
-        var wallet = await CreateWallet(_fixture.Create<string>());
+        var wallet = await CreateWallet(Fixture.Create<string>());
         var walletSection = await CreateWalletSection(wallet, walletPosition);
-        var slice = new Slice(Guid.NewGuid(), walletSection.Id, sectionPosition, registry.Id, certificate.Id, _fixture.Create<int>(), _fixture.Create<byte[]>(), SliceState.Unverified);
+        var slice = new Slice(Guid.NewGuid(), walletSection.Id, sectionPosition, registry.Id, certificate.Id, Fixture.Create<int>(), Fixture.Create<byte[]>(), SliceState.Unverified);
 
         // Act
         await _repository.InsertSlice(slice);
 
         // Assert
-        var insertedSlice = await _connection.QueryFirstOrDefaultAsync<Slice>("SELECT * FROM Slices WHERE Id = @id", new { slice.Id });
+        var insertedSlice = await Connection.QueryFirstOrDefaultAsync<Slice>("SELECT * FROM Slices WHERE Id = @id", new { slice.Id });
         insertedSlice.Should().NotBeNull();
         insertedSlice.Id.Should().Be(slice.Id);
         insertedSlice.WalletSectionId.Should().Be(slice.WalletSectionId);

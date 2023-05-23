@@ -56,6 +56,7 @@ public class MigrationTest : IClassFixture<PostgresDatabaseFixture>
 
         using var connection = new DbConnectionFactory(_dbFixture.ConnectionString).CreateConnection();
 
+        // Act
         await connection.ExecuteAsync(
             "INSERT INTO Registries(Id, Name) VALUES (@Id, @Name)",
             registry);
