@@ -2,7 +2,7 @@
 erDiagram
 
     Wallet {
-        uuid WalletId PK "Unique id of a wallet"
+        uuid Id PK "Unique id of a wallet"
         text Owner "Identifies the owner, is the same as subject from the JWT"
         bytea PrivateKey "The private key of the owner/wallet"
     }
@@ -10,7 +10,7 @@ erDiagram
     Wallet ||--o{ WalletSection : contains
 
     Certficate {
-        uuid CertificateId PK "Unique id of a certificate"
+        uuid Id PK "Unique id of a certificate"
         uuid Registry PK,FK "Unique id of the registry"
         text TechCode "The AIB Tech code"
         text FuelCode "The AIB Fuel Code"
@@ -23,14 +23,14 @@ erDiagram
     Certficate ||--o{ Slice : has
 
     WalletSection {
-        uuid SectionId PK "Unique id of a section"
+        uuid Id PK "Unique id of a section"
         uuid WalletId FK "The wallet that owns the section"
         int WalletPosition "The position of the section in the wallet"
         bytea PublicKey "The public key of the section, generated from the privatekey and Wallet position"
     }
 
     Slice {
-        uuid SliceId PK "Unique id of a slice"
+        uuid Id PK "Unique id of a slice"
         uuid SectionId FK "The section that owns the slice"
         int SectionPosition "The position of the slice in the section"
         uuid CertificateId FK "The certificate that is in the slice"
@@ -44,7 +44,7 @@ erDiagram
 
 
     Registry {
-        uuid RegistryId PK "Unique id of a registry"
+        uuid Id PK "Unique id of a registry"
         string Name UK "The name of the registry"
     }
 
