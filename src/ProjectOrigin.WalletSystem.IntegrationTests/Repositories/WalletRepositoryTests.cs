@@ -40,9 +40,8 @@ public class WalletRepositoryTests : AbstractRepositoryTests
         await repository.Create(wallet);
 
         // Assert
-        var walletDb = await connection.QueryAsync<Wallet>("SELECT * FROM Wallets where Owner = @Owner", new { Owner = subject });
-        walletDb.Should().HaveCount(1);
-        walletDb.Single().Owner.Should().Be(subject);
+        var walletDb = await repository.GetWalletByOwner(subject);
+        walletDb.Should().BeEquivalentTo(wallet);
     }
 
     [Fact]
