@@ -22,8 +22,6 @@ public abstract class AbstractRepositoryTests : IClassFixture<PostgresDatabaseFi
 
     protected AbstractRepositoryTests(PostgresDatabaseFixture dbFixture)
     {
-        DatabaseUpgrader.Upgrade(dbFixture.ConnectionString);
-
         DbFixture = dbFixture;
         Algorithm = new Secp256k1Algorithm();
         Connection = CreateConnection();
