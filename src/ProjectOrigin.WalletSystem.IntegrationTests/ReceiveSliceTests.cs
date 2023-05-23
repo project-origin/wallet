@@ -51,7 +51,7 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
             var certId = Guid.NewGuid();
             var owner = "John";
             var section = await CreateWalletSection(owner);
-            var client = new ExternalWalletService.ExternalWalletServiceClient(_grpcFixture.Channel);
+            var client = new ReceiveSliceService.ReceiveSliceServiceClient(_grpcFixture.Channel);
             var request = new ReceiveRequest()
             {
                 CertificateId = new Register.V1.FederatedStreamId()

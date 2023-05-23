@@ -12,13 +12,13 @@ using ProjectOrigin.WalletSystem.V1;
 namespace ProjectOrigin.WalletSystem.Server.Services;
 
 [AllowAnonymous]
-public class ExternalWalletService : ProjectOrigin.WalletSystem.V1.ExternalWalletService.ExternalWalletServiceBase
+public class ReceiveSliceService : ProjectOrigin.WalletSystem.V1.ReceiveSliceService.ReceiveSliceServiceBase
 {
-    private readonly ILogger<ExternalWalletService> _logger;
+    private readonly ILogger<ReceiveSliceService> _logger;
     private readonly UnitOfWork _unitOfWork;
     private readonly IHDAlgorithm _hdAlgorithm;
 
-    public ExternalWalletService(ILogger<ExternalWalletService> logger, UnitOfWork unitOfWork, IHDAlgorithm hdAlgorithm)
+    public ReceiveSliceService(ILogger<ReceiveSliceService> logger, UnitOfWork unitOfWork, IHDAlgorithm hdAlgorithm)
     {
         _logger = logger;
         _unitOfWork = unitOfWork;
