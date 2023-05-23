@@ -8,6 +8,7 @@ using ProjectOrigin.WalletSystem.Server.HDWallet;
 using ProjectOrigin.WalletSystem.Server.Models;
 using ProjectOrigin.WalletSystem.Server.Repositories;
 using System;
+using FluentAssertions;
 using Grpc.Core;
 using ProjectOrigin.WalletSystem.V1;
 using Xunit;
