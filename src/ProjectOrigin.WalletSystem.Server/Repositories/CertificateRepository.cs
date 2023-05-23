@@ -20,16 +20,6 @@ public class CertificateRepository
         return _connection.ExecuteAsync(@"INSERT INTO Slices(Id, WalletSectionId, WalletSectionPosition, RegistryId, CertificateId, Quantity, RandomR, State) VALUES (@id, @walletSectionId, @walletSectionPosition, @registryId, @certificateId, @quantity, @randomR, @state)", new { newSlice.Id, newSlice.WalletSectionId, newSlice.WalletSectionPosition, newSlice.RegistryId, newSlice.CertificateId, newSlice.Quantity, newSlice.RandomR, newSlice.State });
     }
 
-    public Task<Registry?> GetRegistryFromName(string registry)
-    {
-        return _connection.QueryFirstOrDefaultAsync<Registry?>("SELECT * FROM Registries WHERE Name = @registry", new { registry });
-    }
-
-    public Task InsertRegistry(Registry registry)
-    {
-        return _connection.ExecuteAsync(@"INSERT INTO Registries(Id, Name) VALUES (@id, @name)", new { registry.Id, registry.Name });
-    }
-
     public Task InsertCertificate(Certificate certificate)
     {
         return _connection.ExecuteAsync(@"INSERT INTO Certificates(Id, RegistryId, State) VALUES (@id, @registryId, @state)", new { certificate.Id, certificate.RegistryId, certificate.State });

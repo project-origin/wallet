@@ -61,12 +61,12 @@ public class ExternalWalletService : ProjectOrigin.WalletSystem.V1.ExternalWalle
     private async Task<(Guid RegistryId, Guid CertificateId)> GetOrInsertCertificate(FederatedStreamId federatedStreamId)
     {
         var certId = Guid.Parse(federatedStreamId.StreamId.Value);
-        Registry? registry = await _unitOfWork.CertificateRepository.GetRegistryFromName(federatedStreamId.Registry);
+        Registry? registry = await _unitOfWork.RegistryRepository.GetRegistryFromName(federatedStreamId.Registry);
 
         if (registry == null)
         {
             registry = new Registry(Guid.NewGuid(), federatedStreamId.Registry);
-            await _unitOfWork.CertificateRepository.InsertRegistry(registry);
+            await _unitOfWork.RegistryRepository.InsertRegistry(registry);
         }
 
         Certificate? certificate = await _unitOfWork.CertificateRepository.GetCertificate(registry.Id, certId);

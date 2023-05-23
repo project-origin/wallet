@@ -10,4 +10,5 @@ public class UnitOfWork : AbstractUnitOfWork
 
     public WalletRepository WalletRepository => GetRepository(connection => new WalletRepository(connection));
     public CertificateRepository CertificateRepository => GetRepository(connection => new CertificateRepository(connection));
+    public RegistryRepository RegistryRepository => GetRepository(connection => new RegistryRepository(connection));
 }
