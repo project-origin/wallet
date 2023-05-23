@@ -18,23 +18,17 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
     public class ReceiveSliceTests : GrpcTestsBase
     {
         const string RegistryName = "RegistryA";
-        private IHDAlgorithm _algorithm;
-
         public ReceiveSliceTests(GrpcTestFixture<Startup> grpcFixture, PostgresDatabaseFixture dbFixture, ITestOutputHelper outputHelper)
             : base(grpcFixture, dbFixture, outputHelper)
         {
-            _algorithm = new Secp256k1Algorithm();
         }
 
         private async Task<WalletSection> CreateWalletSection(string owner)
         {
-            SqlMapper.AddTypeHandler<IHDPrivateKey>(new HDPrivateKeyTypeHandler(_algorithm));
-            SqlMapper.AddTypeHandler<IHDPublicKey>(new HDPublicKeyTypeHandler(_algorithm));
-
             using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
             {
                 var walletRepository = new WalletRepository(connection);
-                var wallet = new Wallet(Guid.NewGuid(), owner, _algorithm.GenerateNewPrivateKey());
+                var wallet = new Wallet(Guid.NewGuid(), owner, Algorithm.GenerateNewPrivateKey());
                 await walletRepository.Create(wallet);
 
                 var section = new WalletSection(Guid.NewGuid(), wallet.Id, 1, wallet.PrivateKey.Derive(1).PublicKey);

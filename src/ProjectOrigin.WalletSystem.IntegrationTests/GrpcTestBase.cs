@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Xunit;
 using Xunit.Abstractions;
 using System;
+using ProjectOrigin.WalletSystem.Server.HDWallet;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests;
 
@@ -13,7 +14,7 @@ public abstract class GrpcTestsBase : IClassFixture<GrpcTestFixture<Startup>>, I
     protected readonly GrpcTestFixture<Startup> _grpcFixture;
     protected readonly PostgresDatabaseFixture _dbFixture;
     private readonly IDisposable _logger;
-
+    protected IHDAlgorithm Algorithm => _grpcFixture.GetRequiredService<IHDAlgorithm>();
 
     public GrpcTestsBase(GrpcTestFixture<Startup> grpcFixture, PostgresDatabaseFixture dbFixture, ITestOutputHelper outputHelper)
     {

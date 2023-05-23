@@ -61,7 +61,7 @@ public class ReceiveSliceService : ProjectOrigin.WalletSystem.V1.ReceiveSliceSer
     private async Task<(Guid RegistryId, Guid CertificateId)> GetOrInsertCertificate(FederatedStreamId federatedStreamId)
     {
         var certId = Guid.Parse(federatedStreamId.StreamId.Value);
-        Registry? registry = await _unitOfWork.RegistryRepository.GetRegistryFromName(federatedStreamId.Registry);
+        var registry = await _unitOfWork.RegistryRepository.GetRegistryFromName(federatedStreamId.Registry);
 
         if (registry == null)
         {
@@ -69,7 +69,7 @@ public class ReceiveSliceService : ProjectOrigin.WalletSystem.V1.ReceiveSliceSer
             await _unitOfWork.RegistryRepository.InsertRegistry(registry);
         }
 
-        Certificate? certificate = await _unitOfWork.CertificateRepository.GetCertificate(registry.Id, certId);
+        var certificate = await _unitOfWork.CertificateRepository.GetCertificate(registry.Id, certId);
         if (certificate == null)
         {
             certificate = new Certificate(certId, registry.Id, CertificateState.Inserted);
