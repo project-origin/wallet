@@ -38,7 +38,7 @@ public class CertificateRepository
 
     public Task<IEnumerable<CertificateViewModel>> GetAllOwnedCertificates(string owner)
     {
-        var sql = @"SELECT c.Id, r.Name as Registry, SUM(s.Quantity) as Quantity
+        var sql = @"SELECT c.Id, r.Name as Registry, CAST(SUM(s.Quantity) as bigint) as Quantity
                     FROM Wallets w
                     LEFT JOIN WalletSections ws ON w.Id = ws.WalletId
                     LEFT JOIN Slices s ON ws.Id = s.WalletSectionId

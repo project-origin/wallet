@@ -4,11 +4,8 @@ using ProjectOrigin.WalletSystem.V1;
 
 namespace ProjectOrigin.WalletSystem.Server.Models;
 
-public class CertificateViewModel
+public record CertificateViewModel(Guid Id, string Registry, long Quantity)
 {
-    public Guid Id { get; set; }
-    public string Registry { get; set; } = string.Empty;
-    public long Quantity { get; set; }
     public GranularCertificate ToProto()
     {
         var fedId = new FederatedStreamId
