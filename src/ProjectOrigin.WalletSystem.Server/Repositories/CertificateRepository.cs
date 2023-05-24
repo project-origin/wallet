@@ -39,13 +39,14 @@ public class CertificateRepository
 
     public Task<IEnumerable<CertificateEntity>> GetAllOwnedCertificates(string owner)
     {
-        var sql = @"SELECT c.Id, c.RegistryId, SUM(s.Quantity) as Quantity
+        var sql = @"SELECT c.Id, r.Name as Registry, SUM(s.Quantity) as Quantity
                     FROM Wallets w
                     LEFT JOIN WalletSections ws ON w.Id = ws.WalletId
                     LEFT JOIN Slices s ON ws.Id = s.WalletSectionId
                     LEFT JOIN Certificates c ON s.CertificateId = c.Id
+                    LEFT JOIN Registries r ON c.RegistryId = r.Id
                     WHERE w.Owner = @owner
-                    GROUP BY c.Id, c.RegistryId
+                    GROUP BY c.Id, r.Name
                     ";
         return _connection.QueryAsync<CertificateEntity, decimal, CertificateEntity>(sql, (cert, quantity) =>
         {

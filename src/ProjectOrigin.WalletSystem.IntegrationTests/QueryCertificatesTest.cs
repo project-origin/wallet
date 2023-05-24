@@ -25,16 +25,17 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
         public QueryCertificatesTest(GrpcTestFixture<Startup> grpcFixture, PostgresDatabaseFixture dbFixture, ITestOutputHelper outputHelper) : base(grpcFixture, dbFixture, outputHelper)
         {
             _fixture = new Fixture();
+
+            SqlMapper.AddTypeHandler<IHDPrivateKey>(new HDPrivateKeyTypeHandler(Algorithm));
+            SqlMapper.AddTypeHandler<IHDPublicKey>(new HDPublicKeyTypeHandler(Algorithm));
         }
 
         [Fact]
         public async void QueryCertificates()
         {
             //Arrange
-            var owner = "SomeOwner";
-
-            SqlMapper.AddTypeHandler<IHDPrivateKey>(new HDPrivateKeyTypeHandler(Algorithm));
-            SqlMapper.AddTypeHandler<IHDPublicKey>(new HDPublicKeyTypeHandler(Algorithm));
+            var owner = _fixture.Create<string>();
+            var someOtherOwner = _fixture.Create<string>();
 
             var quantity1 = _fixture.Create<long>();
             var quantity2 = _fixture.Create<long>();
@@ -44,7 +45,7 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
             {
                 var walletRepository = new WalletRepository(connection);
                 var wallet = new Wallet(Guid.NewGuid(), owner, Algorithm.GenerateNewPrivateKey());
-                var notOwnedWallet = new Wallet(Guid.NewGuid(), "SomeOtherOwner", Algorithm.GenerateNewPrivateKey());
+                var notOwnedWallet = new Wallet(Guid.NewGuid(), someOtherOwner, Algorithm.GenerateNewPrivateKey());
                 await walletRepository.Create(wallet);
                 await walletRepository.Create(notOwnedWallet);
 
@@ -53,7 +54,8 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
                 await walletRepository.CreateSection(section);
                 await walletRepository.CreateSection(notOwnedSection);
 
-                var registry = new Registry(Guid.NewGuid(), "SomeRegistry");
+                var regName = _fixture.Create<string>();
+                var registry = new Registry(Guid.NewGuid(), regName);
                 var certificateRepository = new CertificateRepository(connection);
                 var registryRepository = new RegistryRepository(connection);
                 await registryRepository.InsertRegistry(registry);
@@ -75,7 +77,8 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
                 await certificateRepository.InsertSlice(notOwnedSlice);
             }
 
-            var token = _tokenGenerator.GenerateToken(owner, "John Doe");
+            var someOwnerName = _fixture.Create<string>();
+            var token = _tokenGenerator.GenerateToken(owner, someOwnerName);
             var headers = new Metadata();
             headers.Add("Authorization", $"Bearer {token}");
 

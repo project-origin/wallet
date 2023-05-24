@@ -10,7 +10,7 @@ namespace ProjectOrigin.WalletSystem.Server.Mappers
         {
             var fedId = new FederatedStreamId
             {
-                Registry = certificate.RegistryId.ToString(),
+                Registry = certificate.Registry,
                 StreamId = new Register.V1.Uuid
                 {
                     Value = certificate.Id.ToString()
