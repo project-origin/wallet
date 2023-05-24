@@ -52,6 +52,6 @@ public class CertificateRepository
         {
             cert.Quantity = (long)quantity;
             return cert;
-        }, splitOn: "Quantity", param: new { owner });
+        }, splitOn: nameof(CertificateEntity.Quantity), param: new { owner });
     }
 }
