@@ -4,7 +4,6 @@ using System.Data;
 using System.Threading.Tasks;
 using Dapper;
 using ProjectOrigin.WalletSystem.Server.Models;
-using ProjectOrigin.WalletSystem.Server.Models.Database;
 
 namespace ProjectOrigin.WalletSystem.Server.Repositories;
 
@@ -37,7 +36,7 @@ public class CertificateRepository
         return _connection.QueryFirstOrDefaultAsync<Certificate?>("SELECT * FROM Certificates WHERE Id = @certificateId AND RegistryId = @registryId", new { certificateId, registryId });
     }
 
-    public Task<IEnumerable<CertificateEntity>> GetAllOwnedCertificates(string owner)
+    public Task<IEnumerable<CertificateViewModel>> GetAllOwnedCertificates(string owner)
     {
         var sql = @"SELECT c.Id, r.Name as Registry, SUM(s.Quantity) as Quantity
                     FROM Wallets w
@@ -48,10 +47,10 @@ public class CertificateRepository
                     WHERE w.Owner = @owner
                     GROUP BY c.Id, r.Name
                     ";
-        return _connection.QueryAsync<CertificateEntity, decimal, CertificateEntity>(sql, (cert, quantity) =>
+        return _connection.QueryAsync<CertificateViewModel, decimal, CertificateViewModel>(sql, (cert, quantity) =>
         {
             cert.Quantity = (long)quantity;
             return cert;
-        }, splitOn: nameof(CertificateEntity.Quantity), param: new { owner });
+        }, splitOn: nameof(CertificateViewModel.Quantity), param: new { owner });
     }
 }

@@ -7,7 +7,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ProjectOrigin.WalletSystem.Server.Database;
 using ProjectOrigin.WalletSystem.Server.HDWallet;
-using ProjectOrigin.WalletSystem.Server.Mappers;
 using ProjectOrigin.WalletSystem.Server.Models;
 using ProjectOrigin.WalletSystem.V1;
 
@@ -65,7 +64,7 @@ public class WalletService : ProjectOrigin.WalletSystem.V1.WalletService.WalletS
         var response = new QueryResponse();
         foreach (var gc in certificates)
         {
-            response.GranularCertificates.Add(CertificateEntityMapper.ToDto(gc));
+            response.GranularCertificates.Add(gc.ToDto());
         }
 
         return response;
