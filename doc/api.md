@@ -12,7 +12,7 @@ The public API allows anonymous access to deposit slices into wallets.
 
 |  Name   | Description |
 | - | - |
-| [ReceiveSlice](flows/receive_slice.md) | Enables a wallet to receive a slice from either an issuer or another wallet, the slice is verified based on data from the registry. |
+| [ReceiveSlice](api/receive_slice.md) | Enables a wallet to receive a slice from either an issuer or another wallet, the slice is verified based on data from the registry. |
 
 ### Granular Certificate API
 
@@ -25,7 +25,7 @@ All commands require the request to be authenticated by a JWT token.
 | ---- | ----------- |
 | CreateWallet | Creates a new wallet for a user. Only one wallet per user is currently allowed, but multiple wallets per user may be allowed in the future. |
 | CreateWalletSection | Creates a new section in a user's [wallet](concepts/wallet.md). |
-| QueryGranularCertificates | List the certificates owned by the wallet, in time filters should be supported |
+| [QueryGranularCertificates](api/query-certificates.md) | List the certificates owned by the wallet, in time filters should be supported |
 | TransferCertificate | Transfers a number of Wh from ther certificate from one wallet to another. |
 | ClaimCertificates | Claims a number of Wh from a production certificate to a consumption certificate. |
 
