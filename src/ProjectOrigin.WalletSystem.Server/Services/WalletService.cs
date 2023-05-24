@@ -64,7 +64,7 @@ public class WalletService : ProjectOrigin.WalletSystem.V1.WalletService.WalletS
         var response = new QueryResponse();
         foreach (var gc in certificates)
         {
-            response.GranularCertificates.Add(gc.ToDto());
+            response.GranularCertificates.Add(gc.ToProto());
         }
 
         return response;

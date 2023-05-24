@@ -10,7 +10,7 @@ public class CertificateViewModel
     public string Registry { get; set; }
     public long Quantity { get; set; }
 
-    public GranularCertificate ToDto()
+    public GranularCertificate ToProto()
     {
         var fedId = new FederatedStreamId
         {
