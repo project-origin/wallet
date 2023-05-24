@@ -7,9 +7,8 @@ namespace ProjectOrigin.WalletSystem.Server.Models;
 public class CertificateViewModel
 {
     public Guid Id { get; set; }
-    public string Registry { get; set; }
+    public string Registry { get; set; } = string.Empty;
     public long Quantity { get; set; }
-
     public GranularCertificate ToProto()
     {
         var fedId = new FederatedStreamId

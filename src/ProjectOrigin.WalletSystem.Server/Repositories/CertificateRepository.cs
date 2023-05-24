@@ -47,10 +47,6 @@ public class CertificateRepository
                     WHERE w.Owner = @owner
                     GROUP BY c.Id, r.Name
                     ";
-        return _connection.QueryAsync<CertificateViewModel, decimal, CertificateViewModel>(sql, (cert, quantity) =>
-        {
-            cert.Quantity = (long)quantity;
-            return cert;
-        }, splitOn: nameof(CertificateViewModel.Quantity), param: new { owner });
+        return _connection.QueryAsync<CertificateViewModel>(sql, param: new { owner });
     }
 }

@@ -14,7 +14,6 @@ using ProjectOrigin.WalletSystem.V1;
 using Xunit;
 using WalletService = ProjectOrigin.WalletSystem.V1.WalletService;
 using Xunit.Abstractions;
-using FluentAssertions;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests
 {
