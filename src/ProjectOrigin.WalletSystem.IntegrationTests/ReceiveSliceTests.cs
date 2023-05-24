@@ -5,18 +5,17 @@ using System.Threading.Tasks;
 using ProjectOrigin.WalletSystem.V1;
 using Xunit;
 using Google.Protobuf;
-using ProjectOrigin.WalletSystem.Server.HDWallet;
 using Npgsql;
 using Dapper;
 using ProjectOrigin.WalletSystem.Server.Repositories;
 using ProjectOrigin.WalletSystem.Server.Models;
 using Xunit.Abstractions;
+using AutoFixture;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests
 {
     public class ReceiveSliceTests : GrpcTestsBase
     {
-        const string RegistryName = "RegistryA";
         public ReceiveSliceTests(GrpcTestFixture<Startup> grpcFixture, PostgresDatabaseFixture dbFixture, ITestOutputHelper outputHelper)
             : base(grpcFixture, dbFixture, outputHelper)
         {
@@ -43,13 +42,14 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
             //Arrange
             var certId = Guid.NewGuid();
             var owner = "John";
+            var registryName = new Fixture().Create<string>();
             var section = await CreateWalletSection(owner);
             var client = new ReceiveSliceService.ReceiveSliceServiceClient(_grpcFixture.Channel);
             var request = new ReceiveRequest()
             {
                 CertificateId = new Register.V1.FederatedStreamId()
                 {
-                    Registry = RegistryName,
+                    Registry = registryName,
                     StreamId = new Register.V1.Uuid() { Value = certId.ToString() },
                 },
                 WalletSectionPublicKey = ByteString.CopyFrom(section.PublicKey.Export()),

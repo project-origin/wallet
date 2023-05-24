@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Threading.Tasks;
 using Dapper;
@@ -33,5 +34,19 @@ public class CertificateRepository
     public Task<Certificate?> GetCertificate(Guid registryId, Guid certificateId)
     {
         return _connection.QueryFirstOrDefaultAsync<Certificate?>("SELECT * FROM Certificates WHERE Id = @certificateId AND RegistryId = @registryId", new { certificateId, registryId });
+    }
+
+    public Task<IEnumerable<CertificateViewModel>> GetAllOwnedCertificates(string owner)
+    {
+        var sql = @"SELECT c.Id, r.Name as Registry, CAST(SUM(s.Quantity) as bigint) as Quantity
+                    FROM Wallets w
+                    LEFT JOIN WalletSections ws ON w.Id = ws.WalletId
+                    LEFT JOIN Slices s ON ws.Id = s.WalletSectionId
+                    LEFT JOIN Certificates c ON s.CertificateId = c.Id
+                    LEFT JOIN Registries r ON c.RegistryId = r.Id
+                    WHERE w.Owner = @owner
+                    GROUP BY c.Id, r.Name
+                    ";
+        return _connection.QueryAsync<CertificateViewModel>(sql, param: new { owner });
     }
 }

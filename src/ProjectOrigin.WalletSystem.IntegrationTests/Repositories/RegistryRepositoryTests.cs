@@ -16,14 +16,14 @@ public class RegistryRepositoryTests : AbstractRepositoryTests
 
     public RegistryRepositoryTests(PostgresDatabaseFixture dbFixture) : base(dbFixture)
     {
-        _repository = new RegistryRepository(Connection);
+        _repository = new RegistryRepository(_connection);
     }
 
     [Fact]
     public async Task InsertRegistry_InsertsRegistry()
     {
         // Arrange
-        var registry = Fixture.Create<Registry>();
+        var registry = _fixture.Create<Registry>();
 
         // Act
         await _repository.InsertRegistry(registry);

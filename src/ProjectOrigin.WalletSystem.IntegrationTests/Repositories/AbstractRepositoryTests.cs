@@ -15,30 +15,30 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests.Repositories;
 
 public abstract class AbstractRepositoryTests : IClassFixture<PostgresDatabaseFixture>, IDisposable
 {
-    protected PostgresDatabaseFixture DbFixture;
-    protected IHDAlgorithm Algorithm;
-    protected IDbConnection Connection;
-    protected Fixture Fixture;
+    protected PostgresDatabaseFixture _dbFixture;
+    protected IHDAlgorithm _algorithm;
+    protected IDbConnection _connection;
+    protected Fixture _fixture;
 
     protected AbstractRepositoryTests(PostgresDatabaseFixture dbFixture)
     {
-        DbFixture = dbFixture;
-        Algorithm = new Secp256k1Algorithm();
-        Connection = CreateConnection();
-        Fixture = new Fixture();
+        _dbFixture = dbFixture;
+        _algorithm = new Secp256k1Algorithm();
+        _connection = CreateConnection();
+        _fixture = new Fixture();
 
-        SqlMapper.AddTypeHandler(new HDPrivateKeyTypeHandler(Algorithm));
-        SqlMapper.AddTypeHandler(new HDPublicKeyTypeHandler(Algorithm));
+        SqlMapper.AddTypeHandler(new HDPrivateKeyTypeHandler(_algorithm));
+        SqlMapper.AddTypeHandler(new HDPublicKeyTypeHandler(_algorithm));
     }
 
     public void Dispose()
     {
-        Connection.Dispose();
+        _connection.Dispose();
     }
 
     private IDbConnection CreateConnection()
     {
-        var connection = new NpgsqlConnection(DbFixture.ConnectionString);
+        var connection = new NpgsqlConnection(_dbFixture.ConnectionString);
         connection.Open();
         return connection;
     }
@@ -48,7 +48,7 @@ public abstract class AbstractRepositoryTests : IClassFixture<PostgresDatabaseFi
         using var connection = CreateConnection();
         var registryRepository = new RegistryRepository(connection);
 
-        var registry = new Registry(Guid.NewGuid(), Fixture.Create<string>());
+        var registry = new Registry(Guid.NewGuid(), _fixture.Create<string>());
         await registryRepository.InsertRegistry(registry);
 
         return registry;
@@ -59,7 +59,7 @@ public abstract class AbstractRepositoryTests : IClassFixture<PostgresDatabaseFi
         using var connection = CreateConnection();
         var walletRepository = new WalletRepository(connection);
 
-        var wallet = new Wallet(Guid.NewGuid(), owner, Algorithm.GenerateNewPrivateKey());
+        var wallet = new Wallet(Guid.NewGuid(), owner, _algorithm.GenerateNewPrivateKey());
         await walletRepository.Create(wallet);
 
         return wallet;

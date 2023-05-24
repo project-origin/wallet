@@ -15,11 +15,8 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests;
 
 public class GrpcTests : GrpcTestsBase
 {
-    private readonly JwtGenerator _tokenGenerator;
-
     public GrpcTests(GrpcTestFixture<Startup> grpcFixture, PostgresDatabaseFixture dbFixture, ITestOutputHelper outputHelper) : base(grpcFixture, dbFixture, outputHelper)
     {
-        _tokenGenerator = new JwtGenerator();
     }
 
     [Fact]
@@ -68,5 +65,4 @@ public class GrpcTests : GrpcTestsBase
         // Assert
         await sutMethod.Should().ThrowAsync<RpcException>().WithMessage("Status(StatusCode=\"Unauthenticated\", Detail=\"Bad gRPC response. HTTP status code: 401\")");
     }
-
 }

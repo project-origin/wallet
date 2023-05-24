@@ -17,7 +17,7 @@ public class WalletRepositoryTests : AbstractRepositoryTests
 
     public WalletRepositoryTests(PostgresDatabaseFixture dbFixture) : base(dbFixture)
     {
-        _repository = new WalletRepository(Connection);
+        _repository = new WalletRepository(_connection);
     }
 
     [Fact]
@@ -29,10 +29,10 @@ public class WalletRepositoryTests : AbstractRepositoryTests
         var wallet = new Wallet(
             Guid.NewGuid(),
             subject,
-            Algorithm.GenerateNewPrivateKey()
+            _algorithm.GenerateNewPrivateKey()
             );
 
-        using var connection = new DbConnectionFactory(DbFixture.ConnectionString).CreateConnection();
+        using var connection = new DbConnectionFactory(_dbFixture.ConnectionString).CreateConnection();
         connection.Open();
         var repository = new WalletRepository(connection);
 
@@ -52,9 +52,9 @@ public class WalletRepositoryTests : AbstractRepositoryTests
         var wallet = new Wallet(
             Guid.NewGuid(),
             subject,
-            Algorithm.GenerateNewPrivateKey()
+            _algorithm.GenerateNewPrivateKey()
             );
-        using var connection = new DbConnectionFactory(DbFixture.ConnectionString).CreateConnection();
+        using var connection = new DbConnectionFactory(_dbFixture.ConnectionString).CreateConnection();
         connection.Open();
         var repository = new WalletRepository(connection);
         await repository.Create(wallet);
@@ -78,9 +78,9 @@ public class WalletRepositoryTests : AbstractRepositoryTests
         var wallet = new Wallet(
             Guid.NewGuid(),
             subject,
-            Algorithm.GenerateNewPrivateKey()
+            _algorithm.GenerateNewPrivateKey()
             );
-        using var connection = new DbConnectionFactory(DbFixture.ConnectionString).CreateConnection();
+        using var connection = new DbConnectionFactory(_dbFixture.ConnectionString).CreateConnection();
         connection.Open();
         var repository = new WalletRepository(connection);
         await repository.Create(wallet);
@@ -101,7 +101,7 @@ public class WalletRepositoryTests : AbstractRepositoryTests
     public async Task GetWalletSectionFromPublicKey_Success()
     {
         // Arrange
-        var subject = Fixture.Create<string>();
+        var subject = _fixture.Create<string>();
         var wallet = await CreateWallet(subject);
         var section1 = await CreateWalletSection(wallet, 1);
         var section2 = await CreateWalletSection(wallet, 2);
@@ -120,7 +120,7 @@ public class WalletRepositoryTests : AbstractRepositoryTests
     public async Task GetWalletSectionFromPublicKey_ReturnNull()
     {
         // Arrange
-        var publicKey = Algorithm.GenerateNewPrivateKey().Derive(1).PublicKey;
+        var publicKey = _algorithm.GenerateNewPrivateKey().Derive(1).PublicKey;
 
         // Act
         var section = await _repository.GetWalletSectionFromPublicKey(publicKey);
