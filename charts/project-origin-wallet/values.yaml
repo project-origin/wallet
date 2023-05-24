@@ -1,5 +1,14 @@
 # Default values for project-origin-wallet.
 
+# image defines the image configuration for the wallet server
+image:
+
+  # repository defines the image repository to use
+  repository: ghcr.io/project-origin/wallet-server
+
+  # tag defines the image tag to use, defaults to the chart appVersion
+  tag:
+
 # persistence defines the persistence configuration for the wallet server
 persistance:
 

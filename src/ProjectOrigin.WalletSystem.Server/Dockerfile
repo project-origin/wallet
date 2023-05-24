@@ -17,3 +17,5 @@ WORKDIR /app
 COPY --from=dotnet-publish /app/publish .
 HEALTHCHECK CMD curl --fail http://localhost:5000/health || exit 1
 ENTRYPOINT ["dotnet", "ProjectOrigin.WalletSystem.Server.dll"]
+
+CMD ["--serve"]

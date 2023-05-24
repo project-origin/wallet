@@ -15,32 +15,35 @@ spec:
       labels:
         app: po-wallet
     spec:
+      initContainers:
+        - name: wait-for-migration
+          image: groundnuty/k8s-wait-for:2.0 # TODO verify this image
+          args:
+          - "job"
+          - "po-wallet-migrate-job-{{ .Chart.AppVersion }}"
       containers:
         - name: po-wallet
-          image: ghcr.io/project-origin/wallet-server:0.1.0-alpha.1
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}
+          args:
+          - "--serve"
           env:
-          {{ if .Values.database.cloudNativePg.enabled }}
+          {{ if .Values.persistance.cloudNativePG.enabled }}
             - name: DB_HOST
               value: {{ .Values.persistance.cloudNativePG.name }}-rw
-
             - name: DB_PORT
               value: "5432"
-
             - name: DB_DATABASE
               value: {{ .Values.persistance.cloudNativePG.size }}
-
             - name: DB_USERNAME
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.persistance.cloudNativePG.name }}-app
                   key: username
-
             - name: DB_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.persistance.cloudNativePG.name }}-app
                   key: password
-
             - name: ConnectionStrings__Database
               value: Host=$(DB_HOST); Port=$(DB_PORT); Database=$(DB_DATABASE); Username=$(DB_USERNAME); Password=$(DB_PASSWORD);
           {{ end }}
