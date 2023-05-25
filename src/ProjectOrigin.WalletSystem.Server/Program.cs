@@ -23,7 +23,7 @@ if (args.Contains("--migrate"))
 if (args.Contains("--serve"))
 {
     Console.WriteLine("Starting server.");
-    if (!DatabaseUpgrader.IsUpgradeRequired(app.Configuration.GetConnectionString("Database")))
+    if (DatabaseUpgrader.IsUpgradeRequired(app.Configuration.GetConnectionString("Database")))
         throw new SystemException("Database is not up to date. Please run with --migrate first.");
 
     app.Run();

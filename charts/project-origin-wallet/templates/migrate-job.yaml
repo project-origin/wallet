@@ -27,12 +27,12 @@ spec:
             - name: DB_USERNAME
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.persistance.cloudNativePG.name }}-superuser
+                  name: {{ .Values.persistance.cloudNativePG.name }}-app
                   key: username
             - name: DB_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.persistance.cloudNativePG.name }}-superuser
+                  name: {{ .Values.persistance.cloudNativePG.name }}-app
                   key: password
             - name: ConnectionStrings__Database
               value: Host=$(DB_HOST); Port=$(DB_PORT); Database=$(DB_DATABASE); Username=$(DB_USERNAME); Password=$(DB_PASSWORD);
