@@ -1,0 +1,33 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: wallet-migration-waiter
+  namespace: {{ .Release.Namespace }}
+---
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: wallet-migration-waiter-role
+  namespace: {{ .Release.Namespace }}
+rules:
+  - apiGroups:
+      - "batch"
+    resources:
+      - jobs
+    verbs:
+      - get
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: wallet-migration-waiter-role-binding
+  namespace: {{ .Release.Namespace }}
+subjects:
+  - kind: ServiceAccount
+    name: wallet-migration-waiter
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: wallet-migration-waiter-role

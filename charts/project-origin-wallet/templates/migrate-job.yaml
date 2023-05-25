@@ -2,14 +2,17 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: po-wallet-migrate-job-{{ .Chart.AppVersion }}
+  name: po-wallet-migrate-job-{{ .Values.image.tag | default .Chart.AppVersion }}
+  namespace: {{ .Release.Namespace }}
 spec:
-  backoffLimit: 1
+  backoffLimit: 0
+  parallelism: 1
+  completions: 1
   template:
     spec:
       restartPolicy: Never
       containers:
-      - name: po-wallet-migrate-job-{{ .Chart.AppVersion }}
+      - name: po-wallet-migrate-job
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
         args: ["--migrate"]
         env:
@@ -19,7 +22,7 @@ spec:
           - name: DB_PORT
             value: "5432"
           - name: DB_DATABASE
-            value: {{ .Values.persistance.cloudNativePG.size }}
+            value: {{ .Values.persistance.cloudNativePG.database }}
           - name: DB_USERNAME
             valueFrom:
               secretKeyRef:
