@@ -1,15 +1,13 @@
-name: Verifies code formatting, builds, and runs unit tests
+name: Verifies PR are ready for merge
 
 on:
   pull_request:
     branches:
       - main
 
-env:
-  compose_folder: src/ProjectOrigin.VerifiableEventStore.Tests
-
 jobs:
-  verify:
+  verify-code:
+    name: Verifies code formatting, builds, and runs unit tests
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
@@ -27,3 +25,12 @@ jobs:
 
       - name: Verify formatting
         run: make lint
+
+  verify-chart:
+    name: Verify chart with local built container
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Start kind cluster
+        run: make verify-chart
