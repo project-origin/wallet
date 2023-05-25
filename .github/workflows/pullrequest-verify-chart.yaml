@@ -18,10 +18,7 @@ jobs:
         run: kind create cluster
 
       - name: Install Cloudnative-pg operator
-        run: helm install cnpg-operator cloudnative-pg --repo https://cloudnative-pg.io/charts --version 0.18.0 --namespace cnpg --create-namespace
-
-      - name: Wait for operator to be ready
-        run: kubectl wait --namespace cnpg --for=condition=ready pod -l app.kubernetes.io/name=cloudnative-pg --timeout=300s
+        run: helm install cnpg-operator cloudnative-pg --repo https://cloudnative-pg.io/charts --version 0.18.0 --namespace cnpg --create-namespace --wait
 
       - name: Build image
         run: docker build -f src/ProjectOrigin.WalletSystem.Server/Dockerfile -t ghcr.io/project-origin/wallet-server:${{ env.image_tag }} src/
@@ -30,10 +27,7 @@ jobs:
         run: kind load docker-image ghcr.io/project-origin/wallet-server:${{ env.image_tag }}
 
       - name: Install chart
-        run: helm install wallet charts/project-origin-wallet --set image.tag=${{ env.image_tag }},wallet.externalUrl=http://wallet.example:80
-
-      - name: Wait for chart to be ready
-        run: kubectl wait --for=condition=ready pod -l app=po-wallet --timeout=300s
+        run: helm install wallet charts/project-origin-wallet --set image.tag=${{ env.image_tag }},wallet.externalUrl=http://wallet.example:80 --wait
 
   verify-chart-with-current-app-version-container:
     name: Verify chart with current appVersion container
@@ -47,13 +41,7 @@ jobs:
         run: kind create cluster
 
       - name: Install Cloudnative-pg operator
-        run: helm install cnpg-operator cloudnative-pg --repo https://cloudnative-pg.io/charts --version 0.18.0 --namespace cnpg --create-namespace
-
-      - name: Wait for operator to be ready
-        run: kubectl wait --namespace cnpg --for=condition=ready pod -l app.kubernetes.io/name=cloudnative-pg --timeout=300s
+        run: helm install cnpg-operator cloudnative-pg --repo https://cloudnative-pg.io/charts --version 0.18.0 --namespace cnpg --create-namespace --wait
 
       - name: Install chart
-        run: helm install wallet charts/project-origin-wallet --set wallet.externalUrl=http://wallet.example:80
-
-      - name: Wait for chart to be ready
-        run: kubectl wait --for=condition=ready pod -l app=po-wallet --timeout=300s
+        run: helm install wallet charts/project-origin-wallet --set wallet.externalUrl=http://wallet.example:80  --wait
