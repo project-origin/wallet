@@ -1,0 +1,40 @@
+# Default values for project-origin-wallet.
+
+# image defines the image configuration for the wallet server
+image:
+
+  # repository defines the image repository to use
+  repository: ghcr.io/project-origin/wallet-server
+
+  # tag defines the image tag to use, defaults to the chart appVersion
+  tag:
+
+# wallet defines the service configuration for the wallet server
+wallet:
+
+  # externalUrl defines the external url to use for the wallet server
+  externalUrl:
+
+# persistence defines the persistence configuration for the wallet server
+persistance:
+
+  # cloudNativePG determines if the database is created as a cloud native postgresql instance
+  cloudNativePG:
+
+    # enabled determines if the cloud native postgresql instance is enabled
+    enabled: true
+
+    # name defines the name of the cloud native postgresql instance
+    name: cnpg-wallet-db
+
+    # owner defines the owner of the database
+    owner: app
+
+    # database defines the name of the database to create
+    database: wallet-database
+
+    # replicas defines the number of database instances to run
+    replicas: 3
+
+    # storage defines the storage configuration for the database
+    size: 10Gi
