@@ -6,7 +6,8 @@ on:
       - main
 
 jobs:
-  verify:
+  verify-chart-with-latest-container:
+    name: Verify chart with local built container
     runs-on: ubuntu-latest
     env:
       image_tag: local-test
@@ -27,6 +28,26 @@ jobs:
 
       - name: Install chart
         run: helm install wallet charts/project-origin-wallet --set image.tag=${{ env.image_tag }}
+
+      - name: Wait for chart to be ready
+        run: kubectl wait --for=condition=ready pod -l app=po-wallet --timeout=300s
+
+  verify-chart-with-current-app-version-container:
+    name: Verify chart with current appVersion container
+    runs-on: ubuntu-latest
+    env:
+      image_tag: local-test
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Start kind cluster
+        run: kind create cluster
+
+      - name: Install Cloudnative-pg operator
+        run: helm install cnpg-operator cloudnative-pg --repo https://cloudnative-pg.io/charts --version 0.18.0 --namespace cnpg --create-namespace
+
+      - name: Install chart
+        run: helm install wallet charts/project-origin-wallet
 
       - name: Wait for chart to be ready
         run: kubectl wait --for=condition=ready pod -l app=po-wallet --timeout=300s
