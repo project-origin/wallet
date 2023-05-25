@@ -7,7 +7,7 @@ metadata:
   labels:
     app: po-wallet
 spec:
-  replicas: 1
+  replicas: 3
   selector:
     matchLabels:
       app: po-wallet
@@ -21,13 +21,13 @@ spec:
         - name: wait-for-migration
           image: groundnuty/k8s-wait-for:v2.0 # TODO verify this image
           args:
-          - "job"
-          - "po-wallet-migrate-job-{{ .Values.image.tag | default .Chart.AppVersion }}"
+            - "job"
+            - "po-wallet-migrate-job-{{ .Values.image.tag | default .Chart.AppVersion }}"
       containers:
         - name: po-wallet
           image: {{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}
           args:
-          - "--serve"
+            - "--serve"
           env:
             - name: ServiceOptions__EndpointAddress
               value: {{ required "A valid externalUrl is required!"  .Values.wallet.externalUrl }}
@@ -50,4 +50,6 @@ spec:
                   key: password
             - name: ConnectionStrings__Database
               value: Host=$(DB_HOST); Port=$(DB_PORT); Database=$(DB_DATABASE); Username=$(DB_USERNAME); Password=$(DB_PASSWORD);
+          {{- else }}
+            {{- fail "currently only CloudNativePG is supported, and must be enabled." }}
           {{ end }}

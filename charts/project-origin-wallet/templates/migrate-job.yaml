@@ -12,27 +12,28 @@ spec:
     spec:
       restartPolicy: Never
       containers:
-      - name: po-wallet-migrate-job
-        image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-        args: ["--migrate"]
-        env:
-        {{ if .Values.persistance.cloudNativePG.enabled }}
-          - name: DB_HOST
-            value: {{ .Values.persistance.cloudNativePG.name }}-rw
-          - name: DB_PORT
-            value: "5432"
-          - name: DB_DATABASE
-            value: {{ .Values.persistance.cloudNativePG.database }}
-          - name: DB_USERNAME
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.persistance.cloudNativePG.name }}-superuser
-                key: username
-          - name: DB_PASSWORD
-            valueFrom:
-              secretKeyRef:
-                name: {{ .Values.persistance.cloudNativePG.name }}-superuser
-                key: password
-          - name: ConnectionStrings__Database
-            value: Host=$(DB_HOST); Port=$(DB_PORT); Database=$(DB_DATABASE); Username=$(DB_USERNAME); Password=$(DB_PASSWORD);
-        {{ end }}
+        - name: po-wallet-migrate-job
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          args:
+            - "--migrate"
+          env:
+          {{ if .Values.persistance.cloudNativePG.enabled }}
+            - name: DB_HOST
+              value: {{ .Values.persistance.cloudNativePG.name }}-rw
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_DATABASE
+              value: {{ .Values.persistance.cloudNativePG.database }}
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.persistance.cloudNativePG.name }}-superuser
+                  key: username
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.persistance.cloudNativePG.name }}-superuser
+                  key: password
+            - name: ConnectionStrings__Database
+              value: Host=$(DB_HOST); Port=$(DB_PORT); Database=$(DB_DATABASE); Username=$(DB_USERNAME); Password=$(DB_PASSWORD);
+          {{ end }}
