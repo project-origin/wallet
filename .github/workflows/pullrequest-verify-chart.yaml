@@ -44,4 +44,4 @@ jobs:
         run: helm install cnpg-operator cloudnative-pg --repo https://cloudnative-pg.io/charts --version 0.18.0 --namespace cnpg --create-namespace --wait
 
       - name: Install chart
-        run: helm install wallet charts/project-origin-wallet --set wallet.externalUrl=http://wallet.example:80  --wait
+        run: helm install wallet charts/project-origin-wallet --set wallet.externalUrl=http://wallet.example:80 --wait
