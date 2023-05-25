@@ -9,39 +9,17 @@ jobs:
   verify-chart-with-latest-container:
     name: Verify chart with local built container
     runs-on: ubuntu-22.04
-    env:
-      image_tag: local-test
     steps:
       - uses: actions/checkout@v3
 
       - name: Start kind cluster
-        run: kind create cluster
-
-      - name: Install Cloudnative-pg operator
-        run: helm install cnpg-operator cloudnative-pg --repo https://cloudnative-pg.io/charts --version 0.18.0 --namespace cnpg --create-namespace --wait
-
-      - name: Build image
-        run: docker build -f src/ProjectOrigin.WalletSystem.Server/Dockerfile -t ghcr.io/project-origin/wallet-server:${{ env.image_tag }} src/
-
-      - name: Load image into kind cluster
-        run: kind load docker-image ghcr.io/project-origin/wallet-server:${{ env.image_tag }}
-
-      - name: Install chart
-        run: helm install wallet charts/project-origin-wallet --set image.tag=${{ env.image_tag }},wallet.externalUrl=http://wallet.example:80 --wait
+        run: make verify-container-chart
 
   verify-chart-with-current-app-version-container:
     name: Verify chart with current appVersion container
     runs-on: ubuntu-22.04
-    env:
-      image_tag: local-test
     steps:
       - uses: actions/checkout@v3
 
       - name: Start kind cluster
-        run: kind create cluster
-
-      - name: Install Cloudnative-pg operator
-        run: helm install cnpg-operator cloudnative-pg --repo https://cloudnative-pg.io/charts --version 0.18.0 --namespace cnpg --create-namespace --wait
-
-      - name: Install chart
-        run: helm install wallet charts/project-origin-wallet --set wallet.externalUrl=http://wallet.example:80 --wait
+        run: make verify-chart

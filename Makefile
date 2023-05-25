@@ -8,14 +8,14 @@ formatting_command := \033[1;34m
 formatting_desc := \033[0;32m
 formatting_none := \033[0m
 
-.PHONY: help test clean build lint
+.PHONY: help test clean build lint _kind-prepare
 
 .DEFAULT_GOAL := help
 
 ## Show help for each of the Makefile recipes.
 help:
 	@printf "${formatting_header}Available targets:\n"
-	@awk -F '## ' '/^## /{desc=$$2}/^[a-zA-Z0-9_-]+:/{gsub(/:.*/, "", $$1); printf "  ${formatting_command}%-20s ${formatting_desc}%s${formatting_none}\n", $$1, desc}' $(MAKEFILE_LIST) | sort
+	@awk -F '## ' '/^## /{desc=$$2}/^[a-zA-Z0-9][a-zA-Z0-9_-]+:/{gsub(/:.*/, "", $$1); printf "  ${formatting_command}%-20s ${formatting_desc}%s${formatting_none}\n", $$1, desc}' $(MAKEFILE_LIST) | sort
 	@printf "\n"
 
 ## Verify code is ready for commit to branch, runs tests and verifies formatting.
@@ -51,15 +51,23 @@ test:
 unit-test:
 	dotnet test $(src_path) --filter 'FullyQualifiedName!~IntegrationTests'
 
-## Creates kind cluster and installs chart, and verifies it works
-verify-chart:
+
+_kind-prepare:
 	@kind version >/dev/null 2>&1 || { echo >&2 "kind not installed! kind is required to use recipe, please install or use devcontainer"; exit 1;}
 	@helm version >/dev/null 2>&1 || { echo >&2 "helm not installed! helm is required to use recipe, please install or use devcontainer"; exit 1;}
 
 	kind delete cluster -n helm-test
 	kind create cluster -n helm-test
 	helm install cnpg-operator cloudnative-pg --repo https://cloudnative-pg.io/charts --version 0.18.0 --namespace cnpg --create-namespace --wait
+
+## Builds the local container, creates kind cluster and installs chart, and verifies it works
+verify-container-chart: _kind-prepare
 	docker build -f src/ProjectOrigin.WalletSystem.Server/Dockerfile -t ghcr.io/project-origin/wallet-server:test src/
 	kind load -n helm-test docker-image ghcr.io/project-origin/wallet-server:test
 	helm install wallet charts/project-origin-wallet --set image.tag=test,wallet.externalUrl=http://wallet.example:80 --wait
+	kind delete cluster -n helm-test
+
+## Creates kind cluster and installs chart using appVersion container, and verifies it works
+verify-chart: _kind-prepare
+	helm install wallet charts/project-origin-wallet --set wallet.externalUrl=http://wallet.example:80 --wait
 	kind delete cluster -n helm-test

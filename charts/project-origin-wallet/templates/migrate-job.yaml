@@ -2,7 +2,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: po-wallet-migrate-job-{{ .Values.image.tag | default .Chart.AppVersion }}
+  name: po-wallet-migrate-job-{{ .Values.image.tag | default .Chart.AppVersion | replace "." "-" }}
   namespace: {{ .Release.Namespace }}
 spec:
   backoffLimit: 0
