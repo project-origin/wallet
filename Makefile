@@ -50,3 +50,15 @@ test:
 ## Run all Unit-tests
 unit-test:
 	dotnet test $(src_path) --filter 'FullyQualifiedName!~IntegrationTests'
+
+## Creates kind cluster and installs chart, and verifies it works
+verify-chart:
+	@kind version >/dev/null 2>&1 || { echo >&2 "kind not installed! kind is required to use recipe, please install or use devcontainer"; exit 1;}
+	@helm version >/dev/null 2>&1 || { echo >&2 "helm not installed! helm is required to use recipe, please install or use devcontainer"; exit 1;}
+
+	kind create cluster
+	helm install cnpg-operator cloudnative-pg --repo https://cloudnative-pg.io/charts --version 0.18.0 --namespace cnpg --create-namespace --wait
+	docker build -f src/ProjectOrigin.WalletSystem.Server/Dockerfile -t ghcr.io/project-origin/wallet-server:${{ env.image_tag }} src/
+	kind load docker-image ghcr.io/project-origin/wallet-server:${{ env.image_tag }}
+	helm install wallet charts/project-origin-wallet --set image.tag=${{ env.image_tag }},wallet.externalUrl=http://wallet.example:80 --wait
+	kind delete cluster

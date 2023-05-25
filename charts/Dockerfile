@@ -1,4 +1,4 @@
-FROM debian:latest as downloader
+FROM debian:bullseye-20230522 as downloader
 
 # Install necessary dependencies
 RUN apt-get update && apt-get install -y \
@@ -17,7 +17,7 @@ RUN arch=$(arch | sed s/aarch64/arm64/ | sed s/x86_64/amd64/) &&\
     tar -zxvf ./helm.tar.gz linux-arm64/helm --strip-components 1 &&\
     chmod +x ./helm
 
-FROM mcr.microsoft.com/devcontainers/dotnet:7.0
+FROM docker:24.0.1-dind
 
 # Copy binaries from the downloader stage
 COPY --from=downloader /downloads/kind /usr/local/bin/kind

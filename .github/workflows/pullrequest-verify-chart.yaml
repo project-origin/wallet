@@ -8,7 +8,7 @@ on:
 jobs:
   verify-chart-with-latest-container:
     name: Verify chart with local built container
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     env:
       image_tag: local-test
     steps:
@@ -31,7 +31,7 @@ jobs:
 
   verify-chart-with-current-app-version-container:
     name: Verify chart with current appVersion container
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     env:
       image_tag: local-test
     steps:
