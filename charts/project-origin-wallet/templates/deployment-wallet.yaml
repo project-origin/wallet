@@ -29,6 +29,8 @@ spec:
           args:
           - "--serve"
           env:
+            - name: ServiceOptions__EndpointAddress
+              value: {{ required "A valid externalUrl is required!"  .Values.wallet.externalUrl }}
           {{ if .Values.persistance.cloudNativePG.enabled }}
             - name: DB_HOST
               value: {{ .Values.persistance.cloudNativePG.name }}-rw

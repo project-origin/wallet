@@ -9,6 +9,12 @@ image:
   # tag defines the image tag to use, defaults to the chart appVersion
   tag:
 
+# service defines the service configuration for the wallet server
+wallet:
+
+  # externalUrl defines the external url to use for the wallet server
+  externalUrl:
+
 # persistence defines the persistence configuration for the wallet server
 persistance:
 

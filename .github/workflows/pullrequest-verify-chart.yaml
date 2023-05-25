@@ -30,7 +30,7 @@ jobs:
         run: kind load docker-image ghcr.io/project-origin/wallet-server:${{ env.image_tag }}
 
       - name: Install chart
-        run: helm install wallet charts/project-origin-wallet --set image.tag=${{ env.image_tag }}
+        run: helm install wallet charts/project-origin-wallet --set image.tag=${{ env.image_tag }},wallet.externalUrl=http://wallet.example:80
 
       - name: Wait for chart to be ready
         run: kubectl wait --for=condition=ready pod -l app=po-wallet --timeout=300s
@@ -53,7 +53,7 @@ jobs:
         run: kubectl wait --namespace cnpg --for=condition=ready pod -l app.kubernetes.io/name=cloudnative-pg --timeout=300s
 
       - name: Install chart
-        run: helm install wallet charts/project-origin-wallet
+        run: helm install wallet charts/project-origin-wallet --set wallet.externalUrl=http://wallet.example:80
 
       - name: Wait for chart to be ready
         run: kubectl wait --for=condition=ready pod -l app=po-wallet --timeout=300s
