@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Linq;
 using System.Threading.Tasks;
 using Dapper;
 using ProjectOrigin.WalletSystem.Server.Models;
@@ -48,5 +49,16 @@ public class CertificateRepository
                     GROUP BY c.Id, r.Name
                     ";
         return _connection.QueryAsync<CertificateViewModel>(sql, param: new { owner });
+    }
+
+    public Task<IEnumerable<ReceivedSlice>> GetAllReceivedSlices()
+    {
+        return _connection.QueryAsync<ReceivedSlice>("SELECT * FROM ReceivedSlices");
+    }
+
+    public Task RemoveReceivedSlices(List<ReceivedSlice> receivedSlices)
+    {
+        var ids = receivedSlices.Select(x => x.Id).ToList();
+        return _connection.ExecuteAsync("DELETE FROM ReceivedSlices WHERE Id = ANY(@ids)", new { ids });
     }
 }
