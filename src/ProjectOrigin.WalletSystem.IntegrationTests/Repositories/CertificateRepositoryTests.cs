@@ -132,7 +132,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
     }
 
     [Fact]
-    public async Task GetAllOwnedReceivedSlices()
+    public async Task GetAllReceivedSlices()
     {
         var walletPosition = 1;
         var sectionPosition = 1;
