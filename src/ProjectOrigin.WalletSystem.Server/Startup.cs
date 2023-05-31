@@ -53,6 +53,7 @@ public class Startup
         services.AddSingleton<IHDAlgorithm, Secp256k1Algorithm>();
 
         services.AddHostedService<VerifySlicesWorker>();
+        services.AddScoped<IVerifySlicesScopedProcessingService, VerifySlicesScopedProcessingService>();
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
