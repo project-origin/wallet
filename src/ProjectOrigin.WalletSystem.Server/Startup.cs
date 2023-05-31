@@ -9,6 +9,7 @@ using ProjectOrigin.WalletSystem.Server.Database.Mapping;
 using ProjectOrigin.WalletSystem.Server.HDWallet;
 using ProjectOrigin.WalletSystem.Server.Services;
 using System.IdentityModel.Tokens.Jwt;
+using ProjectOrigin.WalletSystem.Server.BackgroundJobs;
 
 namespace ProjectOrigin.WalletSystem.Server;
 
@@ -50,6 +51,8 @@ public class Startup
         services.AddSingleton<IDbConnectionFactory, DbConnectionFactory>();
 
         services.AddSingleton<IHDAlgorithm, Secp256k1Algorithm>();
+
+        services.AddHostedService<VerifySlicesWorker>();
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

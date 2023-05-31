@@ -154,7 +154,12 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
 
         var slicesDb = await _repository.GetAllReceivedSlices();
 
-        slicesDb.Count().Should().Be(3);
+        slicesDb.Should().NotBeNullOrEmpty();
+        var ids = slicesDb.Select(x => x.Id).ToList();
+
+        ids.Contains(receivedSlice1.Id).Should().BeTrue();
+        ids.Contains(receivedSlice2.Id).Should().BeTrue();
+        ids.Contains(receivedSlice3.Id).Should().BeTrue();
     }
 
     [Fact]
@@ -187,8 +192,43 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
 
         await _repository.RemoveReceivedSlices(slices);
 
-        var slicesDb = await _repository.GetAllReceivedSlices();
+        var slicesDb = await _repository.GetReceivedSlices(new List<Guid> { receivedSlice1.Id, receivedSlice2.Id, receivedSlice3.Id });
 
         slicesDb.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task RemoveReceivedSlice()
+    {
+        var walletPosition = 1;
+        var sectionPosition = 1;
+        var register = new Fixture().Create<string>();
+        var wallet1 = await CreateWallet(_fixture.Create<string>());
+        var certificateId1 = Guid.NewGuid();
+        var walletSection1 = await CreateWalletSection(wallet1, walletPosition);
+        var receivedSlice1 = new ReceivedSlice(Guid.NewGuid(), walletSection1.Id, sectionPosition, register, certificateId1, _fixture.Create<int>(), _fixture.Create<byte[]>());
+        await _repository.InsertReceivedSlice(receivedSlice1);
+
+        await _repository.RemoveReceivedSlice(receivedSlice1);
+
+        var slicesDb = await _repository.GetReceivedSlices(new List<Guid>{ receivedSlice1.Id });
+        slicesDb.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetTop1ReceivedSlice()
+    {
+        var walletPosition = 1;
+        var sectionPosition = 1;
+        var register = new Fixture().Create<string>();
+        var wallet1 = await CreateWallet(_fixture.Create<string>());
+        var certificateId1 = Guid.NewGuid();
+        var walletSection1 = await CreateWalletSection(wallet1, walletPosition);
+        var receivedSlice1 = new ReceivedSlice(Guid.NewGuid(), walletSection1.Id, sectionPosition, register, certificateId1, _fixture.Create<int>(), _fixture.Create<byte[]>());
+        await _repository.InsertReceivedSlice(receivedSlice1);
+
+        var receivedSlice = await _repository.GetTop1ReceivedSlice();
+
+        receivedSlice.Should().NotBeNull();
     }
 }
