@@ -52,7 +52,6 @@ public class VerifySlicesScopedProcessingService : IVerifySlicesScopedProcessing
         while (!stoppingToken.IsCancellationRequested)
         {
             await DoWork(stoppingToken);
-            await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken);
         }
     }
 
