@@ -20,6 +20,13 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         _repository = new CertificateRepository(_connection);
     }
 
+    public override async void Dispose()
+    {
+        var slicesInDb = await _repository.GetAllReceivedSlices();
+        await _repository.RemoveReceivedSlices(slicesInDb.ToList());
+        base.Dispose();
+    }
+
     [Fact]
     public async Task InsertCertificate_InsertsCertificate()
     {
@@ -154,12 +161,13 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
 
         var slicesDb = await _repository.GetAllReceivedSlices();
 
-        slicesDb.Should().NotBeNullOrEmpty();
-        var ids = slicesDb.Select(x => x.Id).ToList();
+        var receivedSliceIds = new[]
+        {
+            receivedSlice1.Id, receivedSlice2.Id, receivedSlice3.Id
+        };
 
-        ids.Contains(receivedSlice1.Id).Should().BeTrue();
-        ids.Contains(receivedSlice2.Id).Should().BeTrue();
-        ids.Contains(receivedSlice3.Id).Should().BeTrue();
+        var ids = slicesDb.Select(x => x.Id).ToList();
+        ids.Should().Contain(receivedSliceIds);
     }
 
     [Fact]
@@ -229,6 +237,6 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
 
         var receivedSlice = await _repository.GetTop1ReceivedSlice();
 
-        receivedSlice.Should().NotBeNull();
+        receivedSlice.Should().BeEquivalentTo(receivedSlice1);
     }
 }
