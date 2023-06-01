@@ -31,6 +31,9 @@ public class Startup
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
+        services.Configure<VerifySlicesWorkerOptions>(
+            _configuration.GetSection("VerifySlicesWorkerOptions"));
+
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(o =>
             {

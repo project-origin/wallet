@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using ProjectOrigin.WalletSystem.Server.Database;
 using ProjectOrigin.WalletSystem.Server.Models;
 
@@ -12,11 +13,13 @@ public class VerifySlicesWorker : BackgroundService
 {
     private readonly ILogger<VerifySlicesWorker> _logger;
     private readonly IUnitOfWorkFactory _unitOfWorkFactory;
+    private readonly VerifySlicesWorkerOptions _options;
 
-    public VerifySlicesWorker(ILogger<VerifySlicesWorker> logger, IUnitOfWorkFactory unitOfWorkFactory)
+    public VerifySlicesWorker(ILogger<VerifySlicesWorker> logger, IUnitOfWorkFactory unitOfWorkFactory, IOptions<VerifySlicesWorkerOptions> options)
     {
         _logger = logger;
         _unitOfWorkFactory = unitOfWorkFactory;
+        _options = options.Value;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -45,7 +48,7 @@ public class VerifySlicesWorker : BackgroundService
         if (receivedSlice == null)
         {
             _logger.LogInformation("No received slices found.");
-            await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken);
+            await Task.Delay(TimeSpan.FromSeconds(_options.SleepTimeInSeconds), stoppingToken);
             return;
         }
 
