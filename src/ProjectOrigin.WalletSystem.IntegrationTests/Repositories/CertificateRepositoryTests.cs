@@ -176,7 +176,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         var walletSection1 = await CreateWalletSection(wallet1, walletPosition);
         var walletSection2 = await CreateWalletSection(wallet2, walletPosition);
         var receivedSlice1 = new ReceivedSlice(Guid.NewGuid(), walletSection1.Id, sectionPosition, register, certificateId1, _fixture.Create<int>(), _fixture.Create<byte[]>());
-        var receivedSlice2 = new ReceivedSlice(Guid.NewGuid(), walletSection1.Id, sectionPosition +1, register, certificateId2, _fixture.Create<int>(), _fixture.Create<byte[]>());
+        var receivedSlice2 = new ReceivedSlice(Guid.NewGuid(), walletSection1.Id, sectionPosition + 1, register, certificateId2, _fixture.Create<int>(), _fixture.Create<byte[]>());
         var receivedSlice3 = new ReceivedSlice(Guid.NewGuid(), walletSection2.Id, sectionPosition, register, certificateId3, _fixture.Create<int>(), _fixture.Create<byte[]>());
 
         await _repository.InsertReceivedSlice(receivedSlice1);
@@ -211,7 +211,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
 
         await _repository.RemoveReceivedSlice(receivedSlice1);
 
-        var slicesDb = await _repository.GetReceivedSlices(new List<Guid>{ receivedSlice1.Id });
+        var slicesDb = await _repository.GetReceivedSlices(new List<Guid> { receivedSlice1.Id });
         slicesDb.Should().BeEmpty();
     }
 
