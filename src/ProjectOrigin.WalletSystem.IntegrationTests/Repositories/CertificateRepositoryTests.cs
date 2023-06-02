@@ -1,6 +1,7 @@
 using AutoFixture;
 using Dapper;
 using FluentAssertions;
+using Npgsql;
 using ProjectOrigin.WalletSystem.Server.Models;
 using ProjectOrigin.WalletSystem.Server.Repositories;
 using System;
@@ -245,5 +246,23 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         var receivedSlice = await _repository.GetTop1ReceivedSlice();
 
         receivedSlice.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task InstertReceivedSlice_WhenInsertingTwoOfTheSameEntity_ExpectDatabaseException()
+    {
+        var walletPosition = 1;
+        var sectionPosition = 1;
+        var register = _fixture.Create<string>();
+        var wallet1 = await CreateWallet(_fixture.Create<string>());
+        var certificateId1 = Guid.NewGuid();
+        var walletSection1 = await CreateWalletSection(wallet1, walletPosition);
+        var receivedSlice1 = new ReceivedSlice(Guid.NewGuid(), walletSection1.Id, sectionPosition, register, certificateId1, _fixture.Create<int>(), _fixture.Create<byte[]>());
+        await _repository.InsertReceivedSlice(receivedSlice1);
+
+        await Assert.ThrowsAsync<PostgresException>(async () =>
+        {
+            await _repository.InsertReceivedSlice(receivedSlice1);
+        });
     }
 }
