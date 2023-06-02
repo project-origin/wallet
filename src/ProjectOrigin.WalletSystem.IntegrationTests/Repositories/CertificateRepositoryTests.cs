@@ -20,13 +20,6 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         _repository = new CertificateRepository(_connection);
     }
 
-    public override async void Dispose()
-    {
-        var slicesInDb = await _repository.GetAllReceivedSlices();
-        await _repository.RemoveReceivedSlices(slicesInDb.ToList());
-        base.Dispose();
-    }
-
     [Fact]
     public async Task InsertCertificate_InsertsCertificate()
     {
@@ -124,7 +117,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         // Arrange
         var walletPosition = 1;
         var sectionPosition = 1;
-        var register = new Fixture().Create<string>();
+        var register = _fixture.Create<string>();
         var certificateId = Guid.NewGuid();
         var wallet = await CreateWallet(_fixture.Create<string>());
         var walletSection = await CreateWalletSection(wallet, walletPosition);
@@ -143,7 +136,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
     {
         var walletPosition = 1;
         var sectionPosition = 1;
-        var register = new Fixture().Create<string>();
+        var register = _fixture.Create<string>();
         var wallet1 = await CreateWallet(_fixture.Create<string>());
         var wallet2 = await CreateWallet(_fixture.Create<string>());
         var certificateId1 = Guid.NewGuid();
@@ -175,7 +168,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
     {
         var walletPosition = 1;
         var sectionPosition = 1;
-        var register = new Fixture().Create<string>();
+        var register = _fixture.Create<string>();
         var wallet1 = await CreateWallet(_fixture.Create<string>());
         var wallet2 = await CreateWallet(_fixture.Create<string>());
         var certificateId1 = Guid.NewGuid();
@@ -210,7 +203,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
     {
         var walletPosition = 1;
         var sectionPosition = 1;
-        var register = new Fixture().Create<string>();
+        var register = _fixture.Create<string>();
         var wallet1 = await CreateWallet(_fixture.Create<string>());
         var certificateId1 = Guid.NewGuid();
         var walletSection1 = await CreateWalletSection(wallet1, walletPosition);
@@ -226,9 +219,12 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
     [Fact]
     public async Task GetTop1ReceivedSlice()
     {
+        var slicesInDb = await _repository.GetAllReceivedSlices();
+        await _repository.RemoveReceivedSlices(slicesInDb.ToList());
+
         var walletPosition = 1;
         var sectionPosition = 1;
-        var register = new Fixture().Create<string>();
+        var register = _fixture.Create<string>();
         var wallet1 = await CreateWallet(_fixture.Create<string>());
         var certificateId1 = Guid.NewGuid();
         var walletSection1 = await CreateWalletSection(wallet1, walletPosition);
@@ -238,5 +234,16 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         var receivedSlice = await _repository.GetTop1ReceivedSlice();
 
         receivedSlice.Should().BeEquivalentTo(receivedSlice1);
+    }
+
+    [Fact]
+    public async Task GetTop1ReceivedSlice_WhenNoSlices_ReturnNull()
+    {
+        var slicesInDb = await _repository.GetAllReceivedSlices();
+        await _repository.RemoveReceivedSlices(slicesInDb.ToList());
+
+        var receivedSlice = await _repository.GetTop1ReceivedSlice();
+
+        receivedSlice.Should().BeNull();
     }
 }
