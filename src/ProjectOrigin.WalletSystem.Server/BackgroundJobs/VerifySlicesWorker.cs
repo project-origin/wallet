@@ -56,7 +56,8 @@ public class VerifySlicesWorker : BackgroundService
 
         if (registry == null)
         {
-            _logger.LogError($"Registry with name {0} not found.", receivedSlice.Registry);
+            _logger.LogError($"Registry with name {0} not found. Deleting received slice from certificate with certificate id {1}.", receivedSlice.Registry, receivedSlice.CertificateId);
+            await unitOfWork.CertificateRepository.RemoveReceivedSlice(receivedSlice);
             return;
         }
 
@@ -80,8 +81,9 @@ public class VerifySlicesWorker : BackgroundService
         }
         catch (Exception ex)
         {
-            _logger.LogError("Unable to verify received slice against project origin. Error: {0} ", ex);
+            _logger.LogError("Unable to verify received slice against project origin. Deleting received slice from certificate with certificate id {0}. Error: {1}", receivedSlice.CertificateId, ex);
             unitOfWork.Rollback();
+            await unitOfWork.CertificateRepository.RemoveReceivedSlice(receivedSlice);
         }
     }
 }
