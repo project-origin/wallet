@@ -71,6 +71,13 @@ public class VerifySlicesWorker : BackgroundService
                 receivedSlice.Quantity,
                 receivedSlice.RandomR);
 
+            var certificate = await unitOfWork.CertificateRepository.GetCertificate(registry.Id, slice.CertificateId);
+            if (certificate == null)
+            {
+                certificate = new Certificate(slice.CertificateId, registry.Id);
+                await unitOfWork.CertificateRepository.InsertCertificate(certificate);
+            }
+
             //Verify with project origin registry
 
             await unitOfWork.CertificateRepository.InsertSlice(slice);
