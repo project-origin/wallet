@@ -18,7 +18,7 @@ public class VerifySlicesWorkerTests : WalletSystemTestsBase
     }
 
     [Fact]
-    public async void WhenReceivedSliceWithNoCertificate_IsConvertedToSliceAndCertificateIsCreated()
+    public async void WhenReceivedSliceWithNoCertificate_ExpectIsConvertedToSliceAndCertificateIsCreated()
     {
         var certId = Guid.NewGuid();
         var owner = "SomeOwner";
@@ -39,10 +39,10 @@ public class VerifySlicesWorkerTests : WalletSystemTestsBase
     }
 
     [Fact]
-    public async void WhenReceivedSliceWithCertificate_IsConvertedToSliceWithCertificate()
+    public async void WhenReceivedSliceWithCertificate_ExpectIsConvertedToSliceWithCertificate()
     {
         var certId = Guid.NewGuid();
-        var owner = "SomeOwner";
+        var owner = "SomeOtherOwner";
         var registryName = new Fixture().Create<string>();
         var section = await CreateWalletSection(owner);
         var registry = await CreateRegistry(registryName);
