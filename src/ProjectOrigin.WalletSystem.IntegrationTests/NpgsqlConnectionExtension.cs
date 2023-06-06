@@ -27,7 +27,7 @@ public static class NpgsqlConnectionExtension
         throw new Exception($"Entity not found within the time limit ({limit.TotalSeconds} seconds)");
     }
 
-    public static async Task<object?> RepeatedlyQueryUntilNull<T>(this NpgsqlConnection connection, string sql, object? param = null, TimeSpan? timeLimit = null)
+    public static async Task<T?> RepeatedlyQueryUntilNull<T>(this NpgsqlConnection connection, string sql, object? param = null, TimeSpan? timeLimit = null)
     {
         var limit = timeLimit ?? TimeSpan.FromSeconds(15);
 
@@ -38,7 +38,7 @@ public static class NpgsqlConnectionExtension
         {
             var entity = await connection.QueryFirstOrDefaultAsync<T>(sql, param);
             if (entity == null)
-                return null;
+                return default;
 
             await Task.Delay(TimeSpan.FromMilliseconds(100));
         } while (stopwatch.Elapsed < limit);
