@@ -1,9 +1,11 @@
 using AutoFixture;
 using Dapper;
 using FluentAssertions;
+using Npgsql;
 using ProjectOrigin.WalletSystem.Server.Models;
 using ProjectOrigin.WalletSystem.Server.Repositories;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
@@ -116,7 +118,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         // Arrange
         var walletPosition = 1;
         var sectionPosition = 1;
-        var register = new Fixture().Create<string>();
+        var register = _fixture.Create<string>();
         var certificateId = Guid.NewGuid();
         var wallet = await CreateWallet(_fixture.Create<string>());
         var walletSection = await CreateWalletSection(wallet, walletPosition);
@@ -128,5 +130,138 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         // Assert
         var insertedSlice = await _connection.QueryFirstOrDefaultAsync<ReceivedSlice>("SELECT * FROM ReceivedSlices WHERE Id = @id", new { receivedSlice.Id });
         insertedSlice.Should().BeEquivalentTo(receivedSlice);
+    }
+
+    [Fact]
+    public async Task GetAllReceivedSlices()
+    {
+        var walletPosition = 1;
+        var sectionPosition = 1;
+        var register = _fixture.Create<string>();
+        var wallet1 = await CreateWallet(_fixture.Create<string>());
+        var wallet2 = await CreateWallet(_fixture.Create<string>());
+        var certificateId1 = Guid.NewGuid();
+        var certificateId2 = Guid.NewGuid();
+        var certificateId3 = Guid.NewGuid();
+        var walletSection1 = await CreateWalletSection(wallet1, walletPosition);
+        var walletSection2 = await CreateWalletSection(wallet2, walletPosition);
+        var receivedSlice1 = new ReceivedSlice(Guid.NewGuid(), walletSection1.Id, sectionPosition, register, certificateId1, _fixture.Create<int>(), _fixture.Create<byte[]>());
+        var receivedSlice2 = new ReceivedSlice(Guid.NewGuid(), walletSection1.Id, sectionPosition + 1, register, certificateId2, _fixture.Create<int>(), _fixture.Create<byte[]>());
+        var receivedSlice3 = new ReceivedSlice(Guid.NewGuid(), walletSection2.Id, sectionPosition, register, certificateId3, _fixture.Create<int>(), _fixture.Create<byte[]>());
+
+        await _repository.InsertReceivedSlice(receivedSlice1);
+        await _repository.InsertReceivedSlice(receivedSlice2);
+        await _repository.InsertReceivedSlice(receivedSlice3);
+
+        var slicesDb = await _repository.GetAllReceivedSlices();
+
+        var receivedSliceIds = new[]
+        {
+            receivedSlice1.Id, receivedSlice2.Id, receivedSlice3.Id
+        };
+
+        var ids = slicesDb.Select(x => x.Id).ToList();
+        ids.Should().Contain(receivedSliceIds);
+    }
+
+    [Fact]
+    public async Task RemoveReceivedSlices()
+    {
+        var walletPosition = 1;
+        var sectionPosition = 1;
+        var register = _fixture.Create<string>();
+        var wallet1 = await CreateWallet(_fixture.Create<string>());
+        var wallet2 = await CreateWallet(_fixture.Create<string>());
+        var certificateId1 = Guid.NewGuid();
+        var certificateId2 = Guid.NewGuid();
+        var certificateId3 = Guid.NewGuid();
+        var walletSection1 = await CreateWalletSection(wallet1, walletPosition);
+        var walletSection2 = await CreateWalletSection(wallet2, walletPosition);
+        var receivedSlice1 = new ReceivedSlice(Guid.NewGuid(), walletSection1.Id, sectionPosition, register, certificateId1, _fixture.Create<int>(), _fixture.Create<byte[]>());
+        var receivedSlice2 = new ReceivedSlice(Guid.NewGuid(), walletSection1.Id, sectionPosition + 1, register, certificateId2, _fixture.Create<int>(), _fixture.Create<byte[]>());
+        var receivedSlice3 = new ReceivedSlice(Guid.NewGuid(), walletSection2.Id, sectionPosition, register, certificateId3, _fixture.Create<int>(), _fixture.Create<byte[]>());
+
+        await _repository.InsertReceivedSlice(receivedSlice1);
+        await _repository.InsertReceivedSlice(receivedSlice2);
+        await _repository.InsertReceivedSlice(receivedSlice3);
+
+        var slices = new List<ReceivedSlice>
+        {
+            receivedSlice1,
+            receivedSlice2,
+            receivedSlice3
+        };
+
+        await _repository.RemoveReceivedSlices(slices);
+
+        var slicesDb = await _repository.GetReceivedSlices(new List<Guid> { receivedSlice1.Id, receivedSlice2.Id, receivedSlice3.Id });
+
+        slicesDb.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task RemoveReceivedSlice()
+    {
+        var walletPosition = 1;
+        var sectionPosition = 1;
+        var register = _fixture.Create<string>();
+        var wallet1 = await CreateWallet(_fixture.Create<string>());
+        var certificateId1 = Guid.NewGuid();
+        var walletSection1 = await CreateWalletSection(wallet1, walletPosition);
+        var receivedSlice1 = new ReceivedSlice(Guid.NewGuid(), walletSection1.Id, sectionPosition, register, certificateId1, _fixture.Create<int>(), _fixture.Create<byte[]>());
+        await _repository.InsertReceivedSlice(receivedSlice1);
+
+        await _repository.RemoveReceivedSlice(receivedSlice1);
+
+        var slicesDb = await _repository.GetReceivedSlices(new List<Guid> { receivedSlice1.Id });
+        slicesDb.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetTop1ReceivedSlice()
+    {
+        var slicesInDb = await _repository.GetAllReceivedSlices();
+        await _repository.RemoveReceivedSlices(slicesInDb.ToList());
+
+        var walletPosition = 1;
+        var sectionPosition = 1;
+        var register = _fixture.Create<string>();
+        var wallet1 = await CreateWallet(_fixture.Create<string>());
+        var certificateId1 = Guid.NewGuid();
+        var walletSection1 = await CreateWalletSection(wallet1, walletPosition);
+        var receivedSlice1 = new ReceivedSlice(Guid.NewGuid(), walletSection1.Id, sectionPosition, register, certificateId1, _fixture.Create<int>(), _fixture.Create<byte[]>());
+        await _repository.InsertReceivedSlice(receivedSlice1);
+
+        var receivedSlice = await _repository.GetTop1ReceivedSlice();
+
+        receivedSlice.Should().BeEquivalentTo(receivedSlice1);
+    }
+
+    [Fact]
+    public async Task GetTop1ReceivedSlice_WhenNoSlices_ReturnNull()
+    {
+        var slicesInDb = await _repository.GetAllReceivedSlices();
+        await _repository.RemoveReceivedSlices(slicesInDb.ToList());
+
+        var receivedSlice = await _repository.GetTop1ReceivedSlice();
+
+        receivedSlice.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task InstertReceivedSlice_WhenInsertingTwoOfTheSameEntity_ExpectDatabaseException()
+    {
+        var walletPosition = 1;
+        var sectionPosition = 1;
+        var register = _fixture.Create<string>();
+        var wallet1 = await CreateWallet(_fixture.Create<string>());
+        var certificateId1 = Guid.NewGuid();
+        var walletSection1 = await CreateWalletSection(wallet1, walletPosition);
+        var receivedSlice1 = new ReceivedSlice(Guid.NewGuid(), walletSection1.Id, sectionPosition, register, certificateId1, _fixture.Create<int>(), _fixture.Create<byte[]>());
+        await _repository.InsertReceivedSlice(receivedSlice1);
+
+        var act = async () => await _repository.InsertReceivedSlice(receivedSlice1);
+
+        await act.Should().ThrowAsync<PostgresException>();
     }
 }

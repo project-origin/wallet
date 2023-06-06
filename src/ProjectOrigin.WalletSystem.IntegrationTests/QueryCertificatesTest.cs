@@ -17,7 +17,7 @@ using Xunit.Abstractions;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests
 {
-    public class QueryCertificatesTest : GrpcTestsBase
+    public class QueryCertificatesTest : WalletSystemTestsBase
     {
         private Fixture _fixture;
 
