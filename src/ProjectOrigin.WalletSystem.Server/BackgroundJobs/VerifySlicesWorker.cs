@@ -61,6 +61,8 @@ public class VerifySlicesWorker : BackgroundService
             return;
         }
 
+        //Verify with project origin registry
+
         try
         {
             var slice = new Slice(Guid.NewGuid(),
@@ -78,8 +80,6 @@ public class VerifySlicesWorker : BackgroundService
                 await unitOfWork.CertificateRepository.InsertCertificate(certificate);
             }
 
-            //Verify with project origin registry
-
             await unitOfWork.CertificateRepository.InsertSlice(slice);
 
             await unitOfWork.CertificateRepository.RemoveReceivedSlice(receivedSlice);
@@ -88,9 +88,8 @@ public class VerifySlicesWorker : BackgroundService
         }
         catch (Exception ex)
         {
-            _logger.LogError("Unable to verify received slice against project origin. Deleting received slice from certificate with certificate id {0}. Error: {1}", receivedSlice.CertificateId, ex);
+            _logger.LogError("Unable to convert ReceivedSlice to Slice. Error: {0}", ex);
             unitOfWork.Rollback();
-            await unitOfWork.CertificateRepository.RemoveReceivedSlice(receivedSlice);
         }
     }
 }
