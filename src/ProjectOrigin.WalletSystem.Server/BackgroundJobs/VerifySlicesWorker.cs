@@ -41,7 +41,7 @@ public class VerifySlicesWorker : BackgroundService
 
     private async Task DoWork(CancellationToken stoppingToken)
     {
-        var unitOfWork = _unitOfWorkFactory.Create();
+        using var unitOfWork = _unitOfWorkFactory.Create();
 
         var receivedSlice = await unitOfWork.CertificateRepository.GetTop1ReceivedSlice();
 

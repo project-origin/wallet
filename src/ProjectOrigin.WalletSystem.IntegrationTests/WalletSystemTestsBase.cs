@@ -32,7 +32,8 @@ public abstract class WalletSystemTestsBase : IClassFixture<GrpcTestFixture<Star
         grpcFixture.ConfigureHostConfiguration(new Dictionary<string, string?>()
          {
              {"ConnectionStrings:Database", dbFixture.ConnectionString},
-             {"ServiceOptions:EndpointAddress", endpoint}
+             {"ServiceOptions:EndpointAddress", endpoint},
+             {"VerifySlicesWorkerOptions:SleepTimeInSeconds", "2"}
          });
     }
 
