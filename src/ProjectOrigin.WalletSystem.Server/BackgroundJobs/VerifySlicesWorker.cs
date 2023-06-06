@@ -48,7 +48,7 @@ public class VerifySlicesWorker : BackgroundService
         if (receivedSlice == null)
         {
             _logger.LogInformation("No received slices found.");
-            await Task.Delay(TimeSpan.FromSeconds(_options.SleepTimeInSeconds), stoppingToken);
+            await Task.Delay(_options.SleepTime, stoppingToken);
             return;
         }
 

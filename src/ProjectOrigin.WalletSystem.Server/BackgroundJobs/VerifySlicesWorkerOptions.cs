@@ -1,7 +1,8 @@
-namespace ProjectOrigin.WalletSystem.Server.BackgroundJobs
+using System;
+
+namespace ProjectOrigin.WalletSystem.Server.BackgroundJobs;
+
+public class VerifySlicesWorkerOptions
 {
-    public class VerifySlicesWorkerOptions
-    {
-        public int SleepTimeInSeconds { get; set; }
-    }
+    public TimeSpan SleepTime { get; set; }
 }

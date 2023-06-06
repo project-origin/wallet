@@ -260,9 +260,8 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         var receivedSlice1 = new ReceivedSlice(Guid.NewGuid(), walletSection1.Id, sectionPosition, register, certificateId1, _fixture.Create<int>(), _fixture.Create<byte[]>());
         await _repository.InsertReceivedSlice(receivedSlice1);
 
-        await Assert.ThrowsAsync<PostgresException>(async () =>
-        {
-            await _repository.InsertReceivedSlice(receivedSlice1);
-        });
+        var act = async () => await _repository.InsertReceivedSlice(receivedSlice1);
+
+        await act.Should().ThrowAsync<PostgresException>();
     }
 }

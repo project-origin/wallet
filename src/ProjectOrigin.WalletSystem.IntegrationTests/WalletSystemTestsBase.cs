@@ -33,7 +33,7 @@ public abstract class WalletSystemTestsBase : IClassFixture<GrpcTestFixture<Star
          {
              {"ConnectionStrings:Database", dbFixture.ConnectionString},
              {"ServiceOptions:EndpointAddress", endpoint},
-             {"VerifySlicesWorkerOptions:SleepTimeInSeconds", "2"}
+             {"VerifySlicesWorkerOptions:SleepTime", "00:00:02"}
          });
     }
 
