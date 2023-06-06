@@ -13,9 +13,9 @@ using Xunit.Abstractions;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests;
 
-public class WalletSystemTests : WalletSystemTestsBase
+public class GrpcTests : WalletSystemTestsBase
 {
-    public WalletSystemTests(GrpcTestFixture<Startup> grpcFixture, PostgresDatabaseFixture dbFixture, ITestOutputHelper outputHelper) : base(grpcFixture, dbFixture, outputHelper)
+    public GrpcTests(GrpcTestFixture<Startup> grpcFixture, PostgresDatabaseFixture dbFixture, ITestOutputHelper outputHelper) : base(grpcFixture, dbFixture, outputHelper)
     {
     }
 

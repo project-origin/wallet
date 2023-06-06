@@ -21,7 +21,7 @@ public static class NpgsqlConnectionExtension
             if (entity != null)
                 return entity;
 
-            await Task.Delay(TimeSpan.FromMicroseconds(100));
+            await Task.Delay(TimeSpan.FromMilliseconds(100));
         } while (stopwatch.Elapsed < limit);
 
         throw new Exception($"Entity not found within the time limit ({limit.TotalSeconds} seconds)");

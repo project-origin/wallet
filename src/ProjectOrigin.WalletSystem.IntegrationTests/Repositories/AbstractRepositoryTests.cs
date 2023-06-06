@@ -31,7 +31,7 @@ public abstract class AbstractRepositoryTests : IClassFixture<PostgresDatabaseFi
         SqlMapper.AddTypeHandler(new HDPublicKeyTypeHandler(_algorithm));
     }
 
-    public virtual void Dispose()
+    public void Dispose()
     {
         _connection.Dispose();
     }
