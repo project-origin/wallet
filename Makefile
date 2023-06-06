@@ -22,7 +22,7 @@ help:
 verify: build test lint
 	@echo "Code is ready to commit."
 
-## Prints dotnet ino
+## Prints dotnet info
 info:
 	@echo "Print info and version"
 	dotnet --info
