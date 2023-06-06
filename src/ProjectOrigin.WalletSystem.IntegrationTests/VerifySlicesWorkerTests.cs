@@ -21,7 +21,7 @@ public class VerifySlicesWorkerTests : WalletSystemTestsBase
     public async void WhenReceivedSliceWithNoCertificate_ExpectIsConvertedToSliceAndCertificateIsCreated()
     {
         var certId = Guid.NewGuid();
-        var owner = "SomeOwner";
+        var owner = new Fixture().Create<string>();
         var registryName = new Fixture().Create<string>();
         var section = await CreateWalletSection(owner);
         var registry = await CreateRegistry(registryName);
@@ -42,7 +42,7 @@ public class VerifySlicesWorkerTests : WalletSystemTestsBase
     public async void WhenReceivedSliceWithCertificate_ExpectIsConvertedToSliceWithCertificate()
     {
         var certId = Guid.NewGuid();
-        var owner = "SomeOtherOwner";
+        var owner = new Fixture().Create<string>();
         var registryName = new Fixture().Create<string>();
         var section = await CreateWalletSection(owner);
         var registry = await CreateRegistry(registryName);
@@ -54,6 +54,22 @@ public class VerifySlicesWorkerTests : WalletSystemTestsBase
             var slice = await connection.RepeatedlyQueryFirstOrDefaultUntil<Slice>("SELECT * FROM Slices WHERE certificateId = @id", new { id = certId });
             slice.Should().NotBeNull();
             slice.CertificateId.Should().Be(certificate.Id);
+        }
+    }
+
+    [Fact]
+    public async void WhenReceivedSliceHasUnknownRegistry_ExpectReceivedSliceDeleted()
+    {
+        var certId = Guid.NewGuid();
+        var owner = new Fixture().Create<string>();
+        var registryName = new Fixture().Create<string>();
+        var section = await CreateWalletSection(owner);
+        var receivedSlice = await CreateReceivedSlice(section, registryName, certId, 42);
+
+        await using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
+        {
+            var rSlice = await connection.RepeatedlyQueryUntilNull<ReceivedSlice>("SELECT * FROM ReceivedSlices WHERE certificateId = @id", new { id = certId });
+            rSlice.Should().BeNull();
         }
     }
 }

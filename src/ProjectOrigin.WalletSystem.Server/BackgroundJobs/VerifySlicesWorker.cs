@@ -56,8 +56,9 @@ public class VerifySlicesWorker : BackgroundService
 
         if (registry == null)
         {
-            _logger.LogError($"Registry with name {0} not found. Deleting received slice from certificate with certificate id {1}.", receivedSlice.Registry, receivedSlice.CertificateId);
+            _logger.LogError($"Registry with name {receivedSlice.Registry} not found. Deleting received slice from certificate with certificate id {receivedSlice.CertificateId}.");
             await unitOfWork.CertificateRepository.RemoveReceivedSlice(receivedSlice);
+            unitOfWork.Commit();
             return;
         }
 
