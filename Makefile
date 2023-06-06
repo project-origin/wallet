@@ -19,7 +19,7 @@ help:
 	@printf "\n"
 
 ## Verify code is ready for commit to branch, runs tests and verifies formatting.
-verify: info build test lint
+verify: build test lint
 	@echo "Code is ready to commit."
 
 ## Prints dotnet ino
