@@ -73,7 +73,6 @@ public abstract class WalletSystemTestsBase : IClassFixture<GrpcTestFixture<Star
     {
         using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
         {
-            connection.Open();
             var certificateRepository = new CertificateRepository(connection);
             var attributes = new List<CertificateAttribute>
             {
