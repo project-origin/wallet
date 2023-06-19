@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using ProjectOrigin.WalletSystem.Server.Extensions;
 using Xunit;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests.Repositories;
@@ -26,13 +27,25 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
     {
         // Arrange
         var registry = await CreateRegistry();
-        var certificate = new Certificate(Guid.NewGuid(), registry.Id);
+        var attributes = new List<CertificateAttribute>
+        {
+            new ("AssetId", "571234567890123456"),
+            new ("TechCode", "T070000"),
+            new ("FuelCode", "F00000000")
+        };
+        var certificate = new Certificate(Guid.NewGuid(),
+            registry.Id,
+            DateTimeOffset.Now.ToUtcTime(),
+            DateTimeOffset.Now.AddDays(1).ToUtcTime(),
+            "DK1",
+            GranularCertificateType.Production,
+            attributes);
 
         // Act
         await _repository.InsertCertificate(certificate);
 
         // Assert
-        var insertedCertificate = await _connection.QueryFirstOrDefaultAsync<Certificate>("SELECT * FROM Certificates WHERE Id = @id", new { certificate.Id });
+        var insertedCertificate = await _repository.GetCertificate(registry.Id, certificate.Id);
         insertedCertificate.Should().BeEquivalentTo(certificate);
     }
 
@@ -78,7 +91,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         var sectionPosition = 1;
         var registry = await CreateRegistry();
         var certificate1 = await CreateCertificate(registry.Id);
-        var certificate2 = await CreateCertificate(registry.Id);
+        var certificate2 = await CreateCertificate(registry.Id, GranularCertificateType.Consumption);
         var certificate3 = await CreateCertificate(registry.Id);
         var owner1 = _fixture.Create<string>();
         var wallet1 = await CreateWallet(owner1);
@@ -107,8 +120,8 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         var certificates = await _repository.GetAllOwnedCertificates(owner1);
 
         certificates.Should().HaveCount(2).And.Satisfy(
-            c => c.Id == certificate1.Id && c.Quantity == slice1.Quantity + slice2.Quantity,
-            c => c.Id == certificate2.Id && c.Quantity == slice3.Quantity
+            c => c.Id == certificate1.Id && c.Slices.Sum(x => x.Quantity) == slice1.Quantity + slice2.Quantity,
+            c => c.Id == certificate2.Id && c.Slices.Sum(x => x.Quantity) == slice3.Quantity
         );
     }
 

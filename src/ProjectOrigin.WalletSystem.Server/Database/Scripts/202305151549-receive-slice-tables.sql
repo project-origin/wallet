@@ -6,6 +6,10 @@ CREATE TABLE IF NOT EXISTS Registries (
 CREATE TABLE IF NOT EXISTS Certificates (
     Id uuid NOT NULL,
     RegistryId uuid NOT NULL,
+    StartDate timestamp with time zone NOT NULL,
+    EndDate timestamp with time zone NOT NULL,
+    GridArea VARCHAR(256) NOT NULL,
+    CertificateType integer NOT NULL,
     PRIMARY KEY(Id, RegistryId),
     FOREIGN KEY (RegistryId)
         REFERENCES Registries (Id) MATCH SIMPLE

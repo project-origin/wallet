@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
@@ -77,7 +78,20 @@ public class VerifySlicesWorker : BackgroundService
             var certificate = await unitOfWork.CertificateRepository.GetCertificate(registry.Id, slice.CertificateId);
             if (certificate == null)
             {
-                certificate = new Certificate(slice.CertificateId, registry.Id);
+                //Get these attributes from wallet
+                var attributes = new List<CertificateAttribute>
+                {
+                    new ("AssetId", "571234567890123456"),
+                    new ("TechCode", "T070000"),
+                    new ("FuelCode", "F00000000")
+                };
+                certificate = new Certificate(slice.CertificateId,
+                    registry.Id,
+                    DateTimeOffset.Now,
+                    DateTimeOffset.Now.AddDays(1),
+                    "DK1",
+                    GranularCertificateType.Production,
+                    attributes);
                 await unitOfWork.CertificateRepository.InsertCertificate(certificate);
             }
 

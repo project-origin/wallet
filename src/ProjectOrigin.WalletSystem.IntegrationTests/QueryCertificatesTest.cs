@@ -8,12 +8,14 @@ using ProjectOrigin.WalletSystem.Server.HDWallet;
 using ProjectOrigin.WalletSystem.Server.Models;
 using ProjectOrigin.WalletSystem.Server.Repositories;
 using System;
+using System.Collections.Generic;
 using FluentAssertions;
 using Grpc.Core;
 using ProjectOrigin.WalletSystem.V1;
 using Xunit;
 using WalletService = ProjectOrigin.WalletSystem.V1.WalletService;
 using Xunit.Abstractions;
+using GranularCertificateType = ProjectOrigin.WalletSystem.Server.Models.GranularCertificateType;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests
 {
@@ -42,6 +44,7 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
 
             using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
             {
+                connection.Open();
                 var walletRepository = new WalletRepository(connection);
                 var wallet = new Wallet(Guid.NewGuid(), owner, Algorithm.GenerateNewPrivateKey());
                 var notOwnedWallet = new Wallet(Guid.NewGuid(), someOtherOwner, Algorithm.GenerateNewPrivateKey());
@@ -59,9 +62,15 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
                 var registryRepository = new RegistryRepository(connection);
                 await registryRepository.InsertRegistry(registry);
 
-                var certificate1 = new Certificate(Guid.NewGuid(), registry.Id);
-                var certificate2 = new Certificate(Guid.NewGuid(), registry.Id);
-                var notOwnedCertificate = new Certificate(Guid.NewGuid(), registry.Id);
+                var attributes = new List<CertificateAttribute>
+                {
+                    new ("AssetId", "571234567890123456"),
+                    new ("TechCode", "T070000"),
+                    new ("FuelCode", "F00000000")
+                };
+                var certificate1 = new Certificate(Guid.NewGuid(), registry.Id, DateTimeOffset.Now, DateTimeOffset.Now.AddDays(1), "DK1", GranularCertificateType.Production, attributes);
+                var certificate2 = new Certificate(Guid.NewGuid(), registry.Id, DateTimeOffset.Now, DateTimeOffset.Now.AddDays(1), "DK1", GranularCertificateType.Production, attributes);
+                var notOwnedCertificate = new Certificate(Guid.NewGuid(), registry.Id, DateTimeOffset.Now, DateTimeOffset.Now.AddDays(1), "DK1", GranularCertificateType.Production, attributes);
                 await certificateRepository.InsertCertificate(certificate1);
                 await certificateRepository.InsertCertificate(certificate2);
                 await certificateRepository.InsertCertificate(notOwnedCertificate);
