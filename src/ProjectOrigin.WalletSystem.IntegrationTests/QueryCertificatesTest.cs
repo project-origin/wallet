@@ -44,7 +44,6 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
 
             using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
             {
-                
                 var walletRepository = new WalletRepository(connection);
                 var wallet = new Wallet(Guid.NewGuid(), owner, Algorithm.GenerateNewPrivateKey());
                 var notOwnedWallet = new Wallet(Guid.NewGuid(), someOtherOwner, Algorithm.GenerateNewPrivateKey());
