@@ -15,8 +15,8 @@ public class CertificateViewModel
     public string GridArea { get; set; } = string.Empty;
     public DateTimeOffset StartDate { get; set; }
     public DateTimeOffset EndDate { get; set; }
-    public List<CertificateAttribute> Attributes { get; set; } = new ();
-    public List<SliceViewModel> Slices { get; set; } = new ();
+    public List<CertificateAttribute> Attributes { get; set; } = new();
+    public List<SliceViewModel> Slices { get; set; } = new();
 
     public GranularCertificate ToProto()
     {
@@ -49,13 +49,13 @@ public class CertificateViewModel
 
     private V1.GranularCertificateType ToDto(GranularCertificateType type)
     {
-        if(type == GranularCertificateType.Production)
+        if (type == GranularCertificateType.Production)
             return V1.GranularCertificateType.Production;
 
-        if(type == GranularCertificateType.Consumption)
+        if (type == GranularCertificateType.Consumption)
             return V1.GranularCertificateType.Consumption;
 
-        if(type == GranularCertificateType.Invalid)
+        if (type == GranularCertificateType.Invalid)
             return V1.GranularCertificateType.Invalid;
 
         throw new ArgumentException("GranularCertificateType not supported. Type: " + type);

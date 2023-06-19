@@ -9,7 +9,7 @@ namespace ProjectOrigin.WalletSystem.Server.Models
 
         public override bool Equals(object? obj)
         {
-            if(obj == null) return false;
+            if (obj == null) return false;
             var b = obj as SliceViewModel;
             return SliceId.Equals(b!.SliceId);
         }

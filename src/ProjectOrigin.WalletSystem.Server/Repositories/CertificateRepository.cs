@@ -59,7 +59,7 @@ public class CertificateRepository
                     certsDictionary.Add(cert.Id, certificate = cert);
                 }
 
-                if(atr != null)
+                if (atr != null)
                     certificate.Attributes.Add(atr);
 
                 return certificate;
@@ -88,7 +88,7 @@ public class CertificateRepository
                     certsDictionary.Add(cert.Id, certificate = cert);
                 }
 
-                if(slice != null && !certificate.Slices.Contains(slice))
+                if (slice != null && !certificate.Slices.Contains(slice))
                     certificate.Slices.Add(slice);
 
                 if (atr != null && !certificate.Attributes.Contains(atr))

@@ -18,9 +18,9 @@ public class Certificate
     public DateTimeOffset EndDate { get; set; }
     public string GridArea { get; set; } = string.Empty;
     public GranularCertificateType CertificateType { get; set; }
-    public List<CertificateAttribute> Attributes { get; set; } = new ();
+    public List<CertificateAttribute> Attributes { get; set; } = new();
 
-    public Certificate() {}
+    public Certificate() { }
 
     public Certificate(Guid id, Guid registryId, DateTimeOffset startDate, DateTimeOffset endDate, string gridArea, GranularCertificateType certificateType, List<CertificateAttribute> attributes)
     {
