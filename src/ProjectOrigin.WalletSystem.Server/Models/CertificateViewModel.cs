@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Google.Protobuf.WellKnownTypes;
-using NBitcoin.RPC;
 using ProjectOrigin.Register.V1;
 using ProjectOrigin.WalletSystem.V1;
 
