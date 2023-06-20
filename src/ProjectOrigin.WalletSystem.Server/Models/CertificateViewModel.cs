@@ -7,16 +7,16 @@ using ProjectOrigin.WalletSystem.V1;
 
 namespace ProjectOrigin.WalletSystem.Server.Models;
 
-public class CertificateViewModel
+public record CertificateViewModel
 {
-    public Guid Id { get; set; }
-    public string Registry { get; set; } = string.Empty;
-    public GranularCertificateType CertificateType { get; set; }
-    public string GridArea { get; set; } = string.Empty;
-    public DateTimeOffset StartDate { get; set; }
-    public DateTimeOffset EndDate { get; set; }
-    public List<CertificateAttribute> Attributes { get; set; } = new();
-    public List<SliceViewModel> Slices { get; set; } = new();
+    public Guid Id { get; init; }
+    public string Registry { get; init; } = string.Empty;
+    public GranularCertificateType CertificateType { get; init; }
+    public string GridArea { get; init; } = string.Empty;
+    public DateTimeOffset StartDate { get; init; }
+    public DateTimeOffset EndDate { get; init; }
+    public List<CertificateAttribute> Attributes { get; } = new();
+    public List<SliceViewModel> Slices { get; } = new();
 
     public GranularCertificate ToProto()
     {
