@@ -11,7 +11,6 @@ using System.Data;
 using System.Threading.Tasks;
 using ProjectOrigin.WalletSystem.Server.Extensions;
 using Xunit;
-using ProjectOrigin.WalletSystem.Server.Models;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests.Repositories;
 

@@ -5,7 +5,6 @@ namespace ProjectOrigin.WalletSystem.Server.Models;
 
 public enum GranularCertificateType
 {
-    Invalid = 0,
     Consumption = 1,
     Production = 2
 }

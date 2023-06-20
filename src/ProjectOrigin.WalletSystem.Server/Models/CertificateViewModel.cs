@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Google.Protobuf.WellKnownTypes;
+using NBitcoin.RPC;
 using ProjectOrigin.Register.V1;
 using ProjectOrigin.WalletSystem.V1;
 
@@ -54,9 +55,6 @@ public record CertificateViewModel
 
         if (type == GranularCertificateType.Consumption)
             return V1.GranularCertificateType.Consumption;
-
-        if (type == GranularCertificateType.Invalid)
-            return V1.GranularCertificateType.Invalid;
 
         throw new ArgumentException("GranularCertificateType not supported. Type: " + type);
     }
