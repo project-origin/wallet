@@ -8,12 +8,15 @@ using ProjectOrigin.WalletSystem.Server.HDWallet;
 using ProjectOrigin.WalletSystem.Server.Models;
 using ProjectOrigin.WalletSystem.Server.Repositories;
 using System;
+using System.Collections.Generic;
 using FluentAssertions;
 using Grpc.Core;
+using ProjectOrigin.WalletSystem.Server.Extensions;
 using ProjectOrigin.WalletSystem.V1;
 using Xunit;
 using WalletService = ProjectOrigin.WalletSystem.V1.WalletService;
 using Xunit.Abstractions;
+using GranularCertificateType = ProjectOrigin.WalletSystem.Server.Models.GranularCertificateType;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests
 {
@@ -59,9 +62,15 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
                 var registryRepository = new RegistryRepository(connection);
                 await registryRepository.InsertRegistry(registry);
 
-                var certificate1 = new Certificate(Guid.NewGuid(), registry.Id);
-                var certificate2 = new Certificate(Guid.NewGuid(), registry.Id);
-                var notOwnedCertificate = new Certificate(Guid.NewGuid(), registry.Id);
+                var attributes = new List<CertificateAttribute>
+                {
+                    new ("AssetId", "571234567890123456"),
+                    new ("TechCode", "T070000"),
+                    new ("FuelCode", "F00000000")
+                };
+                var certificate1 = new Certificate(Guid.NewGuid(), registry.Id, DateTimeOffset.Now, DateTimeOffset.Now.AddDays(1), "DK1", GranularCertificateType.Production, attributes);
+                var certificate2 = new Certificate(Guid.NewGuid(), registry.Id, DateTimeOffset.Now, DateTimeOffset.Now.AddDays(1), "DK1", GranularCertificateType.Production, attributes);
+                var notOwnedCertificate = new Certificate(Guid.NewGuid(), registry.Id, DateTimeOffset.Now, DateTimeOffset.Now.AddDays(1), "DK1", GranularCertificateType.Production, attributes);
                 await certificateRepository.InsertCertificate(certificate1);
                 await certificateRepository.InsertCertificate(certificate2);
                 await certificateRepository.InsertCertificate(notOwnedCertificate);
@@ -90,6 +99,41 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
             result.GranularCertificates.Should().HaveCount(2);
             result.GranularCertificates.Should().Contain(x => x.Quantity == quantity1 + quantity2);
             result.GranularCertificates.Should().Contain(x => x.Quantity == quantity3);
+        }
+
+        [Fact]
+        public async void QueryGranularCertificates_WhenInvalidCertificateTypeInDatabase_ExpectException()
+        {
+            var owner = _fixture.Create<string>();
+
+            using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
+            {
+                var walletRepository = new WalletRepository(connection);
+                var wallet = new Wallet(Guid.NewGuid(), owner, Algorithm.GenerateNewPrivateKey());
+                await walletRepository.Create(wallet);
+
+                var section = new WalletSection(Guid.NewGuid(), wallet.Id, 1, wallet.PrivateKey.Derive(1).PublicKey);
+                await walletRepository.CreateSection(section);
+
+                var regName = _fixture.Create<string>();
+                var registry = new Registry(Guid.NewGuid(), regName);
+                var registryRepository = new RegistryRepository(connection);
+                await registryRepository.InsertRegistry(registry);
+
+                await connection.ExecuteAsync(@"INSERT INTO Certificates(Id, RegistryId, StartDate, EndDate, GridArea, CertificateType) VALUES (@id, @registryId, @startDate, @endDate, @gridArea, @certificateType)",
+                    new { id = Guid.NewGuid(), registryId = registry.Id, startDate = DateTimeOffset.Now.ToUtcTime(), endDate = DateTimeOffset.Now.AddDays(1).ToUtcTime(), gridArea = "SomeGridArea", certificateType = 0 });
+            }
+
+            var someOwnerName = _fixture.Create<string>();
+            var token = _tokenGenerator.GenerateToken(owner, someOwnerName);
+            var headers = new Metadata();
+            headers.Add("Authorization", $"Bearer {token}");
+
+            var client = new WalletService.WalletServiceClient(_grpcFixture.Channel);
+
+            var act = async () => await client.QueryGranularCertificatesAsync(new QueryRequest(), headers);
+
+            await act.Should().ThrowAsync<RpcException>();
         }
     }
 }

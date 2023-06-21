@@ -74,7 +74,13 @@ public abstract class WalletSystemTestsBase : IClassFixture<GrpcTestFixture<Star
         using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
         {
             var certificateRepository = new CertificateRepository(connection);
-            var cert = new Certificate(id, registryId);
+            var attributes = new List<CertificateAttribute>
+            {
+                new ("AssetId", "571234567890123456"),
+                new ("TechCode", "T070000"),
+                new ("FuelCode", "F00000000")
+            };
+            var cert = new Certificate(id, registryId, DateTimeOffset.Now, DateTimeOffset.Now.AddDays(1), "DK1", GranularCertificateType.Production, attributes);
             await certificateRepository.InsertCertificate(cert);
 
             return cert;
