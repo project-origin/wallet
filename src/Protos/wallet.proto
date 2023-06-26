@@ -3,7 +3,7 @@ syntax = "proto3";
 import "google/protobuf/timestamp.proto";
 import "primitives.proto";
 
-package ProjectOrigin.WalletSystem.V1;
+package project_origin.wallet_system.v1;
 
 // Anonymously functions, Externally accessible
 service ReceiveSliceService {
@@ -39,7 +39,7 @@ message CreateWalletResponse { }
 message ReceiveRequest {
     bytes WalletSectionPublicKey = 1;
     uint32 WalletSectionPosition = 2;
-    ProjectOrigin.Register.V1.FederatedStreamId CertificateId = 3;
+    project_origin.register.v1.FederatedStreamId CertificateId = 3;
     uint32 Quantity = 4;
     bytes RandomR = 5;
 }
@@ -63,7 +63,7 @@ message QueryResponse {
 }
 
 message TransferRequest {
-    ProjectOrigin.Register.V1.FederatedStreamId CertificateId = 1; // The certificate to transfer from
+    project_origin.register.v1.FederatedStreamId CertificateId = 1; // The certificate to transfer from
     uint32 Quantity = 2; // The quantity, either the total or a part of it, will be sliced implicitly by the wallet
     WalletSectionReference ReceiverWalletReference = 3; // The wallet to transfer to
     uint32 Position = 4; // The position on the receiver wallet key
@@ -72,8 +72,8 @@ message TransferRequest {
 message TransferResponse {} // not yet sure what to return
 
 message ClaimRequest {
-    ProjectOrigin.Register.V1.FederatedStreamId ConsumptionCertificateId = 1;
-    ProjectOrigin.Register.V1.FederatedStreamId ProductionCertificateId = 2;
+    project_origin.register.v1.FederatedStreamId ConsumptionCertificateId = 1;
+    project_origin.register.v1.FederatedStreamId ProductionCertificateId = 2;
     uint32 Quantity = 3;
 }
 
@@ -81,7 +81,7 @@ message ClaimResponse {} // not yet sure what to return
 
 
 message GranularCertificate {
-    ProjectOrigin.Register.V1.FederatedStreamId FederatedId = 1;
+    project_origin.register.v1.FederatedStreamId FederatedId = 1;
     GranularCertificateType Type = 2;
     uint32 Quantity = 3;
     string GridArea = 4;
