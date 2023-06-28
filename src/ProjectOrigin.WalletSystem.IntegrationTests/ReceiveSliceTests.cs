@@ -32,10 +32,10 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
             var client = new ReceiveSliceService.ReceiveSliceServiceClient(_grpcFixture.Channel);
             var request = new ReceiveRequest()
             {
-                CertificateId = new Register.V1.FederatedStreamId()
+                CertificateId = new Common.V1.FederatedStreamId()
                 {
                     Registry = registryName,
-                    StreamId = new Register.V1.Uuid() { Value = certId.ToString() },
+                    StreamId = new Common.V1.Uuid() { Value = certId.ToString() },
                 },
                 WalletSectionPublicKey = ByteString.CopyFrom(section.PublicKey.Export()),
                 WalletSectionPosition = 2,

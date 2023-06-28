@@ -1,12 +1,16 @@
 using System;
-using System.Collections.Generic;
+using System.Linq;
+using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
+using Google.Protobuf;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ProjectOrigin.WalletSystem.Server.Database;
 using ProjectOrigin.WalletSystem.Server.Models;
+using ProjectOrigin.WalletSystem.Server.Projections;
+using ProjectOrigin.WalletSystem.Server.Services;
 
 namespace ProjectOrigin.WalletSystem.Server.BackgroundJobs;
 
@@ -15,12 +19,14 @@ public class VerifySlicesWorker : BackgroundService
     private readonly ILogger<VerifySlicesWorker> _logger;
     private readonly IUnitOfWorkFactory _unitOfWorkFactory;
     private readonly VerifySlicesWorkerOptions _options;
+    private readonly IRegistryService _registryService;
 
-    public VerifySlicesWorker(ILogger<VerifySlicesWorker> logger, IUnitOfWorkFactory unitOfWorkFactory, IOptions<VerifySlicesWorkerOptions> options)
+    public VerifySlicesWorker(ILogger<VerifySlicesWorker> logger, IUnitOfWorkFactory unitOfWorkFactory, IOptions<VerifySlicesWorkerOptions> options, IRegistryService registryService)
     {
         _logger = logger;
         _unitOfWorkFactory = unitOfWorkFactory;
         _options = options.Value;
+        _registryService = registryService;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -31,7 +37,7 @@ public class VerifySlicesWorker : BackgroundService
         {
             try
             {
-                await DoWork(stoppingToken);
+                await DoWorkWithDelay(stoppingToken);
             }
             catch (Exception ex)
             {
@@ -40,7 +46,7 @@ public class VerifySlicesWorker : BackgroundService
         }
     }
 
-    private async Task DoWork(CancellationToken stoppingToken)
+    private async Task DoWorkWithDelay(CancellationToken stoppingToken)
     {
         using var unitOfWork = _unitOfWorkFactory.Create();
 
@@ -53,20 +59,47 @@ public class VerifySlicesWorker : BackgroundService
             return;
         }
 
-        var registry = await unitOfWork.RegistryRepository.GetRegistryFromName(receivedSlice.Registry);
+        await ProcessReceivedSlice(receivedSlice, unitOfWork);
+    }
 
-        if (registry == null)
+    private async Task ProcessReceivedSlice(ReceivedSlice receivedSlice, UnitOfWork unitOfWork)
+    {
+        // Get cert from registry
+        var certificateProjection = await _registryService.GetGranularCertificate(receivedSlice.Registry, receivedSlice.CertificateId);
+        if (certificateProjection is null)
         {
-            _logger.LogError($"Registry with name {receivedSlice.Registry} not found. Deleting received slice from certificate with certificate id {receivedSlice.CertificateId}.");
+            _logger.LogError($"GranularCertificate with id {receivedSlice.CertificateId} not found in registry {receivedSlice.Registry}. Deleting received slice.");
             await unitOfWork.CertificateRepository.RemoveReceivedSlice(receivedSlice);
             unitOfWork.Commit();
             return;
         }
 
-        //Verify with project origin registry
+        // Verify slice
+        var secretCommitmentInfo = new PedersenCommitment.SecretCommitmentInfo((uint)receivedSlice.Quantity, receivedSlice.RandomR);
+        var sliceId = ByteString.CopyFrom(SHA256.HashData(secretCommitmentInfo.Commitment.C));
+        var foundSlice = certificateProjection.GetCertificateSlice(sliceId);
+        if (foundSlice is null)
+        {
+            _logger.LogError($"Slice with id {sliceId} not found in certificate {receivedSlice.CertificateId}. Deleting received slice.");
+            await unitOfWork.CertificateRepository.RemoveReceivedSlice(receivedSlice);
+            unitOfWork.Commit();
+            return;
+        }
 
+        await InsertIntoWallet(unitOfWork, receivedSlice, certificateProjection);
+    }
+
+    private async Task InsertIntoWallet(UnitOfWork unitOfWork, ReceivedSlice receivedSlice, GranularCertificate certificateProjection)
+    {
         try
         {
+            var registry = await unitOfWork.RegistryRepository.GetRegistryFromName(receivedSlice.Registry);
+            if (registry is null)
+            {
+                registry = new RegistryModel(Guid.NewGuid(), receivedSlice.Registry);
+                await unitOfWork.RegistryRepository.InsertRegistry(registry);
+            }
+
             var slice = new Slice(Guid.NewGuid(),
                 receivedSlice.WalletSectionId,
                 receivedSlice.WalletSectionPosition,
@@ -78,28 +111,26 @@ public class VerifySlicesWorker : BackgroundService
             var certificate = await unitOfWork.CertificateRepository.GetCertificate(registry.Id, slice.CertificateId);
             if (certificate == null)
             {
-                //Get these attributes from wallet
-                var attributes = new List<CertificateAttribute>
-                {
-                    new ("AssetId", "571234567890123456"),
-                    new ("TechCode", "T070000"),
-                    new ("FuelCode", "F00000000")
-                };
+                var attributes = certificateProjection.Attributes
+                    .Select(a => new CertificateAttribute(a.Key, a.Value))
+                    .ToList();
+
                 certificate = new Certificate(slice.CertificateId,
                     registry.Id,
-                    DateTimeOffset.Now,
-                    DateTimeOffset.Now.AddDays(1),
-                    "DK1",
-                    GranularCertificateType.Production,
+                    certificateProjection.Period.Start.ToDateTimeOffset(),
+                    certificateProjection.Period.End.ToDateTimeOffset(),
+                    certificateProjection.GridArea,
+                    (GranularCertificateType)certificateProjection.Type,
                     attributes);
                 await unitOfWork.CertificateRepository.InsertCertificate(certificate);
             }
 
             await unitOfWork.CertificateRepository.InsertSlice(slice);
-
             await unitOfWork.CertificateRepository.RemoveReceivedSlice(receivedSlice);
 
             unitOfWork.Commit();
+
+            _logger.LogInformation($"Slice on certificate ”{slice.CertificateId}” inserted into wallet.");
         }
         catch (Exception ex)
         {

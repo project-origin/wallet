@@ -10,6 +10,7 @@ using ProjectOrigin.WalletSystem.Server.HDWallet;
 using ProjectOrigin.WalletSystem.Server.Services;
 using System.IdentityModel.Tokens.Jwt;
 using ProjectOrigin.WalletSystem.Server.BackgroundJobs;
+using ProjectOrigin.WalletSystem.Server.Projections;
 
 namespace ProjectOrigin.WalletSystem.Server;
 
@@ -25,6 +26,9 @@ public class Startup
     public void ConfigureServices(IServiceCollection services)
     {
         services.AddGrpc();
+
+        services.AddTransient<IStreamProjector<GranularCertificate>, GranularCertificateProjector>();
+        services.AddTransient<IRegistryService, RegistryService>();
 
         services.AddOptions<ServiceOptions>()
             .Bind(_configuration.GetSection("ServiceOptions"))

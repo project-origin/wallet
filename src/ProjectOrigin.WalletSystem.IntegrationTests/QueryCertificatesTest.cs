@@ -57,7 +57,7 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
                 await walletRepository.CreateSection(notOwnedSection);
 
                 var regName = _fixture.Create<string>();
-                var registry = new Registry(Guid.NewGuid(), regName);
+                var registry = new RegistryModel(Guid.NewGuid(), regName);
                 var certificateRepository = new CertificateRepository(connection);
                 var registryRepository = new RegistryRepository(connection);
                 await registryRepository.InsertRegistry(registry);
@@ -116,7 +116,7 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
                 await walletRepository.CreateSection(section);
 
                 var regName = _fixture.Create<string>();
-                var registry = new Registry(Guid.NewGuid(), regName);
+                var registry = new RegistryModel(Guid.NewGuid(), regName);
                 var registryRepository = new RegistryRepository(connection);
                 await registryRepository.InsertRegistry(registry);
 

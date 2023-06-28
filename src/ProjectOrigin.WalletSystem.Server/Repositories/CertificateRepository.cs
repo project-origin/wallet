@@ -127,4 +127,9 @@ public class CertificateRepository
     {
         return _connection.QueryAsync<ReceivedSlice>("SELECT * FROM ReceivedSlices WHERE Id = ANY(@ids)", new { ids });
     }
+
+    internal Task<Certificate> GetCertificate(object id, Guid certificateId)
+    {
+        throw new NotImplementedException();
+    }
 }

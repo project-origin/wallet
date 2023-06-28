@@ -2,5 +2,5 @@ using System;
 
 namespace ProjectOrigin.WalletSystem.Server.Models;
 
-public record Registry(Guid Id,
+public record RegistryModel(Guid Id,
                        string Name);

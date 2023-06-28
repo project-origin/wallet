@@ -23,7 +23,7 @@ public class RegistryRepositoryTests : AbstractRepositoryTests
     public async Task InsertRegistry_InsertsRegistry()
     {
         // Arrange
-        var registry = _fixture.Create<Registry>();
+        var registry = _fixture.Create<RegistryModel>();
 
         // Act
         await _repository.InsertRegistry(registry);

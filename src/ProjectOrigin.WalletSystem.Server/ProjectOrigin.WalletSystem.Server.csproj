@@ -1,21 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
-
   <PropertyGroup>
     <TargetFramework>net7.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
   </PropertyGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Include="Database\Scripts\202305101334-create-wallet-tables.sql" />
-    <EmbeddedResource Include="Database\Scripts\202306151348-create-attributes-table.sql" />
-    <EmbeddedResource Include="Database\Scripts\202305151549-receive-slice-tables.sql" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Protobuf Include="..\Protos\primitives.proto" />
-    <Protobuf Include="..\Protos\wallet.proto" GrpcServices="Both" />
-  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Dapper" Version="2.0.123" />
@@ -26,6 +14,30 @@
     <PackageReference Include="NBitcoin" Version="7.0.25" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="7.0.4" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="7.0.0" />
+    <PackageReference Include="ProjectOrigin.PedersenCommitment" Version="0.2.0-rc.17" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Database\Scripts\202305101334-create-wallet-tables.sql" />
+    <EmbeddedResource Include="Database\Scripts\202306151348-create-attributes-table.sql" />
+    <EmbeddedResource Include="Database\Scripts\202305151549-receive-slice-tables.sql" />
+  </ItemGroup>
+
+  <Target Name="Updating grpc references" BeforeTargets="PreBuildEvent">
+    <Exec Command="dotnet-grpc refresh -p $(ProjectDir)"/>
+  </Target>
+
+  <ItemGroup>
+    <Protobuf Include="../Protos/common.proto" Link="Protos\common.proto">
+      <SourceUrl>https://raw.githubusercontent.com/project-origin/registry/v0.2.0-rc.17/src/Protos/common.proto</SourceUrl>
+    </Protobuf>
+    <Protobuf Include="../Protos/registry.proto" Link="Protos\registry.proto">
+      <SourceUrl>https://raw.githubusercontent.com/project-origin/registry/v0.2.0-rc.17/src/Protos/registry.proto</SourceUrl>
+    </Protobuf>
+    <Protobuf Include="../Protos/electricity.proto" Link="Protos\electricity.proto">
+      <SourceUrl>https://raw.githubusercontent.com/project-origin/registry/v0.2.0-rc.17/src/Protos/electricity.proto</SourceUrl>
+    </Protobuf>
+    <Protobuf Include="..\Protos\wallet.proto" GrpcServices="Both" />
   </ItemGroup>
 
 </Project>

@@ -57,12 +57,12 @@ public abstract class WalletSystemTestsBase : IClassFixture<GrpcTestFixture<Star
         }
     }
 
-    protected async Task<Registry> CreateRegistry(string name)
+    protected async Task<RegistryModel> CreateRegistry(string name)
     {
         using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
         {
             var registryRepository = new RegistryRepository(connection);
-            var registry = new Registry(Guid.NewGuid(), name);
+            var registry = new RegistryModel(Guid.NewGuid(), name);
             await registryRepository.InsertRegistry(registry);
 
             return registry;

@@ -44,12 +44,12 @@ public abstract class AbstractRepositoryTests : IClassFixture<PostgresDatabaseFi
         return connection;
     }
 
-    protected async Task<Registry> CreateRegistry()
+    protected async Task<RegistryModel> CreateRegistry()
     {
         using var connection = CreateConnection();
         var registryRepository = new RegistryRepository(connection);
 
-        var registry = new Registry(Guid.NewGuid(), _fixture.Create<string>());
+        var registry = new RegistryModel(Guid.NewGuid(), _fixture.Create<string>());
         await registryRepository.InsertRegistry(registry);
 
         return registry;
