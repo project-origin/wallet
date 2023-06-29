@@ -48,7 +48,7 @@ public class RegistryFixture : IAsyncLifetime
 
         _registryContainer = new Lazy<IContainer>(() =>
             {
-                var verifierUrl = $"http://{_verifierContainer.Hostname}:{_verifierContainer.GetMappedPublicPort(GrpcPort)}";
+                var verifierUrl = $"http://{_verifierContainer.IpAddress}:{GrpcPort}";
                 return new ContainerBuilder()
                     .WithImage(RegistryImage)
                     .WithPortBinding(GrpcPort, true)
