@@ -3,8 +3,8 @@ using System.Threading.Tasks;
 using Grpc.Core;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
+using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
 using ProjectOrigin.WalletSystem.Server.Database;
-using ProjectOrigin.WalletSystem.Server.HDWallet;
 using ProjectOrigin.WalletSystem.Server.Models;
 using ProjectOrigin.WalletSystem.V1;
 
@@ -26,7 +26,7 @@ public class ReceiveSliceService : ProjectOrigin.WalletSystem.V1.ReceiveSliceSer
 
     public override async Task<ReceiveResponse> ReceiveSlice(ReceiveRequest request, ServerCallContext context)
     {
-        var publicKey = _hdAlgorithm.ImportPublicKey(request.WalletSectionPublicKey.Span);
+        var publicKey = _hdAlgorithm.ImportHDPublicKey(request.WalletSectionPublicKey.Span);
         var walletSection = await _unitOfWork.WalletRepository.GetWalletSectionFromPublicKey(publicKey);
 
         if (walletSection == null)

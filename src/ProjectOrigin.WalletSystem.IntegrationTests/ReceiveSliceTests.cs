@@ -7,7 +7,6 @@ using Xunit;
 using Google.Protobuf;
 using Npgsql;
 using Dapper;
-using ProjectOrigin.WalletSystem.Server.Repositories;
 using ProjectOrigin.WalletSystem.Server.Models;
 using Xunit.Abstractions;
 using AutoFixture;

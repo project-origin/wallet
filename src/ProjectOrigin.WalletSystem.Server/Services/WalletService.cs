@@ -5,9 +5,10 @@ using Grpc.Core;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
 using ProjectOrigin.WalletSystem.Server.Database;
-using ProjectOrigin.WalletSystem.Server.HDWallet;
 using ProjectOrigin.WalletSystem.Server.Models;
+using ProjectOrigin.WalletSystem.Server.Options;
 using ProjectOrigin.WalletSystem.V1;
 
 namespace ProjectOrigin.WalletSystem.Server.Services;
@@ -43,7 +44,7 @@ public class WalletService : ProjectOrigin.WalletSystem.V1.WalletService.WalletS
 
         int nextPosition = await _unitOfWork.WalletRepository.GetNextWalletPosition(wallet.Id);
 
-        var section = new WalletSection(Guid.NewGuid(), wallet.Id, nextPosition, wallet.PrivateKey.Derive(nextPosition).PublicKey);
+        var section = new WalletSection(Guid.NewGuid(), wallet.Id, nextPosition, wallet.PrivateKey.Derive(nextPosition).Neuter());
         await _unitOfWork.WalletRepository.CreateSection(section);
         _unitOfWork.Commit();
 

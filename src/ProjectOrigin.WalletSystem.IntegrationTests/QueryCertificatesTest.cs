@@ -4,7 +4,6 @@ using Npgsql;
 using ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures;
 using ProjectOrigin.WalletSystem.Server;
 using ProjectOrigin.WalletSystem.Server.Database.Mapping;
-using ProjectOrigin.WalletSystem.Server.HDWallet;
 using ProjectOrigin.WalletSystem.Server.Models;
 using ProjectOrigin.WalletSystem.Server.Repositories;
 using System;
@@ -17,6 +16,7 @@ using Xunit;
 using WalletService = ProjectOrigin.WalletSystem.V1.WalletService;
 using Xunit.Abstractions;
 using GranularCertificateType = ProjectOrigin.WalletSystem.Server.Models.GranularCertificateType;
+using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests
 {
@@ -51,8 +51,8 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
                 await walletRepository.Create(wallet);
                 await walletRepository.Create(notOwnedWallet);
 
-                var section = new WalletSection(Guid.NewGuid(), wallet.Id, 1, wallet.PrivateKey.Derive(1).PublicKey);
-                var notOwnedSection = new WalletSection(Guid.NewGuid(), notOwnedWallet.Id, 1, notOwnedWallet.PrivateKey.Derive(1).PublicKey);
+                var section = new WalletSection(Guid.NewGuid(), wallet.Id, 1, wallet.PrivateKey.Derive(1).Neuter());
+                var notOwnedSection = new WalletSection(Guid.NewGuid(), notOwnedWallet.Id, 1, notOwnedWallet.PrivateKey.Derive(1).Neuter());
                 await walletRepository.CreateSection(section);
                 await walletRepository.CreateSection(notOwnedSection);
 
@@ -112,7 +112,7 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
                 var wallet = new Wallet(Guid.NewGuid(), owner, Algorithm.GenerateNewPrivateKey());
                 await walletRepository.Create(wallet);
 
-                var section = new WalletSection(Guid.NewGuid(), wallet.Id, 1, wallet.PrivateKey.Derive(1).PublicKey);
+                var section = new WalletSection(Guid.NewGuid(), wallet.Id, 1, wallet.PrivateKey.Derive(1).Neuter());
                 await walletRepository.CreateSection(section);
 
                 var regName = _fixture.Create<string>();

@@ -2,7 +2,7 @@ using System;
 using System.Data;
 using System.Threading.Tasks;
 using Dapper;
-using ProjectOrigin.WalletSystem.Server.HDWallet;
+using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
 using ProjectOrigin.WalletSystem.Server.Models;
 
 namespace ProjectOrigin.WalletSystem.Server.Repositories;

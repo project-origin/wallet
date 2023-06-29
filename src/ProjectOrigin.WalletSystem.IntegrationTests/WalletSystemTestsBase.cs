@@ -4,11 +4,11 @@ using System.Collections.Generic;
 using Xunit;
 using Xunit.Abstractions;
 using System;
-using ProjectOrigin.WalletSystem.Server.HDWallet;
 using Npgsql;
 using ProjectOrigin.WalletSystem.Server.Models;
 using ProjectOrigin.WalletSystem.Server.Repositories;
 using System.Threading.Tasks;
+using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests;
 
@@ -50,7 +50,7 @@ public abstract class WalletSystemTestsBase : IClassFixture<GrpcTestFixture<Star
             var wallet = new Wallet(Guid.NewGuid(), owner, Algorithm.GenerateNewPrivateKey());
             await walletRepository.Create(wallet);
 
-            var section = new WalletSection(Guid.NewGuid(), wallet.Id, 1, wallet.PrivateKey.Derive(1).PublicKey);
+            var section = new WalletSection(Guid.NewGuid(), wallet.Id, 1, wallet.PrivateKey.Derive(1).Neuter());
             await walletRepository.CreateSection(section);
 
             return section;
@@ -87,13 +87,13 @@ public abstract class WalletSystemTestsBase : IClassFixture<GrpcTestFixture<Star
         }
     }
 
-    protected async Task<ReceivedSlice> CreateReceivedSlice(WalletSection walletSection, string registryName, Guid certificateId, long quantity)
+    protected async Task<ReceivedSlice> CreateReceivedSlice(WalletSection walletSection, string registryName, Guid certificateId, long quantity, byte[] randomR)
     {
         using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
         {
             var certificateRepository = new CertificateRepository(connection);
             var receivedSlice = new ReceivedSlice(Guid.NewGuid(), walletSection.Id, walletSection.WalletPosition,
-                registryName, certificateId, quantity, new byte[] { 0x01, 0x02, 0x03, 0x04 });
+                registryName, certificateId, quantity, randomR);
 
             await certificateRepository.InsertReceivedSlice(receivedSlice);
             return receivedSlice;

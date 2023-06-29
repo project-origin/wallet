@@ -1,22 +1,26 @@
 using System;
 using System.Threading.Tasks;
 using Grpc.Net.Client;
+using Microsoft.Extensions.Options;
+using ProjectOrigin.WalletSystem.Server.Options;
 using ProjectOrigin.WalletSystem.Server.Projections;
 
 namespace ProjectOrigin.WalletSystem.Server.Services;
 
 public class RegistryService : IRegistryService
 {
-    private IStreamProjector<GranularCertificate> _projector;
+    private readonly IOptions<RegistryOptions> _options;
+    private readonly IStreamProjector<GranularCertificate> _projector;
 
-    public RegistryService(IStreamProjector<GranularCertificate> projector)
+    public RegistryService(IOptions<RegistryOptions> options, IStreamProjector<GranularCertificate> projector)
     {
+        _options = options;
         _projector = projector;
     }
 
     public async Task<GranularCertificate?> GetGranularCertificate(string registryName, Guid certificateId)
     {
-        var channel = GetChannel(registryName);
+        using var channel = GetChannel(registryName);
         Registry.V1.RegistryService.RegistryServiceClient client = new Registry.V1.RegistryService.RegistryServiceClient(channel);
 
         var response = await client.GetStreamTransactionsAsync(new Registry.V1.GetStreamTransactionsRequest
@@ -31,13 +35,7 @@ public class RegistryService : IRegistryService
 
     private GrpcChannel GetChannel(string registryName)
     {
-
-        throw new NotImplementedException();
-        return GrpcChannel.ForAddress("https://localhost:5001");
+        var registryUrl = _options.Value.RegistryUrls[registryName];
+        return GrpcChannel.ForAddress(registryUrl);
     }
-}
-
-public interface IRegistryService
-{
-    Task<GranularCertificate?> GetGranularCertificate(string registryName, Guid certificateId);
 }

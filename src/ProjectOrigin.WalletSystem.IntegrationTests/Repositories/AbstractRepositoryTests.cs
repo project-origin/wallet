@@ -2,7 +2,6 @@ using AutoFixture;
 using Dapper;
 using Npgsql;
 using ProjectOrigin.WalletSystem.Server.Database.Mapping;
-using ProjectOrigin.WalletSystem.Server.HDWallet;
 using ProjectOrigin.WalletSystem.Server.Models;
 using ProjectOrigin.WalletSystem.Server.Repositories;
 using System;
@@ -11,6 +10,8 @@ using System.Data;
 using System.Threading.Tasks;
 using ProjectOrigin.WalletSystem.Server.Extensions;
 using Xunit;
+using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
+using ProjectOrigin.HierarchicalDeterministicKeys.Implementations;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests.Repositories;
 
@@ -71,7 +72,7 @@ public abstract class AbstractRepositoryTests : IClassFixture<PostgresDatabaseFi
         using var connection = CreateConnection();
         var walletRepository = new WalletRepository(connection);
 
-        var publicKey = wallet.PrivateKey.Derive(position).PublicKey;
+        var publicKey = wallet.PrivateKey.Derive(position).Neuter();
         var walletSection = new WalletSection(Guid.NewGuid(), wallet.Id, position, publicKey);
         await walletRepository.CreateSection(walletSection);
 
