@@ -39,6 +39,7 @@ clean:
 
 ## Restores all dotnet projects
 restore:
+	dotnet tool restore --tool-manifest src/.config/dotnet-tools.json
 	dotnet restore $(src_path)
 
 ## Builds all the code
