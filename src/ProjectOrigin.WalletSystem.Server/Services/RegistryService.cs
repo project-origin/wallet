@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using Grpc.Core;
 using Grpc.Net.Client;
 using Microsoft.Extensions.Options;
 using ProjectOrigin.WalletSystem.Server.Options;
@@ -18,24 +19,39 @@ public class RegistryService : IRegistryService
         _projector = projector;
     }
 
-    public async Task<GranularCertificate?> GetGranularCertificate(string registryName, Guid certificateId)
+    public async Task<GetCertificateResult> GetGranularCertificate(string registryName, Guid certificateId)
     {
-        using var channel = GetChannel(registryName);
-        Registry.V1.RegistryService.RegistryServiceClient client = new Registry.V1.RegistryService.RegistryServiceClient(channel);
+        var client = GetClient(registryName);
+        if (client is null)
+            return new GetCertificateResult.Failure(new Exception("Registry with name " + registryName + " not found in configuration."));
 
-        var response = await client.GetStreamTransactionsAsync(new Registry.V1.GetStreamTransactionsRequest
+        try
         {
-            StreamId = new Common.V1.Uuid { Value = certificateId.ToString() }
-        });
+            var request = new Registry.V1.GetStreamTransactionsRequest
+            {
+                StreamId = new Common.V1.Uuid { Value = certificateId.ToString() }
+            };
 
-        var granularCertificate = _projector.Project(response.Transactions);
-
-        return granularCertificate;
+            var response = await client.GetStreamTransactionsAsync(request);
+            var granularCertificate = _projector.Project(response.Transactions);
+            return new GetCertificateResult.Success(granularCertificate);
+        }
+        catch (RpcException ex)
+        {
+            return new GetCertificateResult.TransientFailure(ex);
+        }
+        catch (NotSupportedException ex)
+        {
+            return new GetCertificateResult.Failure(ex);
+        }
     }
 
-    private GrpcChannel GetChannel(string registryName)
+    private Registry.V1.RegistryService.RegistryServiceClient? GetClient(string registryName)
     {
-        var registryUrl = _options.Value.RegistryUrls[registryName];
-        return GrpcChannel.ForAddress(registryUrl);
+        if (!_options.Value.RegistryUrls.TryGetValue(registryName, out var registryUrl))
+            return null;
+
+        using var channel = GrpcChannel.ForAddress(registryUrl);
+        return new Registry.V1.RegistryService.RegistryServiceClient(channel);
     }
 }

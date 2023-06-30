@@ -28,7 +28,7 @@ public class GranularCertificateProjector : IStreamProjector<GranularCertificate
     {
         var issuedEvent = Deserialize(transactions.First().Header.PayloadType, transactions.First().Payload) as Electricity.V1.IssuedEvent;
         if (issuedEvent == null)
-            throw new Exception("First event must be an IssuedEvent");
+            throw new NotSupportedException("First event must be an IssuedEvent");
 
         var granularCertificate = new GranularCertificate(issuedEvent);
 

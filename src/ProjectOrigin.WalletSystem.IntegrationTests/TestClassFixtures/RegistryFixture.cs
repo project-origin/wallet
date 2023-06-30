@@ -29,7 +29,6 @@ public class RegistryFixture : IAsyncLifetime
     public string Name => RegistryName;
     public IPrivateKey IssuerKey { get; init; }
 
-
     public string RegistryUrl => $"http://{_registryContainer.Value.Hostname}:{_registryContainer.Value.GetMappedPublicPort(GrpcPort)}";
 
     public RegistryFixture()

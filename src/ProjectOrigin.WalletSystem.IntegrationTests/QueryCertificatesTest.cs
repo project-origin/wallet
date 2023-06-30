@@ -24,7 +24,8 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
     {
         private Fixture _fixture;
 
-        public QueryCertificatesTest(GrpcTestFixture<Startup> grpcFixture, PostgresDatabaseFixture dbFixture, ITestOutputHelper outputHelper) : base(grpcFixture, dbFixture, outputHelper)
+        public QueryCertificatesTest(GrpcTestFixture<Startup> grpcFixture, PostgresDatabaseFixture dbFixture, ITestOutputHelper outputHelper)
+            : base(grpcFixture, dbFixture, outputHelper, null)
         {
             _fixture = new Fixture();
 

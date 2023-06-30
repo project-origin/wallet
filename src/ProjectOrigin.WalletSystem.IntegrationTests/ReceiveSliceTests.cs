@@ -16,7 +16,7 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
     public class ReceiveSliceTests : WalletSystemTestsBase
     {
         public ReceiveSliceTests(GrpcTestFixture<Startup> grpcFixture, PostgresDatabaseFixture dbFixture, ITestOutputHelper outputHelper)
-            : base(grpcFixture, dbFixture, outputHelper)
+            : base(grpcFixture, dbFixture, outputHelper, null)
         {
         }
 

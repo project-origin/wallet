@@ -16,7 +16,7 @@ public class VerifySlicesWorkerTests : WalletSystemTestsBase, IClassFixture<Regi
     private RegistryFixture _registryFixture;
 
     public VerifySlicesWorkerTests(GrpcTestFixture<Startup> grpcFixture, RegistryFixture registryFixture, PostgresDatabaseFixture dbFixture, ITestOutputHelper outputHelper)
-        : base(grpcFixture, dbFixture, outputHelper)
+        : base(grpcFixture, dbFixture, outputHelper, registryFixture)
     {
         _registryFixture = registryFixture;
     }

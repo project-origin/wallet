@@ -15,7 +15,8 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests;
 
 public class GrpcTests : WalletSystemTestsBase
 {
-    public GrpcTests(GrpcTestFixture<Startup> grpcFixture, PostgresDatabaseFixture dbFixture, ITestOutputHelper outputHelper) : base(grpcFixture, dbFixture, outputHelper)
+    public GrpcTests(GrpcTestFixture<Startup> grpcFixture, PostgresDatabaseFixture dbFixture, ITestOutputHelper outputHelper)
+        : base(grpcFixture, dbFixture, outputHelper, null)
     {
     }
 

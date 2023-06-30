@@ -6,5 +6,13 @@ namespace ProjectOrigin.WalletSystem.Server.Services;
 
 public interface IRegistryService
 {
-    Task<GranularCertificate?> GetGranularCertificate(string registryName, Guid certificateId);
+    Task<GetCertificateResult> GetGranularCertificate(string registryName, Guid certificateId);
+}
+
+public abstract record GetCertificateResult()
+{
+    public sealed record Success(GranularCertificate gc) : GetCertificateResult;
+    public sealed record NotFound() : GetCertificateResult;
+    public sealed record Failure(Exception Exception) : GetCertificateResult;
+    public sealed record TransientFailure(Exception exception) : GetCertificateResult;
 }

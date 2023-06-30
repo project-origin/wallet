@@ -22,19 +22,24 @@ public abstract class WalletSystemTestsBase : IClassFixture<GrpcTestFixture<Star
 
     protected IHDAlgorithm Algorithm => _grpcFixture.GetRequiredService<IHDAlgorithm>();
 
-    public WalletSystemTestsBase(GrpcTestFixture<Startup> grpcFixture, PostgresDatabaseFixture dbFixture, ITestOutputHelper outputHelper)
+    public WalletSystemTestsBase(GrpcTestFixture<Startup> grpcFixture, PostgresDatabaseFixture dbFixture, ITestOutputHelper outputHelper, RegistryFixture? registry)
     {
         _grpcFixture = grpcFixture;
         _dbFixture = dbFixture;
         _logger = grpcFixture.GetTestLogger(outputHelper);
         _tokenGenerator = new JwtGenerator();
 
-        grpcFixture.ConfigureHostConfiguration(new Dictionary<string, string?>()
-         {
-             {"ConnectionStrings:Database", dbFixture.ConnectionString},
-             {"ServiceOptions:EndpointAddress", endpoint},
-             {"VerifySlicesWorkerOptions:SleepTime", "00:00:02"}
-         });
+        var config = new Dictionary<string, string?>()
+        {
+            {"ConnectionStrings:Database", dbFixture.ConnectionString},
+            {"ServiceOptions:EndpointAddress", endpoint},
+            {"VerifySlicesWorkerOptions:SleepTime", "00:00:02"}
+        };
+
+        if (registry is not null)
+            config.Add($"RegistryUrls:{registry.Name}", registry.RegistryUrl);
+
+        grpcFixture.ConfigureHostConfiguration(config);
     }
 
     public void Dispose()
