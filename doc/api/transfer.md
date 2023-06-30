@@ -1,5 +1,7 @@
 ## GC Transfer flow
 
+wallet://mywallet.sdaugaard.dk/?exchangeToken=123515621b35252453
+
 ```mermaid
 sequenceDiagram
     actor receiver as receiver
@@ -8,11 +10,20 @@ sequenceDiagram
     participant senderWallet as Sender Wallet
     participant wallet as receiver Wallet
 
-    Note over sender,receiver: Out of bounds agreement for transfer
-    receiver ->> sender: WalletSectionReference
-    Note over senderWallet: Slice is expected to exist
+    alt new receiver
+        Note over sender,receiver: Out of bounds agreement for transfer
 
-    sender ->> senderWallet: TransferSlice(WalletSectionReference,...)
+        receiver ->>+ wallet: CreateWalletDepositEndpoint()
+        wallet -->>- receiver: WalletDepositEndpoint
+
+        receiver ->> sender: WalletDepositEndpoint (over coffee)
+
+        sender ->>+ senderWallet: CreateReceiverDepositEndpoint(WalletDepositEndpoint, reference: string)
+
+        senderWallet -->>- sender: Reference: Guid
+    end
+
+    sender ->> senderWallet: TransferCertificate(CertificateId, quantity, ReceiveGuid)
 
     activate senderWallet
     senderWallet ->> senderWallet: Generate next publicKey
