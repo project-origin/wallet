@@ -24,6 +24,7 @@
     <EmbeddedResource Include="Database\Scripts\202305151549-receive-slice-tables.sql" />
   </ItemGroup>
 
+
   <Target Name="Updating grpc references" BeforeTargets="PreBuildEvent">
     <Exec Command="dotnet dotnet-grpc refresh -p $(ProjectDir)"/>
   </Target>
