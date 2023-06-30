@@ -26,9 +26,12 @@ public class GranularCertificateProjector : IStreamProjector<GranularCertificate
 
     public GranularCertificate Project(IEnumerable<Registry.V1.Transaction> transactions)
     {
+        if (!transactions.Any())
+            throw new ProjectionException("Empty event-stream");
+
         var issuedEvent = Deserialize(transactions.First().Header.PayloadType, transactions.First().Payload) as Electricity.V1.IssuedEvent;
         if (issuedEvent == null)
-            throw new NotSupportedException("First event must be an IssuedEvent");
+            throw new ProjectionException("First event must be an IssuedEvent");
 
         var granularCertificate = new GranularCertificate(issuedEvent);
 
@@ -37,7 +40,7 @@ public class GranularCertificateProjector : IStreamProjector<GranularCertificate
             var @event = Deserialize(transaction.Header.PayloadType, transaction.Payload);
             var method = granularCertificate.GetType().GetMethod(nameof(granularCertificate.Apply), new[] { @event.GetType() });
             if (method == null)
-                throw new NotSupportedException($"Event type ”{@event.GetType().FullName}” is not supported");
+                throw new ProjectionException($"Event type ”{@event.GetType().FullName}” is not supported");
             method.Invoke(this, new[] { @event });
         }
 
@@ -50,7 +53,7 @@ public class GranularCertificateProjector : IStreamProjector<GranularCertificate
         if (dictionary.TryGetValue(type, out var descriptor))
             return descriptor.Parser.ParseFrom(content);
         else
-            throw new NotSupportedException($"Event type ”{type}” is not supported");
+            throw new ProjectionException($"Event type ”{type}” is not supported");
     }
 }
 

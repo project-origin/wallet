@@ -67,7 +67,21 @@ public class VerifySlicesWorker : BackgroundService
         {
             case GetCertificateResult.Success:
                 var success = (GetCertificateResult.Success)getCertificateResult;
-                return VerifyAndInserSlice(unitOfWork, receivedSlice, success.gc);
+
+                // Verify received slice exists on certificate
+                var secretCommitmentInfo = new PedersenCommitment.SecretCommitmentInfo((uint)receivedSlice.Quantity, receivedSlice.RandomR);
+                var sliceId = ByteString.CopyFrom(SHA256.HashData(secretCommitmentInfo.Commitment.C));
+                var foundSlice = success.gc.GetCertificateSlice(sliceId);
+                if (foundSlice is null)
+                {
+                    _logger.LogWarning($"Slice with id {sliceId} not found in certificate {receivedSlice.CertificateId}. Deleting received slice.");
+                    await unitOfWork.CertificateRepository.RemoveReceivedSlice(receivedSlice);
+                    unitOfWork.Commit();
+                    return;
+                }
+
+                await InsertIntoWallet(unitOfWork, receivedSlice, success.gc);
+                return;
 
             case GetCertificateResult.TransientFailure:
                 var transient = (GetCertificateResult.Failure)getCertificateResult;
@@ -88,23 +102,6 @@ public class VerifySlicesWorker : BackgroundService
                 unitOfWork.Commit();
                 return;
         }
-    }
-
-    public async Task VerifyAndInserSlice(UnitOfWork unitOfWork, ReceivedSlice receivedSlice, GranularCertificate certificateProjection)
-    {
-        // Verify received slice exists on certificate
-        var secretCommitmentInfo = new PedersenCommitment.SecretCommitmentInfo((uint)receivedSlice.Quantity, receivedSlice.RandomR);
-        var sliceId = ByteString.CopyFrom(SHA256.HashData(secretCommitmentInfo.Commitment.C));
-        var foundSlice = certificateProjection.GetCertificateSlice(sliceId);
-        if (foundSlice is null)
-        {
-            _logger.LogWarning($"Slice with id {sliceId} not found in certificate {receivedSlice.CertificateId}. Deleting received slice.");
-            await unitOfWork.CertificateRepository.RemoveReceivedSlice(receivedSlice);
-            unitOfWork.Commit();
-            return;
-        }
-
-        await InsertIntoWallet(unitOfWork, receivedSlice, certificateProjection);
     }
 
     private async Task InsertIntoWallet(UnitOfWork unitOfWork, ReceivedSlice receivedSlice, GranularCertificate certificateProjection)
