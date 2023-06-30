@@ -43,7 +43,7 @@ restore:
 	dotnet restore $(src_path)
 
 ## Builds all the code
-build:
+build: restore
 	dotnet build $(src_path)
 
 ## Formats files using dotnet format
