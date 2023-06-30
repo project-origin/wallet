@@ -19,7 +19,7 @@
     // Use 'forwardPorts' to make a list of ports inside the container available locally.
     // "forwardPorts": [5000, 5001],
     // Use 'postCreateCommand' to run commands after the container is created.
-    "postCreateCommand": "make restore",
+    "postCreateCommand": "dotnet tool restore --tool-manifest src/.config/dotnet-tools.json && make restore",
     // Configure tool-specific properties.
     "customizations": {
         "vscode": {
