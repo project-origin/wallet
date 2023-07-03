@@ -35,24 +35,23 @@ public class VerifySlicesWorker : BackgroundService
 
         while (!stoppingToken.IsCancellationRequested)
         {
+            using var unitOfWork = _unitOfWorkFactory.Create();
             try
             {
-                using var unitOfWork = _unitOfWorkFactory.Create();
+                var receivedSlice = await unitOfWork.CertificateRepository.GetTop1ReceivedSlice();
+                if (receivedSlice is not null)
                 {
-                    var receivedSlice = await unitOfWork.CertificateRepository.GetTop1ReceivedSlice();
-                    if (receivedSlice is not null)
-                    {
-                        await ProcessReceivedSlice(unitOfWork, receivedSlice);
-                    }
-                    else
-                    {
-                        _logger.LogTrace("No received slices found, sleeping.");
-                        await Task.Delay(_options.SleepTime, stoppingToken);
-                    }
+                    await ProcessReceivedSlice(unitOfWork, receivedSlice);
+                }
+                else
+                {
+                    _logger.LogTrace("No received slices found, sleeping.");
+                    await Task.Delay(_options.SleepTime, stoppingToken);
                 }
             }
             catch (Exception ex)
             {
+                unitOfWork.Rollback();
                 _logger.LogError("VerifySlicesWorker failed. Error: {ex}", ex);
             }
         }
@@ -71,7 +70,7 @@ public class VerifySlicesWorker : BackgroundService
                 // Verify received slice exists on certificate
                 var secretCommitmentInfo = new PedersenCommitment.SecretCommitmentInfo((uint)receivedSlice.Quantity, receivedSlice.RandomR);
                 var sliceId = ByteString.CopyFrom(SHA256.HashData(secretCommitmentInfo.Commitment.C));
-                var foundSlice = success.gc.GetCertificateSlice(sliceId);
+                var foundSlice = success.GranularCertificate.GetCertificateSlice(sliceId);
                 if (foundSlice is null)
                 {
                     _logger.LogWarning($"Slice with id {sliceId} not found in certificate {receivedSlice.CertificateId}. Deleting received slice.");
@@ -80,7 +79,7 @@ public class VerifySlicesWorker : BackgroundService
                     return;
                 }
 
-                await InsertIntoWallet(unitOfWork, receivedSlice, success.gc);
+                await InsertIntoWallet(unitOfWork, receivedSlice, success.GranularCertificate);
                 return;
 
             case GetCertificateResult.TransientFailure:

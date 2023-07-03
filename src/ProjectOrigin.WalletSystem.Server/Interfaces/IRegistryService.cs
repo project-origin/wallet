@@ -11,7 +11,7 @@ public interface IRegistryService
 
 public abstract record GetCertificateResult()
 {
-    public sealed record Success(GranularCertificate gc) : GetCertificateResult;
+    public sealed record Success(GranularCertificate GranularCertificate) : GetCertificateResult;
     public sealed record NotFound() : GetCertificateResult;
     public sealed record Failure(Exception Exception) : GetCertificateResult;
     public sealed record TransientFailure(Exception exception) : GetCertificateResult;
