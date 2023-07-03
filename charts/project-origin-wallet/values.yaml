@@ -15,6 +15,12 @@ wallet:
   # externalUrl defines the external url to use for the wallet server
   externalUrl:
 
+ # Registries is a list of all the known registries in the network
+registries: []
+  # example
+  # - name: test
+  #   address: http://test-registry:80
+
 # persistence defines the persistence configuration for the wallet server
 persistance:
 

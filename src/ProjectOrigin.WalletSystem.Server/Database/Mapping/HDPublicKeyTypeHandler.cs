@@ -1,6 +1,6 @@
 using System.Data;
 using Dapper;
-using ProjectOrigin.WalletSystem.Server.HDWallet;
+using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
 
 namespace ProjectOrigin.WalletSystem.Server.Database.Mapping;
 
@@ -15,7 +15,7 @@ public class HDPublicKeyTypeHandler : SqlMapper.TypeHandler<IHDPublicKey>
 
     public override IHDPublicKey Parse(object value)
     {
-        return _algorithm.ImportPublicKey(value as byte[]);
+        return _algorithm.ImportHDPublicKey(value as byte[]);
     }
 
     public override void SetValue(IDbDataParameter parameter, IHDPublicKey value)

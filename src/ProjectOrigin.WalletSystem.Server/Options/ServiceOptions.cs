@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace ProjectOrigin.WalletSystem.Server.Services;
+namespace ProjectOrigin.WalletSystem.Server.Options;
 
 public class ServiceOptions
 {

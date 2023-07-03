@@ -1,12 +1,16 @@
 using System;
-using System.Collections.Generic;
+using System.Linq;
+using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
+using Google.Protobuf;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ProjectOrigin.WalletSystem.Server.Database;
 using ProjectOrigin.WalletSystem.Server.Models;
+using ProjectOrigin.WalletSystem.Server.Projections;
+using ProjectOrigin.WalletSystem.Server.Services;
 
 namespace ProjectOrigin.WalletSystem.Server.BackgroundJobs;
 
@@ -15,12 +19,14 @@ public class VerifySlicesWorker : BackgroundService
     private readonly ILogger<VerifySlicesWorker> _logger;
     private readonly IUnitOfWorkFactory _unitOfWorkFactory;
     private readonly VerifySlicesWorkerOptions _options;
+    private readonly IRegistryService _registryService;
 
-    public VerifySlicesWorker(ILogger<VerifySlicesWorker> logger, IUnitOfWorkFactory unitOfWorkFactory, IOptions<VerifySlicesWorkerOptions> options)
+    public VerifySlicesWorker(ILogger<VerifySlicesWorker> logger, IUnitOfWorkFactory unitOfWorkFactory, IOptions<VerifySlicesWorkerOptions> options, IRegistryService registryService)
     {
         _logger = logger;
         _unitOfWorkFactory = unitOfWorkFactory;
         _options = options.Value;
+        _registryService = registryService;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -29,82 +35,113 @@ public class VerifySlicesWorker : BackgroundService
 
         while (!stoppingToken.IsCancellationRequested)
         {
+            using var unitOfWork = _unitOfWorkFactory.Create();
             try
             {
-                await DoWork(stoppingToken);
+                var receivedSlice = await unitOfWork.CertificateRepository.GetTop1ReceivedSlice();
+                if (receivedSlice is not null)
+                {
+                    await ProcessReceivedSlice(unitOfWork, receivedSlice);
+                }
+                else
+                {
+                    _logger.LogTrace("No received slices found, sleeping.");
+                    await Task.Delay(_options.SleepTime, stoppingToken);
+                }
             }
             catch (Exception ex)
             {
+                unitOfWork.Rollback();
                 _logger.LogError("VerifySlicesWorker failed. Error: {ex}", ex);
             }
         }
     }
 
-    private async Task DoWork(CancellationToken stoppingToken)
+    private async Task ProcessReceivedSlice(UnitOfWork unitOfWork, ReceivedSlice receivedSlice)
     {
-        using var unitOfWork = _unitOfWorkFactory.Create();
+        // Get Granular Certificate Projection from registry
+        var getCertificateResult = await _registryService.GetGranularCertificate(receivedSlice.Registry, receivedSlice.CertificateId);
 
-        var receivedSlice = await unitOfWork.CertificateRepository.GetTop1ReceivedSlice();
-
-        if (receivedSlice == null)
+        switch (getCertificateResult)
         {
-            _logger.LogInformation("No received slices found.");
-            await Task.Delay(_options.SleepTime, stoppingToken);
-            return;
-        }
+            case GetCertificateResult.Success:
+                var success = (GetCertificateResult.Success)getCertificateResult;
 
-        var registry = await unitOfWork.RegistryRepository.GetRegistryFromName(receivedSlice.Registry);
-
-        if (registry == null)
-        {
-            _logger.LogError($"Registry with name {receivedSlice.Registry} not found. Deleting received slice from certificate with certificate id {receivedSlice.CertificateId}.");
-            await unitOfWork.CertificateRepository.RemoveReceivedSlice(receivedSlice);
-            unitOfWork.Commit();
-            return;
-        }
-
-        //Verify with project origin registry
-
-        try
-        {
-            var slice = new Slice(Guid.NewGuid(),
-                receivedSlice.WalletSectionId,
-                receivedSlice.WalletSectionPosition,
-                registry.Id,
-                receivedSlice.CertificateId,
-                receivedSlice.Quantity,
-                receivedSlice.RandomR);
-
-            var certificate = await unitOfWork.CertificateRepository.GetCertificate(registry.Id, slice.CertificateId);
-            if (certificate == null)
-            {
-                //Get these attributes from wallet
-                var attributes = new List<CertificateAttribute>
+                // Verify received slice exists on certificate
+                var secretCommitmentInfo = new PedersenCommitment.SecretCommitmentInfo((uint)receivedSlice.Quantity, receivedSlice.RandomR);
+                var sliceId = ByteString.CopyFrom(SHA256.HashData(secretCommitmentInfo.Commitment.C));
+                var foundSlice = success.GranularCertificate.GetCertificateSlice(sliceId);
+                if (foundSlice is null)
                 {
-                    new ("AssetId", "571234567890123456"),
-                    new ("TechCode", "T070000"),
-                    new ("FuelCode", "F00000000")
-                };
-                certificate = new Certificate(slice.CertificateId,
-                    registry.Id,
-                    DateTimeOffset.Now,
-                    DateTimeOffset.Now.AddDays(1),
-                    "DK1",
-                    GranularCertificateType.Production,
-                    attributes);
-                await unitOfWork.CertificateRepository.InsertCertificate(certificate);
-            }
+                    _logger.LogWarning($"Slice with id {sliceId} not found in certificate {receivedSlice.CertificateId}. Deleting received slice.");
+                    await unitOfWork.CertificateRepository.RemoveReceivedSlice(receivedSlice);
+                    unitOfWork.Commit();
+                    return;
+                }
 
-            await unitOfWork.CertificateRepository.InsertSlice(slice);
+                await InsertIntoWallet(unitOfWork, receivedSlice, success.GranularCertificate);
+                return;
 
-            await unitOfWork.CertificateRepository.RemoveReceivedSlice(receivedSlice);
+            case GetCertificateResult.TransientFailure:
+                var transient = (GetCertificateResult.Failure)getCertificateResult;
+                _logger.LogWarning(transient.Exception, $"Transient failed to get GranularCertificate with id {receivedSlice.CertificateId} on registry {receivedSlice.Registry}. Sleeping.");
+                await Task.Delay(_options.SleepTime);
+                return;
 
-            unitOfWork.Commit();
+            case GetCertificateResult.NotFound:
+                _logger.LogWarning($"GranularCertificate with id {receivedSlice.CertificateId} not found in registry {receivedSlice.Registry}. Deleting received slice.");
+                await unitOfWork.CertificateRepository.RemoveReceivedSlice(receivedSlice);
+                unitOfWork.Commit();
+                return;
+
+            case GetCertificateResult.Failure:
+                var failure = (GetCertificateResult.Failure)getCertificateResult;
+                _logger.LogError(failure.Exception, $"Failed to get certificate with {receivedSlice.CertificateId}, Deleting received slice.");
+                await unitOfWork.CertificateRepository.RemoveReceivedSlice(receivedSlice);
+                unitOfWork.Commit();
+                return;
         }
-        catch (Exception ex)
+    }
+
+    private async Task InsertIntoWallet(UnitOfWork unitOfWork, ReceivedSlice receivedSlice, GranularCertificate certificateProjection)
+    {
+        var registry = await unitOfWork.RegistryRepository.GetRegistryFromName(receivedSlice.Registry);
+        if (registry is null)
         {
-            _logger.LogError("Unable to convert ReceivedSlice to Slice. Error: {0}", ex);
-            unitOfWork.Rollback();
+            registry = new RegistryModel(Guid.NewGuid(), receivedSlice.Registry);
+            await unitOfWork.RegistryRepository.InsertRegistry(registry);
         }
+
+        var slice = new Slice(Guid.NewGuid(),
+            receivedSlice.WalletSectionId,
+            receivedSlice.WalletSectionPosition,
+            registry.Id,
+            receivedSlice.CertificateId,
+            receivedSlice.Quantity,
+            receivedSlice.RandomR);
+
+        var certificate = await unitOfWork.CertificateRepository.GetCertificate(registry.Id, slice.CertificateId);
+        if (certificate == null)
+        {
+            var attributes = certificateProjection.Attributes
+                .Select(attribute => new CertificateAttribute(attribute.Key, attribute.Value))
+                .ToList();
+
+            certificate = new Certificate(slice.CertificateId,
+                registry.Id,
+                certificateProjection.Period.Start.ToDateTimeOffset(),
+                certificateProjection.Period.End.ToDateTimeOffset(),
+                certificateProjection.GridArea,
+                (GranularCertificateType)certificateProjection.Type,
+                attributes);
+            await unitOfWork.CertificateRepository.InsertCertificate(certificate);
+        }
+
+        await unitOfWork.CertificateRepository.InsertSlice(slice);
+        await unitOfWork.CertificateRepository.RemoveReceivedSlice(receivedSlice);
+
+        unitOfWork.Commit();
+
+        _logger.LogTrace($"Slice on certificate ”{slice.CertificateId}” inserted into wallet.");
     }
 }

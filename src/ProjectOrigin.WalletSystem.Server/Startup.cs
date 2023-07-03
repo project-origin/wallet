@@ -6,10 +6,13 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using ProjectOrigin.WalletSystem.Server.Database;
 using ProjectOrigin.WalletSystem.Server.Database.Mapping;
-using ProjectOrigin.WalletSystem.Server.HDWallet;
 using ProjectOrigin.WalletSystem.Server.Services;
 using System.IdentityModel.Tokens.Jwt;
 using ProjectOrigin.WalletSystem.Server.BackgroundJobs;
+using ProjectOrigin.WalletSystem.Server.Projections;
+using ProjectOrigin.WalletSystem.Server.Options;
+using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
+using ProjectOrigin.HierarchicalDeterministicKeys.Implementations;
 
 namespace ProjectOrigin.WalletSystem.Server;
 
@@ -26,8 +29,16 @@ public class Startup
     {
         services.AddGrpc();
 
+        services.AddTransient<IStreamProjector<GranularCertificate>, GranularCertificateProjector>();
+        services.AddTransient<IRegistryService, RegistryService>();
+
         services.AddOptions<ServiceOptions>()
             .Bind(_configuration.GetSection("ServiceOptions"))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        services.AddOptions<RegistryOptions>()
+            .Bind(_configuration)
             .ValidateDataAnnotations()
             .ValidateOnStart();
 

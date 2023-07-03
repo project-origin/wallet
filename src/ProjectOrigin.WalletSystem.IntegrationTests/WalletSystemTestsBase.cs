@@ -4,11 +4,11 @@ using System.Collections.Generic;
 using Xunit;
 using Xunit.Abstractions;
 using System;
-using ProjectOrigin.WalletSystem.Server.HDWallet;
 using Npgsql;
 using ProjectOrigin.WalletSystem.Server.Models;
 using ProjectOrigin.WalletSystem.Server.Repositories;
 using System.Threading.Tasks;
+using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests;
 
@@ -22,19 +22,24 @@ public abstract class WalletSystemTestsBase : IClassFixture<GrpcTestFixture<Star
 
     protected IHDAlgorithm Algorithm => _grpcFixture.GetRequiredService<IHDAlgorithm>();
 
-    public WalletSystemTestsBase(GrpcTestFixture<Startup> grpcFixture, PostgresDatabaseFixture dbFixture, ITestOutputHelper outputHelper)
+    public WalletSystemTestsBase(GrpcTestFixture<Startup> grpcFixture, PostgresDatabaseFixture dbFixture, ITestOutputHelper outputHelper, RegistryFixture? registry)
     {
         _grpcFixture = grpcFixture;
         _dbFixture = dbFixture;
         _logger = grpcFixture.GetTestLogger(outputHelper);
         _tokenGenerator = new JwtGenerator();
 
-        grpcFixture.ConfigureHostConfiguration(new Dictionary<string, string?>()
-         {
-             {"ConnectionStrings:Database", dbFixture.ConnectionString},
-             {"ServiceOptions:EndpointAddress", endpoint},
-             {"VerifySlicesWorkerOptions:SleepTime", "00:00:02"}
-         });
+        var config = new Dictionary<string, string?>()
+        {
+            {"ConnectionStrings:Database", dbFixture.ConnectionString},
+            {"ServiceOptions:EndpointAddress", endpoint},
+            {"VerifySlicesWorkerOptions:SleepTime", "00:00:02"}
+        };
+
+        if (registry is not null)
+            config.Add($"RegistryUrls:{registry.Name}", registry.RegistryUrl);
+
+        grpcFixture.ConfigureHostConfiguration(config);
     }
 
     public void Dispose()
@@ -50,19 +55,19 @@ public abstract class WalletSystemTestsBase : IClassFixture<GrpcTestFixture<Star
             var wallet = new Wallet(Guid.NewGuid(), owner, Algorithm.GenerateNewPrivateKey());
             await walletRepository.Create(wallet);
 
-            var section = new WalletSection(Guid.NewGuid(), wallet.Id, 1, wallet.PrivateKey.Derive(1).PublicKey);
+            var section = new WalletSection(Guid.NewGuid(), wallet.Id, 1, wallet.PrivateKey.Derive(1).Neuter());
             await walletRepository.CreateSection(section);
 
             return section;
         }
     }
 
-    protected async Task<Registry> CreateRegistry(string name)
+    protected async Task<RegistryModel> CreateRegistry(string name)
     {
         using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
         {
             var registryRepository = new RegistryRepository(connection);
-            var registry = new Registry(Guid.NewGuid(), name);
+            var registry = new RegistryModel(Guid.NewGuid(), name);
             await registryRepository.InsertRegistry(registry);
 
             return registry;
@@ -87,13 +92,13 @@ public abstract class WalletSystemTestsBase : IClassFixture<GrpcTestFixture<Star
         }
     }
 
-    protected async Task<ReceivedSlice> CreateReceivedSlice(WalletSection walletSection, string registryName, Guid certificateId, long quantity)
+    protected async Task<ReceivedSlice> CreateReceivedSlice(WalletSection walletSection, string registryName, Guid certificateId, long quantity, byte[] randomR)
     {
         using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
         {
             var certificateRepository = new CertificateRepository(connection);
             var receivedSlice = new ReceivedSlice(Guid.NewGuid(), walletSection.Id, walletSection.WalletPosition,
-                registryName, certificateId, quantity, new byte[] { 0x01, 0x02, 0x03, 0x04 });
+                registryName, certificateId, quantity, randomR);
 
             await certificateRepository.InsertReceivedSlice(receivedSlice);
             return receivedSlice;
