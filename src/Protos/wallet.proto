@@ -33,7 +33,7 @@ service WalletService {
 
 message CreateReceiverDepositEndpointRequest {
     WalletDepositEndpoint WalletDepositEndpoint = 1;
-    string reference = 2;
+    string Reference = 2;
 }
 
 message CreateReceiverDepositEndpointResponse {
