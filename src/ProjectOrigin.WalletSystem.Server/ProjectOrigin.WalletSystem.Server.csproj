@@ -14,7 +14,6 @@
     <PackageReference Include="NBitcoin" Version="7.0.25" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="7.0.4" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="7.0.0" />
-    <PackageReference Include="Portable.BouncyCastle" Version="1.9.0" />
     <PackageReference Include="ProjectOrigin.PedersenCommitment" Version="0.2.0-rc.17" />
     <PackageReference Include="ProjectOrigin.HierarchicalDeterministicKeys" Version="0.2.0-rc.17" />
   </ItemGroup>
