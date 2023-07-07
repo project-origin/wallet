@@ -4,7 +4,6 @@ using Npgsql;
 using ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures;
 using ProjectOrigin.WalletSystem.Server;
 using ProjectOrigin.WalletSystem.Server.Database.Mapping;
-using ProjectOrigin.WalletSystem.Server.HDWallet;
 using ProjectOrigin.WalletSystem.Server.Models;
 using ProjectOrigin.WalletSystem.Server.Repositories;
 using System;
@@ -17,6 +16,7 @@ using Xunit;
 using WalletService = ProjectOrigin.WalletSystem.V1.WalletService;
 using Xunit.Abstractions;
 using GranularCertificateType = ProjectOrigin.WalletSystem.Server.Models.GranularCertificateType;
+using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests
 {
@@ -24,7 +24,8 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
     {
         private Fixture _fixture;
 
-        public QueryCertificatesTest(GrpcTestFixture<Startup> grpcFixture, PostgresDatabaseFixture dbFixture, ITestOutputHelper outputHelper) : base(grpcFixture, dbFixture, outputHelper)
+        public QueryCertificatesTest(GrpcTestFixture<Startup> grpcFixture, PostgresDatabaseFixture dbFixture, ITestOutputHelper outputHelper)
+            : base(grpcFixture, dbFixture, outputHelper, null)
         {
             _fixture = new Fixture();
 
@@ -51,13 +52,13 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
                 await walletRepository.Create(wallet);
                 await walletRepository.Create(notOwnedWallet);
 
-                var section = new WalletSection(Guid.NewGuid(), wallet.Id, 1, wallet.PrivateKey.Derive(1).PublicKey);
-                var notOwnedSection = new WalletSection(Guid.NewGuid(), notOwnedWallet.Id, 1, notOwnedWallet.PrivateKey.Derive(1).PublicKey);
+                var section = new WalletSection(Guid.NewGuid(), wallet.Id, 1, wallet.PrivateKey.Derive(1).Neuter());
+                var notOwnedSection = new WalletSection(Guid.NewGuid(), notOwnedWallet.Id, 1, notOwnedWallet.PrivateKey.Derive(1).Neuter());
                 await walletRepository.CreateSection(section);
                 await walletRepository.CreateSection(notOwnedSection);
 
                 var regName = _fixture.Create<string>();
-                var registry = new Registry(Guid.NewGuid(), regName);
+                var registry = new RegistryModel(Guid.NewGuid(), regName);
                 var certificateRepository = new CertificateRepository(connection);
                 var registryRepository = new RegistryRepository(connection);
                 await registryRepository.InsertRegistry(registry);
@@ -102,6 +103,33 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
         }
 
         [Fact]
+        public async void QueryGranularCertificates_WhenNoCertificatesInWallet_ExpectZeroCertificates()
+        {
+            var owner = _fixture.Create<string>();
+
+            using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
+            {
+                var walletRepository = new WalletRepository(connection);
+                var wallet = new Wallet(Guid.NewGuid(), owner, Algorithm.GenerateNewPrivateKey());
+                await walletRepository.Create(wallet);
+
+                var section = new WalletSection(Guid.NewGuid(), wallet.Id, 1, wallet.PrivateKey.Derive(1).Neuter());
+                await walletRepository.CreateSection(section);
+            }
+
+            var someOwnerName = _fixture.Create<string>();
+            var token = _tokenGenerator.GenerateToken(owner, someOwnerName);
+            var headers = new Metadata();
+            headers.Add("Authorization", $"Bearer {token}");
+
+            var client = new WalletService.WalletServiceClient(_grpcFixture.Channel);
+
+            var result = await client.QueryGranularCertificatesAsync(new QueryRequest(), headers);
+
+            result.GranularCertificates.Should().BeEmpty();
+        }
+
+        [Fact]
         public async void QueryGranularCertificates_WhenInvalidCertificateTypeInDatabase_ExpectException()
         {
             var owner = _fixture.Create<string>();
@@ -112,16 +140,21 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
                 var wallet = new Wallet(Guid.NewGuid(), owner, Algorithm.GenerateNewPrivateKey());
                 await walletRepository.Create(wallet);
 
-                var section = new WalletSection(Guid.NewGuid(), wallet.Id, 1, wallet.PrivateKey.Derive(1).PublicKey);
+                var section = new WalletSection(Guid.NewGuid(), wallet.Id, 1, wallet.PrivateKey.Derive(1).Neuter());
                 await walletRepository.CreateSection(section);
 
                 var regName = _fixture.Create<string>();
-                var registry = new Registry(Guid.NewGuid(), regName);
+                var registry = new RegistryModel(Guid.NewGuid(), regName);
                 var registryRepository = new RegistryRepository(connection);
                 await registryRepository.InsertRegistry(registry);
 
+                var certId = Guid.NewGuid();
                 await connection.ExecuteAsync(@"INSERT INTO Certificates(Id, RegistryId, StartDate, EndDate, GridArea, CertificateType) VALUES (@id, @registryId, @startDate, @endDate, @gridArea, @certificateType)",
-                    new { id = Guid.NewGuid(), registryId = registry.Id, startDate = DateTimeOffset.Now.ToUtcTime(), endDate = DateTimeOffset.Now.AddDays(1).ToUtcTime(), gridArea = "SomeGridArea", certificateType = 0 });
+                    new { id = certId, registryId = registry.Id, startDate = DateTimeOffset.Now.ToUtcTime(), endDate = DateTimeOffset.Now.AddDays(1).ToUtcTime(), gridArea = "SomeGridArea", certificateType = 0 });
+
+                var slice1 = new Slice(Guid.NewGuid(), section.Id, 1, registry.Id, certId, 42, _fixture.Create<byte[]>());
+                var certificateRepository = new CertificateRepository(connection);
+                await certificateRepository.InsertSlice(slice1);
             }
 
             var someOwnerName = _fixture.Create<string>();

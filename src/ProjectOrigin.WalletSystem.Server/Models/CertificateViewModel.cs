@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Google.Protobuf.WellKnownTypes;
-using ProjectOrigin.Register.V1;
+using ProjectOrigin.Common.V1;
 using ProjectOrigin.WalletSystem.V1;
 
 namespace ProjectOrigin.WalletSystem.Server.Models;
@@ -23,7 +23,7 @@ public record CertificateViewModel
         var fedId = new FederatedStreamId
         {
             Registry = Registry,
-            StreamId = new Register.V1.Uuid
+            StreamId = new Common.V1.Uuid
             {
                 Value = Id.ToString()
             }

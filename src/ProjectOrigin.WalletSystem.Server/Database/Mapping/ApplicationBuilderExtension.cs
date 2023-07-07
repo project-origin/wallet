@@ -1,7 +1,7 @@
 using Dapper;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
-using ProjectOrigin.WalletSystem.Server.HDWallet;
+using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
 
 namespace ProjectOrigin.WalletSystem.Server.Database.Mapping;
 

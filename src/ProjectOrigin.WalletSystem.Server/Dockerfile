@@ -6,6 +6,7 @@ EXPOSE 443
 FROM mcr.microsoft.com/dotnet/sdk:7.0 AS dotnet-build
 WORKDIR /src
 COPY . .
+RUN dotnet tool restore
 RUN dotnet restore
 RUN dotnet build ProjectOrigin.WalletSystem.Server -c Release --no-restore -o /app/build
 

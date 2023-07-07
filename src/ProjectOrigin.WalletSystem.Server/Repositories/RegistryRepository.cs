@@ -14,12 +14,12 @@ public class RegistryRepository
         this._connection = connection;
     }
 
-    public Task<Registry?> GetRegistryFromName(string registry)
+    public Task<RegistryModel?> GetRegistryFromName(string registry)
     {
-        return _connection.QueryFirstOrDefaultAsync<Registry?>("SELECT * FROM Registries WHERE Name = @registry", new { registry });
+        return _connection.QueryFirstOrDefaultAsync<RegistryModel?>("SELECT * FROM Registries WHERE Name = @registry", new { registry });
     }
 
-    public Task InsertRegistry(Registry registry)
+    public Task InsertRegistry(RegistryModel registry)
     {
         return _connection.ExecuteAsync(@"INSERT INTO Registries(Id, Name) VALUES (@id, @name)", new { registry.Id, registry.Name });
     }

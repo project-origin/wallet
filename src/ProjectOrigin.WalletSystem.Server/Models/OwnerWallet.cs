@@ -1,5 +1,5 @@
 using System;
-using ProjectOrigin.WalletSystem.Server.HDWallet;
+using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
 
 namespace ProjectOrigin.WalletSystem.Server.Models;
 

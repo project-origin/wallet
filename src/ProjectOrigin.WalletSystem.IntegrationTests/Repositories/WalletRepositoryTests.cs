@@ -87,7 +87,7 @@ public class WalletRepositoryTests : AbstractRepositoryTests
 
         for (int position = 1; position <= sections; position++)
         {
-            await repository.CreateSection(new WalletSection(Guid.NewGuid(), wallet.Id, position, wallet.PrivateKey.Derive(position).PublicKey));
+            await repository.CreateSection(new WalletSection(Guid.NewGuid(), wallet.Id, position, wallet.PrivateKey.Derive(position).Neuter()));
         }
 
         // Act
@@ -108,7 +108,7 @@ public class WalletRepositoryTests : AbstractRepositoryTests
         var section3 = await CreateWalletSection(wallet, 3);
 
         // Act
-        var publicKey = wallet.PrivateKey.Derive(2).PublicKey;
+        var publicKey = wallet.PrivateKey.Derive(2).Neuter();
         var section = await _repository.GetWalletSectionFromPublicKey(publicKey);
 
         // Assert
@@ -120,7 +120,7 @@ public class WalletRepositoryTests : AbstractRepositoryTests
     public async Task GetWalletSectionFromPublicKey_ReturnNull()
     {
         // Arrange
-        var publicKey = _algorithm.GenerateNewPrivateKey().Derive(1).PublicKey;
+        var publicKey = _algorithm.GenerateNewPrivateKey().Derive(1).Neuter();
 
         // Act
         var section = await _repository.GetWalletSectionFromPublicKey(publicKey);

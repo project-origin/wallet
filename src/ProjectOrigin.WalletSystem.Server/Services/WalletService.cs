@@ -5,9 +5,10 @@ using Grpc.Core;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
 using ProjectOrigin.WalletSystem.Server.Database;
-using ProjectOrigin.WalletSystem.Server.HDWallet;
 using ProjectOrigin.WalletSystem.Server.Models;
+using ProjectOrigin.WalletSystem.Server.Options;
 using ProjectOrigin.WalletSystem.V1;
 
 namespace ProjectOrigin.WalletSystem.Server.Services;
@@ -28,7 +29,7 @@ public class WalletService : ProjectOrigin.WalletSystem.V1.WalletService.WalletS
         _hdAlgorithm = hdAlgorithm;
     }
 
-    public override async Task<V1.WalletSectionReference> CreateWalletSection(V1.CreateWalletSectionRequest request, ServerCallContext context)
+    public override async Task<V1.CreateWalletDepositEndpointResponse> CreateWalletDepositEndpoint(V1.CreateWalletDepositEndpointRequest request, ServerCallContext context)
     {
         var subject = context.GetSubject();
 
@@ -43,15 +44,18 @@ public class WalletService : ProjectOrigin.WalletSystem.V1.WalletService.WalletS
 
         int nextPosition = await _unitOfWork.WalletRepository.GetNextWalletPosition(wallet.Id);
 
-        var section = new WalletSection(Guid.NewGuid(), wallet.Id, nextPosition, wallet.PrivateKey.Derive(nextPosition).PublicKey);
+        var section = new WalletSection(Guid.NewGuid(), wallet.Id, nextPosition, wallet.PrivateKey.Derive(nextPosition).Neuter());
         await _unitOfWork.WalletRepository.CreateSection(section);
         _unitOfWork.Commit();
 
-        return new V1.WalletSectionReference()
+        return new V1.CreateWalletDepositEndpointResponse
         {
-            Version = 1,
-            Endpoint = _endpointAddress,
-            SectionPublicKey = ByteString.CopyFrom(section.PublicKey.Export())
+            WalletDepositEndpoint = new V1.WalletDepositEndpoint()
+            {
+                Version = 1,
+                Endpoint = _endpointAddress,
+                PublicKey = ByteString.CopyFrom(section.PublicKey.Export())
+            }
         };
     }
 

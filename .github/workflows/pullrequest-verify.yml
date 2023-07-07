@@ -20,6 +20,9 @@ jobs:
       - name: Print info
         run: make info
 
+      - name: Restore
+        run: make restore
+
       - name: Build code
         run: make build
 
