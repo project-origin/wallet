@@ -37,15 +37,15 @@ public class GrpcTests : WalletSystemTestsBase
 
         // Assert
         walletSection.Should().NotBeNull();
-        walletSection.Version.Should().Be(1);
-        walletSection.Endpoint.Should().Be(endpoint);
-        walletSection.PublicKey.Should().NotBeNullOrEmpty();
+        walletSection.WalletDepositEndpoint.Version.Should().Be(1);
+        walletSection.WalletDepositEndpoint.Endpoint.Should().Be(endpoint);
+        walletSection.WalletDepositEndpoint.PublicKey.Should().NotBeNullOrEmpty();
 
         using (var connection = new DbConnectionFactory(_dbFixture.ConnectionString).CreateConnection())
         {
             var foundSection = connection.QuerySingle<WalletSection>("SELECT * FROM WalletSections");
 
-            walletSection.PublicKey.Should().Equal(foundSection.PublicKey.Export().ToArray());
+            walletSection.WalletDepositEndpoint.PublicKey.Should().Equal(foundSection.PublicKey.Export().ToArray());
 
             var foundWallet = connection.QuerySingle<Wallet>("SELECT * FROM Wallets where owner = @owner", new { owner = subject });
             // Wallet should be implicitly created

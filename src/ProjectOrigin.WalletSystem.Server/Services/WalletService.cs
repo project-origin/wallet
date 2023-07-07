@@ -29,7 +29,7 @@ public class WalletService : ProjectOrigin.WalletSystem.V1.WalletService.WalletS
         _hdAlgorithm = hdAlgorithm;
     }
 
-    public override async Task<V1.WalletDepositEndpoint> CreateWalletDepositEndpoint(V1.CreateWalletDepositEndpointRequest request, ServerCallContext context)
+    public override async Task<V1.CreateWalletDepositEndpointResponse> CreateWalletDepositEndpoint(V1.CreateWalletDepositEndpointRequest request, ServerCallContext context)
     {
         var subject = context.GetSubject();
 
@@ -48,11 +48,14 @@ public class WalletService : ProjectOrigin.WalletSystem.V1.WalletService.WalletS
         await _unitOfWork.WalletRepository.CreateSection(section);
         _unitOfWork.Commit();
 
-        return new V1.WalletDepositEndpoint()
+        return new V1.CreateWalletDepositEndpointResponse
         {
-            Version = 1,
-            Endpoint = _endpointAddress,
-            PublicKey = ByteString.CopyFrom(section.PublicKey.Export())
+            WalletDepositEndpoint = new V1.WalletDepositEndpoint()
+            {
+                Version = 1,
+                Endpoint = _endpointAddress,
+                PublicKey = ByteString.CopyFrom(section.PublicKey.Export())
+            }
         };
     }
 
