@@ -26,7 +26,7 @@ public class ReceiveSliceService : ProjectOrigin.WalletSystem.V1.ReceiveSliceSer
 
     public override async Task<ReceiveResponse> ReceiveSlice(ReceiveRequest request, ServerCallContext context)
     {
-        var publicKey = _hdAlgorithm.ImportHDPublicKey(request.WalletSectionPublicKey.Span);
+        var publicKey = _hdAlgorithm.ImportHDPublicKey(request.WalletDepositEndpointPublicKey.Span);
         var walletSection = await _unitOfWork.WalletRepository.GetWalletSectionFromPublicKey(publicKey);
 
         if (walletSection == null)
@@ -34,7 +34,7 @@ public class ReceiveSliceService : ProjectOrigin.WalletSystem.V1.ReceiveSliceSer
 
         var newSlice = new ReceivedSlice(Guid.NewGuid(),
                                  walletSection.Id,
-                                 (int)request.WalletSectionPosition,
+                                 (int)request.WalletDepositEndpointPosition,
                                  request.CertificateId.Registry,
                                  Guid.Parse(request.CertificateId.StreamId.Value),
                                  request.Quantity,

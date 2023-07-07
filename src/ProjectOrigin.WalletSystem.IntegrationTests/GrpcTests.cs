@@ -30,22 +30,22 @@ public class GrpcTests : WalletSystemTestsBase
         var headers = new Metadata { { "Authorization", $"Bearer {token}" } };
 
         var client = new WalletService.WalletServiceClient(_grpcFixture.Channel);
-        var request = new CreateWalletSectionRequest();
+        var request = new CreateWalletDepositEndpointRequest();
 
         // Act
-        var walletSection = await client.CreateWalletSectionAsync(request, headers);
+        var walletSection = await client.CreateWalletDepositEndpointAsync(request, headers);
 
         // Assert
         walletSection.Should().NotBeNull();
-        walletSection.Version.Should().Be(1);
-        walletSection.Endpoint.Should().Be(endpoint);
-        walletSection.SectionPublicKey.Should().NotBeNullOrEmpty();
+        walletSection.WalletDepositEndpoint.Version.Should().Be(1);
+        walletSection.WalletDepositEndpoint.Endpoint.Should().Be(endpoint);
+        walletSection.WalletDepositEndpoint.PublicKey.Should().NotBeNullOrEmpty();
 
         using (var connection = new DbConnectionFactory(_dbFixture.ConnectionString).CreateConnection())
         {
             var foundSection = connection.QuerySingle<WalletSection>("SELECT * FROM WalletSections");
 
-            walletSection.SectionPublicKey.Should().Equal(foundSection.PublicKey.Export().ToArray());
+            walletSection.WalletDepositEndpoint.PublicKey.Should().Equal(foundSection.PublicKey.Export().ToArray());
 
             var foundWallet = connection.QuerySingle<Wallet>("SELECT * FROM Wallets where owner = @owner", new { owner = subject });
             // Wallet should be implicitly created
@@ -58,10 +58,10 @@ public class GrpcTests : WalletSystemTestsBase
     {
         // Arrange
         var client = new WalletService.WalletServiceClient(_grpcFixture.Channel);
-        var request = new CreateWalletSectionRequest();
+        var request = new CreateWalletDepositEndpointRequest();
 
         // Act
-        Func<Task> sutMethod = async () => await client.CreateWalletSectionAsync(request);
+        Func<Task> sutMethod = async () => await client.CreateWalletDepositEndpointAsync(request);
 
         // Assert
         await sutMethod.Should().ThrowAsync<RpcException>().WithMessage("Status(StatusCode=\"Unauthenticated\", Detail=\"Bad gRPC response. HTTP status code: 401\")");

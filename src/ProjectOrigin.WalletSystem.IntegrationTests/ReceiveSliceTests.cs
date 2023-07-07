@@ -36,8 +36,8 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
                     Registry = registryName,
                     StreamId = new Common.V1.Uuid() { Value = certId.ToString() },
                 },
-                WalletSectionPublicKey = ByteString.CopyFrom(section.PublicKey.Export()),
-                WalletSectionPosition = 2,
+                WalletDepositEndpointPublicKey = ByteString.CopyFrom(section.PublicKey.Export()),
+                WalletDepositEndpointPosition = 2,
                 Quantity = 240,
                 RandomR = ByteString.CopyFrom(new byte[] { 0x01, 0x02, 0x03, 0x04 }),
             };
