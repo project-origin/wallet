@@ -1,0 +1,96 @@
+name: Create new release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  define-version:
+    runs-on: ubuntu-22.04
+    outputs:
+      version: ${{ steps.output-version.outputs.version }}
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set env
+        id: output-version
+        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+  publish-server-container:
+    name: Publish Wallet Server container
+    runs-on: ubuntu-22.04
+    needs:
+      - define-version
+    env:
+      project: src/ProjectOrigin.WalletSystem.Server
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@f054a8b539a109f9f41c372932f1ae047eff08c9
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@ad44023a93711e3deb337508980b4b5e9bcdc5dc
+        with:
+          context: ./src
+          file: ./src/ProjectOrigin.WalletSystem.Server/Dockerfile
+          push: true
+          tags: ghcr.io/project-origin/wallet-server:${{ needs.define-version.outputs.version }}
+
+  publish-chart:
+    name: Publish helm chart
+    runs-on: ubuntu-22.04
+    needs:
+      - define-version
+      - publish-server-container
+    env:
+      CHART_FOLDER: charts/project-origin-wallet
+      HELM_REGISTRY_REPOSITORY: project-origin/helm-registry
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          path: this
+
+      - uses: actions/checkout@v3
+        with:
+          repository: ${{ env.HELM_REGISTRY_REPOSITORY }}
+          path: helm-registry
+          ssh-key: ${{ secrets.HELM_REGISTRY_TOKEN }}
+
+      - name: Get chart name
+        id: variables
+        run: |
+          echo "name=$(yq .name < this/${{ env.CHART_FOLDER }}/Chart.yaml)" >> $GITHUB_OUTPUT
+
+      - name: Package and generate index
+        run: |
+          helm package this/${{ env.CHART_FOLDER }} --version ${{ needs.define-version.outputs.version }} --app-version "${{ needs.define-version.outputs.version }}" --destination helm-releases
+          helm repo index helm-releases --merge helm-registry/index.yaml --url https://github.com/${{ github.repository }}/releases/download/chart-v${{ needs.define-version.outputs.version }}/
+          cp helm-releases/index.yaml helm-registry/index.yaml
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          draft: "${{ contains( env.GITHUB_REF, '-rc.') }}"
+          generate_release_notes: true
+          files: helm-releases/${{ steps.variables.outputs.name }}-${{ needs.define-version.outputs.version }}.tgz
+
+      - uses: actions/upload-artifact@v3
+        with:
+          path: helm-releases/${{ steps.variables.outputs.name }}-${{ needs.define-version.outputs.version }}.tgz
+
+      - name: Commit index changes
+        run: |
+          cd helm-registry
+          git config --local user.name github-actions
+          git config --local user.email github-actions@github.com
+          git add index.yaml
+          git commit -m "Update index.yaml for ${{ steps.variables.outputs.name }}-${{ needs.define-version.outputs.version }}"
+          git push
