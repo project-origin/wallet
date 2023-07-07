@@ -50,7 +50,11 @@ jobs:
     needs:
       - define-version
       - publish-server-container
-    steps:
+    env:
+      CHART_FOLDER: charts/project-origin-wallet
+      HELM_REGISTRY_REPOSITORY: project-origin/helm-registry
+
+   steps:
       - uses: actions/checkout@v3
         with:
           path: this
