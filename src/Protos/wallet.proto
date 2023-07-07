@@ -14,7 +14,7 @@ service ReceiveSliceService {
 // Could be internal only, up to the host to decide
 service WalletService {
     rpc CreateWallet(CreateWalletRequest) returns (CreateWalletResponse); // Only allowed one per user for now, later multiple wallets per user will be allowed.
-    rpc CreateWalletDepositEndpoint(CreateWalletDepositEndpointRequest) returns (WalletDepositEndpoint);
+    rpc CreateWalletDepositEndpoint(CreateWalletDepositEndpointRequest) returns (CreateWalletDepositEndpointResponse);
     rpc CreateReceiverDepositEndpoint(CreateReceiverDepositEndpointRequest) returns (CreateReceiverDepositEndpointResponse);
 
     // Certificate functions, slices abstracted away and solved by wallet
@@ -29,6 +29,12 @@ service WalletService {
     // rpc TransferSlice(TransferSliceRequest) returns (TransferSliceResponse);
 
     // Events should also be able to be emitted.. RPC or event bus?
+}
+
+message CreateWalletDepositEndpointRequest {}
+
+message CreateWalletDepositEndpointResponse {
+    WalletDepositEndpoint WalletDepositEndpoint = 1;
 }
 
 message CreateReceiverDepositEndpointRequest {
@@ -56,7 +62,6 @@ message ReceiveRequest {
 
 message ReceiveResponse {} // not yet sure what to return
 
-message CreateWalletDepositEndpointRequest {} // not yet sure
 
 message WalletDepositEndpoint {
     int32 Version = 1; // The version of the Wallet protobuf API.
