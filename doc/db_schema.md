@@ -7,7 +7,7 @@ erDiagram
         bytea PrivateKey "The private key of the owner/wallet"
     }
 
-    Wallet ||--o{ WalletSection : contains
+    Wallet |o--o{ DepositEndpoint : contains
 
     Certficate {
         uuid Id PK "Unique id of a certificate"
@@ -22,25 +22,32 @@ erDiagram
 
     Certficate ||--o{ Slice : has
 
-    WalletSection {
+    DepositEndpoint {
         uuid Id PK "Unique id of a section"
         uuid WalletId FK "The wallet that owns the section"
         int WalletPosition "The position of the section in the wallet"
         bytea PublicKey "The public key of the section, generated from the privatekey and Wallet position"
+        text Owner "Identifies the owner, is the same as subject from the JWT"
+        text Reference "Users on reference own textural reference"
     }
+
+    Slice |o--o{ Slice : source
+
 
     Slice {
         uuid Id PK "Unique id of a slice"
         uuid CertificateId FK "The certificate that is in the slice"
         uuid RegisterId FK "The certificate that is in the slice"
-        uuid WalletSectionId FK "The section that owns the slice"
-        int WalletSectionPosition "The position of the slice in the section"
+        uuid DepositEndpointId FK "The deposit endpoint the slice is in"
+        int DepositEndpointPosition "The position of the slice in the section"
         bigint Quantity "The quantity of watt-hours on the slice"
         bytea RandomR "The random R is the blinding factor for the commitment"
         bool Verified "If the slice has been verified from the registry"
+        uuid SourceSlice FK "Nullable (when was a received slice) Reference to the slice it came from"
+        int State "enum of the state of the slice"
     }
 
-    WalletSection ||--o{ Slice : contains
+    DepositEndpoint ||--o{ Slice : contains
     Registry ||--o{ Certficate : holds
 
     Registry {

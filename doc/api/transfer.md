@@ -45,3 +45,35 @@ sequenceDiagram
     wallet ->> wallet: Update wallet datastore
     deactivate wallet
 ```
+
+```mermaid
+sequenceDiagram
+    participant ex as External party
+    participant wallet as Wallet system
+    participant reg as Registry
+    participant receiver as Receiver Wallet
+
+    ex ->>+ wallet: Transfer(ReceiverId, quantity, certificateId)
+    wallet -->>- ex: return
+
+    wallet ->>+ wallet: Start from JobQueue
+
+    wallet ->> wallet: set source slice to state: slicing
+    wallet ->> wallet: get deposit position
+
+    wallet ->> wallet: create two new slices
+    note over wallet: "one for own deposit endpoint, one for receiver deposit endpoint, set status: registering"
+
+    wallet ->> registry: SubmitTransaction
+
+    alt loop until valid
+        wallet ->> registry: GetTransactionStatus
+    end
+    wallet ->> wallet: set source slice to state: sliced
+    wallet ->> wallet: new slices to state: available
+
+    wallet ->> receiver: ReceivedSlice()
+
+    deactivate wallet
+
+```
