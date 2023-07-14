@@ -28,7 +28,7 @@ public class VerifySlicesWorkerTests : WalletSystemTestsBase, IClassFixture<Regi
     public async void WhenReceivedSliceIsValid_ExpectIsConvertedToSliceAndCertificateIsCreated()
     {
         var owner = _fixture.Create<string>();
-        var section = await CreateWalletSection(owner);
+        var section = await CreateWalletDepositEndpoint(owner);
         var commitment = new SecretCommitmentInfo(150);
 
         var issuedEvent = await _registryFixture.IssueCertificate(Electricity.V1.GranularCertificateType.Production, commitment, section.PublicKey.GetPublicKey());
@@ -52,13 +52,13 @@ public class VerifySlicesWorkerTests : WalletSystemTestsBase, IClassFixture<Regi
     public async void WhenReceivedSliceIsUnknownInRegistry_ExpectReceivedSliceDeleted()
     {
         var owner = _fixture.Create<string>();
-        var section = await CreateWalletSection(owner);
+        var depositEndpoint = await CreateWalletDepositEndpoint(owner);
         var commitment = new SecretCommitmentInfo(150);
 
         var certId = Guid.NewGuid();
         var registryName = _registryFixture.Name;
 
-        var receivedSlice = await CreateReceivedSlice(section, registryName, certId, commitment.Message, commitment.BlindingValue.ToArray());
+        var receivedSlice = await CreateReceivedSlice(depositEndpoint, registryName, certId, commitment.Message, commitment.BlindingValue.ToArray());
 
         await using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
         {
@@ -74,13 +74,13 @@ public class VerifySlicesWorkerTests : WalletSystemTestsBase, IClassFixture<Regi
     public async void WhenReceivedSliceIsUnknownRegistry_ExpectReceivedSliceDeleted()
     {
         var owner = _fixture.Create<string>();
-        var section = await CreateWalletSection(owner);
+        var depositEndpoint = await CreateWalletDepositEndpoint(owner);
         var commitment = new SecretCommitmentInfo(150);
 
         var certId = Guid.NewGuid();
         var registryName = _fixture.Create<string>();
 
-        var receivedSlice = await CreateReceivedSlice(section, registryName, certId, commitment.Message, commitment.BlindingValue.ToArray());
+        var receivedSlice = await CreateReceivedSlice(depositEndpoint, registryName, certId, commitment.Message, commitment.BlindingValue.ToArray());
 
         await using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
         {

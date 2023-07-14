@@ -44,8 +44,8 @@ public class WalletService : ProjectOrigin.WalletSystem.V1.WalletService.WalletS
 
         int nextPosition = await _unitOfWork.WalletRepository.GetNextWalletPosition(wallet.Id);
 
-        var section = new WalletSection(Guid.NewGuid(), wallet.Id, nextPosition, wallet.PrivateKey.Derive(nextPosition).Neuter());
-        await _unitOfWork.WalletRepository.CreateSection(section);
+        var depositEndpoint = new DepositEndpoint(Guid.NewGuid(), wallet.Id, nextPosition, wallet.PrivateKey.Derive(nextPosition).Neuter(), subject, "");
+        await _unitOfWork.WalletRepository.CreateDepositEndpoint(depositEndpoint);
         _unitOfWork.Commit();
 
         return new V1.CreateWalletDepositEndpointResponse
@@ -54,7 +54,7 @@ public class WalletService : ProjectOrigin.WalletSystem.V1.WalletService.WalletS
             {
                 Version = 1,
                 Endpoint = _endpointAddress,
-                PublicKey = ByteString.CopyFrom(section.PublicKey.Export())
+                PublicKey = ByteString.CopyFrom(depositEndpoint.PublicKey.Export())
             }
         };
     }
@@ -72,5 +72,10 @@ public class WalletService : ProjectOrigin.WalletSystem.V1.WalletService.WalletS
         }
 
         return response;
+    }
+
+    public override Task<CreateReceiverDepositEndpointResponse> CreateReceiverDepositEndpoint(CreateReceiverDepositEndpointRequest request, ServerCallContext context)
+    {
+        return base.CreateReceiverDepositEndpoint(request, context);
     }
 }

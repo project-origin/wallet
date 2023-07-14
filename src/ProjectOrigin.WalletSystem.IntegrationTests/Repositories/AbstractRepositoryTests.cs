@@ -67,17 +67,29 @@ public abstract class AbstractRepositoryTests : IClassFixture<PostgresDatabaseFi
         return wallet;
     }
 
-    protected async Task<WalletSection> CreateWalletSection(Wallet wallet, int position)
+    protected async Task<DepositEndpoint> CreateDepositEndpoint(Wallet wallet, int position)
     {
         using var connection = CreateConnection();
         var walletRepository = new WalletRepository(connection);
 
         var publicKey = wallet.PrivateKey.Derive(position).Neuter();
-        var walletSection = new WalletSection(Guid.NewGuid(), wallet.Id, position, publicKey);
-        await walletRepository.CreateSection(walletSection);
+        var depositEndpoint = new DepositEndpoint(Guid.NewGuid(), wallet.Id, position, publicKey, wallet.Owner, "");
+        await walletRepository.CreateDepositEndpoint(depositEndpoint);
 
-        return walletSection;
+        return depositEndpoint;
     }
+
+    /*
+    protected async Task<DepositEndpoint> CreateReceiverDepositEndpoint(DepositEndpoint depositEndpoint, string owner, string referenceText)
+    {
+        using var connection = CreateConnection();
+        var walletRepository = new WalletRepository(connection);
+
+        var depositEndpoint = new DepositEndpoint(Guid.NewGuid(), null, null, publicKey, owner, referenceText);
+        await walletRepository.CreateDepositEndpoint(depositEndpoint);
+
+        return depositEndpoint;
+    }*/
 
     protected async Task<Certificate> CreateCertificate(Guid registryId, GranularCertificateType type = GranularCertificateType.Production)
     {

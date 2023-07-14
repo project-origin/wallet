@@ -72,8 +72,8 @@ public class CertificateRepository
     {
         var sql = @"SELECT c.Id, r.Name as Registry, c.StartDate, c. EndDate, c.GridArea, c.CertificateType, s.Id AS SliceId, s.Quantity as Quantity, a.Id AS AttributeId, a.KeyAtr AS Key, a.ValueAtr as Value
                     FROM Wallets w
-                    JOIN WalletSections ws ON w.Id = ws.WalletId
-                    JOIN Slices s ON ws.Id = s.WalletSectionId
+                    JOIN DepositEndpoints de ON w.Id = de.WalletId
+                    JOIN Slices s ON de.Id = s.WalletSectionId
                     JOIN Certificates c ON s.CertificateId = c.Id
                     LEFT JOIN Attributes a ON c.Id = a.CertificateId AND c.RegistryId = a.RegistryId
                     JOIN Registries r ON c.RegistryId = r.Id

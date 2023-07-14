@@ -27,13 +27,13 @@ public class ReceiveSliceService : ProjectOrigin.WalletSystem.V1.ReceiveSliceSer
     public override async Task<ReceiveResponse> ReceiveSlice(ReceiveRequest request, ServerCallContext context)
     {
         var publicKey = _hdAlgorithm.ImportHDPublicKey(request.WalletDepositEndpointPublicKey.Span);
-        var walletSection = await _unitOfWork.WalletRepository.GetWalletSectionFromPublicKey(publicKey);
+        var depositEndpoint = await _unitOfWork.WalletRepository.GetDepositEndpointFromPublicKey(publicKey);
 
-        if (walletSection == null)
-            throw new RpcException(new Status(StatusCode.InvalidArgument, "WalletSection not found for public key."));
+        if (depositEndpoint == null)
+            throw new RpcException(new Status(StatusCode.InvalidArgument, "DepositEndpoint not found for public key."));
 
         var newSlice = new ReceivedSlice(Guid.NewGuid(),
-                                 walletSection.Id,
+            depositEndpoint.Id,
                                  (int)request.WalletDepositEndpointPosition,
                                  request.CertificateId.Registry,
                                  Guid.Parse(request.CertificateId.StreamId.Value),

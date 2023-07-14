@@ -72,7 +72,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         var registry = await CreateRegistry();
         var certificate = await CreateCertificate(registry.Id);
         var wallet = await CreateWallet(_fixture.Create<string>());
-        var walletSection = await CreateWalletSection(wallet, walletPosition);
+        var walletSection = await CreateDepositEndpoint(wallet, walletPosition);
         var slice = new Slice(Guid.NewGuid(), walletSection.Id, sectionPosition, registry.Id, certificate.Id, _fixture.Create<int>(), _fixture.Create<byte[]>());
 
         // Act
@@ -95,11 +95,11 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         var certificate3 = await CreateCertificate(registry.Id);
         var owner1 = _fixture.Create<string>();
         var wallet1 = await CreateWallet(owner1);
-        var walletSection1 = await CreateWalletSection(wallet1, walletPosition);
-        var walletSection2 = await CreateWalletSection(wallet1, walletPosition + 1);
+        var walletSection1 = await CreateDepositEndpoint(wallet1, walletPosition);
+        var walletSection2 = await CreateDepositEndpoint(wallet1, walletPosition + 1);
         var owner2 = _fixture.Create<string>();
         var wallet2 = await CreateWallet(owner2);
-        var walletSection3 = await CreateWalletSection(wallet2, walletPosition);
+        var walletSection3 = await CreateDepositEndpoint(wallet2, walletPosition);
         //Wallet1
         var slice1 = new Slice(Guid.NewGuid(), walletSection1.Id, sectionPosition, registry.Id, certificate1.Id, _fixture.Create<int>(),
             _fixture.Create<byte[]>());
@@ -134,7 +134,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         var register = _fixture.Create<string>();
         var certificateId = Guid.NewGuid();
         var wallet = await CreateWallet(_fixture.Create<string>());
-        var walletSection = await CreateWalletSection(wallet, walletPosition);
+        var walletSection = await CreateDepositEndpoint(wallet, walletPosition);
         var receivedSlice = new ReceivedSlice(Guid.NewGuid(), walletSection.Id, sectionPosition, register, certificateId, _fixture.Create<int>(), _fixture.Create<byte[]>());
 
         // Act
@@ -156,8 +156,8 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         var certificateId1 = Guid.NewGuid();
         var certificateId2 = Guid.NewGuid();
         var certificateId3 = Guid.NewGuid();
-        var walletSection1 = await CreateWalletSection(wallet1, walletPosition);
-        var walletSection2 = await CreateWalletSection(wallet2, walletPosition);
+        var walletSection1 = await CreateDepositEndpoint(wallet1, walletPosition);
+        var walletSection2 = await CreateDepositEndpoint(wallet2, walletPosition);
         var receivedSlice1 = new ReceivedSlice(Guid.NewGuid(), walletSection1.Id, sectionPosition, register, certificateId1, _fixture.Create<int>(), _fixture.Create<byte[]>());
         var receivedSlice2 = new ReceivedSlice(Guid.NewGuid(), walletSection1.Id, sectionPosition + 1, register, certificateId2, _fixture.Create<int>(), _fixture.Create<byte[]>());
         var receivedSlice3 = new ReceivedSlice(Guid.NewGuid(), walletSection2.Id, sectionPosition, register, certificateId3, _fixture.Create<int>(), _fixture.Create<byte[]>());
@@ -188,8 +188,8 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         var certificateId1 = Guid.NewGuid();
         var certificateId2 = Guid.NewGuid();
         var certificateId3 = Guid.NewGuid();
-        var walletSection1 = await CreateWalletSection(wallet1, walletPosition);
-        var walletSection2 = await CreateWalletSection(wallet2, walletPosition);
+        var walletSection1 = await CreateDepositEndpoint(wallet1, walletPosition);
+        var walletSection2 = await CreateDepositEndpoint(wallet2, walletPosition);
         var receivedSlice1 = new ReceivedSlice(Guid.NewGuid(), walletSection1.Id, sectionPosition, register, certificateId1, _fixture.Create<int>(), _fixture.Create<byte[]>());
         var receivedSlice2 = new ReceivedSlice(Guid.NewGuid(), walletSection1.Id, sectionPosition + 1, register, certificateId2, _fixture.Create<int>(), _fixture.Create<byte[]>());
         var receivedSlice3 = new ReceivedSlice(Guid.NewGuid(), walletSection2.Id, sectionPosition, register, certificateId3, _fixture.Create<int>(), _fixture.Create<byte[]>());
@@ -220,7 +220,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         var register = _fixture.Create<string>();
         var wallet1 = await CreateWallet(_fixture.Create<string>());
         var certificateId1 = Guid.NewGuid();
-        var walletSection1 = await CreateWalletSection(wallet1, walletPosition);
+        var walletSection1 = await CreateDepositEndpoint(wallet1, walletPosition);
         var receivedSlice1 = new ReceivedSlice(Guid.NewGuid(), walletSection1.Id, sectionPosition, register, certificateId1, _fixture.Create<int>(), _fixture.Create<byte[]>());
         await _repository.InsertReceivedSlice(receivedSlice1);
 
@@ -241,7 +241,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         var register = _fixture.Create<string>();
         var wallet1 = await CreateWallet(_fixture.Create<string>());
         var certificateId1 = Guid.NewGuid();
-        var walletSection1 = await CreateWalletSection(wallet1, walletPosition);
+        var walletSection1 = await CreateDepositEndpoint(wallet1, walletPosition);
         var receivedSlice1 = new ReceivedSlice(Guid.NewGuid(), walletSection1.Id, sectionPosition, register, certificateId1, _fixture.Create<int>(), _fixture.Create<byte[]>());
         await _repository.InsertReceivedSlice(receivedSlice1);
 
@@ -269,7 +269,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         var register = _fixture.Create<string>();
         var wallet1 = await CreateWallet(_fixture.Create<string>());
         var certificateId1 = Guid.NewGuid();
-        var walletSection1 = await CreateWalletSection(wallet1, walletPosition);
+        var walletSection1 = await CreateDepositEndpoint(wallet1, walletPosition);
         var receivedSlice1 = new ReceivedSlice(Guid.NewGuid(), walletSection1.Id, sectionPosition, register, certificateId1, _fixture.Create<int>(), _fixture.Create<byte[]>());
         await _repository.InsertReceivedSlice(receivedSlice1);
 
