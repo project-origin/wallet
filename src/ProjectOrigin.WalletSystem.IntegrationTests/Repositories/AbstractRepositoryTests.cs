@@ -79,18 +79,6 @@ public abstract class AbstractRepositoryTests : IClassFixture<PostgresDatabaseFi
         return depositEndpoint;
     }
 
-    /*
-    protected async Task<DepositEndpoint> CreateReceiverDepositEndpoint(DepositEndpoint depositEndpoint, string owner, string referenceText)
-    {
-        using var connection = CreateConnection();
-        var walletRepository = new WalletRepository(connection);
-
-        var depositEndpoint = new DepositEndpoint(Guid.NewGuid(), null, null, publicKey, owner, referenceText);
-        await walletRepository.CreateDepositEndpoint(depositEndpoint);
-
-        return depositEndpoint;
-    }*/
-
     protected async Task<Certificate> CreateCertificate(Guid registryId, GranularCertificateType type = GranularCertificateType.Production)
     {
         using var connection = CreateConnection();

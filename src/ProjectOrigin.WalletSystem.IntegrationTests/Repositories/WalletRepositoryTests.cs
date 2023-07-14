@@ -128,16 +128,4 @@ public class WalletRepositoryTests : AbstractRepositoryTests
         // Assert
         depositEndpoint.Should().BeNull();
     }
-
-    [Fact]
-    public async Task CreateDepositEndpoint_WhenReceiverDepositEndpoint()
-    {
-        var owner = Guid.NewGuid().ToString();
-        var wallet = await CreateWallet(owner);
-        var receiverDepositEndpoint = new DepositEndpoint(Guid.NewGuid(), null, null, )
-
-        using var connection = new DbConnectionFactory(_dbFixture.ConnectionString).CreateConnection();
-        connection.Open();
-        var repository = new WalletRepository(connection);
-    }
 }
