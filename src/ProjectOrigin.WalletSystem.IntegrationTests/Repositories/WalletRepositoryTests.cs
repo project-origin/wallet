@@ -103,9 +103,9 @@ public class WalletRepositoryTests : AbstractRepositoryTests
         // Arrange
         var subject = _fixture.Create<string>();
         var wallet = await CreateWallet(subject);
-        var section1 = await CreateDepositEndpoint(wallet, 1);
-        var section2 = await CreateDepositEndpoint(wallet, 2);
-        var section3 = await CreateDepositEndpoint(wallet, 3);
+        var depositEndpoint1 = await CreateDepositEndpoint(wallet, 1);
+        var depositEndpoint2 = await CreateDepositEndpoint(wallet, 2);
+        var depositEndpoint3 = await CreateDepositEndpoint(wallet, 3);
 
         // Act
         var publicKey = wallet.PrivateKey.Derive(2).Neuter();
@@ -113,7 +113,7 @@ public class WalletRepositoryTests : AbstractRepositoryTests
 
         // Assert
         depositEndpoint.Should().NotBeNull();
-        depositEndpoint!.Id.Should().Be(section2.Id);
+        depositEndpoint!.Id.Should().Be(depositEndpoint2.Id);
     }
 
     [Fact]

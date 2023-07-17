@@ -113,8 +113,8 @@ public class VerifySlicesWorker : BackgroundService
         }
 
         var slice = new Slice(Guid.NewGuid(),
-            receivedSlice.WalletSectionId,
-            receivedSlice.WalletSectionPosition,
+            receivedSlice.DepositEndpointId,
+            receivedSlice.DepositEndpointPosition,
             registry.Id,
             receivedSlice.CertificateId,
             receivedSlice.Quantity,

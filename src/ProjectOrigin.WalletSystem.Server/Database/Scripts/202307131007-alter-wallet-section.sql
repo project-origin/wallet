@@ -19,4 +19,10 @@ begin;
 
     UPDATE DepositEndpoints SET Endpoint = '';
     ALTER TABLE DepositEndpoints ALTER COLUMN Endpoint SET NOT NULL;
+
+    ALTER TABLE Slices RENAME COLUMN WalletSectionId TO DepositEndpointId;
+    ALTER TABLE Slices RENAME COLUMN WalletSectionPosition TO DepositEndpointPosition;
+    
+    ALTER TABLE ReceivedSlices RENAME COLUMN WalletSectionId TO DepositEndpointId;
+    ALTER TABLE ReceivedSlices RENAME COLUMN WalletSectionPosition TO DepositEndpointPosition;
 commit;

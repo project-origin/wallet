@@ -20,12 +20,12 @@ public class CertificateRepository
 
     public Task InsertSlice(Slice newSlice)
     {
-        return _connection.ExecuteAsync(@"INSERT INTO Slices(Id, WalletSectionId, WalletSectionPosition, RegistryId, CertificateId, Quantity, RandomR) VALUES (@id, @walletSectionId, @walletSectionPosition, @registryId, @certificateId, @quantity, @randomR)", new { newSlice.Id, newSlice.WalletSectionId, newSlice.WalletSectionPosition, newSlice.RegistryId, newSlice.CertificateId, newSlice.Quantity, newSlice.RandomR, });
+        return _connection.ExecuteAsync(@"INSERT INTO Slices(Id, DepositEndpointId, DepositEndpointPosition, RegistryId, CertificateId, Quantity, RandomR) VALUES (@id, @depositEndpointId, @depositEndpointPosition, @registryId, @certificateId, @quantity, @randomR)", new { newSlice.Id, newSlice.DepositEndpointId, newSlice.DepositEndpointPosition, newSlice.RegistryId, newSlice.CertificateId, newSlice.Quantity, newSlice.RandomR, });
     }
 
     public Task InsertReceivedSlice(ReceivedSlice receivedSlice)
     {
-        return _connection.ExecuteAsync(@"INSERT INTO ReceivedSlices(Id, WalletSectionId, WalletSectionPosition, Registry, CertificateId, Quantity, RandomR) VALUES (@id, @walletSectionId, @walletSectionPosition, @registry, @certificateId, @quantity, @randomR)", new { receivedSlice.Id, receivedSlice.WalletSectionId, receivedSlice.WalletSectionPosition, receivedSlice.Registry, receivedSlice.CertificateId, receivedSlice.Quantity, receivedSlice.RandomR });
+        return _connection.ExecuteAsync(@"INSERT INTO ReceivedSlices(Id, DepositEndpointId, DepositEndpointPosition, Registry, CertificateId, Quantity, RandomR) VALUES (@id, @walletSectionId, @walletSectionPosition, @registry, @certificateId, @quantity, @randomR)", new { receivedSlice.Id, WalletSectionId = receivedSlice.DepositEndpointId, WalletSectionPosition = receivedSlice.DepositEndpointPosition, receivedSlice.Registry, receivedSlice.CertificateId, receivedSlice.Quantity, receivedSlice.RandomR });
     }
 
     public async Task InsertCertificate(Certificate certificate)
@@ -73,7 +73,7 @@ public class CertificateRepository
         var sql = @"SELECT c.Id, r.Name as Registry, c.StartDate, c. EndDate, c.GridArea, c.CertificateType, s.Id AS SliceId, s.Quantity as Quantity, a.Id AS AttributeId, a.KeyAtr AS Key, a.ValueAtr as Value
                     FROM Wallets w
                     JOIN DepositEndpoints de ON w.Id = de.WalletId
-                    JOIN Slices s ON de.Id = s.WalletSectionId
+                    JOIN Slices s ON de.Id = s.DepositEndpointId
                     JOIN Certificates c ON s.CertificateId = c.Id
                     LEFT JOIN Attributes a ON c.Id = a.CertificateId AND c.RegistryId = a.RegistryId
                     JOIN Registries r ON c.RegistryId = r.Id
