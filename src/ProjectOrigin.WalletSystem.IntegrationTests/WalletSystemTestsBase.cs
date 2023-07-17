@@ -55,7 +55,7 @@ public abstract class WalletSystemTestsBase : IClassFixture<GrpcTestFixture<Star
             var wallet = new Wallet(Guid.NewGuid(), owner, Algorithm.GenerateNewPrivateKey());
             await walletRepository.Create(wallet);
 
-            var depositEndpoint = new DepositEndpoint(Guid.NewGuid(), wallet.Id, 1, wallet.PrivateKey.Derive(1).Neuter(), owner, "");
+            var depositEndpoint = new DepositEndpoint(Guid.NewGuid(), wallet.Id, 1, wallet.PrivateKey.Derive(1).Neuter(), owner, "", "");
             await walletRepository.CreateDepositEndpoint(depositEndpoint);
 
             return depositEndpoint;

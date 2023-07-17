@@ -73,7 +73,7 @@ public abstract class AbstractRepositoryTests : IClassFixture<PostgresDatabaseFi
         var walletRepository = new WalletRepository(connection);
 
         var publicKey = wallet.PrivateKey.Derive(position).Neuter();
-        var depositEndpoint = new DepositEndpoint(Guid.NewGuid(), wallet.Id, position, publicKey, wallet.Owner, "");
+        var depositEndpoint = new DepositEndpoint(Guid.NewGuid(), wallet.Id, position, publicKey, wallet.Owner, "", "");
         await walletRepository.CreateDepositEndpoint(depositEndpoint);
 
         return depositEndpoint;

@@ -71,7 +71,7 @@ public class WalletRepositoryTests : AbstractRepositoryTests
     [InlineData(0, 1)]
     [InlineData(1, 2)]
     [InlineData(3, 4)]
-    public async Task Query_CreateSection_GetNextWalletPosition_Valid(int sections, int next)
+    public async Task Query_CreateDepositEndpoint_GetNextWalletPosition_Valid(int sections, int next)
     {
         // Arrange
         var subject = Guid.NewGuid().ToString();
@@ -87,7 +87,7 @@ public class WalletRepositoryTests : AbstractRepositoryTests
 
         for (int position = 1; position <= sections; position++)
         {
-            await repository.CreateDepositEndpoint(new DepositEndpoint(Guid.NewGuid(), wallet.Id, position, wallet.PrivateKey.Derive(position).Neuter(), subject, ""));
+            await repository.CreateDepositEndpoint(new DepositEndpoint(Guid.NewGuid(), wallet.Id, position, wallet.PrivateKey.Derive(position).Neuter(), subject, "", ""));
         }
 
         // Act
@@ -98,7 +98,7 @@ public class WalletRepositoryTests : AbstractRepositoryTests
     }
 
     [Fact]
-    public async Task GetWalletSectionFromPublicKey_Success()
+    public async Task GetWalletDepositEndpointFromPublicKey_Success()
     {
         // Arrange
         var subject = _fixture.Create<string>();
@@ -117,7 +117,7 @@ public class WalletRepositoryTests : AbstractRepositoryTests
     }
 
     [Fact]
-    public async Task GetWalletSectionFromPublicKey_ReturnNull()
+    public async Task GetWalletDepositEndpointFromPublicKey_ReturnNull()
     {
         // Arrange
         var publicKey = _algorithm.GenerateNewPrivateKey().Derive(1).Neuter();

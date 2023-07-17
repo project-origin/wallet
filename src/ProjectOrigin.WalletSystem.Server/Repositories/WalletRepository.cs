@@ -31,9 +31,9 @@ public class WalletRepository
         return await _connection.ExecuteScalarAsync<int>("SELECT MAX(WalletPosition) FROM DepositEndpoints WHERE WalletId = @id", new { id }) + 1;
     }
 
-    public Task CreateDepositEndpoint(DepositEndpoint section)
+    public Task CreateDepositEndpoint(DepositEndpoint depositEndpoint)
     {
-        return _connection.ExecuteAsync(@"INSERT INTO DepositEndpoints(Id, WalletId, WalletPosition, PublicKey, Owner, ReferenceText) VALUES (@id, @walletId, @walletPosition, @publicKey, @owner, @referenceText)", new { section.Id, section.WalletId, section.WalletPosition, section.PublicKey, section.Owner, section.ReferenceText });
+        return _connection.ExecuteAsync(@"INSERT INTO DepositEndpoints(Id, WalletId, WalletPosition, PublicKey, Owner, ReferenceText, Endpoint) VALUES (@id, @walletId, @walletPosition, @publicKey, @owner, @referenceText, @endpoint)", new { depositEndpoint.Id, depositEndpoint.WalletId, depositEndpoint.WalletPosition, depositEndpoint.PublicKey, depositEndpoint.Owner, depositEndpoint.ReferenceText, depositEndpoint.Endpoint });
     }
 
     public async Task<DepositEndpoint?> GetDepositEndpointFromPublicKey(IHDPublicKey publicKey)

@@ -52,8 +52,8 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
                 await walletRepository.Create(wallet);
                 await walletRepository.Create(notOwnedWallet);
 
-                var depositEndpoint = new DepositEndpoint(Guid.NewGuid(), wallet.Id, 1, wallet.PrivateKey.Derive(1).Neuter(), owner, "");
-                var notOwnedDepositEndpoint = new DepositEndpoint(Guid.NewGuid(), notOwnedWallet.Id, 1, notOwnedWallet.PrivateKey.Derive(1).Neuter(), owner, "");
+                var depositEndpoint = new DepositEndpoint(Guid.NewGuid(), wallet.Id, 1, wallet.PrivateKey.Derive(1).Neuter(), owner, "", "");
+                var notOwnedDepositEndpoint = new DepositEndpoint(Guid.NewGuid(), notOwnedWallet.Id, 1, notOwnedWallet.PrivateKey.Derive(1).Neuter(), owner, "", "");
                 await walletRepository.CreateDepositEndpoint(depositEndpoint);
                 await walletRepository.CreateDepositEndpoint(notOwnedDepositEndpoint);
 
@@ -113,7 +113,7 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
                 var wallet = new Wallet(Guid.NewGuid(), owner, Algorithm.GenerateNewPrivateKey());
                 await walletRepository.Create(wallet);
 
-                var depositEndpoint = new DepositEndpoint(Guid.NewGuid(), wallet.Id, 1, wallet.PrivateKey.Derive(1).Neuter(), owner, "");
+                var depositEndpoint = new DepositEndpoint(Guid.NewGuid(), wallet.Id, 1, wallet.PrivateKey.Derive(1).Neuter(), owner, "", "");
                 await walletRepository.CreateDepositEndpoint(depositEndpoint);
             }
 
@@ -140,7 +140,7 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
                 var wallet = new Wallet(Guid.NewGuid(), owner, Algorithm.GenerateNewPrivateKey());
                 await walletRepository.Create(wallet);
 
-                var depositEndpoint = new DepositEndpoint(Guid.NewGuid(), wallet.Id, 1, wallet.PrivateKey.Derive(1).Neuter(), owner, "");
+                var depositEndpoint = new DepositEndpoint(Guid.NewGuid(), wallet.Id, 1, wallet.PrivateKey.Derive(1).Neuter(), owner, "", "");
                 await walletRepository.CreateDepositEndpoint(depositEndpoint);
 
                 var regName = _fixture.Create<string>();

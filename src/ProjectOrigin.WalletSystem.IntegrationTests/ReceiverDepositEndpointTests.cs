@@ -58,6 +58,8 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
                 var foundDepositEndpoint = connection.QuerySingle<DepositEndpoint>("SELECT * FROM DepositEndpoints");
 
                 request.WalletDepositEndpoint.PublicKey.Should().Equal(foundDepositEndpoint.PublicKey.Export().ToArray());
+                request.WalletDepositEndpoint.Endpoint.Should().Be(foundDepositEndpoint.Endpoint);
+                request.Reference.Should().Be(foundDepositEndpoint.ReferenceText);
             }
         }
     }
