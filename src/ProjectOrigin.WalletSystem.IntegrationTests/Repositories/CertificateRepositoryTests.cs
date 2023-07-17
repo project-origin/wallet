@@ -178,6 +178,17 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
     }
 
     [Fact]
+    public async Task InsertReceivedSlice_WhenFKConstraintViolated_ExpectException()
+    {
+        var register = _fixture.Create<string>();
+        var receivedSlice = new ReceivedSlice(Guid.NewGuid(), Guid.NewGuid(), 543, register, Guid.NewGuid(), _fixture.Create<int>(), _fixture.Create<byte[]>());
+
+        var act = async () => await _repository.InsertReceivedSlice(receivedSlice);
+
+        await act.Should().ThrowAsync<PostgresException>();
+    }
+
+    [Fact]
     public async Task RemoveReceivedSlices()
     {
         var walletPosition = 1;
