@@ -2,12 +2,14 @@ using System;
 using System.Threading.Tasks;
 using Google.Protobuf;
 using Grpc.Core;
+using MassTransit;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ProjectOrigin.Common.V1;
 using ProjectOrigin.HierarchicalDeterministicKeys.Implementations;
 using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
+using ProjectOrigin.WalletSystem.Server.CommandHandlers;
 using ProjectOrigin.WalletSystem.Server.Database;
 using ProjectOrigin.WalletSystem.Server.Models;
 using ProjectOrigin.WalletSystem.Server.Options;
@@ -22,13 +24,15 @@ public class WalletService : ProjectOrigin.WalletSystem.V1.WalletService.WalletS
     private readonly ILogger<WalletService> _logger;
     private readonly UnitOfWork _unitOfWork;
     private readonly IHDAlgorithm _hdAlgorithm;
+    private readonly IBus _bus;
 
-    public WalletService(ILogger<WalletService> logger, UnitOfWork unitOfWork, IHDAlgorithm hdAlgorithm, IOptions<ServiceOptions> options)
+    public WalletService(ILogger<WalletService> logger, UnitOfWork unitOfWork, IHDAlgorithm hdAlgorithm, IOptions<ServiceOptions> options, IBus bus)
     {
         _endpointAddress = options.Value.EndpointAddress;
         _logger = logger;
         _unitOfWork = unitOfWork;
         _hdAlgorithm = hdAlgorithm;
+        _bus = bus;
     }
 
     public override async Task<V1.CreateWalletDepositEndpointResponse> CreateWalletDepositEndpoint(V1.CreateWalletDepositEndpointRequest request, ServerCallContext context)
@@ -93,5 +97,14 @@ public class WalletService : ProjectOrigin.WalletSystem.V1.WalletService.WalletS
                 Value = receiverDepositEndpoint.Id.ToString()
             }
         };
+    }
+
+    public override Task<TransferResponse> TransferCertificate(TransferRequest request, ServerCallContext context)
+    {
+        var command = new TransferCertificateCommand(request.CertificateId.Registry, new Guid(request.CertificateId.StreamId.Value), request.Quantity, new Guid(request.ReceiverId.Value));
+
+        _bus.Send(command);
+
+        return Task.FromResult(new TransferResponse());
     }
 }

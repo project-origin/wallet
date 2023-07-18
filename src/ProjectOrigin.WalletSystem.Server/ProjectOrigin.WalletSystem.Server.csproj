@@ -6,12 +6,14 @@
   </PropertyGroup>
   <ItemGroup>
     <None Remove="Database\Scripts\202307131007-alter-wallet-section.sql" />
+    <None Remove="Database\Scripts\202307180830-add-slice-state.sql" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Dapper" Version="2.0.123" />
     <PackageReference Include="dbup-postgresql" Version="5.0.8" />
     <PackageReference Include="Grpc.AspNetCore" Version="2.49.0" />
+    <PackageReference Include="MassTransit.RabbitMQ" Version="8.0.12" />
     <PackageReference Include="Npgsql" Version="7.0.4" />
     <PackageReference Include="NSec.Cryptography" Version="22.4.0" />
     <PackageReference Include="NBitcoin" Version="7.0.25" />
@@ -22,6 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="Database\Scripts\202307180830-add-slice-state.sql" />
     <EmbeddedResource Include="Database\Scripts\202307131007-alter-wallet-section.sql" />
     <EmbeddedResource Include="Database\Scripts\202305101334-create-wallet-tables.sql" />
     <EmbeddedResource Include="Database\Scripts\202306151348-create-attributes-table.sql" />

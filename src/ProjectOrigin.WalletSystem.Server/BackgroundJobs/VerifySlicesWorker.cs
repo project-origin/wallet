@@ -118,7 +118,8 @@ public class VerifySlicesWorker : BackgroundService
             registry.Id,
             receivedSlice.CertificateId,
             receivedSlice.Quantity,
-            receivedSlice.RandomR);
+            receivedSlice.RandomR,
+            SliceState.NotSliced);
 
         var certificate = await unitOfWork.CertificateRepository.GetCertificate(registry.Id, slice.CertificateId);
         if (certificate == null)

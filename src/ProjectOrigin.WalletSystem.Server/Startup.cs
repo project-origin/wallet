@@ -8,11 +8,13 @@ using ProjectOrigin.WalletSystem.Server.Database;
 using ProjectOrigin.WalletSystem.Server.Database.Mapping;
 using ProjectOrigin.WalletSystem.Server.Services;
 using System.IdentityModel.Tokens.Jwt;
+using MassTransit;
 using ProjectOrigin.WalletSystem.Server.BackgroundJobs;
 using ProjectOrigin.WalletSystem.Server.Projections;
 using ProjectOrigin.WalletSystem.Server.Options;
 using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
 using ProjectOrigin.HierarchicalDeterministicKeys.Implementations;
+using ProjectOrigin.WalletSystem.Server.CommandHandlers;
 
 namespace ProjectOrigin.WalletSystem.Server;
 
@@ -60,6 +62,18 @@ public class Startup
                 };
             });
         services.AddAuthorization();
+
+        services.AddMassTransit(o =>
+        {
+            o.SetKebabCaseEndpointNameFormatter();
+
+            o.AddConsumer<TransferCertificateCommandHandler>();
+
+            o.UsingInMemory((context, cfg) =>
+            {
+                cfg.ConfigureEndpoints(context);
+            });
+        });
 
         services.AddScoped<UnitOfWork>();
         services.AddSingleton<IDbConnectionFactory, DbConnectionFactory>();

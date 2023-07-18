@@ -73,7 +73,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         var certificate = await CreateCertificate(registry.Id);
         var wallet = await CreateWallet(_fixture.Create<string>());
         var depositEndpoint = await CreateDepositEndpoint(wallet, walletPosition);
-        var slice = new Slice(Guid.NewGuid(), depositEndpoint.Id, depositEndpointPosition, registry.Id, certificate.Id, _fixture.Create<int>(), _fixture.Create<byte[]>());
+        var slice = new Slice(Guid.NewGuid(), depositEndpoint.Id, depositEndpointPosition, registry.Id, certificate.Id, _fixture.Create<int>(), _fixture.Create<byte[]>(), SliceState.NotSliced);
 
         // Act
         await _repository.InsertSlice(slice);
@@ -102,15 +102,15 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         var depositEndpoint3 = await CreateDepositEndpoint(wallet2, walletPosition);
         //Wallet1
         var slice1 = new Slice(Guid.NewGuid(), depositEndpoint1.Id, deposintEndpointPosition, registry.Id, certificate1.Id, _fixture.Create<int>(),
-            _fixture.Create<byte[]>());
+            _fixture.Create<byte[]>(), SliceState.NotSliced);
         var slice2 = new Slice(Guid.NewGuid(), depositEndpoint1.Id, deposintEndpointPosition + 1, registry.Id, certificate1.Id, _fixture.Create<int>(),
-            _fixture.Create<byte[]>());
+            _fixture.Create<byte[]>(), SliceState.NotSliced);
         //Certficiate2
         var slice3 = new Slice(Guid.NewGuid(), depositEndpoint2.Id, deposintEndpointPosition, registry.Id, certificate2.Id, _fixture.Create<int>(),
-            _fixture.Create<byte[]>());
+            _fixture.Create<byte[]>(), SliceState.NotSliced);
 
         var sliceWithDifferentOwner = new Slice(Guid.NewGuid(), depositEndpoint3.Id, deposintEndpointPosition, registry.Id, certificate3.Id,
-            _fixture.Create<int>(), _fixture.Create<byte[]>());
+            _fixture.Create<int>(), _fixture.Create<byte[]>(), SliceState.NotSliced);
 
         await _repository.InsertSlice(slice1);
         await _repository.InsertSlice(slice2);

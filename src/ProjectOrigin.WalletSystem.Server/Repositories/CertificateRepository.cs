@@ -20,7 +20,7 @@ public class CertificateRepository
 
     public Task InsertSlice(Slice newSlice)
     {
-        return _connection.ExecuteAsync(@"INSERT INTO Slices(Id, DepositEndpointId, DepositEndpointPosition, RegistryId, CertificateId, Quantity, RandomR) VALUES (@id, @depositEndpointId, @depositEndpointPosition, @registryId, @certificateId, @quantity, @randomR)", new { newSlice.Id, newSlice.DepositEndpointId, newSlice.DepositEndpointPosition, newSlice.RegistryId, newSlice.CertificateId, newSlice.Quantity, newSlice.RandomR, });
+        return _connection.ExecuteAsync(@"INSERT INTO Slices(Id, DepositEndpointId, DepositEndpointPosition, RegistryId, CertificateId, Quantity, RandomR, SliceState) VALUES (@id, @depositEndpointId, @depositEndpointPosition, @registryId, @certificateId, @quantity, @randomR, @sliceState)", new { newSlice.Id, newSlice.DepositEndpointId, newSlice.DepositEndpointPosition, newSlice.RegistryId, newSlice.CertificateId, newSlice.Quantity, newSlice.RandomR, newSlice.SliceState });
     }
 
     public Task InsertReceivedSlice(ReceivedSlice receivedSlice)
