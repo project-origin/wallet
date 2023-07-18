@@ -87,7 +87,7 @@ public class TransferCertificateCommandHandler : IConsumer<TransferCertificateCo
         if (msg.Quantity == slice.Quantity)
         {
             await TransferInRegistry(client, slice1, msg.Registry, receiverDepositEndpoint.PublicKey);
-            
+
             await _unitOfWork.CertificateRepository.SetSliceState(slice, SliceState.Sliced);
             await _unitOfWork.CertificateRepository.SetSliceState(slice1, SliceState.Available);
             _unitOfWork.Commit();
