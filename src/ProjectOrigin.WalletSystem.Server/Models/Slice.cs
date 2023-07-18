@@ -4,9 +4,10 @@ namespace ProjectOrigin.WalletSystem.Server.Models;
 
 public enum SliceState
 {
-    NotSliced = 1,
+    Available = 1,
     Slicing = 2,
-    Sliced = 3
+    Registering = 3,
+    Sliced = 4
 }
 
 public record Slice(Guid Id,

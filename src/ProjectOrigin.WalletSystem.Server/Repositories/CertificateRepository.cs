@@ -128,6 +128,33 @@ public class CertificateRepository
         return _connection.QueryAsync<ReceivedSlice>("SELECT * FROM ReceivedSlices WHERE Id = ANY(@ids)", new { ids });
     }
 
+    public Task<Slice?> GetAvailableSlice(string registryName, Guid certificateId)
+    {
+        var sql = @"SELECT s.*
+                    FROM Certificates c
+                    LEFT JOIN Slices s on c.Id = s.CertificateId
+                    LEFT JOIN Registries r on s.RegistryId = r.Id
+                    WHERE r.Name = @registryName AND s.CertificateId = @certificateId AND s.SliceState = 1";
+
+        return _connection.QueryFirstOrDefaultAsync<Slice?>(sql, new { registryName, certificateId });
+    }
+
+    public Task<Slice> GetSlice(string registryName, Guid certificateId)
+    {
+        var sql = @"SELECT s.*
+                    FROM Certificates c
+                    LEFT JOIN Slices s on c.Id = s.CertificateId
+                    LEFT JOIN Registries r on s.RegistryId = r.Id
+                    WHERE r.Name = @registryName AND s.CertificateId = @certificateId";
+
+        return _connection.QueryFirstOrDefaultAsync<Slice>(sql, new { registryName, certificateId });
+    }
+
+    public Task SetSliceState(Slice slice, SliceState state)
+    {
+        return _connection.ExecuteAsync("UPDATE Slices SET SliceState = @state WHERE Id = @id", new { state, slice.Id });
+    }
+
     internal Task<Certificate> GetCertificate(object id, Guid certificateId)
     {
         throw new NotImplementedException();

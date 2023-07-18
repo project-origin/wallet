@@ -76,10 +76,10 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
                 await certificateRepository.InsertCertificate(certificate2);
                 await certificateRepository.InsertCertificate(notOwnedCertificate);
 
-                var slice1 = new Slice(Guid.NewGuid(), depositEndpoint.Id, 1, registry.Id, certificate1.Id, quantity1, _fixture.Create<byte[]>(), SliceState.NotSliced);
-                var slice2 = new Slice(Guid.NewGuid(), depositEndpoint.Id, 1, registry.Id, certificate1.Id, quantity2, _fixture.Create<byte[]>(), SliceState.NotSliced);
-                var slice3 = new Slice(Guid.NewGuid(), depositEndpoint.Id, 1, registry.Id, certificate2.Id, quantity3, _fixture.Create<byte[]>(), SliceState.NotSliced);
-                var notOwnedSlice = new Slice(Guid.NewGuid(), notOwnedDepositEndpoint.Id, 1, registry.Id, notOwnedCertificate.Id, _fixture.Create<long>(), _fixture.Create<byte[]>(), SliceState.NotSliced);
+                var slice1 = new Slice(Guid.NewGuid(), depositEndpoint.Id, 1, registry.Id, certificate1.Id, quantity1, _fixture.Create<byte[]>(), SliceState.Available);
+                var slice2 = new Slice(Guid.NewGuid(), depositEndpoint.Id, 1, registry.Id, certificate1.Id, quantity2, _fixture.Create<byte[]>(), SliceState.Available);
+                var slice3 = new Slice(Guid.NewGuid(), depositEndpoint.Id, 1, registry.Id, certificate2.Id, quantity3, _fixture.Create<byte[]>(), SliceState.Available);
+                var notOwnedSlice = new Slice(Guid.NewGuid(), notOwnedDepositEndpoint.Id, 1, registry.Id, notOwnedCertificate.Id, _fixture.Create<long>(), _fixture.Create<byte[]>(), SliceState.Available);
                 await certificateRepository.InsertSlice(slice1);
                 await certificateRepository.InsertSlice(slice2);
                 await certificateRepository.InsertSlice(slice3);
@@ -152,7 +152,7 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
                 await connection.ExecuteAsync(@"INSERT INTO Certificates(Id, RegistryId, StartDate, EndDate, GridArea, CertificateType) VALUES (@id, @registryId, @startDate, @endDate, @gridArea, @certificateType)",
                     new { id = certId, registryId = registry.Id, startDate = DateTimeOffset.Now.ToUtcTime(), endDate = DateTimeOffset.Now.AddDays(1).ToUtcTime(), gridArea = "SomeGridArea", certificateType = 0 });
 
-                var slice1 = new Slice(Guid.NewGuid(), depositEndpoint.Id, 1, registry.Id, certId, 42, _fixture.Create<byte[]>(), SliceState.NotSliced);
+                var slice1 = new Slice(Guid.NewGuid(), depositEndpoint.Id, 1, registry.Id, certId, 42, _fixture.Create<byte[]>(), SliceState.Available);
                 var certificateRepository = new CertificateRepository(connection);
                 await certificateRepository.InsertSlice(slice1);
             }

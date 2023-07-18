@@ -1,11 +1,9 @@
 using AutoFixture;
-using Dapper;
 using FluentAssertions;
 using ProjectOrigin.WalletSystem.Server.Database;
 using ProjectOrigin.WalletSystem.Server.Models;
 using ProjectOrigin.WalletSystem.Server.Repositories;
 using System;
-using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -127,5 +125,18 @@ public class WalletRepositoryTests : AbstractRepositoryTests
 
         // Assert
         depositEndpoint.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task GetReceiverDepositEndpoint()
+    {
+        var subject = _fixture.Create<string>();
+        var depositEndpoint = await CreateReceiverDepositEndpoint(subject, _fixture.Create<string>(), _fixture.Create<string>());
+
+        var deDb = await _repository.GetReceiverDepositEndpoint(depositEndpoint.Id);
+
+        deDb.Should().NotBeNull();
+        deDb.WalletPosition.Should().BeNull();
+        deDb.WalletId.Should().BeNull();
     }
 }

@@ -101,7 +101,8 @@ public class WalletService : ProjectOrigin.WalletSystem.V1.WalletService.WalletS
 
     public override Task<TransferResponse> TransferCertificate(TransferRequest request, ServerCallContext context)
     {
-        var command = new TransferCertificateCommand(request.CertificateId.Registry, new Guid(request.CertificateId.StreamId.Value), request.Quantity, new Guid(request.ReceiverId.Value));
+        var owner = context.GetSubject();
+        var command = new TransferCertificateCommand(owner, request.CertificateId.Registry, new Guid(request.CertificateId.StreamId.Value), request.Quantity, new Guid(request.ReceiverId.Value));
 
         _bus.Send(command);
 

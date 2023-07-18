@@ -41,4 +41,9 @@ public class WalletRepository
         var publicKeyBytes = publicKey.Export().ToArray();
         return await _connection.QuerySingleOrDefaultAsync<DepositEndpoint>("SELECT * FROM DepositEndpoints WHERE PublicKey = @publicKeyBytes", new { publicKeyBytes });
     }
+
+    public async Task<DepositEndpoint?> GetReceiverDepositEndpoint(Guid depositEndpointId)
+    {
+        return await _connection.QuerySingleOrDefaultAsync<DepositEndpoint?>("SELECT * FROM DepositEndpoints WHERE Id = @depositEndpointId", new { depositEndpointId });
+    }
 }
