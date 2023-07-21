@@ -21,7 +21,7 @@ public class GrpcTests : WalletSystemTestsBase
     }
 
     [Fact]
-    public async Task can_create_wallet_section_when_authenticated()
+    public async Task can_create_deposit_endpoint_when_authenticated()
     {
         // Arrange
         var subject = Guid.NewGuid().ToString();
@@ -33,19 +33,19 @@ public class GrpcTests : WalletSystemTestsBase
         var request = new CreateWalletDepositEndpointRequest();
 
         // Act
-        var walletSection = await client.CreateWalletDepositEndpointAsync(request, headers);
+        var depositEndpoint = await client.CreateWalletDepositEndpointAsync(request, headers);
 
         // Assert
-        walletSection.Should().NotBeNull();
-        walletSection.WalletDepositEndpoint.Version.Should().Be(1);
-        walletSection.WalletDepositEndpoint.Endpoint.Should().Be(endpoint);
-        walletSection.WalletDepositEndpoint.PublicKey.Should().NotBeNullOrEmpty();
+        depositEndpoint.Should().NotBeNull();
+        depositEndpoint.WalletDepositEndpoint.Version.Should().Be(1);
+        depositEndpoint.WalletDepositEndpoint.Endpoint.Should().Be(endpoint);
+        depositEndpoint.WalletDepositEndpoint.PublicKey.Should().NotBeNullOrEmpty();
 
         using (var connection = new DbConnectionFactory(_dbFixture.ConnectionString).CreateConnection())
         {
-            var foundSection = connection.QuerySingle<WalletSection>("SELECT * FROM WalletSections");
+            var foundDepositEndpoint = connection.QuerySingle<DepositEndpoint>("SELECT * FROM DepositEndpoints");
 
-            walletSection.WalletDepositEndpoint.PublicKey.Should().Equal(foundSection.PublicKey.Export().ToArray());
+            depositEndpoint.WalletDepositEndpoint.PublicKey.Should().Equal(foundDepositEndpoint.PublicKey.Export().ToArray());
 
             var foundWallet = connection.QuerySingle<Wallet>("SELECT * FROM Wallets where owner = @owner", new { owner = subject });
             // Wallet should be implicitly created

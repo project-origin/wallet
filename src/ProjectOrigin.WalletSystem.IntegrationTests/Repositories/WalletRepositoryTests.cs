@@ -71,7 +71,7 @@ public class WalletRepositoryTests : AbstractRepositoryTests
     [InlineData(0, 1)]
     [InlineData(1, 2)]
     [InlineData(3, 4)]
-    public async Task Query_CreateSection_GetNextWalletPosition_Valid(int sections, int next)
+    public async Task Query_CreateDepositEndpoint_GetNextWalletPosition_Valid(int sections, int next)
     {
         // Arrange
         var subject = Guid.NewGuid().ToString();
@@ -87,7 +87,7 @@ public class WalletRepositoryTests : AbstractRepositoryTests
 
         for (int position = 1; position <= sections; position++)
         {
-            await repository.CreateSection(new WalletSection(Guid.NewGuid(), wallet.Id, position, wallet.PrivateKey.Derive(position).Neuter()));
+            await repository.CreateDepositEndpoint(new DepositEndpoint(Guid.NewGuid(), wallet.Id, position, wallet.PrivateKey.Derive(position).Neuter(), subject, "", ""));
         }
 
         // Act
@@ -98,34 +98,34 @@ public class WalletRepositoryTests : AbstractRepositoryTests
     }
 
     [Fact]
-    public async Task GetWalletSectionFromPublicKey_Success()
+    public async Task GetWalletDepositEndpointFromPublicKey_Success()
     {
         // Arrange
         var subject = _fixture.Create<string>();
         var wallet = await CreateWallet(subject);
-        var section1 = await CreateWalletSection(wallet, 1);
-        var section2 = await CreateWalletSection(wallet, 2);
-        var section3 = await CreateWalletSection(wallet, 3);
+        var depositEndpoint1 = await CreateDepositEndpoint(wallet, 1);
+        var depositEndpoint2 = await CreateDepositEndpoint(wallet, 2);
+        var depositEndpoint3 = await CreateDepositEndpoint(wallet, 3);
 
         // Act
         var publicKey = wallet.PrivateKey.Derive(2).Neuter();
-        var section = await _repository.GetWalletSectionFromPublicKey(publicKey);
+        var depositEndpoint = await _repository.GetDepositEndpointFromPublicKey(publicKey);
 
         // Assert
-        section.Should().NotBeNull();
-        section!.Id.Should().Be(section2.Id);
+        depositEndpoint.Should().NotBeNull();
+        depositEndpoint!.Id.Should().Be(depositEndpoint2.Id);
     }
 
     [Fact]
-    public async Task GetWalletSectionFromPublicKey_ReturnNull()
+    public async Task GetWalletDepositEndpointFromPublicKey_ReturnNull()
     {
         // Arrange
         var publicKey = _algorithm.GenerateNewPrivateKey().Derive(1).Neuter();
 
         // Act
-        var section = await _repository.GetWalletSectionFromPublicKey(publicKey);
+        var depositEndpoint = await _repository.GetDepositEndpointFromPublicKey(publicKey);
 
         // Assert
-        section.Should().BeNull();
+        depositEndpoint.Should().BeNull();
     }
 }

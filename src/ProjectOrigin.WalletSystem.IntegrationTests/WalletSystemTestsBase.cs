@@ -47,7 +47,7 @@ public abstract class WalletSystemTestsBase : IClassFixture<GrpcTestFixture<Star
         _logger.Dispose();
     }
 
-    protected async Task<WalletSection> CreateWalletSection(string owner)
+    protected async Task<DepositEndpoint> CreateWalletDepositEndpoint(string owner)
     {
         using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
         {
@@ -55,10 +55,10 @@ public abstract class WalletSystemTestsBase : IClassFixture<GrpcTestFixture<Star
             var wallet = new Wallet(Guid.NewGuid(), owner, Algorithm.GenerateNewPrivateKey());
             await walletRepository.Create(wallet);
 
-            var section = new WalletSection(Guid.NewGuid(), wallet.Id, 1, wallet.PrivateKey.Derive(1).Neuter());
-            await walletRepository.CreateSection(section);
+            var depositEndpoint = new DepositEndpoint(Guid.NewGuid(), wallet.Id, 1, wallet.PrivateKey.Derive(1).Neuter(), owner, "", "");
+            await walletRepository.CreateDepositEndpoint(depositEndpoint);
 
-            return section;
+            return depositEndpoint;
         }
     }
 
@@ -92,12 +92,12 @@ public abstract class WalletSystemTestsBase : IClassFixture<GrpcTestFixture<Star
         }
     }
 
-    protected async Task<ReceivedSlice> CreateReceivedSlice(WalletSection walletSection, string registryName, Guid certificateId, long quantity, byte[] randomR)
+    protected async Task<ReceivedSlice> CreateReceivedSlice(DepositEndpoint depositEndpoint, string registryName, Guid certificateId, long quantity, byte[] randomR)
     {
         using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
         {
             var certificateRepository = new CertificateRepository(connection);
-            var receivedSlice = new ReceivedSlice(Guid.NewGuid(), walletSection.Id, walletSection.WalletPosition,
+            var receivedSlice = new ReceivedSlice(Guid.NewGuid(), depositEndpoint.Id, depositEndpoint.WalletPosition!.Value,
                 registryName, certificateId, quantity, randomR);
 
             await certificateRepository.InsertReceivedSlice(receivedSlice);

@@ -5,6 +5,8 @@ using Grpc.Core;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using ProjectOrigin.Common.V1;
+using ProjectOrigin.HierarchicalDeterministicKeys.Implementations;
 using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
 using ProjectOrigin.WalletSystem.Server.Database;
 using ProjectOrigin.WalletSystem.Server.Models;
@@ -44,8 +46,8 @@ public class WalletService : ProjectOrigin.WalletSystem.V1.WalletService.WalletS
 
         int nextPosition = await _unitOfWork.WalletRepository.GetNextWalletPosition(wallet.Id);
 
-        var section = new WalletSection(Guid.NewGuid(), wallet.Id, nextPosition, wallet.PrivateKey.Derive(nextPosition).Neuter());
-        await _unitOfWork.WalletRepository.CreateSection(section);
+        var depositEndpoint = new DepositEndpoint(Guid.NewGuid(), wallet.Id, nextPosition, wallet.PrivateKey.Derive(nextPosition).Neuter(), subject, "", "");
+        await _unitOfWork.WalletRepository.CreateDepositEndpoint(depositEndpoint);
         _unitOfWork.Commit();
 
         return new V1.CreateWalletDepositEndpointResponse
@@ -54,7 +56,7 @@ public class WalletService : ProjectOrigin.WalletSystem.V1.WalletService.WalletS
             {
                 Version = 1,
                 Endpoint = _endpointAddress,
-                PublicKey = ByteString.CopyFrom(section.PublicKey.Export())
+                PublicKey = ByteString.CopyFrom(depositEndpoint.PublicKey.Export())
             }
         };
     }
@@ -72,5 +74,24 @@ public class WalletService : ProjectOrigin.WalletSystem.V1.WalletService.WalletS
         }
 
         return response;
+    }
+
+    public override async Task<CreateReceiverDepositEndpointResponse> CreateReceiverDepositEndpoint(CreateReceiverDepositEndpointRequest request, ServerCallContext context)
+    {
+        var subject = context.GetSubject();
+        var ownerPublicKey = new Secp256k1Algorithm().ImportHDPublicKey(request.WalletDepositEndpoint.PublicKey.Span);
+
+        var receiverDepositEndpoint = new DepositEndpoint(Guid.NewGuid(), null, null, ownerPublicKey, subject, request.Reference, request.WalletDepositEndpoint.Endpoint);
+
+        await _unitOfWork.WalletRepository.CreateDepositEndpoint(receiverDepositEndpoint);
+        _unitOfWork.Commit();
+
+        return new V1.CreateReceiverDepositEndpointResponse
+        {
+            ReceiverId = new Uuid
+            {
+                Value = receiverDepositEndpoint.Id.ToString()
+            }
+        };
     }
 }

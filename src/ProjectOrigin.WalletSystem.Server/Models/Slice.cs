@@ -3,8 +3,8 @@ using System;
 namespace ProjectOrigin.WalletSystem.Server.Models;
 
 public record Slice(Guid Id,
-                    Guid WalletSectionId,
-                    int WalletSectionPosition,
+                    Guid DepositEndpointId,
+                    int DepositEndpointPosition,
                     Guid RegistryId,
                     Guid CertificateId,
                     long Quantity,
