@@ -26,6 +26,7 @@
     <EmbeddedResource Include="Database\Scripts\202305101334-create-wallet-tables.sql" />
     <EmbeddedResource Include="Database\Scripts\202306151348-create-attributes-table.sql" />
     <EmbeddedResource Include="Database\Scripts\202305151549-receive-slice-tables.sql" />
+    <EmbeddedResource Include="Database\Scripts\202308010911-publickey-constraint.sql" />
   </ItemGroup>
 
 

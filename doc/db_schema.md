@@ -7,7 +7,7 @@ erDiagram
         bytea PrivateKey "The private key of the owner/wallet"
     }
 
-    Wallet ||--o{ WalletSection : contains
+    Wallet |o--o{ DepositEndpoint : contains
 
     Certficate {
         uuid Id PK "Unique id of a certificate"
@@ -22,11 +22,14 @@ erDiagram
 
     Certficate ||--o{ Slice : has
 
-    WalletSection {
-        uuid Id PK "Unique id of a section"
-        uuid WalletId FK "The wallet that owns the section"
-        int WalletPosition "The position of the section in the wallet"
-        bytea PublicKey "The public key of the section, generated from the privatekey and Wallet position"
+    DepositEndpoint {
+        uuid Id PK "Unique id of a deposit endpoint"
+        uuid WalletId FK "The wallet that owns the deposit endpoint, if null then it is a ReceiverDepositEndpoint"
+        int WalletPosition "The position of the deposit endpoint in the wallet"
+        bytea PublicKey "The public key of the deposit endpoint, generated from the privatekey and Wallet position"
+        text Owner "Identifies the owner, is the same as subject from the JWT"
+        text ReferenceText "Textural reference of the depositEndpoint"
+        text Endpoint "The URL of where the wallet system of receiver deposit endpoint is placed"
     }
 
     Slice {
@@ -40,7 +43,7 @@ erDiagram
         bool Verified "If the slice has been verified from the registry"
     }
 
-    WalletSection ||--o{ Slice : contains
+    DepositEndpoint ||--o{ Slice : contains
     Registry ||--o{ Certficate : holds
 
     Registry {
