@@ -4,10 +4,6 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
   </PropertyGroup>
-  <ItemGroup>
-    <None Remove="Database\Scripts\202307131007-alter-wallet-section.sql" />
-    <None Remove="Database\Scripts\202307180830-add-slice-state.sql" />
-  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Dapper" Version="2.0.123" />
@@ -24,7 +20,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Database\Scripts\202307180830-add-slice-state.sql" />
+    <EmbeddedResource Include="Database\Scripts\202308021200-add-slice-state.sql" />
+    <EmbeddedResource Include="Database\Scripts\202308010911-publickey-constraint.sql" />
     <EmbeddedResource Include="Database\Scripts\202307131007-alter-wallet-section.sql" />
     <EmbeddedResource Include="Database\Scripts\202305101334-create-wallet-tables.sql" />
     <EmbeddedResource Include="Database\Scripts\202306151348-create-attributes-table.sql" />
