@@ -48,10 +48,7 @@ public class WalletService : ProjectOrigin.WalletSystem.V1.WalletService.WalletS
             await _unitOfWork.WalletRepository.Create(wallet);
         }
 
-        int nextPosition = await _unitOfWork.WalletRepository.GetNextWalletPosition(wallet.Id);
-
-        var depositEndpoint = new DepositEndpoint(Guid.NewGuid(), wallet.Id, nextPosition, wallet.PrivateKey.Derive(nextPosition).Neuter(), subject, "", "");
-        await _unitOfWork.WalletRepository.CreateDepositEndpoint(depositEndpoint);
+        var depositEndpoint = await _unitOfWork.WalletRepository.CreateDepositEndpoint(wallet.Id, string.Empty);
         _unitOfWork.Commit();
 
         return new V1.CreateWalletDepositEndpointResponse
@@ -85,9 +82,7 @@ public class WalletService : ProjectOrigin.WalletSystem.V1.WalletService.WalletS
         var subject = context.GetSubject();
         var ownerPublicKey = new Secp256k1Algorithm().ImportHDPublicKey(request.WalletDepositEndpoint.PublicKey.Span);
 
-        var receiverDepositEndpoint = new DepositEndpoint(Guid.NewGuid(), null, null, ownerPublicKey, subject, request.Reference, request.WalletDepositEndpoint.Endpoint);
-
-        await _unitOfWork.WalletRepository.CreateDepositEndpoint(receiverDepositEndpoint);
+        var receiverDepositEndpoint = await _unitOfWork.WalletRepository.CreateReceiverDepositEndpoint(subject, ownerPublicKey, request.Reference, request.WalletDepositEndpoint.Endpoint);
         _unitOfWork.Commit();
 
         return new V1.CreateReceiverDepositEndpointResponse
@@ -104,7 +99,7 @@ public class WalletService : ProjectOrigin.WalletSystem.V1.WalletService.WalletS
         var owner = context.GetSubject();
         var command = new TransferCertificateCommand(owner, request.CertificateId.Registry, new Guid(request.CertificateId.StreamId.Value), request.Quantity, new Guid(request.ReceiverId.Value));
 
-        _bus.Send(command);
+        _bus.Publish(command);
 
         return Task.FromResult(new TransferResponse());
     }

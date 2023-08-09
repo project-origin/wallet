@@ -52,10 +52,8 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
                 await walletRepository.Create(wallet);
                 await walletRepository.Create(notOwnedWallet);
 
-                var depositEndpoint = new DepositEndpoint(Guid.NewGuid(), wallet.Id, 1, wallet.PrivateKey.Derive(1).Neuter(), owner, "", "");
-                var notOwnedDepositEndpoint = new DepositEndpoint(Guid.NewGuid(), notOwnedWallet.Id, 1, notOwnedWallet.PrivateKey.Derive(1).Neuter(), owner, "", "");
-                await walletRepository.CreateDepositEndpoint(depositEndpoint);
-                await walletRepository.CreateDepositEndpoint(notOwnedDepositEndpoint);
+                var depositEndpoint = await walletRepository.CreateDepositEndpoint(wallet.Id, string.Empty);
+                var notOwnedDepositEndpoint = await walletRepository.CreateDepositEndpoint(notOwnedWallet.Id, string.Empty);
 
                 var regName = _fixture.Create<string>();
                 var registry = new RegistryModel(Guid.NewGuid(), regName);
@@ -113,8 +111,7 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
                 var wallet = new Wallet(Guid.NewGuid(), owner, Algorithm.GenerateNewPrivateKey());
                 await walletRepository.Create(wallet);
 
-                var depositEndpoint = new DepositEndpoint(Guid.NewGuid(), wallet.Id, 1, wallet.PrivateKey.Derive(1).Neuter(), owner, "", "");
-                await walletRepository.CreateDepositEndpoint(depositEndpoint);
+                var depositEndpoint = await walletRepository.CreateDepositEndpoint(wallet.Id, string.Empty);
             }
 
             var someOwnerName = _fixture.Create<string>();
@@ -140,8 +137,7 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
                 var wallet = new Wallet(Guid.NewGuid(), owner, Algorithm.GenerateNewPrivateKey());
                 await walletRepository.Create(wallet);
 
-                var depositEndpoint = new DepositEndpoint(Guid.NewGuid(), wallet.Id, 1, wallet.PrivateKey.Derive(1).Neuter(), owner, "", "");
-                await walletRepository.CreateDepositEndpoint(depositEndpoint);
+                var depositEndpoint = await walletRepository.CreateDepositEndpoint(wallet.Id, string.Empty);
 
                 var regName = _fixture.Create<string>();
                 var registry = new RegistryModel(Guid.NewGuid(), regName);

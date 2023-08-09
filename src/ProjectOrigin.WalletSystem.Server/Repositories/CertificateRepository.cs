@@ -128,15 +128,20 @@ public class CertificateRepository
         return _connection.QueryAsync<ReceivedSlice>("SELECT * FROM ReceivedSlices WHERE Id = ANY(@ids)", new { ids });
     }
 
-    public Task<Slice?> GetAvailableSlice(string registryName, Guid certificateId)
+    public Task<IEnumerable<Slice>> GetOwnerAvailableSlices(string registryName, Guid certificateId, string owner)
     {
         var sql = @"SELECT s.*
                     FROM Certificates c
                     LEFT JOIN Slices s on c.Id = s.CertificateId
                     LEFT JOIN Registries r on s.RegistryId = r.Id
-                    WHERE r.Name = @registryName AND s.CertificateId = @certificateId AND s.SliceState = 1";
+                    LEFT JOIN DepositEndpoints de on s.DepositEndpointId = de.Id
+                    LEFT JOIN Wallets w on de.WalletId = w.Id
+                    WHERE r.Name = @registryName
+                    AND s.CertificateId = @certificateId
+                    AND w.owner = @owner
+                    AND s.SliceState = 1";
 
-        return _connection.QueryFirstOrDefaultAsync<Slice?>(sql, new { registryName, certificateId });
+        return _connection.QueryAsync<Slice>(sql, new { registryName, certificateId, owner });
     }
 
     public Task<Slice> GetSlice(string registryName, Guid certificateId)
@@ -153,10 +158,5 @@ public class CertificateRepository
     public Task SetSliceState(Slice slice, SliceState state)
     {
         return _connection.ExecuteAsync("UPDATE Slices SET SliceState = @state WHERE Id = @id", new { state, slice.Id });
-    }
-
-    internal Task<Certificate> GetCertificate(object id, Guid certificateId)
-    {
-        throw new NotImplementedException();
     }
 }

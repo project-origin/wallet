@@ -9,7 +9,8 @@ namespace ProjectOrigin.WalletSystem.Server.Repositories;
 
 public class WalletRepository
 {
-    private IDbConnection _connection;
+    private const string RemainderReferenceText = "RemainderSection";
+    private readonly IDbConnection _connection;
 
     public WalletRepository(IDbConnection connection)
     {
@@ -26,12 +27,27 @@ public class WalletRepository
         return _connection.QuerySingleOrDefaultAsync<Wallet?>("SELECT * FROM Wallets WHERE Owner = @owner", new { owner });
     }
 
-    public async Task<int> GetNextWalletPosition(Guid id)
+    public async Task<DepositEndpoint> CreateDepositEndpoint(Guid walletId, string referenceText)
     {
-        return await _connection.ExecuteScalarAsync<int>("SELECT MAX(WalletPosition) FROM DepositEndpoints WHERE WalletId = @id", new { id }) + 1;
+        var position = await GetNextNumberForId(walletId);
+
+        var wallet = await GetWallet(walletId);
+        var key = wallet.PrivateKey.Derive(position).Neuter();
+
+        var newEndpoint = new DepositEndpoint(Guid.NewGuid(), walletId, position, key, wallet.Owner, referenceText, string.Empty);
+
+        await CreateDepositEndpoint(newEndpoint);
+        return newEndpoint;
     }
 
-    public Task CreateDepositEndpoint(DepositEndpoint depositEndpoint)
+    public async Task<DepositEndpoint> CreateReceiverDepositEndpoint(string owner, IHDPublicKey ownerPublicKey, string referenceText, string endpoint)
+    {
+        var newEndpoint = new DepositEndpoint(Guid.NewGuid(), null, null, ownerPublicKey, owner, referenceText, endpoint);
+        await CreateDepositEndpoint(newEndpoint);
+        return newEndpoint;
+    }
+
+    private Task CreateDepositEndpoint(DepositEndpoint depositEndpoint)
     {
         return _connection.ExecuteAsync(@"INSERT INTO DepositEndpoints(Id, WalletId, WalletPosition, PublicKey, Owner, ReferenceText, Endpoint) VALUES (@id, @walletId, @walletPosition, @publicKey, @owner, @referenceText, @endpoint)", new { depositEndpoint.Id, depositEndpoint.WalletId, depositEndpoint.WalletPosition, depositEndpoint.PublicKey, depositEndpoint.Owner, depositEndpoint.ReferenceText, depositEndpoint.Endpoint });
     }
@@ -39,11 +55,39 @@ public class WalletRepository
     public async Task<DepositEndpoint?> GetDepositEndpointFromPublicKey(IHDPublicKey publicKey)
     {
         var publicKeyBytes = publicKey.Export().ToArray();
-        return await _connection.QuerySingleOrDefaultAsync<DepositEndpoint>("SELECT * FROM DepositEndpoints WHERE PublicKey = @publicKeyBytes", new { publicKeyBytes });
+        return await _connection.QuerySingleOrDefaultAsync<DepositEndpoint>("SELECT * FROM DepositEndpoints WHERE PublicKey = @publicKeyBytes and WalletId is not null", new { publicKeyBytes });
     }
 
-    public async Task<DepositEndpoint?> GetReceiverDepositEndpoint(Guid depositEndpointId)
+    public Task<DepositEndpoint> GetDepositEndpoint(Guid depositEndpointId)
     {
-        return await _connection.QuerySingleOrDefaultAsync<DepositEndpoint?>("SELECT * FROM DepositEndpoints WHERE Id = @depositEndpointId", new { depositEndpointId });
+        return _connection.QuerySingleAsync<DepositEndpoint>("SELECT * FROM DepositEndpoints WHERE Id = @depositEndpointId", new { depositEndpointId });
     }
+
+    public Task<Wallet> GetWallet(Guid walletId)
+    {
+        return _connection.QuerySingleAsync<Wallet>("SELECT * FROM Wallets WHERE Id = @walletId", new { walletId });
+    }
+
+    public Task<int> GetNextNumberForId(Guid id)
+    {
+        return _connection.ExecuteScalarAsync<int>("SELECT * FROM IncrementNumberForId(@in_id);", new { in_id = id });
+    }
+
+    public async Task<DepositEndpoint> GetWalletRemainderDepositEndpoint(Guid walletId)
+    {
+        var referenceText = RemainderReferenceText;
+        var remainderEndpoint = await _connection.QuerySingleOrDefaultAsync<DepositEndpoint?>("SELECT * FROM DepositEndpoints WHERE WalletId = @walletId AND ReferenceText = @referenceText", new { walletId, referenceText });
+
+        if (remainderEndpoint is null)
+        {
+            var wallet = await GetWallet(walletId);
+            var nextWalletPosition = await GetNextNumberForId(walletId);
+            var publicKey = wallet.PrivateKey.Derive(nextWalletPosition).Neuter();
+            remainderEndpoint = new DepositEndpoint(Guid.NewGuid(), walletId, nextWalletPosition, publicKey, wallet.Owner, referenceText, string.Empty);
+            await CreateDepositEndpoint(remainderEndpoint);
+        }
+
+        return remainderEndpoint;
+    }
+
 }
