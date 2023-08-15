@@ -78,8 +78,6 @@ public class TransferCertificateTests : WalletSystemTestsBase, IClassFixture<Reg
             }
             Assert.True(AllSlicesFound);
         }
-
-        Assert.True(false);
     }
 
     [Fact(Skip = "Not implemented")]
