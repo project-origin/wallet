@@ -90,4 +90,15 @@ public class WalletRepository
         return remainderEndpoint;
     }
 
+    internal async Task<IHDPrivateKey> GetPrivateKeyForSlice(Guid sliceId)
+    {
+        var keyInfo = await _connection.QuerySingleAsync<(IHDPrivateKey PrivateKey, int WalletPosition, int DepositEndpointPosition)>(
+            @"SELECT w.PrivateKey, de.WalletPosition, s.DepositEndpointPosition
+              FROM Slices s
+              LEFT JOIN DepositEndpoints de on s.DepositEndpointId = de.Id
+              LEFT JOIN Wallets w on de.WalletId = w.Id
+              WHERE s.Id = @sliceId", new { sliceId });
+
+        return keyInfo.PrivateKey.Derive(keyInfo.WalletPosition).Derive(keyInfo.DepositEndpointPosition);
+    }
 }

@@ -81,13 +81,13 @@ public class TransferCertificateTests : WalletSystemTestsBase, IClassFixture<Reg
 
     }
 
-    [Fact]
+    [Fact(Skip = "Not implemented")]
     public Task Transfer_SingleSlice_ExternalWallet()
     {
         throw new NotImplementedException();
     }
 
-    [Fact]
+    [Fact(Skip = "Not implemented")]
     public Task Transfer_MultipleSlice_LocalWallet()
     {
         throw new NotImplementedException();

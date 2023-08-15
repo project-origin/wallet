@@ -334,9 +334,9 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
 
         await _repository.InsertSlice(slice);
 
-        await _repository.SetSliceState(slice, SliceState.Slicing);
+        await _repository.SetSliceState(slice.Id, SliceState.Slicing);
 
-        var sliceDb = await _repository.GetSlice(registry.Name, slice.CertificateId);
+        var sliceDb = await _repository.GetSlice(slice.Id);
 
         sliceDb.SliceState.Should().Be(SliceState.Slicing);
     }

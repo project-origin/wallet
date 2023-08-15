@@ -144,19 +144,17 @@ public class CertificateRepository
         return _connection.QueryAsync<Slice>(sql, new { registryName, certificateId, owner });
     }
 
-    public Task<Slice> GetSlice(string registryName, Guid certificateId)
+    public Task<Slice> GetSlice(Guid sliceId)
     {
-        var sql = @"SELECT s.*
-                    FROM Certificates c
-                    LEFT JOIN Slices s on c.Id = s.CertificateId
-                    LEFT JOIN Registries r on s.RegistryId = r.Id
-                    WHERE r.Name = @registryName AND s.CertificateId = @certificateId";
+        var sql = @"SELECT *
+                    FROM Slices
+                    WHERE Id = @sliceId ";
 
-        return _connection.QueryFirstOrDefaultAsync<Slice>(sql, new { registryName, certificateId });
+        return _connection.QuerySingleAsync<Slice>(sql, new { sliceId });
     }
 
-    public Task SetSliceState(Slice slice, SliceState state)
+    public Task SetSliceState(Guid sliceId, SliceState state)
     {
-        return _connection.ExecuteAsync("UPDATE Slices SET SliceState = @state WHERE Id = @id", new { state, slice.Id });
+        return _connection.ExecuteAsync("UPDATE Slices SET SliceState = @state WHERE Id = @sliceId", new { sliceId, state });
     }
 }

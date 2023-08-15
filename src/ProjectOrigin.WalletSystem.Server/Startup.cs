@@ -15,6 +15,10 @@ using ProjectOrigin.WalletSystem.Server.Options;
 using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
 using ProjectOrigin.HierarchicalDeterministicKeys.Implementations;
 using ProjectOrigin.WalletSystem.Server.CommandHandlers;
+using ProjectOrigin.WalletSystem.Server.Activities;
+using System;
+using ProjectOrigin.WalletSystem.Server.Activities.Exceptions;
+using ProjectOrigin.WalletSystem.Server.Serialization;
 
 namespace ProjectOrigin.WalletSystem.Server;
 
@@ -69,10 +73,26 @@ public class Startup
 
             o.AddConsumer<TransferCertificateCommandHandler>();
 
+            o.AddActivitiesFromNamespaceContaining<TransferFullSliceActivity>();
+
+            o.AddExecuteActivity<WaitCommittedTransactionActivity, WaitCommittedTransactionArguments>(cfg =>
+            {
+                cfg.UseRetry(r => r.Interval(100, TimeSpan.FromSeconds(10))
+                    .Handle<TransactionProcessingException>());
+            });
+
             o.UsingInMemory((context, cfg) =>
             {
+                cfg.UseDelayedMessageScheduler();
                 cfg.ConfigureEndpoints(context);
+
+                cfg.ConfigureJsonSerializerOptions(options =>
+                {
+                    options.Converters.Add(new TransactionConverter());
+                    return options;
+                });
             });
+
         });
 
         services.AddScoped<UnitOfWork>();

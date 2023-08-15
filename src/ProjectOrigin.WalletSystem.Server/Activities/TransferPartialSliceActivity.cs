@@ -1,0 +1,188 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Security.Cryptography;
+using System.Threading.Tasks;
+using Google.Protobuf;
+using MassTransit;
+using Microsoft.Extensions.Logging;
+using ProjectOrigin.Common.V1;
+using ProjectOrigin.Electricity.V1;
+using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
+using ProjectOrigin.PedersenCommitment;
+using ProjectOrigin.Registry.V1;
+using ProjectOrigin.WalletSystem.Server.Database;
+using ProjectOrigin.WalletSystem.Server.Extensions;
+using ProjectOrigin.WalletSystem.Server.Models;
+
+namespace ProjectOrigin.WalletSystem.Server.Activities;
+
+public record TransferPartialWholeSliceArguments(Guid SourceSliceId, Guid ReceiverDepositEndpointId, uint Quantity);
+
+public class TransferPartialSliceActivity : IExecuteActivity<TransferPartialWholeSliceArguments>
+{
+    private readonly UnitOfWork _unitOfWork;
+    private readonly ILogger<TransferPartialSliceActivity> _logger;
+    private readonly IEndpointNameFormatter _formatter;
+
+    public TransferPartialSliceActivity(
+        UnitOfWork unitOfWork,
+        ILogger<TransferPartialSliceActivity> logger,
+        IEndpointNameFormatter formatter)
+    {
+        _unitOfWork = unitOfWork;
+        _logger = logger;
+        _formatter = formatter;
+    }
+
+    public async Task<ExecutionResult> Execute(ExecuteContext<TransferPartialWholeSliceArguments> context)
+    {
+        using var _ = _logger.BeginScope("Executing TransferPartialSliceActivity");
+
+        try
+        {
+            var quantity = context.Arguments.Quantity;
+            var sourceSlice = await _unitOfWork.CertificateRepository.GetSlice(context.Arguments.SourceSliceId);
+            var receiverDepositEndpoint = await _unitOfWork.WalletRepository.GetDepositEndpoint(context.Arguments.ReceiverDepositEndpointId);
+
+            var nextReceiverPosition = await _unitOfWork.WalletRepository.GetNextNumberForId(receiverDepositEndpoint.Id);
+            var receiverPublicKey = receiverDepositEndpoint.PublicKey.Derive(nextReceiverPosition).GetPublicKey();
+
+            var sourceDepositEndpoint = await _unitOfWork.WalletRepository.GetDepositEndpoint(sourceSlice.DepositEndpointId);
+
+            DepositEndpoint remainderDepositEndpoint = await _unitOfWork.WalletRepository.GetWalletRemainderDepositEndpoint(sourceDepositEndpoint.WalletId ?? throw new Exception());
+            var nextRemainderPosition = await _unitOfWork.WalletRepository.GetNextNumberForId(remainderDepositEndpoint.Id); ;
+            var remainderPublicKey = remainderDepositEndpoint.PublicKey.Derive(nextReceiverPosition).GetPublicKey();
+
+            var remainder = (uint)sourceSlice.Quantity - quantity;
+
+            var commitmentQuantity = new SecretCommitmentInfo(quantity);
+            var commitmentRemainder = new SecretCommitmentInfo(remainder);
+
+            var transferredSlice = new Slice(Guid.NewGuid(), receiverDepositEndpoint.Id, nextReceiverPosition, sourceSlice.RegistryId, sourceSlice.CertificateId, commitmentQuantity.Message, commitmentQuantity.BlindingValue.ToArray(), SliceState.Registering);
+            await _unitOfWork.CertificateRepository.InsertSlice(transferredSlice);
+            var remainderSlice = new Slice(Guid.NewGuid(), remainderDepositEndpoint.Id, nextRemainderPosition, sourceSlice.RegistryId, sourceSlice.CertificateId, commitmentRemainder.Message, commitmentRemainder.BlindingValue.ToArray(), SliceState.Registering);
+            await _unitOfWork.CertificateRepository.InsertSlice(remainderSlice);
+
+            var registry = await _unitOfWork.RegistryRepository.GetRegistryFromId(sourceSlice.RegistryId);
+            var slicedEvent = CreateSliceEvent(registry.Name, sourceSlice, new NewSlice(commitmentQuantity, receiverPublicKey), new NewSlice(commitmentRemainder, remainderPublicKey));
+            var sourceSlicePrivateKey = await _unitOfWork.WalletRepository.GetPrivateKeyForSlice(sourceSlice.Id);
+            Transaction transaction = CreateAndSignTransaction(slicedEvent.CertificateId, slicedEvent, sourceSlicePrivateKey);
+
+            _unitOfWork.Commit();
+
+            var states = new Dictionary<Guid, SliceState>() {
+                { sourceSlice.Id, SliceState.Sliced },
+                { transferredSlice.Id, SliceState.Transferred },
+                { remainderSlice.Id, SliceState.Available }
+            };
+
+            return AddTransferRequiredActivities(context, receiverDepositEndpoint, transferredSlice, transaction, states);
+        }
+        catch (Exception ex)
+        {
+            _unitOfWork.Rollback();
+            _logger.LogError(ex, "Error sending transactions to registry");
+            return context.Faulted(ex);
+        }
+    }
+
+    private ExecutionResult AddTransferRequiredActivities(ExecuteContext context, DepositEndpoint receiverDepositEndpoint, Slice transferredSlice, Transaction transaction, Dictionary<Guid, SliceState> states)
+    {
+        return context.ReviseItinerary(builder =>
+        {
+            builder.AddActivity<SendTransactionActivity, SendTransactionArguments>(_formatter,
+                new()
+                {
+                    Transaction = transaction
+                });
+
+            builder.AddActivity<WaitCommittedTransactionActivity, WaitCommittedTransactionArguments>(_formatter,
+                new()
+                {
+                    RegistryName = transaction.Header.FederatedStreamId.Registry,
+                    TransactionId = transaction.ToShaId()
+                });
+
+            builder.AddActivity<UpdateSliceStateActivity, UpdateSliceStateArguments>(_formatter,
+                new()
+                {
+                    SliceStates = states
+                });
+
+            builder.AddActivity<SendInformationToReceiverWalletActivity, SendInformationToReceiverWalletArgument>(_formatter,
+                new()
+                {
+                    ReceiverDepositEndpointId = receiverDepositEndpoint.Id,
+                    SliceId = transferredSlice.Id,
+                });
+
+            builder.AddActivitiesFromSourceItinerary();
+        });
+    }
+
+    private record NewSlice(SecretCommitmentInfo ci, IPublicKey Key);
+
+    private SlicedEvent CreateSliceEvent(string registryName, Slice sourceSlice, params NewSlice[] newSlices)
+    {
+        if (newSlices.Sum(s => s.ci.Message) != sourceSlice.Quantity)
+            throw new InvalidOperationException();
+
+        var certificateId = new ProjectOrigin.Common.V1.FederatedStreamId
+        {
+            Registry = registryName,
+            StreamId = new ProjectOrigin.Common.V1.Uuid { Value = sourceSlice.CertificateId.ToString() }
+        };
+
+        var sourceSliceCommitment = new PedersenCommitment.SecretCommitmentInfo((uint)sourceSlice.Quantity, sourceSlice.RandomR);
+        var sumOfNewSlices = newSlices.Select(newSlice => newSlice.ci).Aggregate((left, right) => left + right);
+        var equalityProof = SecretCommitmentInfo.CreateEqualityProof(sourceSliceCommitment, sumOfNewSlices, certificateId.StreamId.Value);
+
+        var slicedEvent = new SlicedEvent
+        {
+            CertificateId = certificateId,
+            SumProof = ByteString.CopyFrom(equalityProof),
+            SourceSliceHash = ByteString.CopyFrom(SHA256.HashData(sourceSliceCommitment.Commitment.C))
+        };
+
+        foreach (var newSlice in newSlices)
+        {
+            var poSlice = new SlicedEvent.Types.Slice
+            {
+                NewOwner = new PublicKey
+                {
+                    Type = KeyType.Secp256K1,
+                    Content = ByteString.CopyFrom(newSlice.Key.Export())
+                },
+                Quantity = new ProjectOrigin.Electricity.V1.Commitment
+                {
+                    Content = ByteString.CopyFrom(newSlice.ci.Commitment.C),
+                    RangeProof = ByteString.CopyFrom(newSlice.ci.CreateRangeProof(certificateId.StreamId.Value))
+                }
+            };
+            slicedEvent.NewSlices.Add(poSlice);
+        }
+
+        return slicedEvent;
+    }
+
+    private static Transaction CreateAndSignTransaction(FederatedStreamId certificateId, IMessage @event, IHDPrivateKey slicePrivateKey)
+    {
+        var header = new TransactionHeader
+        {
+            FederatedStreamId = certificateId,
+            PayloadType = @event.Descriptor.FullName,
+            PayloadSha512 = ByteString.CopyFrom(SHA512.HashData(@event.ToByteArray())),
+            Nonce = Guid.NewGuid().ToString(),
+        };
+
+        var transaction = new Transaction
+        {
+            Header = header,
+            HeaderSignature = ByteString.CopyFrom(slicePrivateKey.Sign(header.ToByteArray())),
+            Payload = @event.ToByteString()
+        };
+
+        return transaction;
+    }
+}
