@@ -26,7 +26,7 @@ public class UpdateSliceStateActivity : IExecuteActivity<UpdateSliceStateArgumen
 
     public async Task<ExecutionResult> Execute(ExecuteContext<UpdateSliceStateArguments> context)
     {
-        using var _ = _logger.BeginScope("Executing UpdateSliceStateActivity");
+        _logger.LogTrace("RoutingSlip {TrackingNumber} - Executing {ActivityName}", context.TrackingNumber, context.ActivityName);
 
         try
         {

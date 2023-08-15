@@ -33,7 +33,7 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
 
     public async Task<ExecutionResult> Execute(ExecuteContext<SendInformationToReceiverWalletArgument> context)
     {
-        using var _ = _logger.BeginScope("Executing SendInformationToReceiverWalletActivity");
+        _logger.LogTrace("RoutingSlip {TrackingNumber} - Executing {ActivityName}", context.TrackingNumber, context.ActivityName);
 
         try
         {

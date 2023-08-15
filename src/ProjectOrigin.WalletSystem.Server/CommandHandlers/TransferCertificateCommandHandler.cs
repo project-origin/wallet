@@ -75,11 +75,12 @@ public class TransferCertificateCommandHandler : IConsumer<TransferCertificateCo
                 }
 
                 var routingSlip = builder.Build();
-
                 tasks.Add(context.Execute(routingSlip));
             }
 
             await Task.WhenAll(tasks);
+
+            _logger.LogTrace($"Transfer command complete.");
         }
         catch (InvalidOperationException ex)
         {

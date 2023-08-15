@@ -63,7 +63,7 @@ public class TransferCertificateTests : WalletSystemTestsBase, IClassFixture<Reg
         using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
         {
             var startedAt = DateTime.UtcNow;
-            var b = false;
+            var AllSlicesFound = false;
             while (DateTime.UtcNow - startedAt < TimeSpan.FromMinutes(1))
             {
                 // Verify slice created in database
@@ -71,14 +71,15 @@ public class TransferCertificateTests : WalletSystemTestsBase, IClassFixture<Reg
                 Console.WriteLine(slices.Count());
                 if (slices.Count() == 4)
                 {
-                    b = true;
+                    AllSlicesFound = true;
                     break;
                 }
                 await Task.Delay(2500);
             }
-            Assert.True(b);
+            Assert.True(AllSlicesFound);
         }
 
+        Assert.True(false);
     }
 
     [Fact(Skip = "Not implemented")]

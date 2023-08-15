@@ -37,7 +37,7 @@ public class TransferPartialSliceActivity : IExecuteActivity<TransferPartialWhol
 
     public async Task<ExecutionResult> Execute(ExecuteContext<TransferPartialWholeSliceArguments> context)
     {
-        using var _ = _logger.BeginScope("Executing TransferPartialSliceActivity");
+        _logger.LogTrace("RoutingSlip {TrackingNumber} - Executing {ActivityName}", context.TrackingNumber, context.ActivityName);
 
         try
         {

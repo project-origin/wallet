@@ -30,7 +30,7 @@ public class WaitCommittedTransactionActivity : IExecuteActivity<WaitCommittedTr
 
     public async Task<ExecutionResult> Execute(ExecuteContext<WaitCommittedTransactionArguments> context)
     {
-        using var _ = _logger.BeginScope("Executing WaitCommittedTransactionActivity.");
+        _logger.LogTrace("RoutingSlip {TrackingNumber} - Executing {ActivityName}", context.TrackingNumber, context.ActivityName);
 
         try
         {

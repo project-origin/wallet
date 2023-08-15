@@ -36,7 +36,7 @@ public class TransferFullSliceActivity : IExecuteActivity<TransferFullSliceArgum
 
     public async Task<ExecutionResult> Execute(ExecuteContext<TransferFullSliceArguments> context)
     {
-        using var _ = _logger.BeginScope("Executing TransferFullSliceActivity");
+        _logger.LogTrace("RoutingSlip {TrackingNumber} - Executing {ActivityName}", context.TrackingNumber, context.ActivityName);
 
         try
         {

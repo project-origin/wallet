@@ -27,7 +27,7 @@ public class SendTransactionActivity : IExecuteActivity<SendTransactionArguments
 
     public async Task<ExecutionResult> Execute(ExecuteContext<SendTransactionArguments> context)
     {
-        using var _ = _logger.BeginScope("Executing SendTransactionActivity");
+        _logger.LogTrace("RoutingSlip {TrackingNumber} - Executing {ActivityName}", context.TrackingNumber, context.ActivityName);
 
         try
         {
