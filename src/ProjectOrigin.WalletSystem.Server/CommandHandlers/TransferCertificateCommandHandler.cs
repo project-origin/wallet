@@ -41,7 +41,8 @@ public class TransferCertificateCommandHandler : IConsumer<TransferCertificateCo
 
     public async Task Consume(ConsumeContext<TransferCertificateCommand> context)
     {
-        using var scope = _logger.BeginScope("Consuming TransferCertificateCommand, Receiver Id: {msg.Receiver}");
+        using var scope = _logger.BeginScope($"Consuming TransferCertificateCommand, Receiver Id: {context.Message.Receiver}");
+
         try
         {
             var msg = context.Message;
