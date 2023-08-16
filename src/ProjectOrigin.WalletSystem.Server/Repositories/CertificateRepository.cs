@@ -144,6 +144,23 @@ public class CertificateRepository
         return _connection.QueryAsync<Slice>(sql, new { registryName, certificateId, owner });
     }
 
+    public Task<IEnumerable<Slice>> GetToBeAvailable(string registryName, Guid certificateId, string owner)
+    {
+        var sql = @"SELECT s.*
+                    FROM Certificates c
+                    LEFT JOIN Slices s on c.Id = s.CertificateId
+                    LEFT JOIN Registries r on s.RegistryId = r.Id
+                    LEFT JOIN DepositEndpoints de on s.DepositEndpointId = de.Id
+                    LEFT JOIN Wallets w on de.WalletId = w.Id
+                    WHERE r.Name = @registryName
+                    AND s.CertificateId = @certificateId
+                    AND w.owner = @owner
+                    AND s.SliceState = 1 OR s.SliceState = 3";
+
+        return _connection.QueryAsync<Slice>(sql, new { registryName, certificateId, owner });
+    }
+
+
     public Task<Slice> GetSlice(Guid sliceId)
     {
         var sql = @"SELECT *

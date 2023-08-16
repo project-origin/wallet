@@ -71,7 +71,11 @@ public class Startup
         {
             o.SetKebabCaseEndpointNameFormatter();
 
-            o.AddConsumer<TransferCertificateCommandHandler>();
+            o.AddConsumer<TransferCertificateCommandHandler>(cfg =>
+            {
+                cfg.UseRetry(r => r.Interval(100, TimeSpan.FromMinutes(1))
+                    .Handle<TransientException>());
+            });
 
             o.AddActivitiesFromNamespaceContaining<TransferFullSliceActivity>();
 

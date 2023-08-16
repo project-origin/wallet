@@ -41,7 +41,7 @@ public class TransferFullSliceActivity : IExecuteActivity<TransferFullSliceArgum
         try
         {
             var sourceSlice = await _unitOfWork.CertificateRepository.GetSlice(context.Arguments.SourceSliceId);
-            var receiverDepositEndpoint = await _unitOfWork.WalletRepository.GetWalletRemainderDepositEndpoint(context.Arguments.ReceiverDepositEndpointId);
+            var receiverDepositEndpoint = await _unitOfWork.WalletRepository.GetDepositEndpoint(context.Arguments.ReceiverDepositEndpointId);
 
             var nextReceiverPosition = await _unitOfWork.WalletRepository.GetNextNumberForId(receiverDepositEndpoint.Id);
             var receiverPublicKey = receiverDepositEndpoint.PublicKey.Derive(nextReceiverPosition).GetPublicKey();

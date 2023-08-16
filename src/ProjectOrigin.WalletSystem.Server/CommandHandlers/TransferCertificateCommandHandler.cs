@@ -6,6 +6,7 @@ using MassTransit;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ProjectOrigin.WalletSystem.Server.Activities;
+using ProjectOrigin.WalletSystem.Server.Activities.Exceptions;
 using ProjectOrigin.WalletSystem.Server.Database;
 using ProjectOrigin.WalletSystem.Server.Extensions;
 using ProjectOrigin.WalletSystem.Server.Models;
@@ -53,7 +54,13 @@ public class TransferCertificateCommandHandler : IConsumer<TransferCertificateCo
                 throw new InvalidOperationException($"Owner has no available slices to transfer");
 
             if (availableSlices.Sum(slice => slice.Quantity) < msg.Quantity)
-                throw new InvalidOperationException($"Owner has less to transfer than available");
+            {
+                var b = await _unitOfWork.CertificateRepository.GetToBeAvailable(msg.Registry, msg.CertificateId, msg.Owner);
+                if (b.Sum(slice => slice.Quantity) < msg.Quantity)
+                    throw new InvalidOperationException($"Owner has less to transfer than available");
+                else
+                    throw new TransientException($"Owner has more to transfer than available, but it is not yet available");
+            }
 
             IEnumerable<Slice> reservedSlices = await ReserveRequiredSlices(availableSlices, msg.Quantity);
 
@@ -67,10 +74,11 @@ public class TransferCertificateCommandHandler : IConsumer<TransferCertificateCo
                 {
                     builder.AddActivity<TransferFullSliceActivity, TransferFullSliceArguments>(_formatter,
                         new(slice.Id, receiverDepositEndpoint.Id));
+                    remainderToTransfer -= (uint)slice.Quantity;
                 }
                 else
                 {
-                    builder.AddActivity<TransferPartialSliceActivity, TransferPartialWholeSliceArguments>(_formatter,
+                    builder.AddActivity<TransferPartialSliceActivity, TransferPartialSliceArguments>(_formatter,
                         new(slice.Id, receiverDepositEndpoint.Id, remainderToTransfer));
                 }
 

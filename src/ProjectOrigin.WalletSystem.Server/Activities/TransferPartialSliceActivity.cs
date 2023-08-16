@@ -17,9 +17,9 @@ using ProjectOrigin.WalletSystem.Server.Models;
 
 namespace ProjectOrigin.WalletSystem.Server.Activities;
 
-public record TransferPartialWholeSliceArguments(Guid SourceSliceId, Guid ReceiverDepositEndpointId, uint Quantity);
+public record TransferPartialSliceArguments(Guid SourceSliceId, Guid ReceiverDepositEndpointId, uint Quantity);
 
-public class TransferPartialSliceActivity : IExecuteActivity<TransferPartialWholeSliceArguments>
+public class TransferPartialSliceActivity : IExecuteActivity<TransferPartialSliceArguments>
 {
     private readonly UnitOfWork _unitOfWork;
     private readonly ILogger<TransferPartialSliceActivity> _logger;
@@ -35,7 +35,7 @@ public class TransferPartialSliceActivity : IExecuteActivity<TransferPartialWhol
         _formatter = formatter;
     }
 
-    public async Task<ExecutionResult> Execute(ExecuteContext<TransferPartialWholeSliceArguments> context)
+    public async Task<ExecutionResult> Execute(ExecuteContext<TransferPartialSliceArguments> context)
     {
         _logger.LogTrace("RoutingSlip {TrackingNumber} - Executing {ActivityName}", context.TrackingNumber, context.ActivityName);
 
