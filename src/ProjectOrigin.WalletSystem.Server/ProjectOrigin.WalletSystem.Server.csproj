@@ -4,14 +4,13 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
   </PropertyGroup>
-  <ItemGroup>
-    <None Remove="Database\Scripts\202307131007-alter-wallet-section.sql" />
-  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Dapper" Version="2.0.123" />
     <PackageReference Include="dbup-postgresql" Version="5.0.8" />
     <PackageReference Include="Grpc.AspNetCore" Version="2.49.0" />
+    <PackageReference Include="MassTransit" Version="8.0.16" />
+    <PackageReference Include="MassTransit.RabbitMQ" Version="8.0.12" />
     <PackageReference Include="Npgsql" Version="7.0.4" />
     <PackageReference Include="NSec.Cryptography" Version="22.4.0" />
     <PackageReference Include="NBitcoin" Version="7.0.25" />
@@ -22,11 +21,13 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="Database\Scripts\202308041300-number-increment.sql" />
+    <EmbeddedResource Include="Database\Scripts\202308021200-add-slice-state.sql" />
+    <EmbeddedResource Include="Database\Scripts\202308010911-publickey-constraint.sql" />
     <EmbeddedResource Include="Database\Scripts\202307131007-alter-wallet-section.sql" />
     <EmbeddedResource Include="Database\Scripts\202305101334-create-wallet-tables.sql" />
     <EmbeddedResource Include="Database\Scripts\202306151348-create-attributes-table.sql" />
     <EmbeddedResource Include="Database\Scripts\202305151549-receive-slice-tables.sql" />
-    <EmbeddedResource Include="Database\Scripts\202308010911-publickey-constraint.sql" />
   </ItemGroup>
 
 

@@ -46,4 +46,18 @@ public class RegistryRepositoryTests : AbstractRepositoryTests
         result.Should().NotBeNull();
         result.Should().BeEquivalentTo(registry);
     }
+
+    [Fact]
+    public async Task GetRegistryFromId_ReturnsRegistry()
+    {
+        // Arrange
+        var registry = await CreateRegistry();
+
+        // Act
+        var result = await _repository.GetRegistryFromId(registry.Id);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Should().BeEquivalentTo(registry);
+    }
 }
