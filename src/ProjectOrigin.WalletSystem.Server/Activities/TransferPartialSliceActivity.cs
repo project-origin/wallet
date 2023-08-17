@@ -50,7 +50,7 @@ public class TransferPartialSliceActivity : IExecuteActivity<TransferPartialSlic
 
             var sourceDepositEndpoint = await _unitOfWork.WalletRepository.GetDepositEndpoint(sourceSlice.DepositEndpointId);
 
-            DepositEndpoint remainderDepositEndpoint = await _unitOfWork.WalletRepository.GetWalletRemainderDepositEndpoint(sourceDepositEndpoint.WalletId ?? throw new Exception());
+            DepositEndpoint remainderDepositEndpoint = await _unitOfWork.WalletRepository.GetWalletRemainderDepositEndpoint(sourceDepositEndpoint.WalletId.Value);
             var nextRemainderPosition = await _unitOfWork.WalletRepository.GetNextNumberForId(remainderDepositEndpoint.Id); ;
             var remainderPublicKey = remainderDepositEndpoint.PublicKey.Derive(nextReceiverPosition).GetPublicKey();
 
