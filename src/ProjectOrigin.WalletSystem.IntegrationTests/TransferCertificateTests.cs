@@ -64,25 +64,6 @@ public class TransferCertificateTests : WalletSystemTestsBase, IClassFixture<Reg
         await WaitForCertCount(certId, 4);
     }
 
-    private async Task WaitForCertCount(Guid certId, int number)
-    {
-        using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
-        {
-            var startedAt = DateTime.UtcNow;
-            var slicesFound = 0;
-            while (DateTime.UtcNow - startedAt < TimeSpan.FromMinutes(1))
-            {
-                // Verify slice created in database
-                var slices = await connection.QueryAsync<Slice>("SELECT * FROM Slices WHERE CertificateId = @certificateId", new { certificateId = certId });
-                slicesFound = slices.Count();
-                if (slicesFound >= number)
-                    break;
-                await Task.Delay(2500);
-            }
-            slicesFound.Should().Be(number, "correct number of slices should be found");
-        }
-    }
-
     [Fact]
     public async Task Transfer_MultipleSlice_LocalWallet()
     {
@@ -155,6 +136,25 @@ public class TransferCertificateTests : WalletSystemTestsBase, IClassFixture<Reg
     {
         // Requires an seperate walletSystem instance to send the ReceiveSlice request to.
         throw new NotImplementedException();
+    }
+
+    private async Task WaitForCertCount(Guid certId, int number)
+    {
+        using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
+        {
+            var startedAt = DateTime.UtcNow;
+            var slicesFound = 0;
+            while (DateTime.UtcNow - startedAt < TimeSpan.FromMinutes(1))
+            {
+                // Verify slice created in database
+                var slices = await connection.QueryAsync<Slice>("SELECT * FROM Slices WHERE CertificateId = @certificateId", new { certificateId = certId });
+                slicesFound = slices.Count();
+                if (slicesFound >= number)
+                    break;
+                await Task.Delay(2500);
+            }
+            slicesFound.Should().Be(number, "correct number of slices should be found");
+        }
     }
 
     private (string, Metadata) GenerateUserHeader()

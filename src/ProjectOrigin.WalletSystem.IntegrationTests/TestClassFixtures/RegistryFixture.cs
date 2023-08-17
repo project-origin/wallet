@@ -16,8 +16,8 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests;
 
 public class RegistryFixture : IAsyncLifetime
 {
-    private const string RegistryImage = "ghcr.io/project-origin/registry-server:0.2.0-rc.17";
-    private const string ElectricityVerifierImage = "ghcr.io/project-origin/electricity-server:0.2.0-rc.17";
+    private const string RegistryImage = "ghcr.io/project-origin/registry-server:0.2.0";
+    private const string ElectricityVerifierImage = "ghcr.io/project-origin/electricity-server:0.2.0";
     private const int GrpcPort = 80;
     private const string Area = "Narnia";
     private const string RegistryName = "TestRegistry";
@@ -75,8 +75,13 @@ public class RegistryFixture : IAsyncLifetime
     public async Task DisposeAsync()
     {
         if (_registryContainer.IsValueCreated)
-            await _registryContainer.Value.StopAsync();
-        await _verifierContainer.StopAsync();
+        {
+            await _registryContainer.Value.StopAsync().ConfigureAwait(false);
+            await _registryContainer.Value.DisposeAsync().ConfigureAwait(false);
+        }
+
+        await _verifierContainer.StopAsync().ConfigureAwait(false);
+        await _verifierContainer.DisposeAsync().ConfigureAwait(false);
     }
 
     public async Task<Electricity.V1.IssuedEvent> IssueCertificate(Electricity.V1.GranularCertificateType type, SecretCommitmentInfo commitment, IPublicKey ownerKey)
