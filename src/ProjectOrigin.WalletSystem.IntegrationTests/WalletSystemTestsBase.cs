@@ -79,13 +79,19 @@ public abstract class WalletSystemTestsBase : IClassFixture<GrpcTestFixture<Star
         }
     }
 
-    protected async Task<ReceivedSlice> CreateReceivedSlice(DepositEndpoint depositEndpoint, string registryName, Guid certificateId, long quantity, byte[] randomR)
+    protected async Task<ReceivedSlice> CreateReceivedSlice(DepositEndpoint depositEndpoint, int position, string registryName, Guid certificateId, long quantity, byte[] randomR)
     {
         using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
         {
             var certificateRepository = new CertificateRepository(connection);
-            var receivedSlice = new ReceivedSlice(Guid.NewGuid(), depositEndpoint.Id, depositEndpoint.WalletPosition!.Value,
-                registryName, certificateId, quantity, randomR);
+            var receivedSlice = new ReceivedSlice(
+                Guid.NewGuid(),
+                depositEndpoint.Id,
+                position,
+                registryName,
+                certificateId,
+                quantity,
+                randomR);
 
             await certificateRepository.InsertReceivedSlice(receivedSlice);
             return receivedSlice;
