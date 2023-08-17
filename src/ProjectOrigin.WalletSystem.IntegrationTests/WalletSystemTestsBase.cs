@@ -9,12 +9,14 @@ using ProjectOrigin.WalletSystem.Server.Models;
 using ProjectOrigin.WalletSystem.Server.Repositories;
 using System.Threading.Tasks;
 using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
+using ProjectOrigin.PedersenCommitment;
+using Dapper;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests;
 
 public abstract class WalletSystemTestsBase : IClassFixture<GrpcTestFixture<Startup>>, IClassFixture<PostgresDatabaseFixture>, IDisposable
 {
-    protected readonly string endpoint = "http://my-endpoint:80/";
+    protected readonly string endpoint = "http://localhost/";
     protected readonly GrpcTestFixture<Startup> _grpcFixture;
     protected readonly PostgresDatabaseFixture _dbFixture;
     protected readonly JwtGenerator _tokenGenerator;
@@ -55,22 +57,7 @@ public abstract class WalletSystemTestsBase : IClassFixture<GrpcTestFixture<Star
             var wallet = new Wallet(Guid.NewGuid(), owner, Algorithm.GenerateNewPrivateKey());
             await walletRepository.Create(wallet);
 
-            var depositEndpoint = new DepositEndpoint(Guid.NewGuid(), wallet.Id, 1, wallet.PrivateKey.Derive(1).Neuter(), owner, "", "");
-            await walletRepository.CreateDepositEndpoint(depositEndpoint);
-
-            return depositEndpoint;
-        }
-    }
-
-    protected async Task<RegistryModel> CreateRegistry(string name)
-    {
-        using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
-        {
-            var registryRepository = new RegistryRepository(connection);
-            var registry = new RegistryModel(Guid.NewGuid(), name);
-            await registryRepository.InsertRegistry(registry);
-
-            return registry;
+            return await walletRepository.CreateDepositEndpoint(wallet.Id, string.Empty);
         }
     }
 
@@ -103,5 +90,46 @@ public abstract class WalletSystemTestsBase : IClassFixture<GrpcTestFixture<Star
             await certificateRepository.InsertReceivedSlice(receivedSlice);
             return receivedSlice;
         }
+    }
+
+    protected async Task InsertSlice(DepositEndpoint depositEndpoint, int position, Electricity.V1.IssuedEvent issuedEvent, SecretCommitmentInfo commitment)
+    {
+        using var connection = new NpgsqlConnection(_dbFixture.ConnectionString);
+        var certificateRepository = new CertificateRepository(connection);
+
+        RegistryModel registry = await GetOrInsertRegistry(connection, issuedEvent.CertificateId.Registry);
+        var certificate = await certificateRepository.GetCertificate(registry.Id, Guid.Parse(issuedEvent.CertificateId.StreamId.Value));
+
+        if (certificate is null)
+        {
+            certificate = new Certificate(
+                Guid.Parse(issuedEvent.CertificateId.StreamId.Value),
+                registry.Id,
+                issuedEvent.Period.Start.ToDateTimeOffset(),
+                issuedEvent.Period.End.ToDateTimeOffset(),
+                issuedEvent.GridArea,
+                (GranularCertificateType)issuedEvent.Type,
+                new List<CertificateAttribute>());
+
+            await certificateRepository.InsertCertificate(certificate);
+        }
+
+        var receivedSlice = new Slice(Guid.NewGuid(), depositEndpoint.Id, position,
+            certificate.RegistryId, certificate.Id, commitment.Message, commitment.BlindingValue.ToArray(), SliceState.Available);
+
+        await certificateRepository.InsertSlice(receivedSlice);
+    }
+
+    protected static async Task<RegistryModel> GetOrInsertRegistry(NpgsqlConnection connection, string registryName)
+    {
+        var registryRepository = new RegistryRepository(connection);
+        var registry = await registryRepository.GetRegistryFromName(registryName);
+        if (registry is null)
+        {
+            registry = new RegistryModel(Guid.NewGuid(), registryName);
+            await registryRepository.InsertRegistry(registry);
+        }
+
+        return registry;
     }
 }

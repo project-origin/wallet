@@ -8,11 +8,17 @@ using ProjectOrigin.WalletSystem.Server.Database;
 using ProjectOrigin.WalletSystem.Server.Database.Mapping;
 using ProjectOrigin.WalletSystem.Server.Services;
 using System.IdentityModel.Tokens.Jwt;
+using MassTransit;
 using ProjectOrigin.WalletSystem.Server.BackgroundJobs;
 using ProjectOrigin.WalletSystem.Server.Projections;
 using ProjectOrigin.WalletSystem.Server.Options;
 using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
 using ProjectOrigin.HierarchicalDeterministicKeys.Implementations;
+using ProjectOrigin.WalletSystem.Server.CommandHandlers;
+using ProjectOrigin.WalletSystem.Server.Activities;
+using System;
+using ProjectOrigin.WalletSystem.Server.Activities.Exceptions;
+using ProjectOrigin.WalletSystem.Server.Serialization;
 
 namespace ProjectOrigin.WalletSystem.Server;
 
@@ -60,6 +66,38 @@ public class Startup
                 };
             });
         services.AddAuthorization();
+
+        services.AddMassTransit(o =>
+        {
+            o.SetKebabCaseEndpointNameFormatter();
+
+            o.AddConsumer<TransferCertificateCommandHandler>(cfg =>
+            {
+                cfg.UseRetry(r => r.Interval(100, TimeSpan.FromMinutes(1))
+                    .Handle<TransientException>());
+            });
+
+            o.AddActivitiesFromNamespaceContaining<TransferFullSliceActivity>();
+
+            o.AddExecuteActivity<WaitCommittedRegistryTransactionActivity, WaitCommittedTransactionArguments>(cfg =>
+            {
+                cfg.UseRetry(r => r.Interval(100, TimeSpan.FromSeconds(10))
+                    .Handle<RegistryTransactionStillProcessingException>());
+            });
+
+            o.UsingInMemory((context, cfg) =>
+            {
+                cfg.UseDelayedMessageScheduler();
+                cfg.ConfigureEndpoints(context);
+
+                cfg.ConfigureJsonSerializerOptions(options =>
+                {
+                    options.Converters.Add(new TransactionConverter());
+                    return options;
+                });
+            });
+
+        });
 
         services.AddScoped<UnitOfWork>();
         services.AddSingleton<IDbConnectionFactory, DbConnectionFactory>();

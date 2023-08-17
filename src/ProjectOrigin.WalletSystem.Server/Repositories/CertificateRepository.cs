@@ -20,7 +20,7 @@ public class CertificateRepository
 
     public Task InsertSlice(Slice newSlice)
     {
-        return _connection.ExecuteAsync(@"INSERT INTO Slices(Id, DepositEndpointId, DepositEndpointPosition, RegistryId, CertificateId, Quantity, RandomR) VALUES (@id, @depositEndpointId, @depositEndpointPosition, @registryId, @certificateId, @quantity, @randomR)", new { newSlice.Id, newSlice.DepositEndpointId, newSlice.DepositEndpointPosition, newSlice.RegistryId, newSlice.CertificateId, newSlice.Quantity, newSlice.RandomR, });
+        return _connection.ExecuteAsync(@"INSERT INTO Slices(Id, DepositEndpointId, DepositEndpointPosition, RegistryId, CertificateId, Quantity, RandomR, SliceState) VALUES (@id, @depositEndpointId, @depositEndpointPosition, @registryId, @certificateId, @quantity, @randomR, @sliceState)", new { newSlice.Id, newSlice.DepositEndpointId, newSlice.DepositEndpointPosition, newSlice.RegistryId, newSlice.CertificateId, newSlice.Quantity, newSlice.RandomR, newSlice.SliceState });
     }
 
     public Task InsertReceivedSlice(ReceivedSlice receivedSlice)
@@ -128,8 +128,50 @@ public class CertificateRepository
         return _connection.QueryAsync<ReceivedSlice>("SELECT * FROM ReceivedSlices WHERE Id = ANY(@ids)", new { ids });
     }
 
-    internal Task<Certificate> GetCertificate(object id, Guid certificateId)
+    public Task<IEnumerable<Slice>> GetOwnerAvailableSlices(string registryName, Guid certificateId, string owner)
     {
-        throw new NotImplementedException();
+        var sql = @"SELECT s.*
+                    FROM Certificates c
+                    LEFT JOIN Slices s on c.Id = s.CertificateId
+                    LEFT JOIN Registries r on s.RegistryId = r.Id
+                    LEFT JOIN DepositEndpoints de on s.DepositEndpointId = de.Id
+                    LEFT JOIN Wallets w on de.WalletId = w.Id
+                    WHERE r.Name = @registryName
+                    AND s.CertificateId = @certificateId
+                    AND w.owner = @owner
+                    AND s.SliceState = 1";
+
+        return _connection.QueryAsync<Slice>(sql, new { registryName, certificateId, owner });
+    }
+
+    public Task<IEnumerable<Slice>> GetToBeAvailable(string registryName, Guid certificateId, string owner)
+    {
+        var sql = @"SELECT s.*
+                    FROM Certificates c
+                    LEFT JOIN Slices s on c.Id = s.CertificateId
+                    LEFT JOIN Registries r on s.RegistryId = r.Id
+                    LEFT JOIN DepositEndpoints de on s.DepositEndpointId = de.Id
+                    LEFT JOIN Wallets w on de.WalletId = w.Id
+                    WHERE r.Name = @registryName
+                    AND s.CertificateId = @certificateId
+                    AND w.owner = @owner
+                    AND s.SliceState = 1 OR s.SliceState = 3";
+
+        return _connection.QueryAsync<Slice>(sql, new { registryName, certificateId, owner });
+    }
+
+
+    public Task<Slice> GetSlice(Guid sliceId)
+    {
+        var sql = @"SELECT *
+                    FROM Slices
+                    WHERE Id = @sliceId ";
+
+        return _connection.QuerySingleAsync<Slice>(sql, new { sliceId });
+    }
+
+    public Task SetSliceState(Guid sliceId, SliceState state)
+    {
+        return _connection.ExecuteAsync("UPDATE Slices SET SliceState = @state WHERE Id = @sliceId", new { sliceId, state });
     }
 }

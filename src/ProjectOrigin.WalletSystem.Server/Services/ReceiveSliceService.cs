@@ -34,11 +34,11 @@ public class ReceiveSliceService : ProjectOrigin.WalletSystem.V1.ReceiveSliceSer
 
         var newSlice = new ReceivedSlice(Guid.NewGuid(),
             depositEndpoint.Id,
-                                 (int)request.WalletDepositEndpointPosition,
-                                 request.CertificateId.Registry,
-                                 Guid.Parse(request.CertificateId.StreamId.Value),
-                                 request.Quantity,
-                                 request.RandomR.ToByteArray());
+            (int)request.WalletDepositEndpointPosition,
+            request.CertificateId.Registry,
+            Guid.Parse(request.CertificateId.StreamId.Value),
+            request.Quantity,
+            request.RandomR.ToByteArray());
 
         await _unitOfWork.CertificateRepository.InsertReceivedSlice(newSlice);
 

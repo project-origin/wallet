@@ -1,11 +1,9 @@
 using AutoFixture;
-using Dapper;
 using FluentAssertions;
 using ProjectOrigin.WalletSystem.Server.Database;
 using ProjectOrigin.WalletSystem.Server.Models;
 using ProjectOrigin.WalletSystem.Server.Repositories;
 using System;
-using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -87,11 +85,11 @@ public class WalletRepositoryTests : AbstractRepositoryTests
 
         for (int position = 1; position <= sections; position++)
         {
-            await repository.CreateDepositEndpoint(new DepositEndpoint(Guid.NewGuid(), wallet.Id, position, wallet.PrivateKey.Derive(position).Neuter(), subject, "", ""));
+            await repository.CreateDepositEndpoint(wallet.Id, string.Empty);
         }
 
         // Act
-        var walletResponse = await repository.GetNextWalletPosition(wallet.Id);
+        var walletResponse = await repository.GetNextNumberForId(wallet.Id);
 
         // Assert
         walletResponse.Should().Be(next);
@@ -103,9 +101,9 @@ public class WalletRepositoryTests : AbstractRepositoryTests
         // Arrange
         var subject = _fixture.Create<string>();
         var wallet = await CreateWallet(subject);
-        var depositEndpoint1 = await CreateDepositEndpoint(wallet, 1);
-        var depositEndpoint2 = await CreateDepositEndpoint(wallet, 2);
-        var depositEndpoint3 = await CreateDepositEndpoint(wallet, 3);
+        var depositEndpoint1 = await CreateDepositEndpoint(wallet);
+        var depositEndpoint2 = await CreateDepositEndpoint(wallet);
+        var depositEndpoint3 = await CreateDepositEndpoint(wallet);
 
         // Act
         var publicKey = wallet.PrivateKey.Derive(2).Neuter();
@@ -127,5 +125,62 @@ public class WalletRepositoryTests : AbstractRepositoryTests
 
         // Assert
         depositEndpoint.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task GetReceiverDepositEndpoint()
+    {
+        // Arrange
+        var subject = _fixture.Create<string>();
+        var depositEndpoint = await CreateReceiverDepositEndpoint(subject, _fixture.Create<string>(), _fixture.Create<string>());
+
+        // Act
+        var deDb = await _repository.GetDepositEndpoint(depositEndpoint.Id);
+
+        // Assert
+        deDb.Should().NotBeNull();
+        deDb.WalletPosition.Should().BeNull();
+        deDb.WalletId.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task GetWallet()
+    {
+        // Arrange
+        var subject = Guid.NewGuid().ToString();
+        var wallet = new Wallet(
+            Guid.NewGuid(),
+            subject,
+            _algorithm.GenerateNewPrivateKey()
+            );
+        using var connection = new DbConnectionFactory(_dbFixture.ConnectionString).CreateConnection();
+        connection.Open();
+        var repository = new WalletRepository(connection);
+        await repository.Create(wallet);
+
+        // Act
+        var walletResponse = await repository.GetWallet(wallet.Id);
+
+        // Assert
+        walletResponse.Should().BeEquivalentTo(wallet);
+    }
+
+
+    [Fact]
+    public async Task GetNextNumberForIdTest()
+    {
+        // Arrange
+        using var connection = new DbConnectionFactory(_dbFixture.ConnectionString).CreateConnection();
+        connection.Open();
+        var repository = new WalletRepository(connection);
+        var id = Guid.NewGuid();
+
+        // Act
+        await repository.GetNextNumberForId(id);
+        await repository.GetNextNumberForId(id);
+        var number = await repository.GetNextNumberForId(id);
+
+        // Assert
+        number.Should().Be(3);
     }
 }
