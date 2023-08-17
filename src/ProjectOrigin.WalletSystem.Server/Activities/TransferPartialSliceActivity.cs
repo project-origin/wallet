@@ -91,13 +91,13 @@ public class TransferPartialSliceActivity : IExecuteActivity<TransferPartialSlic
     {
         return context.ReviseItinerary(builder =>
         {
-            builder.AddActivity<SendTransactionActivity, SendTransactionArguments>(_formatter,
+            builder.AddActivity<SendRegistryTransactionActivity, SendTransactionArguments>(_formatter,
                 new()
                 {
                     Transaction = transaction
                 });
 
-            builder.AddActivity<WaitCommittedTransactionActivity, WaitCommittedTransactionArguments>(_formatter,
+            builder.AddActivity<WaitCommittedRegistryTransactionActivity, WaitCommittedTransactionArguments>(_formatter,
                 new()
                 {
                     RegistryName = transaction.Header.FederatedStreamId.Registry,

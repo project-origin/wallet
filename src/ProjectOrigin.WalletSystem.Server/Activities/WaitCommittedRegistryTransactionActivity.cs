@@ -17,12 +17,12 @@ public record WaitCommittedTransactionArguments
     public required string TransactionId { get; set; }
 }
 
-public class WaitCommittedTransactionActivity : IExecuteActivity<WaitCommittedTransactionArguments>
+public class WaitCommittedRegistryTransactionActivity : IExecuteActivity<WaitCommittedTransactionArguments>
 {
     private IOptions<RegistryOptions> _registryOptions;
-    private ILogger<WaitCommittedTransactionActivity> _logger;
+    private ILogger<WaitCommittedRegistryTransactionActivity> _logger;
 
-    public WaitCommittedTransactionActivity(IOptions<RegistryOptions> registryOptions, ILogger<WaitCommittedTransactionActivity> logger)
+    public WaitCommittedRegistryTransactionActivity(IOptions<RegistryOptions> registryOptions, ILogger<WaitCommittedRegistryTransactionActivity> logger)
     {
         _registryOptions = registryOptions;
         _logger = logger;
@@ -51,7 +51,7 @@ public class WaitCommittedTransactionActivity : IExecuteActivity<WaitCommittedTr
             }
             else if (status.Status == TransactionState.Failed)
             {
-                var ex = new InvalidTransactionException($"Transaction failed on registry. Message: {status.Message}");
+                var ex = new InvalidRegistryTransactionException($"Transaction failed on registry. Message: {status.Message}");
                 _logger.LogCritical(ex, null);
                 return context.Faulted(ex);
             }
@@ -59,7 +59,7 @@ public class WaitCommittedTransactionActivity : IExecuteActivity<WaitCommittedTr
             {
                 var message = "Transaction is still processing on registry.";
                 _logger.LogTrace(message);
-                return context.Faulted(new TransactionProcessingException(message));
+                return context.Faulted(new RegistryTransactionStillProcessingException(message));
             }
         }
         catch (RpcException ex)

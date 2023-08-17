@@ -79,10 +79,10 @@ public class Startup
 
             o.AddActivitiesFromNamespaceContaining<TransferFullSliceActivity>();
 
-            o.AddExecuteActivity<WaitCommittedTransactionActivity, WaitCommittedTransactionArguments>(cfg =>
+            o.AddExecuteActivity<WaitCommittedRegistryTransactionActivity, WaitCommittedTransactionArguments>(cfg =>
             {
                 cfg.UseRetry(r => r.Interval(100, TimeSpan.FromSeconds(10))
-                    .Handle<TransactionProcessingException>());
+                    .Handle<RegistryTransactionStillProcessingException>());
             });
 
             o.UsingInMemory((context, cfg) =>

@@ -14,12 +14,12 @@ public record SendTransactionArguments
     public required Transaction Transaction { get; init; }
 }
 
-public class SendTransactionActivity : IExecuteActivity<SendTransactionArguments>
+public class SendRegistryTransactionActivity : IExecuteActivity<SendTransactionArguments>
 {
     private IOptions<RegistryOptions> _registryOptions;
-    private ILogger<SendTransactionActivity> _logger;
+    private ILogger<SendRegistryTransactionActivity> _logger;
 
-    public SendTransactionActivity(IOptions<RegistryOptions> registryOptions, ILogger<SendTransactionActivity> logger)
+    public SendRegistryTransactionActivity(IOptions<RegistryOptions> registryOptions, ILogger<SendRegistryTransactionActivity> logger)
     {
         _registryOptions = registryOptions;
         _logger = logger;
