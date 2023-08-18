@@ -104,7 +104,8 @@ public class VerifySlicesWorkerTests : WalletSystemTestsBase, IClassFixture<Regi
         var commitment = new SecretCommitmentInfo(150);
         var position = 1;
 
-        var publicKey = depositEndpoint.PublicKey.Derive(position + 1).GetPublicKey();
+        var wrongPosition = position + 1;
+        var publicKey = depositEndpoint.PublicKey.Derive(wrongPosition).GetPublicKey();
 
         var issuedEvent = await _registryFixture.IssueCertificate(Electricity.V1.GranularCertificateType.Production, commitment, publicKey);
         var certId = Guid.Parse(issuedEvent.CertificateId.StreamId.Value);
