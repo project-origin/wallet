@@ -1,3 +1,5 @@
+using System;
+using System.Threading.Tasks;
 using AutoFixture;
 using Dapper;
 using FluentAssertions;
@@ -116,6 +118,24 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
 
                 foundDepositEndpoints.Should().HaveCount(2);
             }
+        }
+
+        [Fact]
+        public async void CreateSelfReferenceNotAllowed()
+        {
+            var client = new WalletService.WalletServiceClient(_grpcFixture.Channel);
+            var (subject, header) = GenerateUserHeader();
+
+            var createDepositEndpointResponse = await client.CreateWalletDepositEndpointAsync(new CreateWalletDepositEndpointRequest(), header);
+
+            var request = new CreateReceiverDepositEndpointRequest
+            {
+                WalletDepositEndpoint = createDepositEndpointResponse.WalletDepositEndpoint
+            };
+
+            Func<Task> sutMethod = async () => await client.CreateReceiverDepositEndpointAsync(request, header);
+
+            await sutMethod.Should().ThrowAsync<RpcException>().WithMessage("""Status(StatusCode="InvalidArgument", Detail="Cannot create receiver deposit endpoint to self.")""");
         }
 
         private (string, Metadata) GenerateUserHeader()
