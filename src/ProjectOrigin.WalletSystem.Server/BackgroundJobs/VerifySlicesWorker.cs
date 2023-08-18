@@ -8,6 +8,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ProjectOrigin.WalletSystem.Server.Database;
+using ProjectOrigin.WalletSystem.Server.Extensions;
 using ProjectOrigin.WalletSystem.Server.Models;
 using ProjectOrigin.WalletSystem.Server.Projections;
 using ProjectOrigin.WalletSystem.Server.Services;
@@ -74,6 +75,17 @@ public class VerifySlicesWorker : BackgroundService
                 if (foundSlice is null)
                 {
                     _logger.LogWarning($"Slice with id {sliceId} not found in certificate {receivedSlice.CertificateId}. Deleting received slice.");
+                    await unitOfWork.CertificateRepository.RemoveReceivedSlice(receivedSlice);
+                    unitOfWork.Commit();
+                    return;
+                }
+
+                var depositEndpoint = await unitOfWork.WalletRepository.GetDepositEndpoint(receivedSlice.DepositEndpointId);
+                var positionPublicKey = depositEndpoint.PublicKey.Derive(receivedSlice.DepositEndpointPosition).GetPublicKey();
+
+                if (!foundSlice.Owner.ImportKey().Equals(positionPublicKey))
+                {
+                    _logger.LogError($"Not correct publicKey on {receivedSlice.CertificateId}, Deleting received slice.");
                     await unitOfWork.CertificateRepository.RemoveReceivedSlice(receivedSlice);
                     unitOfWork.Commit();
                     return;

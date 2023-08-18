@@ -30,11 +30,13 @@ public class VerifySlicesWorkerTests : WalletSystemTestsBase, IClassFixture<Regi
         var owner = _fixture.Create<string>();
         var depositEndpoint = await CreateWalletDepositEndpoint(owner);
         var commitment = new SecretCommitmentInfo(150);
+        var position = 1;
+        var publicKey = depositEndpoint.PublicKey.Derive(position).GetPublicKey();
 
-        var issuedEvent = await _registryFixture.IssueCertificate(Electricity.V1.GranularCertificateType.Production, commitment, depositEndpoint.PublicKey.GetPublicKey());
+        var issuedEvent = await _registryFixture.IssueCertificate(Electricity.V1.GranularCertificateType.Production, commitment, publicKey);
         var certId = Guid.Parse(issuedEvent.CertificateId.StreamId.Value);
 
-        var receivedSlice = await CreateReceivedSlice(depositEndpoint, issuedEvent.CertificateId.Registry, certId, commitment.Message, commitment.BlindingValue.ToArray());
+        var receivedSlice = await CreateReceivedSlice(depositEndpoint, position, issuedEvent.CertificateId.Registry, certId, commitment.Message, commitment.BlindingValue.ToArray());
 
         await using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
         {
@@ -54,11 +56,12 @@ public class VerifySlicesWorkerTests : WalletSystemTestsBase, IClassFixture<Regi
         var owner = _fixture.Create<string>();
         var depositEndpoint = await CreateWalletDepositEndpoint(owner);
         var commitment = new SecretCommitmentInfo(150);
+        var position = 1;
 
         var certId = Guid.NewGuid();
         var registryName = _registryFixture.Name;
 
-        var receivedSlice = await CreateReceivedSlice(depositEndpoint, registryName, certId, commitment.Message, commitment.BlindingValue.ToArray());
+        await CreateReceivedSlice(depositEndpoint, position, registryName, certId, commitment.Message, commitment.BlindingValue.ToArray());
 
         await using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
         {
@@ -76,11 +79,38 @@ public class VerifySlicesWorkerTests : WalletSystemTestsBase, IClassFixture<Regi
         var owner = _fixture.Create<string>();
         var depositEndpoint = await CreateWalletDepositEndpoint(owner);
         var commitment = new SecretCommitmentInfo(150);
+        var position = 1;
 
         var certId = Guid.NewGuid();
         var registryName = _fixture.Create<string>();
 
-        var receivedSlice = await CreateReceivedSlice(depositEndpoint, registryName, certId, commitment.Message, commitment.BlindingValue.ToArray());
+        await CreateReceivedSlice(depositEndpoint, position, registryName, certId, commitment.Message, commitment.BlindingValue.ToArray());
+
+        await using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
+        {
+            var rSlice = await connection.RepeatedlyQueryUntilNull<ReceivedSlice>("SELECT * FROM ReceivedSlices WHERE certificateId = @id", new { id = certId });
+            rSlice.Should().BeNull();
+
+            var cert = await connection.QueryAsync<Certificate>("SELECT * FROM Certificates WHERE id = @id", new { id = certId });
+            cert.Should().BeEmpty();
+        }
+    }
+
+    [Fact]
+    public async void WhenPositionDoesNotMatchKey_ExpectReceivedSliceDeleted()
+    {
+        var owner = _fixture.Create<string>();
+        var depositEndpoint = await CreateWalletDepositEndpoint(owner);
+        var commitment = new SecretCommitmentInfo(150);
+        var position = 1;
+
+        var wrongPosition = position + 1;
+        var publicKey = depositEndpoint.PublicKey.Derive(wrongPosition).GetPublicKey();
+
+        var issuedEvent = await _registryFixture.IssueCertificate(Electricity.V1.GranularCertificateType.Production, commitment, publicKey);
+        var certId = Guid.Parse(issuedEvent.CertificateId.StreamId.Value);
+
+        await CreateReceivedSlice(depositEndpoint, position, issuedEvent.CertificateId.Registry, certId, commitment.Message, commitment.BlindingValue.ToArray());
 
         await using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
         {
