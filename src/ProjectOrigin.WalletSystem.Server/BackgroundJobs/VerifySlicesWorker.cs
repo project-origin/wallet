@@ -83,7 +83,7 @@ public class VerifySlicesWorker : BackgroundService
                 var depositEndpoint = await unitOfWork.WalletRepository.GetDepositEndpoint(receivedSlice.DepositEndpointId);
                 var positionPublicKey = depositEndpoint.PublicKey.Derive(receivedSlice.DepositEndpointPosition).GetPublicKey();
 
-                if (!foundSlice.Owner.ToModel().Equals(positionPublicKey))
+                if (!foundSlice.Owner.ImportKey().Equals(positionPublicKey))
                 {
                     _logger.LogError($"Not correct publicKey on {receivedSlice.CertificateId}, Deleting received slice.");
                     await unitOfWork.CertificateRepository.RemoveReceivedSlice(receivedSlice);
