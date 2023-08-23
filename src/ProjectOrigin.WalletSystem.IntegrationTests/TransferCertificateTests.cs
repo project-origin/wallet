@@ -191,6 +191,7 @@ public class TransferCertificateTests : WalletSystemTestsBase, IClassFixture<Reg
             certsFound = certificates.GranularCertificates.Count;
             if (certsFound >= number)
                 break;
+            await Task.Delay(1000);
         }
         certsFound.Should().Be(number, "correct number of certificates should be returned");
     }
@@ -208,7 +209,7 @@ public class TransferCertificateTests : WalletSystemTestsBase, IClassFixture<Reg
                 slicesFound = slices.Count();
                 if (slicesFound >= number)
                     break;
-                await Task.Delay(2500);
+                await Task.Delay(1000);
             }
             slicesFound.Should().Be(number, "correct number of slices should be found");
         }
