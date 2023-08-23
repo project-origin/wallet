@@ -76,8 +76,8 @@ public class CertificateRepository
                     JOIN Slices s ON de.Id = s.DepositEndpointId
                     JOIN Certificates c ON s.CertificateId = c.Id
                     LEFT JOIN Attributes a ON c.Id = a.CertificateId AND c.RegistryId = a.RegistryId
-                    JOIN Registries r ON c.RegistryId = r.Id
-                    WHERE w.Owner = @owner";
+                    JOIN Registries r ON c.RegistryId = r.Id 
+                    WHERE w.Owner = @owner AND s.SliceState = 1";
 
         var certsDictionary = new Dictionary<Guid, CertificateViewModel>();
         var res = await _connection.QueryAsync<CertificateViewModel, SliceViewModel, CertificateAttribute, CertificateViewModel>(sql,

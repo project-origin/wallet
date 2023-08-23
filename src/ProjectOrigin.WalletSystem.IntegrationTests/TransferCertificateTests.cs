@@ -65,6 +65,49 @@ public class TransferCertificateTests : WalletSystemTestsBase, IClassFixture<Reg
     }
 
     [Fact]
+    public async Task Transfer_EntireCertificate_LocalWallet()
+    {
+        //Arrange
+        var client = new WalletService.WalletServiceClient(_grpcFixture.Channel);
+        var issuedAmount = 250u;
+        var transferredAmount = issuedAmount;
+
+        var (sender, senderHeader) = GenerateUserHeader();
+        var commitment = new SecretCommitmentInfo(issuedAmount);
+        var senderDepositEndpoint = await CreateWalletDepositEndpoint(sender);
+        var position = 1;
+        var issuedEvent = await _registryFixture.IssueCertificate(Electricity.V1.GranularCertificateType.Production, commitment, senderDepositEndpoint.PublicKey.Derive(position).GetPublicKey());
+        var certId = Guid.Parse(issuedEvent.CertificateId.StreamId.Value);
+        await InsertSlice(senderDepositEndpoint, position, issuedEvent, commitment);
+
+        var (_, recipientHeader) = GenerateUserHeader();
+        var createEndpointResponse = await client.CreateWalletDepositEndpointAsync(new CreateWalletDepositEndpointRequest(), recipientHeader);
+        var receiverEndpointResponse = await client.CreateReceiverDepositEndpointAsync(new CreateReceiverDepositEndpointRequest
+        {
+            WalletDepositEndpoint = createEndpointResponse.WalletDepositEndpoint
+        }, senderHeader);
+
+        //Act
+        var request = new TransferRequest()
+        {
+            CertificateId = issuedEvent.CertificateId,
+            Quantity = transferredAmount,
+            ReceiverId = receiverEndpointResponse.ReceiverId
+        };
+        await client.TransferCertificateAsync(request, senderHeader);
+
+        //Assert
+        await WaitForCertCount(client, recipientHeader, 1);
+
+        var senderCertsAfter = await client.QueryGranularCertificatesAsync(new QueryRequest(), senderHeader);
+        senderCertsAfter.GranularCertificates.Should().HaveCount(0);
+
+        var receiverCertsAfter = await client.QueryGranularCertificatesAsync(new QueryRequest(), recipientHeader);
+        receiverCertsAfter.GranularCertificates.Should().HaveCount(1);
+        receiverCertsAfter.GranularCertificates.Single().FederatedId.StreamId.Value.Should().Be(certId.ToString());
+    }
+
+    [Fact]
     public async Task Transfer_MultipleSlice_LocalWallet()
     {
         //Arrange
@@ -136,6 +179,20 @@ public class TransferCertificateTests : WalletSystemTestsBase, IClassFixture<Reg
     {
         // Requires an seperate walletSystem instance to send the ReceiveSlice request to.
         throw new NotImplementedException();
+    }
+
+    private static async Task WaitForCertCount(WalletService.WalletServiceClient client, Metadata header, int number)
+    {
+        var startedAt = DateTime.UtcNow;
+        var certsFound = 0;
+        while (DateTime.UtcNow - startedAt < TimeSpan.FromMinutes(1))
+        {
+            var certificates = await client.QueryGranularCertificatesAsync(new QueryRequest(), header);
+            certsFound = certificates.GranularCertificates.Count;
+            if (certsFound >= number)
+                break;
+        }
+        certsFound.Should().Be(number, "correct number of certificates should be returned");
     }
 
     private async Task WaitForCertCount(Guid certId, int number)
