@@ -67,7 +67,12 @@ verify-chart:
 	kind create cluster -n helm-test
 	helm install cnpg-operator cloudnative-pg --repo https://cloudnative-pg.io/charts --version 0.18.0 --namespace cnpg --create-namespace --wait
 
-	docker build -f src/ProjectOrigin.WalletSystem.Server/Dockerfile -t ghcr.io/project-origin/wallet-server:test src/
+	docker build -f $(src_path)/ProjectOrigin.WalletSystem.Server/Dockerfile -t ghcr.io/project-origin/wallet-server:test $(src_path)/
 	kind load -n helm-test docker-image ghcr.io/project-origin/wallet-server:test
 	helm install wallet charts/project-origin-wallet --set image.tag=test,wallet.externalUrl=http://wallet.example:80 --wait
 	kind delete cluster -n helm-test
+	
+## Builds and runs docker contaier
+docker-run:
+	docker build -f $(src_path)/ProjectOrigin.WalletSystem.Server/Dockerfile -t ghcr.io/project-origin/wallet-server:dev $(src_path) 
+	docker run ghcr.io/project-origin/wallet-server:dev
