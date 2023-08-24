@@ -123,6 +123,33 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         );
     }
 
+    [Theory]
+    [InlineData(SliceState.Available, 1)]
+    [InlineData(SliceState.Registering, 0)]
+    [InlineData(SliceState.Slicing, 0)]
+    [InlineData(SliceState.Sliced, 0)]
+    [InlineData(SliceState.Transferred, 0)]
+    public async Task GetAllOwnedCertificates_AllSliceStates(SliceState sliceState, int expectedCertificateCount)
+    {
+        // Arrange
+        var registry = await CreateRegistry();
+        var certificate = await CreateCertificate(registry.Id);
+        var owner = _fixture.Create<string>();
+        var wallet = await CreateWallet(owner);
+        var depositEndpoint = await CreateDepositEndpoint(wallet);
+        var slice = new Slice(Guid.NewGuid(), depositEndpoint.Id, 1, registry.Id, certificate.Id, _fixture.Create<int>(),
+            _fixture.Create<byte[]>(), SliceState.Available);
+
+        // Act
+        await _repository.InsertSlice(slice);
+        await _repository.SetSliceState(slice.Id, sliceState);
+
+        var certificates = await _repository.GetAllOwnedCertificates(owner);
+
+        // Assert
+        certificates.Should().HaveCount(expectedCertificateCount);
+    }
+
     [Fact]
     public async Task CreateSlice_InsertsReceivedSlice()
     {

@@ -18,8 +18,8 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests;
 
 public class TransferCertificateTests : WalletSystemTestsBase, IClassFixture<RegistryFixture>
 {
-    private RegistryFixture _registryFixture;
-    private Fixture _fixture;
+    private readonly RegistryFixture _registryFixture;
+    private readonly Fixture _fixture;
 
     public TransferCertificateTests(GrpcTestFixture<Startup> grpcFixture, RegistryFixture registryFixture, PostgresDatabaseFixture dbFixture, ITestOutputHelper outputHelper)
         : base(grpcFixture, dbFixture, outputHelper, registryFixture)
@@ -140,21 +140,19 @@ public class TransferCertificateTests : WalletSystemTestsBase, IClassFixture<Reg
 
     private async Task WaitForCertCount(Guid certId, int number)
     {
-        using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
+        await using var connection = new NpgsqlConnection(_dbFixture.ConnectionString);
+        var startedAt = DateTime.UtcNow;
+        var slicesFound = 0;
+        while (DateTime.UtcNow - startedAt < TimeSpan.FromMinutes(1))
         {
-            var startedAt = DateTime.UtcNow;
-            var slicesFound = 0;
-            while (DateTime.UtcNow - startedAt < TimeSpan.FromMinutes(1))
-            {
-                // Verify slice created in database
-                var slices = await connection.QueryAsync<Slice>("SELECT * FROM Slices WHERE CertificateId = @certificateId", new { certificateId = certId });
-                slicesFound = slices.Count();
-                if (slicesFound >= number)
-                    break;
-                await Task.Delay(2500);
-            }
-            slicesFound.Should().Be(number, "correct number of slices should be found");
+            // Verify slice created in database
+            var slices = await connection.QueryAsync<Slice>("SELECT * FROM Slices WHERE CertificateId = @certificateId", new { certificateId = certId });
+            slicesFound = slices.Count();
+            if (slicesFound >= number)
+                break;
+            await Task.Delay(1000);
         }
+        slicesFound.Should().Be(number, "correct number of slices should be found");
     }
 
     private (string, Metadata) GenerateUserHeader()
