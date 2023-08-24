@@ -124,11 +124,12 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
     }
 
     [Theory]
-    [InlineData(SliceState.Registering)]
-    [InlineData(SliceState.Sliced)]
-    [InlineData(SliceState.Slicing)]
-    [InlineData(SliceState.Transferred)]
-    public async Task GetAllOwnedCertificates_SliceStateNotAvailable(SliceState sliceState)
+    [InlineData(SliceState.Available, 1)]
+    [InlineData(SliceState.Registering, 0)]
+    [InlineData(SliceState.Slicing, 0)]
+    [InlineData(SliceState.Sliced, 0)]
+    [InlineData(SliceState.Transferred, 0)]
+    public async Task GetAllOwnedCertificates_AllSliceStates(SliceState sliceState, int expectedCertificateCount)
     {
         // Arrange
         var registry = await CreateRegistry();
@@ -146,7 +147,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         var certificates = await _repository.GetAllOwnedCertificates(owner);
 
         // Assert
-        certificates.Should().HaveCount(0);
+        certificates.Should().HaveCount(expectedCertificateCount);
     }
 
     [Fact]
