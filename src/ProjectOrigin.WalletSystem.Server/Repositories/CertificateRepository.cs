@@ -70,14 +70,14 @@ public class CertificateRepository
 
     public async Task<IEnumerable<CertificateViewModel>> GetAllOwnedCertificates(string owner)
     {
-        var sql = @"SELECT c.Id, r.Name as Registry, c.StartDate, c. EndDate, c.GridArea, c.CertificateType, s.Id AS SliceId, s.Quantity as Quantity, a.Id AS AttributeId, a.KeyAtr AS Key, a.ValueAtr as Value
+        var sql = $@"SELECT c.Id, r.Name as Registry, c.StartDate, c. EndDate, c.GridArea, c.CertificateType, s.Id AS SliceId, s.Quantity as Quantity, a.Id AS AttributeId, a.KeyAtr AS Key, a.ValueAtr as Value
                     FROM Wallets w
                     JOIN DepositEndpoints de ON w.Id = de.WalletId
                     JOIN Slices s ON de.Id = s.DepositEndpointId
                     JOIN Certificates c ON s.CertificateId = c.Id
                     LEFT JOIN Attributes a ON c.Id = a.CertificateId AND c.RegistryId = a.RegistryId
                     JOIN Registries r ON c.RegistryId = r.Id 
-                    WHERE w.Owner = @owner AND s.SliceState = 1";
+                    WHERE w.Owner = @owner AND s.SliceState = {(int)SliceState.Available}";
 
         var certsDictionary = new Dictionary<Guid, CertificateViewModel>();
         var res = await _connection.QueryAsync<CertificateViewModel, SliceViewModel, CertificateAttribute, CertificateViewModel>(sql,
@@ -130,7 +130,7 @@ public class CertificateRepository
 
     public Task<IEnumerable<Slice>> GetOwnerAvailableSlices(string registryName, Guid certificateId, string owner)
     {
-        var sql = @"SELECT s.*
+        var sql = $@"SELECT s.*
                     FROM Certificates c
                     LEFT JOIN Slices s on c.Id = s.CertificateId
                     LEFT JOIN Registries r on s.RegistryId = r.Id
@@ -139,14 +139,14 @@ public class CertificateRepository
                     WHERE r.Name = @registryName
                     AND s.CertificateId = @certificateId
                     AND w.owner = @owner
-                    AND s.SliceState = 1";
+                    AND s.SliceState = {(int)SliceState.Available}";
 
         return _connection.QueryAsync<Slice>(sql, new { registryName, certificateId, owner });
     }
 
     public Task<IEnumerable<Slice>> GetToBeAvailable(string registryName, Guid certificateId, string owner)
     {
-        var sql = @"SELECT s.*
+        var sql = $@"SELECT s.*
                     FROM Certificates c
                     LEFT JOIN Slices s on c.Id = s.CertificateId
                     LEFT JOIN Registries r on s.RegistryId = r.Id
@@ -155,7 +155,7 @@ public class CertificateRepository
                     WHERE r.Name = @registryName
                     AND s.CertificateId = @certificateId
                     AND w.owner = @owner
-                    AND s.SliceState = 1 OR s.SliceState = 3";
+                    AND s.SliceState = {(int)SliceState.Available} OR s.SliceState = {(int)SliceState.Registering}";
 
         return _connection.QueryAsync<Slice>(sql, new { registryName, certificateId, owner });
     }
