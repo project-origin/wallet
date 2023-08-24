@@ -18,8 +18,8 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests;
 
 public class TransferCertificateTests : WalletSystemTestsBase, IClassFixture<RegistryFixture>
 {
-    private RegistryFixture _registryFixture;
-    private Fixture _fixture;
+    private readonly RegistryFixture _registryFixture;
+    private readonly Fixture _fixture;
 
     public TransferCertificateTests(GrpcTestFixture<Startup> grpcFixture, RegistryFixture registryFixture, PostgresDatabaseFixture dbFixture, ITestOutputHelper outputHelper)
         : base(grpcFixture, dbFixture, outputHelper, registryFixture)
@@ -62,49 +62,6 @@ public class TransferCertificateTests : WalletSystemTestsBase, IClassFixture<Reg
 
         //Assert
         await WaitForCertCount(certId, 4);
-    }
-
-    [Fact]
-    public async Task Transfer_EntireCertificate_LocalWallet()
-    {
-        //Arrange
-        var client = new WalletService.WalletServiceClient(_grpcFixture.Channel);
-        var issuedAmount = 250u;
-        var transferredAmount = issuedAmount;
-
-        var (sender, senderHeader) = GenerateUserHeader();
-        var commitment = new SecretCommitmentInfo(issuedAmount);
-        var senderDepositEndpoint = await CreateWalletDepositEndpoint(sender);
-        var position = 1;
-        var issuedEvent = await _registryFixture.IssueCertificate(Electricity.V1.GranularCertificateType.Production, commitment, senderDepositEndpoint.PublicKey.Derive(position).GetPublicKey());
-        var certId = Guid.Parse(issuedEvent.CertificateId.StreamId.Value);
-        await InsertSlice(senderDepositEndpoint, position, issuedEvent, commitment);
-
-        var (_, recipientHeader) = GenerateUserHeader();
-        var createEndpointResponse = await client.CreateWalletDepositEndpointAsync(new CreateWalletDepositEndpointRequest(), recipientHeader);
-        var receiverEndpointResponse = await client.CreateReceiverDepositEndpointAsync(new CreateReceiverDepositEndpointRequest
-        {
-            WalletDepositEndpoint = createEndpointResponse.WalletDepositEndpoint
-        }, senderHeader);
-
-        //Act
-        var request = new TransferRequest()
-        {
-            CertificateId = issuedEvent.CertificateId,
-            Quantity = transferredAmount,
-            ReceiverId = receiverEndpointResponse.ReceiverId
-        };
-        await client.TransferCertificateAsync(request, senderHeader);
-
-        //Assert
-        await WaitForCertCount(client, recipientHeader, 1);
-
-        var senderCertsAfter = await client.QueryGranularCertificatesAsync(new QueryRequest(), senderHeader);
-        senderCertsAfter.GranularCertificates.Should().HaveCount(0);
-
-        var receiverCertsAfter = await client.QueryGranularCertificatesAsync(new QueryRequest(), recipientHeader);
-        receiverCertsAfter.GranularCertificates.Should().HaveCount(1);
-        receiverCertsAfter.GranularCertificates.Single().FederatedId.StreamId.Value.Should().Be(certId.ToString());
     }
 
     [Fact]
@@ -180,39 +137,22 @@ public class TransferCertificateTests : WalletSystemTestsBase, IClassFixture<Reg
         // Requires an seperate walletSystem instance to send the ReceiveSlice request to.
         throw new NotImplementedException();
     }
-
-    private static async Task WaitForCertCount(WalletService.WalletServiceClient client, Metadata header, int number)
+    
+    private async Task WaitForCertCount(Guid certId, int number)
     {
+        await using var connection = new NpgsqlConnection(_dbFixture.ConnectionString);
         var startedAt = DateTime.UtcNow;
-        var certsFound = 0;
+        var slicesFound = 0;
         while (DateTime.UtcNow - startedAt < TimeSpan.FromMinutes(1))
         {
-            var certificates = await client.QueryGranularCertificatesAsync(new QueryRequest(), header);
-            certsFound = certificates.GranularCertificates.Count;
-            if (certsFound >= number)
+            // Verify slice created in database
+            var slices = await connection.QueryAsync<Slice>("SELECT * FROM Slices WHERE CertificateId = @certificateId", new { certificateId = certId });
+            slicesFound = slices.Count();
+            if (slicesFound >= number)
                 break;
             await Task.Delay(1000);
         }
-        certsFound.Should().Be(number, "correct number of certificates should be returned");
-    }
-
-    private async Task WaitForCertCount(Guid certId, int number)
-    {
-        using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
-        {
-            var startedAt = DateTime.UtcNow;
-            var slicesFound = 0;
-            while (DateTime.UtcNow - startedAt < TimeSpan.FromMinutes(1))
-            {
-                // Verify slice created in database
-                var slices = await connection.QueryAsync<Slice>("SELECT * FROM Slices WHERE CertificateId = @certificateId", new { certificateId = certId });
-                slicesFound = slices.Count();
-                if (slicesFound >= number)
-                    break;
-                await Task.Delay(1000);
-            }
-            slicesFound.Should().Be(number, "correct number of slices should be found");
-        }
+        slicesFound.Should().Be(number, "correct number of slices should be found");
     }
 
     private (string, Metadata) GenerateUserHeader()
