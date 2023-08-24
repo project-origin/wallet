@@ -137,7 +137,7 @@ public class TransferCertificateTests : WalletSystemTestsBase, IClassFixture<Reg
         // Requires an seperate walletSystem instance to send the ReceiveSlice request to.
         throw new NotImplementedException();
     }
-    
+
     private async Task WaitForCertCount(Guid certId, int number)
     {
         await using var connection = new NpgsqlConnection(_dbFixture.ConnectionString);
