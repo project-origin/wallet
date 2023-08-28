@@ -24,7 +24,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Database\Scripts\202308041300-number-increment.sql" />
+    <EmbeddedResource Include="Database\Scripts\202308280900-migrate-number-increment.sql" />
+    <EmbeddedResource Include="Database\Scripts\202308041301-number-increment.sql" />
     <EmbeddedResource Include="Database\Scripts\202308021200-add-slice-state.sql" />
     <EmbeddedResource Include="Database\Scripts\202308010911-publickey-constraint.sql" />
     <EmbeddedResource Include="Database\Scripts\202307131007-alter-wallet-section.sql" />
