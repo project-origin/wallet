@@ -1,4 +1,4 @@
-CREATE TABLE IdIncrements (
+CREATE TABLE IF NOT EXISTS IdIncrements (
     Id uuid PRIMARY KEY,
     number INT NOT NULL
 );
@@ -15,8 +15,12 @@ BEGIN
 
     IF NOT FOUND THEN
         -- If the ID is not found, insert a new row with number 1
-        out_number := 1;
-        INSERT INTO IdIncrements (ID, number) VALUES (in_id, out_number);
+        -- if a concurrent transaction has already inserted a row,
+        -- the ON CONFLICT clause will increment the number and return it
+        INSERT INTO IdIncrements (id, number)
+        VALUES (in_id, 1)
+        ON CONFLICT (ID) DO UPDATE SET number = IdIncrements.number + 1
+        RETURNING number INTO out_number;
     ELSE
         -- If the ID is found, increment the number and update the row
         out_number := out_number + 1;
