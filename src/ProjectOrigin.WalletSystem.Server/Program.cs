@@ -32,7 +32,7 @@ startup.Configure(app, builder.Environment);
 if (args.Contains("--migrate"))
 {
     Console.WriteLine("Starting database migration.");
-    DatabaseUpgrader.Upgrade(app.Configuration.GetConnectionString("Database"));
+    await DatabaseUpgrader.Upgrade(app.Configuration.GetConnectionString("Database"));
     Console.WriteLine("Database migrated successfully.");
 }
 
