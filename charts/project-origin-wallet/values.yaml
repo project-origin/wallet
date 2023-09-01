@@ -9,6 +9,13 @@ image:
   # tag defines the image tag to use, defaults to the chart appVersion
   tag:
 
+# service holds the configuration for the service
+service:
+  # type is the type of service to create, allowed values are (ClusterIP | NodePort | LoadBalancer)
+  type: ClusterIP
+  # nodePort is the port to expose the service on if type is NodePort
+  nodePort:
+
 # wallet defines the service configuration for the wallet server
 wallet:
 
