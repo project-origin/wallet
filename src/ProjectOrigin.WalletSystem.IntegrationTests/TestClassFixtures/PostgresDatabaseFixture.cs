@@ -21,7 +21,7 @@ public class PostgresDatabaseFixture : IAsyncLifetime
     public async Task InitializeAsync()
     {
         await _postgreSqlContainer.StartAsync();
-        DatabaseUpgrader.Upgrade(_postgreSqlContainer.GetConnectionString());
+        await DatabaseUpgrader.Upgrade(_postgreSqlContainer.GetConnectionString());
     }
 
     public Task DisposeAsync()

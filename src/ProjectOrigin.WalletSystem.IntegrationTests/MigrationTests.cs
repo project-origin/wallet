@@ -20,7 +20,7 @@ public class MigrationTest : IClassFixture<PostgresDatabaseFixture>
     public async Task can_insert_and_query_after_migration()
     {
         // Arrange
-        DatabaseUpgrader.Upgrade(_dbFixture.ConnectionString);
+        await DatabaseUpgrader.Upgrade(_dbFixture.ConnectionString);
 
         var wallet = new
         {
@@ -46,7 +46,7 @@ public class MigrationTest : IClassFixture<PostgresDatabaseFixture>
     public async Task can_insert_registries_and_query_after_migration()
     {
         // Arrange
-        DatabaseUpgrader.Upgrade(_dbFixture.ConnectionString);
+        await DatabaseUpgrader.Upgrade(_dbFixture.ConnectionString);
 
         var registry = new
         {
