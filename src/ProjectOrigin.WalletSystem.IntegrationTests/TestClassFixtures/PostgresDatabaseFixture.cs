@@ -1,5 +1,8 @@
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using ProjectOrigin.WalletSystem.Server.Database;
+using ProjectOrigin.WalletSystem.Server.Database.Postgres;
 using Testcontainers.PostgreSql;
 using Xunit;
 
@@ -16,13 +19,40 @@ public class PostgresDatabaseFixture : IAsyncLifetime
         _postgreSqlContainer = new PostgreSqlBuilder()
             .WithImage("postgres:15")
             .Build();
+
+        var loggerFactory = LoggerFactory.Create(builder =>
+        {
+            builder.AddConsole();
+        });
     }
 
     public async Task InitializeAsync()
     {
         await _postgreSqlContainer.StartAsync();
-        DatabaseUpgrader.Upgrade(_postgreSqlContainer.GetConnectionString());
+        await UpgradeDatabase();
     }
+
+    public async Task UpgradeDatabase()
+    {
+        var loggerFactory = LoggerFactory.Create(builder =>
+        {
+            builder.AddConsole();
+        });
+
+        var upgrader = new PostgresUpgrader(
+            loggerFactory.CreateLogger<PostgresUpgrader>(),
+            Options.Create(new PostgresOptions
+            {
+                ConnectionString = _postgreSqlContainer.GetConnectionString()
+            }));
+
+        await upgrader.Upgrade();
+    }
+
+    public IDbConnectionFactory GetConnectionFactory() => new PostgresConnectionFactory(Options.Create(new PostgresOptions
+    {
+        ConnectionString = _postgreSqlContainer.GetConnectionString()
+    }));
 
     public Task DisposeAsync()
     {

@@ -3,7 +3,6 @@ using FluentAssertions;
 using Grpc.Core;
 using ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures;
 using ProjectOrigin.WalletSystem.Server;
-using ProjectOrigin.WalletSystem.Server.Database;
 using ProjectOrigin.WalletSystem.Server.Models;
 using ProjectOrigin.WalletSystem.V1;
 using System;
@@ -41,7 +40,7 @@ public class GrpcTests : WalletSystemTestsBase
         depositEndpoint.WalletDepositEndpoint.Endpoint.Should().Be(endpoint);
         depositEndpoint.WalletDepositEndpoint.PublicKey.Should().NotBeNullOrEmpty();
 
-        using (var connection = new DbConnectionFactory(_dbFixture.ConnectionString).CreateConnection())
+        using (var connection = _dbFixture.GetConnectionFactory().CreateConnection())
         {
             var foundDepositEndpoint = connection.QuerySingle<DepositEndpoint>("SELECT * FROM DepositEndpoints");
 

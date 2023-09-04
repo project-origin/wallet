@@ -2,46 +2,48 @@ using System;
 using System.Linq;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using ProjectOrigin.WalletSystem.Server;
+using Microsoft.Extensions.DependencyInjection;
 using ProjectOrigin.WalletSystem.Server.Database;
+using ProjectOrigin.WalletSystem.Server.Extensions;
 using Serilog;
-using Serilog.Enrichers.Span;
-using Serilog.Formatting.Json;
 
-var builder = WebApplication.CreateBuilder(args);
-var loggerConfiguration = new LoggerConfiguration()
-    .Filter.ByExcluding("RequestPath like '/health%'")
-    .Filter.ByExcluding("RequestPath like '/metrics%'")
-    .Enrich.WithSpan();
+var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+var configuration = new ConfigurationBuilder()
+    .AddJsonFile("appsettings.json", optional: false)
+    .AddJsonFile($"appsettings.{environment}.json", optional: true)
+    .AddEnvironmentVariables()
+    .AddCommandLine(args)
+    .Build();
 
-loggerConfiguration = builder.Environment.IsDevelopment()
-    ? loggerConfiguration.WriteTo.Console()
-    : loggerConfiguration.WriteTo.Console(new JsonFormatter());
+Log.Logger = configuration.GetSeriLogger();
 
-builder.Logging.ClearProviders();
-builder.Logging.AddSerilog(loggerConfiguration.CreateLogger());
-
-var startup = new Startup(builder.Configuration);
-startup.ConfigureServices(builder.Services);
-
-var app = builder.Build();
-startup.Configure(app, builder.Environment);
-
-if (args.Contains("--migrate"))
+try
 {
-    Console.WriteLine("Starting database migration.");
-    DatabaseUpgrader.Upgrade(app.Configuration.GetConnectionString("Database"));
-    Console.WriteLine("Database migrated successfully.");
+    if (args.Contains("--migrate"))
+    {
+        Log.Information("Starting repository migration.");
+        await configuration.GetRepositoryUpgrader(Log.Logger).Upgrade();
+        Log.Information("Repository migrated successfully.");
+    }
+
+    if (args.Contains("--serve"))
+    {
+        Log.Information("Starting server.");
+        WebApplication app = configuration.BuildApp();
+
+        var upgrader = app.Services.GetRequiredService<IRepositoryUpgrader>();
+        if (await upgrader.IsUpgradeRequired())
+            throw new SystemException("Repository is not up to date. Please run with --migrate first.");
+
+        await app.RunAsync();
+        Log.Information("Server stopped.");
+    }
 }
-
-if (args.Contains("--serve"))
+catch (Exception ex)
 {
-    Console.WriteLine("Starting server.");
-    if (DatabaseUpgrader.IsUpgradeRequired(app.Configuration.GetConnectionString("Database")))
-        throw new SystemException("Database is not up to date. Please run with --migrate first.");
-
-    app.Run();
-    Console.WriteLine("Server stopped.");
+    Log.Fatal(ex, "Host terminated unexpectedly");
+}
+finally
+{
+    Log.CloseAndFlush();
 }

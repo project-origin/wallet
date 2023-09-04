@@ -1,6 +1,5 @@
 using Dapper;
 using FluentAssertions;
-using ProjectOrigin.WalletSystem.Server.Database;
 using System;
 using System.Threading.Tasks;
 using Xunit;
@@ -20,8 +19,6 @@ public class MigrationTest : IClassFixture<PostgresDatabaseFixture>
     public async Task can_insert_and_query_after_migration()
     {
         // Arrange
-        DatabaseUpgrader.Upgrade(_dbFixture.ConnectionString);
-
         var wallet = new
         {
             Id = Guid.NewGuid(),
@@ -29,7 +26,7 @@ public class MigrationTest : IClassFixture<PostgresDatabaseFixture>
             PrivateKey = new byte[] { 1, 2, 3 }
         };
 
-        using var connection = new DbConnectionFactory(_dbFixture.ConnectionString).CreateConnection();
+        using var connection = _dbFixture.GetConnectionFactory().CreateConnection();
 
         // Act
         await connection.ExecuteAsync(
@@ -46,15 +43,13 @@ public class MigrationTest : IClassFixture<PostgresDatabaseFixture>
     public async Task can_insert_registries_and_query_after_migration()
     {
         // Arrange
-        DatabaseUpgrader.Upgrade(_dbFixture.ConnectionString);
-
         var registry = new
         {
             Id = Guid.NewGuid(),
             Name = "RegistryA"
         };
 
-        using var connection = new DbConnectionFactory(_dbFixture.ConnectionString).CreateConnection();
+        using var connection = _dbFixture.GetConnectionFactory().CreateConnection();
 
         // Act
         await connection.ExecuteAsync(

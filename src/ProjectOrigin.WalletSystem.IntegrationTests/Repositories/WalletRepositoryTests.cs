@@ -1,6 +1,5 @@
 using AutoFixture;
 using FluentAssertions;
-using ProjectOrigin.WalletSystem.Server.Database;
 using ProjectOrigin.WalletSystem.Server.Models;
 using ProjectOrigin.WalletSystem.Server.Repositories;
 using System;
@@ -30,7 +29,7 @@ public class WalletRepositoryTests : AbstractRepositoryTests
             _algorithm.GenerateNewPrivateKey()
             );
 
-        using var connection = new DbConnectionFactory(_dbFixture.ConnectionString).CreateConnection();
+        using var connection = _dbFixture.GetConnectionFactory().CreateConnection();
         connection.Open();
         var repository = new WalletRepository(connection);
 
@@ -52,7 +51,7 @@ public class WalletRepositoryTests : AbstractRepositoryTests
             subject,
             _algorithm.GenerateNewPrivateKey()
             );
-        using var connection = new DbConnectionFactory(_dbFixture.ConnectionString).CreateConnection();
+        using var connection = _dbFixture.GetConnectionFactory().CreateConnection();
         connection.Open();
         var repository = new WalletRepository(connection);
         await repository.Create(wallet);
@@ -78,7 +77,7 @@ public class WalletRepositoryTests : AbstractRepositoryTests
             subject,
             _algorithm.GenerateNewPrivateKey()
             );
-        using var connection = new DbConnectionFactory(_dbFixture.ConnectionString).CreateConnection();
+        using var connection = _dbFixture.GetConnectionFactory().CreateConnection();
         connection.Open();
         var repository = new WalletRepository(connection);
         await repository.Create(wallet);
@@ -153,7 +152,7 @@ public class WalletRepositoryTests : AbstractRepositoryTests
             subject,
             _algorithm.GenerateNewPrivateKey()
             );
-        using var connection = new DbConnectionFactory(_dbFixture.ConnectionString).CreateConnection();
+        using var connection = _dbFixture.GetConnectionFactory().CreateConnection();
         connection.Open();
         var repository = new WalletRepository(connection);
         await repository.Create(wallet);
@@ -170,7 +169,7 @@ public class WalletRepositoryTests : AbstractRepositoryTests
     public async Task GetNextNumberForIdTest()
     {
         // Arrange
-        using var connection = new DbConnectionFactory(_dbFixture.ConnectionString).CreateConnection();
+        using var connection = _dbFixture.GetConnectionFactory().CreateConnection();
         connection.Open();
         var repository = new WalletRepository(connection);
         var id = Guid.NewGuid();
