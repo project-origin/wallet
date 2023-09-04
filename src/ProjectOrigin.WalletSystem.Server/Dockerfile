@@ -1,9 +1,9 @@
-FROM mcr.microsoft.com/dotnet/aspnet:7.0 AS base
+FROM mcr.microsoft.com/dotnet/aspnet:7.0.10-bookworm-slim AS base
 WORKDIR /app
 EXPOSE 80
 EXPOSE 443
 
-FROM mcr.microsoft.com/dotnet/sdk:7.0 AS dotnet-build
+FROM mcr.microsoft.com/dotnet/sdk:7.0.400-bookworm-slim AS dotnet-build
 WORKDIR /src
 COPY . .
 RUN dotnet tool restore
