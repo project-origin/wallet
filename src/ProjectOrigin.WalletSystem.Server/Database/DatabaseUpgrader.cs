@@ -81,7 +81,7 @@ public static class DatabaseUpgrader
         return DeployChanges.To
                     .PostgresqlDatabase(connectionString)
                     .WithScriptsEmbeddedInAssembly(typeof(DatabaseUpgrader).Assembly)
-                    .LogToAutodetectedLog()
+                    .LogToConsole()
                     .WithExecutionTimeout(TimeSpan.FromMinutes(5))
                     .Build();
     }
