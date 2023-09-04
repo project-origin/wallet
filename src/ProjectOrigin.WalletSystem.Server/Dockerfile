@@ -3,7 +3,7 @@ WORKDIR /app
 EXPOSE 80
 EXPOSE 443
 
-FROM mcr.microsoft.com/dotnet/sdk:7.0.400-bookworm-slim AS dotnet-build
+FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:7.0.400-bookworm-slim AS dotnet-build
 WORKDIR /src
 COPY . .
 RUN dotnet tool restore
