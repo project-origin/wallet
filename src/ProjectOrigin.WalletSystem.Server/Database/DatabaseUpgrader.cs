@@ -12,11 +12,9 @@ public static class DatabaseUpgrader
     private static TimeSpan _connectTimeout = TimeSpan.FromSeconds(15);
     private static TimeSpan _longTimeout = TimeSpan.FromMinutes(5);
 
-    public static async Task Upgrade(string? connectionString)
+    public static async Task Upgrade(string connectionString)
     {
-        var upgradeEngine = BuildUpgradeEngine(connectionString);
-
-        await TryConnectToDatabaseWithRetry(upgradeEngine);
+        var upgradeEngine = await TryConnectToDatabaseWithRetry(connectionString);
 
         Console.WriteLine($"Performing database upgrade.");
         var databaseUpgradeResult = upgradeEngine.PerformUpgrade();
@@ -32,19 +30,21 @@ public static class DatabaseUpgrader
         }
     }
 
-    public static bool IsUpgradeRequired(string? connectionString)
+    public static bool IsUpgradeRequired(string connectionString)
     {
         var upgradeEngine = BuildUpgradeEngine(connectionString);
 
         return upgradeEngine.IsUpgradeRequired();
     }
 
-    private static async Task TryConnectToDatabaseWithRetry(UpgradeEngine upgradeEngine)
+    private static async Task<UpgradeEngine> TryConnectToDatabaseWithRetry(string connectionString)
     {
         var stopwatch = Stopwatch.StartNew();
 
         while (true)
         {
+            var upgradeEngine = BuildUpgradeEngine(connectionString);
+
             var tryConnectTask = Task.Run(() =>
             {
                 var success = upgradeEngine.TryConnect(out string msg);
@@ -57,7 +57,7 @@ public static class DatabaseUpgrader
                 if (result.Success)
                 {
                     Console.WriteLine($"Successfully connected to database.");
-                    return;
+                    return upgradeEngine;
                 }
                 else
                 {
@@ -76,7 +76,7 @@ public static class DatabaseUpgrader
         }
     }
 
-    private static UpgradeEngine BuildUpgradeEngine(string? connectionString)
+    private static UpgradeEngine BuildUpgradeEngine(string connectionString)
     {
         return DeployChanges.To
                     .PostgresqlDatabase(connectionString)

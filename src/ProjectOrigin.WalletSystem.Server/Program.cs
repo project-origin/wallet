@@ -32,14 +32,14 @@ startup.Configure(app, builder.Environment);
 if (args.Contains("--migrate"))
 {
     Console.WriteLine("Starting database migration.");
-    await DatabaseUpgrader.Upgrade(app.Configuration.GetConnectionString("Database"));
+    await DatabaseUpgrader.Upgrade(app.Configuration.GetConnectionString("Database") ?? throw new InvalidOperationException());
     Console.WriteLine("Database migrated successfully.");
 }
 
 if (args.Contains("--serve"))
 {
     Console.WriteLine("Starting server.");
-    if (DatabaseUpgrader.IsUpgradeRequired(app.Configuration.GetConnectionString("Database")))
+    if (DatabaseUpgrader.IsUpgradeRequired(app.Configuration.GetConnectionString("Database") ?? throw new InvalidOperationException()))
         throw new SystemException("Database is not up to date. Please run with --migrate first.");
 
     app.Run();
