@@ -18,38 +18,16 @@ jobs:
         run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
 
   publish-server-container:
-    name: Publish Wallet Server container
-    runs-on: ubuntu-22.04
     needs:
       - define-version
-    env:
-      project: src/ProjectOrigin.WalletSystem.Server
-
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
-      - name: Log in to the Container registry
-        uses: docker/login-action@v2
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ github.token }}
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v4
-        with:
-          platforms: linux/amd64,linux/arm64
-          provenance: false
-          context: ./src
-          file: ./src/ProjectOrigin.WalletSystem.Server/Dockerfile
-          push: true
-          tags: ghcr.io/project-origin/wallet-server:${{ needs.define-version.outputs.version }}
+    uses: ./.github/workflows/reusable-build-container.yaml
+    with:
+      imagename: ghcr.io/project-origin/wallet-server
+      version: ${{ needs.define-version.outputs.version }}
+      context: ./src
+      dockerfile: ./src/ProjectOrigin.WalletSystem.Server/Dockerfile
+    secrets:
+      pushtoken: ${{ github.token }}
 
   publish-chart:
     name: Publish helm chart
