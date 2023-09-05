@@ -42,7 +42,7 @@ jobs:
         run: make verify-chart
 
   test-server-container-build:
-    uses: ./.github/workflows/reusable-build-container.yaml
+    uses: project-origin/.github/.github/workflows/reusable-build-container.yaml@main
     with:
       imagename: ghcr.io/project-origin/wallet-server
       version: test
