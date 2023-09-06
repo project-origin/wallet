@@ -40,3 +40,13 @@ jobs:
 
       - name: Start kind cluster
         run: make verify-chart
+
+  test-server-container-build:
+    uses: project-origin/.github/.github/workflows/reusable-build-container.yaml@main
+    with:
+      imagename: ghcr.io/project-origin/wallet-server
+      version: test
+      context: ./src
+      dockerfile: ./src/ProjectOrigin.WalletSystem.Server/Dockerfile
+    secrets:
+      pushtoken: ''
