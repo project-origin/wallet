@@ -16,6 +16,7 @@ public static class IConfigurationExtensions
     public static IRepositoryUpgrader GetRepositoryUpgrader(this IConfiguration configuration, Serilog.ILogger logger)
     {
         var services = new ServiceCollection();
+        services.AddLogging();
         services.AddSerilog(logger);
         services.ConfigurePersistance(configuration);
         using var serviceProvider = services.BuildServiceProvider();
