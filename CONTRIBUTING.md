@@ -11,4 +11,4 @@ The new tag should be in one of the following formats:
 - `v1.2.3` - this is used to create a production release
 - `v1.2.3-rc.4` - this is used to create release-candidates so they can be tested and used before they are made generally available, when doing this, remember to set the `Pre-release` flag to `true` in the GitHub portal.
 
-Once the release is `publishes` a workflow will start, and build and publish the release and all packages tied to it.
+Once the release is `published` a workflow will start, and build and publish the release and all packages tied to it.
