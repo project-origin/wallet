@@ -69,5 +69,6 @@ verify-chart:
 
 	docker build -f src/ProjectOrigin.WalletSystem.Server/Dockerfile -t ghcr.io/project-origin/wallet-server:test src/
 	kind load -n helm-test docker-image ghcr.io/project-origin/wallet-server:test
-	helm install wallet charts/project-origin-wallet --set image.tag=test,wallet.externalUrl=http://wallet.example:80 --wait
+	helm install wallet charts/project-origin-wallet --set image.tag=test,wallet.externalUrl=http://wallet.example:80 --namespace wallet --create-namespace --wait
+
 	kind delete cluster -n helm-test
