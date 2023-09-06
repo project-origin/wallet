@@ -7,7 +7,6 @@ using Google.Protobuf;
 using Grpc.Core;
 using ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures;
 using ProjectOrigin.WalletSystem.Server;
-using ProjectOrigin.WalletSystem.Server.Database;
 using ProjectOrigin.WalletSystem.Server.Models;
 using ProjectOrigin.WalletSystem.V1;
 using Xunit;
@@ -50,7 +49,7 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
             response.Should().NotBeNull();
             response.ReceiverId.Should().NotBeNull();
 
-            using (var connection = new DbConnectionFactory(_dbFixture.ConnectionString).CreateConnection())
+            using (var connection = _dbFixture.GetConnectionFactory().CreateConnection())
             {
                 var foundDepositEndpoint = connection.QuerySingle<DepositEndpoint>("SELECT * FROM DepositEndpoints WHERE Owner = @subject", new { subject });
 
@@ -86,7 +85,7 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
             await client.CreateReceiverDepositEndpointAsync(request, receiverHeader1);
             await client.CreateReceiverDepositEndpointAsync(request, receiverHeader2);
 
-            using (var connection = new DbConnectionFactory(_dbFixture.ConnectionString).CreateConnection())
+            using (var connection = _dbFixture.GetConnectionFactory().CreateConnection())
             {
                 var foundDepositEndpoints = connection.Query<DepositEndpoint>("SELECT * FROM DepositEndpoints Where ReferenceText = @reference", new { reference });
                 foundDepositEndpoints.Should().HaveCount(2);
@@ -112,7 +111,7 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
             createReceiverResponse.Should().NotBeNull();
             createReceiverResponse.ReceiverId.Should().NotBeNull();
 
-            using (var connection = new DbConnectionFactory(_dbFixture.ConnectionString).CreateConnection())
+            using (var connection = _dbFixture.GetConnectionFactory().CreateConnection())
             {
                 var foundDepositEndpoints = connection.Query<DepositEndpoint>("SELECT * FROM DepositEndpoints");
 

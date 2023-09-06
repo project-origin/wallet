@@ -19,6 +19,8 @@ using ProjectOrigin.WalletSystem.Server.Activities;
 using System;
 using ProjectOrigin.WalletSystem.Server.Activities.Exceptions;
 using ProjectOrigin.WalletSystem.Server.Serialization;
+using ProjectOrigin.WalletSystem.Server.Extensions;
+using ProjectOrigin.WalletSystem.Server.Database.Postgres;
 
 namespace ProjectOrigin.WalletSystem.Server;
 
@@ -47,6 +49,8 @@ public class Startup
             .Bind(_configuration)
             .ValidateDataAnnotations()
             .ValidateOnStart();
+
+        services.ConfigurePersistance(_configuration);
 
         services.Configure<VerifySlicesWorkerOptions>(
             _configuration.GetSection("VerifySlicesWorkerOptions"));
@@ -100,7 +104,7 @@ public class Startup
         });
 
         services.AddScoped<UnitOfWork>();
-        services.AddSingleton<IDbConnectionFactory, DbConnectionFactory>();
+        services.AddSingleton<IDbConnectionFactory, PostgresConnectionFactory>();
         services.AddSingleton<IUnitOfWorkFactory, UnitOfWorkFactory>();
 
         services.AddSingleton<IHDAlgorithm, Secp256k1Algorithm>();

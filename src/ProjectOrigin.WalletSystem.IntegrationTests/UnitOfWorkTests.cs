@@ -31,7 +31,7 @@ public class UnitOfWorkTests : IClassFixture<PostgresDatabaseFixture>
         var owner = Guid.NewGuid().ToString();
         var model = new Wallet(Guid.NewGuid(), owner, _algorithm.GenerateNewPrivateKey());
 
-        var dbConnectionFactory = new DbConnectionFactory(_dbFixture.ConnectionString);
+        var dbConnectionFactory = _dbFixture.GetConnectionFactory();
 
         using (var uof = new UnitOfWork(dbConnectionFactory))
         {
@@ -53,7 +53,7 @@ public class UnitOfWorkTests : IClassFixture<PostgresDatabaseFixture>
         var owner = Guid.NewGuid().ToString();
         var model = new Wallet(Guid.NewGuid(), owner, _algorithm.GenerateNewPrivateKey());
 
-        var dbConnectionFactory = new DbConnectionFactory(_dbFixture.ConnectionString);
+        var dbConnectionFactory = _dbFixture.GetConnectionFactory();
 
         using (var uof = new UnitOfWork(dbConnectionFactory))
         {
