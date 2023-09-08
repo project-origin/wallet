@@ -16,13 +16,23 @@ using FluentAssertions;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests;
 
-public class TransferCertificateTests : WalletSystemTestsBase, IClassFixture<RegistryFixture>
+public class TransferCertificateTests : WalletSystemTestsBase, IClassFixture<RegistryFixture>, IClassFixture<InMemoryFixture>
 {
     private readonly RegistryFixture _registryFixture;
     private readonly Fixture _fixture;
 
-    public TransferCertificateTests(GrpcTestFixture<Startup> grpcFixture, RegistryFixture registryFixture, PostgresDatabaseFixture dbFixture, ITestOutputHelper outputHelper)
-        : base(grpcFixture, dbFixture, outputHelper, registryFixture)
+    public TransferCertificateTests(
+            GrpcTestFixture<Startup> grpcFixture,
+            PostgresDatabaseFixture dbFixture,
+            InMemoryFixture inMemoryFixture,
+            RegistryFixture registryFixture,
+            ITestOutputHelper outputHelper)
+            : base(
+                  grpcFixture,
+                  dbFixture,
+                  inMemoryFixture,
+                  outputHelper,
+                  registryFixture)
     {
         _registryFixture = registryFixture;
         _fixture = new Fixture();

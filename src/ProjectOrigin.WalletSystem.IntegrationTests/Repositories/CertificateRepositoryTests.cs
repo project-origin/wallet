@@ -10,6 +10,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using ProjectOrigin.WalletSystem.Server.Extensions;
 using Xunit;
+using ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests.Repositories;
 

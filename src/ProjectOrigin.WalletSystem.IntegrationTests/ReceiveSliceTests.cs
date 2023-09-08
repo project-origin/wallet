@@ -13,10 +13,19 @@ using AutoFixture;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests
 {
-    public class ReceiveSliceTests : WalletSystemTestsBase
+    public class ReceiveSliceTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
     {
-        public ReceiveSliceTests(GrpcTestFixture<Startup> grpcFixture, PostgresDatabaseFixture dbFixture, ITestOutputHelper outputHelper)
-            : base(grpcFixture, dbFixture, outputHelper, null)
+        public ReceiveSliceTests(
+            GrpcTestFixture<Startup> grpcFixture,
+            PostgresDatabaseFixture dbFixture,
+            InMemoryFixture inMemoryFixture,
+            ITestOutputHelper outputHelper)
+            : base(
+                  grpcFixture,
+                  dbFixture,
+                  inMemoryFixture,
+                  outputHelper,
+                  null)
         {
         }
 

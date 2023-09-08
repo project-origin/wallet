@@ -20,12 +20,21 @@ using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests
 {
-    public class QueryCertificatesTest : WalletSystemTestsBase
+    public class QueryCertificatesTest : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
     {
         private Fixture _fixture;
 
-        public QueryCertificatesTest(GrpcTestFixture<Startup> grpcFixture, PostgresDatabaseFixture dbFixture, ITestOutputHelper outputHelper)
-            : base(grpcFixture, dbFixture, outputHelper, null)
+        public QueryCertificatesTest(
+            GrpcTestFixture<Startup> grpcFixture,
+            PostgresDatabaseFixture dbFixture,
+            InMemoryFixture inMemoryFixture,
+            ITestOutputHelper outputHelper)
+            : base(
+                  grpcFixture,
+                  dbFixture,
+                  inMemoryFixture,
+                  outputHelper,
+                  null)
         {
             _fixture = new Fixture();
 

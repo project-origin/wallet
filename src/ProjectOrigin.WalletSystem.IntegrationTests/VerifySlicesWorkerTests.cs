@@ -12,13 +12,23 @@ using Xunit.Abstractions;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests;
 
-public class VerifySlicesWorkerTests : WalletSystemTestsBase, IClassFixture<RegistryFixture>
+public class VerifySlicesWorkerTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>, IClassFixture<RegistryFixture>
 {
     private RegistryFixture _registryFixture;
     private Fixture _fixture;
 
-    public VerifySlicesWorkerTests(GrpcTestFixture<Startup> grpcFixture, RegistryFixture registryFixture, PostgresDatabaseFixture dbFixture, ITestOutputHelper outputHelper)
-        : base(grpcFixture, dbFixture, outputHelper, registryFixture)
+    public VerifySlicesWorkerTests(
+        GrpcTestFixture<Startup> grpcFixture,
+        PostgresDatabaseFixture dbFixture,
+        InMemoryFixture inMemoryFixture,
+        RegistryFixture registryFixture,
+        ITestOutputHelper outputHelper)
+        : base(
+              grpcFixture,
+              dbFixture,
+              inMemoryFixture,
+              outputHelper,
+              registryFixture)
     {
         _registryFixture = registryFixture;
         _fixture = new Fixture();

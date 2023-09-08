@@ -6,7 +6,7 @@ using ProjectOrigin.WalletSystem.Server.Database.Postgres;
 using Testcontainers.PostgreSql;
 using Xunit;
 
-namespace ProjectOrigin.WalletSystem.IntegrationTests;
+namespace ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures;
 
 public class PostgresDatabaseFixture : IAsyncLifetime
 {

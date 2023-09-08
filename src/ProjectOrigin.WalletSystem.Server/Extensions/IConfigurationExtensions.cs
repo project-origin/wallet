@@ -1,10 +1,10 @@
 using System;
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using ProjectOrigin.WalletSystem.Server.Database;
-using ProjectOrigin.WalletSystem.Server.Database.Postgres;
 using Serilog;
 using Serilog.Enrichers.Span;
 using Serilog.Formatting.Json;
@@ -13,6 +13,25 @@ namespace ProjectOrigin.WalletSystem.Server.Extensions;
 
 public static class IConfigurationExtensions
 {
+    public static T GetValid<T>(this IConfiguration configuration) where T : IValidatableObject
+    {
+        try
+        {
+            var value = configuration.Get<T>();
+
+            if (value is null)
+                throw new ArgumentNullException($"Configuration value of type {typeof(T)} is null");
+
+            Validator.ValidateObject(value, new ValidationContext(value), true);
+
+            return value;
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("Failed to convert configuration value"))
+        {
+            throw new ValidationException($"Configuration value of type {typeof(T)} is invalid", ex);
+        }
+    }
+
     public static IRepositoryUpgrader GetRepositoryUpgrader(this IConfiguration configuration, Serilog.ILogger logger)
     {
         var services = new ServiceCollection();

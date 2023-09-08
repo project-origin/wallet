@@ -10,13 +10,14 @@ using ProjectOrigin.WalletSystem.Server.Repositories;
 using System.Threading.Tasks;
 using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
 using ProjectOrigin.PedersenCommitment;
-using Dapper;
+using System.Linq;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests;
 
 public abstract class WalletSystemTestsBase : IClassFixture<GrpcTestFixture<Startup>>, IClassFixture<PostgresDatabaseFixture>, IDisposable
 {
     protected readonly string endpoint = "http://localhost/";
+    private readonly IMessageBrokerFixture _messageBrokerFixture;
     protected readonly GrpcTestFixture<Startup> _grpcFixture;
     protected readonly PostgresDatabaseFixture _dbFixture;
     protected readonly JwtGenerator _tokenGenerator;
@@ -24,8 +25,14 @@ public abstract class WalletSystemTestsBase : IClassFixture<GrpcTestFixture<Star
 
     protected IHDAlgorithm Algorithm => _grpcFixture.GetRequiredService<IHDAlgorithm>();
 
-    public WalletSystemTestsBase(GrpcTestFixture<Startup> grpcFixture, PostgresDatabaseFixture dbFixture, ITestOutputHelper outputHelper, RegistryFixture? registry)
+    public WalletSystemTestsBase(
+        GrpcTestFixture<Startup> grpcFixture,
+        PostgresDatabaseFixture dbFixture,
+        IMessageBrokerFixture messageBrokerFixture,
+        ITestOutputHelper outputHelper,
+        RegistryFixture? registry)
     {
+        _messageBrokerFixture = messageBrokerFixture;
         _grpcFixture = grpcFixture;
         _dbFixture = dbFixture;
         _logger = grpcFixture.GetTestLogger(outputHelper);
@@ -35,8 +42,10 @@ public abstract class WalletSystemTestsBase : IClassFixture<GrpcTestFixture<Star
         {
             {"ConnectionStrings:Database", dbFixture.ConnectionString},
             {"ServiceOptions:EndpointAddress", endpoint},
-            {"VerifySlicesWorkerOptions:SleepTime", "00:00:02"}
+            {"VerifySlicesWorkerOptions:SleepTime", "00:00:02"},
         };
+
+        config = config.Concat(_messageBrokerFixture.Configuration).ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
 
         if (registry is not null)
             config.Add($"RegistryUrls:{registry.Name}", registry.RegistryUrl);

@@ -12,7 +12,7 @@ using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
 using ProjectOrigin.PedersenCommitment;
 using Xunit;
 
-namespace ProjectOrigin.WalletSystem.IntegrationTests;
+namespace ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures;
 
 public class RegistryFixture : IAsyncLifetime
 {
