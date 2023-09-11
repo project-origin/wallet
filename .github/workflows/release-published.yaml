@@ -20,14 +20,13 @@ jobs:
   publish-server-container:
     needs:
       - define-version
-    uses: project-origin/.github/.github/workflows/reusable-build-container.yaml@main
+    uses: project-origin/.github/.github/workflows/reusable-build-push-container-ghcr.yaml@main
     with:
       imagename: ghcr.io/project-origin/wallet-server
       version: ${{ needs.define-version.outputs.version }}
       context: ./src
       dockerfile: ./src/ProjectOrigin.WalletSystem.Server/Dockerfile
-    secrets:
-      pushtoken: ${{ secrets.github_token }}
+      push: true
 
   publish-chart:
     name: Publish helm chart
