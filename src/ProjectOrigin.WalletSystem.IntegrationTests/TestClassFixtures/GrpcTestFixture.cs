@@ -22,16 +22,12 @@ using System.Net.Http;
 using Grpc.Net.Client;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Configuration.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures.GrpcHelpers;
 using Xunit.Abstractions;
-
-using ProjectOrigin.WalletSystem.Server.Extensions;
-using ProjectOrigin.WalletSystem.Server;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures
 {
@@ -44,6 +40,7 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures
         private HttpMessageHandler? _handler;
         private GrpcChannel? _channel;
         private Dictionary<string, string?>? _configurationDictionary;
+        public event Action<IServiceCollection>? ConfigureTestServices;
 
         public event LogMessage? LoggedMessage;
         public GrpcChannel Channel => _channel ??= CreateChannel();
@@ -96,6 +93,11 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures
                             .UseTestServer()
                             .UseEnvironment("Development")
                             .UseStartup<TStartup>();
+                    })
+                    .ConfigureServices(services =>
+                    {
+                        if (ConfigureTestServices != null)
+                            ConfigureTestServices.Invoke(services);
                     });
 
                 _host = builder.Start();

@@ -19,12 +19,12 @@ public record TransferFullSliceArguments(Guid SourceSliceId, Guid ReceiverDeposi
 
 public class TransferFullSliceActivity : IExecuteActivity<TransferFullSliceArguments>
 {
-    private readonly UnitOfWork _unitOfWork;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<TransferPartialSliceActivity> _logger;
     private readonly IEndpointNameFormatter _formatter;
 
     public TransferFullSliceActivity(
-        UnitOfWork unitOfWork,
+        IUnitOfWork unitOfWork,
         ILogger<TransferPartialSliceActivity> logger,
         IEndpointNameFormatter formatter)
     {

@@ -4,7 +4,6 @@ using Google.Protobuf;
 using Grpc.Core;
 using MassTransit;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ProjectOrigin.Common.V1;
 using ProjectOrigin.HierarchicalDeterministicKeys.Implementations;
@@ -18,18 +17,16 @@ using ProjectOrigin.WalletSystem.V1;
 namespace ProjectOrigin.WalletSystem.Server.Services;
 
 [Authorize]
-public class WalletService : ProjectOrigin.WalletSystem.V1.WalletService.WalletServiceBase
+public class WalletService : V1.WalletService.WalletServiceBase
 {
     private readonly string _endpointAddress;
-    private readonly ILogger<WalletService> _logger;
-    private readonly UnitOfWork _unitOfWork;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IHDAlgorithm _hdAlgorithm;
     private readonly IBus _bus;
 
-    public WalletService(ILogger<WalletService> logger, UnitOfWork unitOfWork, IHDAlgorithm hdAlgorithm, IOptions<ServiceOptions> options, IBus bus)
+    public WalletService(IUnitOfWork unitOfWork, IHDAlgorithm hdAlgorithm, IOptions<ServiceOptions> options, IBus bus)
     {
         _endpointAddress = options.Value.EndpointAddress;
-        _logger = logger;
         _unitOfWork = unitOfWork;
         _hdAlgorithm = hdAlgorithm;
         _bus = bus;

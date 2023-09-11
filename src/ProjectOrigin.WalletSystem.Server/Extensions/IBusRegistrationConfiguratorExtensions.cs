@@ -42,6 +42,7 @@ public static class IBusRegistrationConfiguratorExtensions
     private static void ConfigureDefaults<T>(this IBusFactoryConfigurator<T> cfg, IBusRegistrationContext context) where T : IReceiveEndpointConfigurator
     {
         cfg.ConfigureEndpoints(context);
+        cfg.UseInMemoryOutbox(context);
 
         cfg.ConfigureJsonSerializerOptions(options =>
         {

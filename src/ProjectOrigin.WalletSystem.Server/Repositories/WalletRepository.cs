@@ -7,7 +7,7 @@ using ProjectOrigin.WalletSystem.Server.Models;
 
 namespace ProjectOrigin.WalletSystem.Server.Repositories;
 
-public class WalletRepository
+public class WalletRepository : IWalletRepository
 {
     private const string RemainderReferenceText = "RemainderSection";
     private readonly IDbConnection _connection;
@@ -90,7 +90,7 @@ public class WalletRepository
         return remainderEndpoint;
     }
 
-    internal async Task<IHDPrivateKey> GetPrivateKeyForSlice(Guid sliceId)
+    public async Task<IHDPrivateKey> GetPrivateKeyForSlice(Guid sliceId)
     {
         var keyInfo = await _connection.QuerySingleAsync<(IHDPrivateKey PrivateKey, int WalletPosition, int DepositEndpointPosition)>(
             @"SELECT w.PrivateKey, de.WalletPosition, s.DepositEndpointPosition

@@ -9,7 +9,6 @@ using ProjectOrigin.WalletSystem.Server.Database.Mapping;
 using ProjectOrigin.WalletSystem.Server.Services;
 using System.IdentityModel.Tokens.Jwt;
 using MassTransit;
-using ProjectOrigin.WalletSystem.Server.BackgroundJobs;
 using ProjectOrigin.WalletSystem.Server.Projections;
 using ProjectOrigin.WalletSystem.Server.Options;
 using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
@@ -51,9 +50,6 @@ public class Startup
 
         services.ConfigurePersistance(_configuration);
 
-        services.Configure<VerifySlicesWorkerOptions>(
-            _configuration.GetSection("VerifySlicesWorkerOptions"));
-
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(o =>
             {
@@ -80,24 +76,26 @@ public class Startup
                     .Handle<TransientException>());
             });
 
-            o.AddActivitiesFromNamespaceContaining<TransferFullSliceActivity>();
+            o.AddConsumer<VerifySliceCommandHandler>(cfg =>
+            {
+                cfg.UseMessageRetry(r => r.Interval(100, TimeSpan.FromMinutes(1))
+                    .Handle<TransientException>());
+            });
 
+            o.AddActivitiesFromNamespaceContaining<TransferFullSliceActivity>();
             o.AddExecuteActivity<WaitCommittedRegistryTransactionActivity, WaitCommittedTransactionArguments>(cfg =>
             {
                 cfg.UseRetry(r => r.Interval(100, TimeSpan.FromSeconds(10))
                     .Handle<RegistryTransactionStillProcessingException>());
             });
 
-            o.ConfigureMassTransitTransport(_configuration.GetSection("MessageBroker").GetValid<MessageBrokerOptions>());
+            var messageBrokerOptions = _configuration.GetSection("MessageBroker").GetValid<MessageBrokerOptions>();
+            o.ConfigureMassTransitTransport(messageBrokerOptions);
         });
 
-        services.AddScoped<UnitOfWork>();
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddSingleton<IDbConnectionFactory, PostgresConnectionFactory>();
-        services.AddSingleton<IUnitOfWorkFactory, UnitOfWorkFactory>();
-
         services.AddSingleton<IHDAlgorithm, Secp256k1Algorithm>();
-
-        services.AddHostedService<VerifySlicesWorker>();
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

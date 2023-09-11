@@ -6,7 +6,7 @@ using ProjectOrigin.WalletSystem.Server.Models;
 
 namespace ProjectOrigin.WalletSystem.Server.Repositories;
 
-public class RegistryRepository
+public class RegistryRepository : IRegistryRepository
 {
     private readonly IDbConnection _connection;
 
