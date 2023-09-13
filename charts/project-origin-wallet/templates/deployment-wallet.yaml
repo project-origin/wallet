@@ -32,6 +32,46 @@ spec:
           env:
             - name: ServiceOptions__EndpointAddress
               value: {{ required "A valid externalUrl is required!"  .Values.wallet.externalUrl }}
+            {{- if eq .Values.messageBroker.type "inMemory" }}
+            - name: MessageBroker__Type
+              value: InMemory
+            {{- else if eq .Values.messageBroker.type "rabbitmq" }}
+            - name: MessageBroker__Type
+              value: RabbitMq
+            - name: MessageBroker__RabbitMQ__Host
+              value: {{ required "A valid messageBroker rabbitmq host is required!" .Values.messageBroker.rabbitmq.host }}
+            - name: MessageBroker__RabbitMQ__Port
+              value: {{ required "A valid messageBroker rabbitmq port is required!" .Values.messageBroker.rabbitmq.port }}
+            - name: MessageBroker__RabbitMQ__Username
+              value: {{ required "A valid messageBroker rabbitmq username is required!" .Values.messageBroker.rabbitmq.username }}
+            - name: MessageBroker__RabbitMQ__Password
+              value: {{ required "A valid messageBroker rabbitmq password is required!" .Values.messageBroker.rabbitmq.password }}
+            {{- else if eq .Values.messageBroker.type "rabbitmqOperator" }}
+            - name: MessageBroker__Type
+              value: RabbitMq
+            - name: MessageBroker__RabbitMQ__Host
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-rabbitmq-default-user
+                  key: host
+            - name: MessageBroker__RabbitMQ__Port
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-rabbitmq-default-user
+                  key: port
+            - name: MessageBroker__RabbitMQ__Username
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-rabbitmq-default-user
+                  key: username
+            - name: MessageBroker__RabbitMQ__Password
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-rabbitmq-default-user
+                  key: password
+            {{- else}}
+            {{- fail "messageBroker type must be one of (inMemory | rabbitmq | rabbitmqOperator)" }}
+            {{- end }}
             {{- range .Values.registries }}
             - name: RegistryUrls__{{ .name }}
               value: {{ .address }}

@@ -14,12 +14,21 @@ using Xunit.Abstractions;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests
 {
-    public class ReceiverDepositEndpointTests : WalletSystemTestsBase
+    public class ReceiverDepositEndpointTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
     {
         private Fixture _fixture;
 
-        public ReceiverDepositEndpointTests(GrpcTestFixture<Startup> grpcFixture, PostgresDatabaseFixture dbFixture, ITestOutputHelper outputHelper)
-            : base(grpcFixture, dbFixture, outputHelper, null)
+        public ReceiverDepositEndpointTests(
+            GrpcTestFixture<Startup> grpcFixture,
+            PostgresDatabaseFixture dbFixture,
+            InMemoryFixture inMemoryFixture,
+            ITestOutputHelper outputHelper)
+            : base(
+                  grpcFixture,
+                  dbFixture,
+                  inMemoryFixture,
+                  outputHelper,
+                  null)
         {
             _fixture = new Fixture();
         }

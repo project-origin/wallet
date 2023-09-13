@@ -1,5 +1,6 @@
 using Dapper;
 using FluentAssertions;
+using ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures;
 using System;
 using System.Threading.Tasks;
 using Xunit;

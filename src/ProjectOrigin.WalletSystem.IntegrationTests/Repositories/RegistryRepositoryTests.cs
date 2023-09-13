@@ -1,10 +1,8 @@
 using AutoFixture;
-using Dapper;
 using FluentAssertions;
+using ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures;
 using ProjectOrigin.WalletSystem.Server.Models;
 using ProjectOrigin.WalletSystem.Server.Repositories;
-using System;
-using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
 

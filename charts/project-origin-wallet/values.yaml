@@ -16,6 +16,21 @@ service:
   # nodePort is the port to expose the service on if type is NodePort
   nodePort:
 
+messageBroker:
+  # type defines the type of message broker to use, allowed values are (inMemory | rabbitmq | rabbitmqOperator)
+  type:
+
+  # rabbitmq defines the rabbitmq configuration for the message broker if type is rabbitmq, with rabbitmqOperator or inMemory this is ignored
+  rabbitmq:
+    # host defines the host of the rabbitmq server in url format 'http://localhost:15672/'
+    host:
+    # port defines the port of the rabbitmq server, defaults to 5672
+    port: 5672
+    # username defines the username to use to connect to the rabbitmq server
+    username:
+    # password defines the password to use to connect to the rabbitmq server
+    password:
+
 # wallet defines the service configuration for the wallet server
 wallet:
 

@@ -62,13 +62,4 @@ unit-test:
 verify-chart:
 	@kind version >/dev/null 2>&1 || { echo >&2 "kind not installed! kind is required to use recipe, please install or use devcontainer"; exit 1;}
 	@helm version >/dev/null 2>&1 || { echo >&2 "helm not installed! helm is required to use recipe, please install or use devcontainer"; exit 1;}
-
-	kind delete cluster -n helm-test
-	kind create cluster -n helm-test
-	helm install cnpg-operator cloudnative-pg --repo https://cloudnative-pg.io/charts --version 0.18.0 --namespace cnpg --create-namespace --wait
-
-	docker build -f src/ProjectOrigin.WalletSystem.Server/Dockerfile -t ghcr.io/project-origin/wallet-server:test src/
-	kind load -n helm-test docker-image ghcr.io/project-origin/wallet-server:test
-	helm install wallet charts/project-origin-wallet --set image.tag=test,wallet.externalUrl=http://wallet.example:80 --namespace wallet --create-namespace --wait
-
-	kind delete cluster -n helm-test
+	charts/project-origin-wallet/run_kind_test.sh

@@ -12,6 +12,7 @@ using ProjectOrigin.WalletSystem.Server.Extensions;
 using Xunit;
 using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
 using ProjectOrigin.HierarchicalDeterministicKeys.Implementations;
+using ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests.Repositories;
 

@@ -18,7 +18,6 @@ using ProjectOrigin.WalletSystem.Server.CommandHandlers;
 using ProjectOrigin.WalletSystem.Server.Activities;
 using System;
 using ProjectOrigin.WalletSystem.Server.Activities.Exceptions;
-using ProjectOrigin.WalletSystem.Server.Serialization;
 using ProjectOrigin.WalletSystem.Server.Extensions;
 using ProjectOrigin.WalletSystem.Server.Database.Postgres;
 
@@ -26,7 +25,7 @@ namespace ProjectOrigin.WalletSystem.Server;
 
 public class Startup
 {
-    private IConfiguration _configuration;
+    private readonly IConfiguration _configuration;
 
     public Startup(IConfiguration configuration)
     {
@@ -77,7 +76,7 @@ public class Startup
 
             o.AddConsumer<TransferCertificateCommandHandler>(cfg =>
             {
-                cfg.UseRetry(r => r.Interval(100, TimeSpan.FromMinutes(1))
+                cfg.UseMessageRetry(r => r.Interval(100, TimeSpan.FromMinutes(1))
                     .Handle<TransientException>());
             });
 
@@ -89,18 +88,7 @@ public class Startup
                     .Handle<RegistryTransactionStillProcessingException>());
             });
 
-            o.UsingInMemory((context, cfg) =>
-            {
-                cfg.UseDelayedMessageScheduler();
-                cfg.ConfigureEndpoints(context);
-
-                cfg.ConfigureJsonSerializerOptions(options =>
-                {
-                    options.Converters.Add(new TransactionConverter());
-                    return options;
-                });
-            });
-
+            o.ConfigureMassTransitTransport(_configuration.GetSection("MessageBroker").GetValid<MessageBrokerOptions>());
         });
 
         services.AddScoped<UnitOfWork>();
