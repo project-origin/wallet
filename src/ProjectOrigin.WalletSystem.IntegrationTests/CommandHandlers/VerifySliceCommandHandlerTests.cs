@@ -85,8 +85,8 @@ public class VerifySliceCommandHandlerTests : IAsyncLifetime
         var depositEndpoint = new DepositEndpoint(Guid.NewGuid(), Guid.NewGuid(), walletPosition, privateKey.Derive(walletPosition).Neuter(), string.Empty, string.Empty, string.Empty);
         _walletRepository.GetDepositEndpoint(depositEndpoint.Id).Returns(depositEndpoint);
 
-        IssuedEvent issuedEvent = CreateIssuedEvent(certId, commitment, privateKey.Derive(walletPosition).Derive(depositPosition).PublicKey);
-        GranularCertificate certificate = new GranularCertificate(issuedEvent);
+        var issuedEvent = CreateIssuedEvent(certId, commitment, privateKey.Derive(walletPosition).Derive(depositPosition).PublicKey);
+        var certificate = new GranularCertificate(issuedEvent);
 
         _registryService.GetGranularCertificate(RegistryName, certId).Returns(new GetCertificateResult.Success(certificate));
 
