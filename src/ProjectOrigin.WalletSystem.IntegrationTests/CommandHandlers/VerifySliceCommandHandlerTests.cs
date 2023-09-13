@@ -85,8 +85,8 @@ public class VerifySliceCommandHandlerTests : IAsyncLifetime
         var depositEndpoint = new DepositEndpoint(Guid.NewGuid(), Guid.NewGuid(), walletPosition, privateKey.Derive(walletPosition).Neuter(), string.Empty, string.Empty, string.Empty);
         _walletRepository.GetDepositEndpoint(depositEndpoint.Id).Returns(depositEndpoint);
 
-        IssuedEvent issuedEvent = CreateIssuedEvent(certId, commitment, privateKey.Derive(walletPosition).Derive(depositPosition).PublicKey);
-        GranularCertificate certificate = new GranularCertificate(issuedEvent);
+        var issuedEvent = CreateIssuedEvent(certId, commitment, depositEndpoint.PublicKey.Derive(depositPosition).GetPublicKey());
+        var certificate = new GranularCertificate(issuedEvent);
 
         _registryService.GetGranularCertificate(RegistryName, certId).Returns(new GetCertificateResult.Success(certificate));
 
@@ -263,8 +263,8 @@ public class VerifySliceCommandHandlerTests : IAsyncLifetime
         var depositEndpoint = new DepositEndpoint(Guid.NewGuid(), Guid.NewGuid(), walletPosition, privateKey.Derive(walletPosition).Neuter(), string.Empty, string.Empty, string.Empty);
         _walletRepository.GetDepositEndpoint(depositEndpoint.Id).Returns(depositEndpoint);
 
-        IssuedEvent issuedEvent = CreateIssuedEvent(certId, commitmentIssued, privateKey.Derive(walletPosition).Derive(depositPosition).PublicKey);
-        GranularCertificate certificate = new GranularCertificate(issuedEvent);
+        var issuedEvent = CreateIssuedEvent(certId, commitmentIssued, depositEndpoint.PublicKey.Derive(depositPosition).GetPublicKey());
+        var certificate = new GranularCertificate(issuedEvent);
 
         _registryService.GetGranularCertificate(RegistryName, certId).Returns(new GetCertificateResult.Success(certificate));
 
@@ -308,8 +308,8 @@ public class VerifySliceCommandHandlerTests : IAsyncLifetime
         var depositEndpoint = new DepositEndpoint(Guid.NewGuid(), Guid.NewGuid(), walletPosition, privateKey.Derive(walletPosition).Neuter(), string.Empty, string.Empty, string.Empty);
         _walletRepository.GetDepositEndpoint(depositEndpoint.Id).Returns(depositEndpoint);
 
-        IssuedEvent issuedEvent = CreateIssuedEvent(certId, commitment, privateKey.Derive(walletPosition).Derive(depositPosition).PublicKey);
-        GranularCertificate certificate = new GranularCertificate(issuedEvent);
+        var issuedEvent = CreateIssuedEvent(certId, commitment, depositEndpoint.PublicKey.Derive(depositPosition).GetPublicKey());
+        var certificate = new GranularCertificate(issuedEvent);
 
         _registryService.GetGranularCertificate(RegistryName, certId).Returns(new GetCertificateResult.Success(certificate));
 
