@@ -20,7 +20,7 @@ messageBroker:
   # type defines the type of message broker to use, allowed values are (inMemory | rabbitmq | rabbitmqOperator)
   type:
 
-  # rabbitmq defines the rabbitmq configuration for the message broker if type is rabbitmq, with rabbitmqOperator this is ignored
+  # rabbitmq defines the rabbitmq configuration for the message broker if type is rabbitmq, with rabbitmqOperator or inMemory this is ignored
   rabbitmq:
     # host defines the host of the rabbitmq server in url format 'http://localhost:15672/'
     host:

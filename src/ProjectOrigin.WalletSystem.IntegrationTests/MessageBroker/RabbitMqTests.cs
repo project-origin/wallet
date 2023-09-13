@@ -23,7 +23,7 @@ public class RabbitMqTests : WalletSystemTestsBase, IClassFixture<RabbitMqFixtur
     [Fact]
     public void VerifyHostStarts()
     {
-        // More will be added here later
+        // TODO: write test with test-harness
         Assert.True(true);
     }
 }

@@ -1,4 +1,3 @@
-
 using System;
 using MassTransit;
 using ProjectOrigin.WalletSystem.Server.Options;

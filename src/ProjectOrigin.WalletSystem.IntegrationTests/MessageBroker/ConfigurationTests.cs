@@ -140,7 +140,7 @@ public class ConfigurationTests
     }
 
     [Fact]
-    public void RabbitMqMisconfiguredUrl()
+    public void RabbitMqMisconfiguredHost()
     {
         // Arrange
         var configuration = new ConfigurationBuilder()

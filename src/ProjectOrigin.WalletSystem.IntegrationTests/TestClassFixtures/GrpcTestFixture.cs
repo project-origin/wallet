@@ -22,16 +22,12 @@ using System.Net.Http;
 using Grpc.Net.Client;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Configuration.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures.GrpcHelpers;
 using Xunit.Abstractions;
-
-using ProjectOrigin.WalletSystem.Server.Extensions;
-using ProjectOrigin.WalletSystem.Server;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures
 {
