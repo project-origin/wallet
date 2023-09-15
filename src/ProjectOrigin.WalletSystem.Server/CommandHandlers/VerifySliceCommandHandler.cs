@@ -14,13 +14,16 @@ using ProjectOrigin.WalletSystem.Server.Services;
 
 namespace ProjectOrigin.WalletSystem.Server.CommandHandlers;
 
-public record VerifySliceCommand(Guid Id,
-                    Guid DepositEndpointId,
-                    int DepositEndpointPosition,
-                    string Registry,
-                    Guid CertificateId,
-                    long Quantity,
-                    byte[] RandomR);
+public record VerifySliceCommand
+{
+    public required Guid Id { get; init; }
+    public required Guid DepositEndpointId { get; init; }
+    public required int DepositEndpointPosition { get; init; }
+    public required string Registry { get; init; }
+    public required Guid CertificateId { get; init; }
+    public required long Quantity { get; init; }
+    public required byte[] RandomR { get; init; }
+}
 
 public class VerifySliceCommandHandler : IConsumer<VerifySliceCommand>
 {
@@ -92,36 +95,39 @@ public class VerifySliceCommandHandler : IConsumer<VerifySliceCommand>
 
     private async Task InsertIntoWallet(VerifySliceCommand receivedSlice, GranularCertificate certificateProjection)
     {
-        var registry = await _unitOfWork.RegistryRepository.GetRegistryFromName(receivedSlice.Registry);
-        if (registry is null)
+        var slice = new Slice
         {
-            registry = new RegistryModel(Guid.NewGuid(), receivedSlice.Registry);
-            await _unitOfWork.RegistryRepository.InsertRegistry(registry);
-        }
+            Id = Guid.NewGuid(),
+            DepositEndpointId = receivedSlice.DepositEndpointId,
+            DepositEndpointPosition = receivedSlice.DepositEndpointPosition,
+            Registry = receivedSlice.Registry,
+            CertificateId = receivedSlice.CertificateId,
+            Quantity = receivedSlice.Quantity,
+            RandomR = receivedSlice.RandomR,
+            SliceState = SliceState.Available
+        };
 
-        var slice = new Slice(Guid.NewGuid(),
-            receivedSlice.DepositEndpointId,
-            receivedSlice.DepositEndpointPosition,
-            registry.Id,
-            receivedSlice.CertificateId,
-            receivedSlice.Quantity,
-            receivedSlice.RandomR,
-            SliceState.Available);
-
-        var certificate = await _unitOfWork.CertificateRepository.GetCertificate(registry.Id, slice.CertificateId);
+        var certificate = await _unitOfWork.CertificateRepository.GetCertificate(slice.Registry, slice.CertificateId);
         if (certificate == null)
         {
             var attributes = certificateProjection.Attributes
-                .Select(attribute => new CertificateAttribute(attribute.Key, attribute.Value))
+                .Select(attribute => new CertificateAttribute
+                {
+                    Key = attribute.Key,
+                    Value = attribute.Value
+                })
                 .ToList();
 
-            certificate = new Certificate(slice.CertificateId,
-                registry.Id,
-                certificateProjection.Period.Start.ToDateTimeOffset(),
-                certificateProjection.Period.End.ToDateTimeOffset(),
-                certificateProjection.GridArea,
-                (GranularCertificateType)certificateProjection.Type,
-                attributes);
+            certificate = new Certificate
+            {
+                Id = slice.CertificateId,
+                Registry = receivedSlice.Registry,
+                StartDate = certificateProjection.Period.Start.ToDateTimeOffset(),
+                EndDate = certificateProjection.Period.End.ToDateTimeOffset(),
+                GridArea = certificateProjection.GridArea,
+                CertificateType = (GranularCertificateType)certificateProjection.Type,
+                Attributes = attributes
+            };
             await _unitOfWork.CertificateRepository.InsertCertificate(certificate);
         }
 

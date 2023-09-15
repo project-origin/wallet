@@ -17,7 +17,13 @@ using ProjectOrigin.WalletSystem.Server.Models;
 
 namespace ProjectOrigin.WalletSystem.Server.Activities;
 
-public record TransferPartialSliceArguments(Guid SourceSliceId, Guid ReceiverDepositEndpointId, uint Quantity);
+public record TransferPartialSliceArguments
+{
+    public required Guid SourceSliceId { get; init; }
+    public required Guid ReceiverDepositEndpointId { get; init; }
+    public required uint Quantity { get; init; }
+}
+
 
 public class TransferPartialSliceActivity : IExecuteActivity<TransferPartialSliceArguments>
 {
@@ -59,13 +65,32 @@ public class TransferPartialSliceActivity : IExecuteActivity<TransferPartialSlic
             var commitmentQuantity = new SecretCommitmentInfo(quantity);
             var commitmentRemainder = new SecretCommitmentInfo(remainder);
 
-            var transferredSlice = new Slice(Guid.NewGuid(), receiverDepositEndpoint.Id, nextReceiverPosition, sourceSlice.RegistryId, sourceSlice.CertificateId, commitmentQuantity.Message, commitmentQuantity.BlindingValue.ToArray(), SliceState.Registering);
+            var transferredSlice = new Slice
+            {
+                Id = Guid.NewGuid(),
+                DepositEndpointId = receiverDepositEndpoint.Id,
+                DepositEndpointPosition = nextReceiverPosition,
+                Registry = sourceSlice.Registry,
+                CertificateId = sourceSlice.CertificateId,
+                Quantity = commitmentQuantity.Message,
+                RandomR = commitmentQuantity.BlindingValue.ToArray(),
+                SliceState = SliceState.Registering
+            };
             await _unitOfWork.CertificateRepository.InsertSlice(transferredSlice);
-            var remainderSlice = new Slice(Guid.NewGuid(), remainderDepositEndpoint.Id, nextRemainderPosition, sourceSlice.RegistryId, sourceSlice.CertificateId, commitmentRemainder.Message, commitmentRemainder.BlindingValue.ToArray(), SliceState.Registering);
+            var remainderSlice = new Slice
+            {
+                Id = Guid.NewGuid(),
+                DepositEndpointId = remainderDepositEndpoint.Id,
+                DepositEndpointPosition = nextRemainderPosition,
+                Registry = sourceSlice.Registry,
+                CertificateId = sourceSlice.CertificateId,
+                Quantity = commitmentRemainder.Message,
+                RandomR = commitmentRemainder.BlindingValue.ToArray(),
+                SliceState = SliceState.Registering
+            };
             await _unitOfWork.CertificateRepository.InsertSlice(remainderSlice);
 
-            var registry = await _unitOfWork.RegistryRepository.GetRegistryFromId(sourceSlice.RegistryId);
-            var slicedEvent = CreateSliceEvent(registry.Name, sourceSlice, new NewSlice(commitmentQuantity, receiverPublicKey), new NewSlice(commitmentRemainder, remainderPublicKey));
+            var slicedEvent = CreateSliceEvent(sourceSlice, new NewSlice(commitmentQuantity, receiverPublicKey), new NewSlice(commitmentRemainder, remainderPublicKey));
             var sourceSlicePrivateKey = await _unitOfWork.WalletRepository.GetPrivateKeyForSlice(sourceSlice.Id);
             Transaction transaction = CreateAndSignTransaction(slicedEvent.CertificateId, slicedEvent, sourceSlicePrivateKey);
 
@@ -123,14 +148,14 @@ public class TransferPartialSliceActivity : IExecuteActivity<TransferPartialSlic
 
     private record NewSlice(SecretCommitmentInfo ci, IPublicKey Key);
 
-    private SlicedEvent CreateSliceEvent(string registryName, Slice sourceSlice, params NewSlice[] newSlices)
+    private SlicedEvent CreateSliceEvent(Slice sourceSlice, params NewSlice[] newSlices)
     {
         if (newSlices.Sum(s => s.ci.Message) != sourceSlice.Quantity)
             throw new InvalidOperationException();
 
         var certificateId = new ProjectOrigin.Common.V1.FederatedStreamId
         {
-            Registry = registryName,
+            Registry = sourceSlice.Registry,
             StreamId = new ProjectOrigin.Common.V1.Uuid { Value = sourceSlice.CertificateId.ToString() }
         };
 

@@ -24,11 +24,12 @@ public class WalletRepositoryTests : AbstractRepositoryTests
         var subject = Guid.NewGuid().ToString();
 
         // Arrange
-        var wallet = new Wallet(
-            Guid.NewGuid(),
-            subject,
-            _algorithm.GenerateNewPrivateKey()
-            );
+        var wallet = new Wallet
+        {
+            Id = Guid.NewGuid(),
+            Owner = subject,
+            PrivateKey = _algorithm.GenerateNewPrivateKey()
+        };
 
         using var connection = _dbFixture.GetConnectionFactory().CreateConnection();
         connection.Open();
@@ -47,11 +48,12 @@ public class WalletRepositoryTests : AbstractRepositoryTests
     {
         // Arrange
         var subject = Guid.NewGuid().ToString();
-        var wallet = new Wallet(
-            Guid.NewGuid(),
-            subject,
-            _algorithm.GenerateNewPrivateKey()
-            );
+        var wallet = new Wallet
+        {
+            Id = Guid.NewGuid(),
+            Owner = subject,
+            PrivateKey = _algorithm.GenerateNewPrivateKey()
+        };
         using var connection = _dbFixture.GetConnectionFactory().CreateConnection();
         connection.Open();
         var repository = new WalletRepository(connection);
@@ -73,11 +75,12 @@ public class WalletRepositoryTests : AbstractRepositoryTests
     {
         // Arrange
         var subject = Guid.NewGuid().ToString();
-        var wallet = new Wallet(
-            Guid.NewGuid(),
-            subject,
-            _algorithm.GenerateNewPrivateKey()
-            );
+        var wallet = new Wallet
+        {
+            Id = Guid.NewGuid(),
+            Owner = subject,
+            PrivateKey = _algorithm.GenerateNewPrivateKey()
+        };
         using var connection = _dbFixture.GetConnectionFactory().CreateConnection();
         connection.Open();
         var repository = new WalletRepository(connection);
@@ -148,11 +151,12 @@ public class WalletRepositoryTests : AbstractRepositoryTests
     {
         // Arrange
         var subject = Guid.NewGuid().ToString();
-        var wallet = new Wallet(
-            Guid.NewGuid(),
-            subject,
-            _algorithm.GenerateNewPrivateKey()
-            );
+        var wallet = new Wallet
+        {
+            Id = Guid.NewGuid(),
+            Owner = subject,
+            PrivateKey = _algorithm.GenerateNewPrivateKey()
+        };
         using var connection = _dbFixture.GetConnectionFactory().CreateConnection();
         connection.Open();
         var repository = new WalletRepository(connection);

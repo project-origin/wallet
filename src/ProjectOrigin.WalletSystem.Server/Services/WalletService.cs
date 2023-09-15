@@ -41,7 +41,13 @@ public class WalletService : V1.WalletService.WalletServiceBase
         if (wallet is null)
         {
             var key = _hdAlgorithm.GenerateNewPrivateKey();
-            wallet = new Wallet(Guid.NewGuid(), subject, key);
+            wallet = new Wallet
+            {
+                Id = Guid.NewGuid(),
+                Owner = subject,
+                PrivateKey = key
+            };
+
             await _unitOfWork.WalletRepository.Create(wallet);
         }
 
@@ -103,7 +109,14 @@ public class WalletService : V1.WalletService.WalletServiceBase
     public override Task<TransferResponse> TransferCertificate(TransferRequest request, ServerCallContext context)
     {
         var owner = context.GetSubject();
-        var command = new TransferCertificateCommand(owner, request.CertificateId.Registry, new Guid(request.CertificateId.StreamId.Value), request.Quantity, new Guid(request.ReceiverId.Value));
+        var command = new TransferCertificateCommand
+        {
+            Owner = owner,
+            Registry = request.CertificateId.Registry,
+            CertificateId = new Guid(request.CertificateId.StreamId.Value),
+            Quantity = request.Quantity,
+            Receiver = new Guid(request.ReceiverId.Value)
+        };
 
         _bus.Publish(command);
 

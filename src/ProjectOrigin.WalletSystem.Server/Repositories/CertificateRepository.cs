@@ -13,34 +13,42 @@ public class CertificateRepository : ICertificateRepository
 {
     private IDbConnection _connection;
 
-    public CertificateRepository(IDbConnection connection)
-    {
-        this._connection = connection;
-    }
+    public CertificateRepository(IDbConnection connection) => this._connection = connection;
 
-    public Task InsertSlice(Slice newSlice)
+    public async Task InsertSlice(Slice newSlice)
     {
-        return _connection.ExecuteAsync(@"INSERT INTO Slices(Id, DepositEndpointId, DepositEndpointPosition, RegistryId, CertificateId, Quantity, RandomR, SliceState) VALUES (@id, @depositEndpointId, @depositEndpointPosition, @registryId, @certificateId, @quantity, @randomR, @sliceState)", new { newSlice.Id, newSlice.DepositEndpointId, newSlice.DepositEndpointPosition, newSlice.RegistryId, newSlice.CertificateId, newSlice.Quantity, newSlice.RandomR, newSlice.SliceState });
+        var registryId = await _connection.QuerySingleAsync<Guid>("SELECT Id FROM Registries WHERE Name = @registry", new { newSlice.Registry });
+
+        await _connection.ExecuteAsync(@"INSERT INTO Slices(Id, DepositEndpointId, DepositEndpointPosition, RegistryId, CertificateId, Quantity, RandomR, SliceState) VALUES (@id, @depositEndpointId, @depositEndpointPosition, @registryId, @certificateId, @quantity, @randomR, @sliceState)", new { newSlice.Id, newSlice.DepositEndpointId, newSlice.DepositEndpointPosition, registryId, newSlice.CertificateId, newSlice.Quantity, newSlice.RandomR, newSlice.SliceState });
     }
     public async Task InsertCertificate(Certificate certificate)
     {
+        var registryId = await _connection.QuerySingleOrDefaultAsync<Guid?>("SELECT Id FROM Registries WHERE Name = @registry", new { certificate.Registry });
+
+        if (!registryId.HasValue)
+        {
+            registryId = Guid.NewGuid();
+            await _connection.ExecuteAsync(@"INSERT INTO Registries(Id, Name) VALUES (@registryId, @registry)", new { registryId, certificate.Registry });
+        }
+
         await _connection.ExecuteAsync(@"INSERT INTO Certificates(Id, RegistryId, StartDate, EndDate, GridArea, CertificateType) VALUES (@id, @registryId, @startDate, @endDate, @gridArea, @certificateType)",
-            new { certificate.Id, certificate.RegistryId, startDate = certificate.StartDate.ToUtcTime(), endDate = certificate.EndDate.ToUtcTime(), certificate.GridArea, certificate.CertificateType });
+            new { certificate.Id, registryId, startDate = certificate.StartDate.ToUtcTime(), endDate = certificate.EndDate.ToUtcTime(), certificate.GridArea, certificate.CertificateType });
 
         foreach (var atr in certificate.Attributes)
         {
             var atrId = Guid.NewGuid();
             await _connection.ExecuteAsync(@"INSERT INTO Attributes(Id, KeyAtr, ValueAtr, CertificateId, RegistryId) VALUES (@atrId, @key, @value, @id, @registryId)",
-                new { atrId, atr.Key, atr.Value, certificate.Id, certificate.RegistryId });
+                new { atrId, atr.Key, atr.Value, certificate.Id, registryId });
         }
     }
 
-    public async Task<Certificate?> GetCertificate(Guid registryId, Guid certificateId)
+    public async Task<Certificate?> GetCertificate(string registryName, Guid certificateId)
     {
-        var sql = @"SELECT c.Id, c.RegistryId, c.StartDate, c.EndDate, c.GridArea, c.CertificateType, a.Id AS AttributeId, a.KeyAtr AS Key, a.ValueAtr as Value
+        var sql = @"SELECT c.Id, r.Name as Registry, c.StartDate, c.EndDate, c.GridArea, c.CertificateType, a.Id AS AttributeId, a.KeyAtr AS Key, a.ValueAtr as Value
                     FROM Certificates c
+                    INNER JOIN Registries r ON c.RegistryId = r.Id
                     LEFT JOIN Attributes a ON c.Id = a.CertificateId AND c.RegistryId = a.RegistryId
-                    WHERE c.Id = @certificateId AND c.RegistryId = @registryId";
+                    WHERE c.Id = @certificateId AND r.Name = @registryName";
 
         var certsDictionary = new Dictionary<Guid, Certificate>();
         var res = await _connection.QueryAsync<Certificate?, CertificateAttribute, Certificate?>(sql,
@@ -57,7 +65,7 @@ public class CertificateRepository : ICertificateRepository
                     certificate.Attributes.Add(atr);
 
                 return certificate;
-            }, splitOn: "AttributeId", param: new { certificateId, registryId });
+            }, splitOn: "AttributeId", param: new { certificateId, registryName });
 
         return certsDictionary.Values.FirstOrDefault();
     }
@@ -108,7 +116,7 @@ public class CertificateRepository : ICertificateRepository
 
     public Task<IEnumerable<Slice>> GetOwnerAvailableSlices(string registryName, Guid certificateId, string owner)
     {
-        var sql = $@"SELECT s.*
+        var sql = $@"SELECT s.*, r.Name as Registry
                     FROM Certificates c
                     LEFT JOIN Slices s on c.Id = s.CertificateId
                     LEFT JOIN Registries r on s.RegistryId = r.Id
@@ -124,7 +132,7 @@ public class CertificateRepository : ICertificateRepository
 
     public Task<IEnumerable<Slice>> GetToBeAvailable(string registryName, Guid certificateId, string owner)
     {
-        var sql = $@"SELECT s.*
+        var sql = $@"SELECT s.*, r.Name as Registry
                     FROM Certificates c
                     LEFT JOIN Slices s on c.Id = s.CertificateId
                     LEFT JOIN Registries r on s.RegistryId = r.Id
@@ -141,9 +149,10 @@ public class CertificateRepository : ICertificateRepository
 
     public Task<Slice> GetSlice(Guid sliceId)
     {
-        var sql = @"SELECT *
-                    FROM Slices
-                    WHERE Id = @sliceId ";
+        var sql = @"SELECT s.*, r.Name as Registry
+                    FROM Slices s
+                    INNER JOIN Registries r ON s.RegistryId = r.Id
+                    WHERE s.Id = @sliceId";
 
         return _connection.QuerySingleAsync<Slice>(sql, new { sliceId });
     }

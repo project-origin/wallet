@@ -26,26 +26,29 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
     public async Task InsertCertificate_InsertsCertificate()
     {
         // Arrange
-        var registry = await CreateRegistry();
+        var registry = _fixture.Create<string>();
         var attributes = new List<CertificateAttribute>
         {
-            new ("AssetId", "571234567890123456"),
-            new ("TechCode", "T070000"),
-            new ("FuelCode", "F00000000")
+            new (){ Key="AssetId", Value= "571234567890123456"},
+            new (){ Key="TechCode", Value= "T070000"},
+            new (){ Key="FuelCode", Value= "F00000000"}
         };
-        var certificate = new Certificate(Guid.NewGuid(),
-            registry.Id,
-            DateTimeOffset.Now.ToUtcTime(),
-            DateTimeOffset.Now.AddDays(1).ToUtcTime(),
-            "DK1",
-            GranularCertificateType.Production,
-            attributes);
+        var certificate = new Certificate
+        {
+            Id = Guid.NewGuid(),
+            Registry = registry,
+            StartDate = DateTimeOffset.Now.ToUtcTime(),
+            EndDate = DateTimeOffset.Now.AddDays(1).ToUtcTime(),
+            GridArea = "DK1",
+            CertificateType = GranularCertificateType.Production,
+            Attributes = attributes
+        };
 
         // Act
         await _repository.InsertCertificate(certificate);
 
         // Assert
-        var insertedCertificate = await _repository.GetCertificate(registry.Id, certificate.Id);
+        var insertedCertificate = await _repository.GetCertificate(certificate.Registry, certificate.Id);
         insertedCertificate.Should().BeEquivalentTo(certificate);
     }
 
@@ -53,11 +56,11 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
     public async Task GetCertificate_ReturnsCertificate()
     {
         // Arrange
-        var registry = await CreateRegistry();
-        var certificate = await CreateCertificate(registry.Id);
+        var registry = _fixture.Create<string>();
+        var certificate = await CreateCertificate(registry);
 
         // Act
-        var result = await _repository.GetCertificate(registry.Id, certificate.Id);
+        var result = await _repository.GetCertificate(registry, certificate.Id);
 
         // Assert
         result.Should().BeEquivalentTo(certificate);
@@ -68,17 +71,27 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
     {
         // Arrange
         var depositEndpointPosition = 1;
-        var registry = await CreateRegistry();
-        var certificate = await CreateCertificate(registry.Id);
-        var wallet = await CreateWallet(_fixture.Create<string>());
+        var registry = _fixture.Create<string>();
+        var certificate = await CreateCertificate(registry);
+        var wallet = await CreateWallet(registry);
         var depositEndpoint = await CreateDepositEndpoint(wallet);
-        var slice = new Slice(Guid.NewGuid(), depositEndpoint.Id, depositEndpointPosition, registry.Id, certificate.Id, _fixture.Create<int>(), _fixture.Create<byte[]>(), SliceState.Available);
+        var slice = new Slice
+        {
+            Id = Guid.NewGuid(),
+            DepositEndpointId = depositEndpoint.Id,
+            DepositEndpointPosition = depositEndpointPosition,
+            Registry = registry,
+            CertificateId = certificate.Id,
+            Quantity = _fixture.Create<int>(),
+            RandomR = _fixture.Create<byte[]>(),
+            SliceState = SliceState.Available
+        };
 
         // Act
         await _repository.InsertSlice(slice);
 
         // Assert
-        var insertedSlice = await _connection.QueryFirstOrDefaultAsync<Slice>("SELECT * FROM Slices WHERE Id = @id", new { slice.Id });
+        var insertedSlice = await _connection.QueryFirstOrDefaultAsync<Slice>("SELECT s.*, r.Name as Registry FROM Slices s INNER JOIN Registries r ON r.id = s.registryId  WHERE s.Id = @id", new { slice.Id });
         insertedSlice.Should().BeEquivalentTo(slice);
     }
 
@@ -87,10 +100,10 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
     {
         // Arrange
         var deposintEndpointPosition = 1;
-        var registry = await CreateRegistry();
-        var certificate1 = await CreateCertificate(registry.Id);
-        var certificate2 = await CreateCertificate(registry.Id, GranularCertificateType.Consumption);
-        var certificate3 = await CreateCertificate(registry.Id);
+        var registry = _fixture.Create<string>();
+        var certificate1 = await CreateCertificate(registry);
+        var certificate2 = await CreateCertificate(registry, GranularCertificateType.Consumption);
+        var certificate3 = await CreateCertificate(registry);
         var owner1 = _fixture.Create<string>();
         var wallet1 = await CreateWallet(owner1);
         var depositEndpoint1 = await CreateDepositEndpoint(wallet1);
@@ -99,16 +112,52 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         var wallet2 = await CreateWallet(owner2);
         var depositEndpoint3 = await CreateDepositEndpoint(wallet2);
         //Wallet1
-        var slice1 = new Slice(Guid.NewGuid(), depositEndpoint1.Id, deposintEndpointPosition, registry.Id, certificate1.Id, _fixture.Create<int>(),
-            _fixture.Create<byte[]>(), SliceState.Available);
-        var slice2 = new Slice(Guid.NewGuid(), depositEndpoint1.Id, deposintEndpointPosition + 1, registry.Id, certificate1.Id, _fixture.Create<int>(),
-            _fixture.Create<byte[]>(), SliceState.Available);
+        var slice1 = new Slice
+        {
+            Id = Guid.NewGuid(),
+            DepositEndpointId = depositEndpoint1.Id,
+            DepositEndpointPosition = deposintEndpointPosition,
+            Registry = registry,
+            CertificateId = certificate1.Id,
+            Quantity = _fixture.Create<int>(),
+            RandomR = _fixture.Create<byte[]>(),
+            SliceState = SliceState.Available
+        };
+        var slice2 = new Slice
+        {
+            Id = Guid.NewGuid(),
+            DepositEndpointId = depositEndpoint1.Id,
+            DepositEndpointPosition = deposintEndpointPosition + 1,
+            Registry = registry,
+            CertificateId = certificate1.Id,
+            Quantity = _fixture.Create<int>(),
+            RandomR = _fixture.Create<byte[]>(),
+            SliceState = SliceState.Available
+        };
         //Certficiate2
-        var slice3 = new Slice(Guid.NewGuid(), depositEndpoint2.Id, deposintEndpointPosition, registry.Id, certificate2.Id, _fixture.Create<int>(),
-            _fixture.Create<byte[]>(), SliceState.Available);
+        var slice3 = new Slice
+        {
+            Id = Guid.NewGuid(),
+            DepositEndpointId = depositEndpoint2.Id,
+            DepositEndpointPosition = deposintEndpointPosition,
+            Registry = registry,
+            CertificateId = certificate2.Id,
+            Quantity = _fixture.Create<int>(),
+            RandomR = _fixture.Create<byte[]>(),
+            SliceState = SliceState.Available
+        };
 
-        var sliceWithDifferentOwner = new Slice(Guid.NewGuid(), depositEndpoint3.Id, deposintEndpointPosition, registry.Id, certificate3.Id,
-            _fixture.Create<int>(), _fixture.Create<byte[]>(), SliceState.Available);
+        var sliceWithDifferentOwner = new Slice
+        {
+            Id = Guid.NewGuid(),
+            DepositEndpointId = depositEndpoint3.Id,
+            DepositEndpointPosition = deposintEndpointPosition,
+            Registry = registry,
+            CertificateId = certificate3.Id,
+            Quantity = _fixture.Create<int>(),
+            RandomR = _fixture.Create<byte[]>(),
+            SliceState = SliceState.Available
+        };
 
         await _repository.InsertSlice(slice1);
         await _repository.InsertSlice(slice2);
@@ -132,13 +181,22 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
     public async Task GetAllOwnedCertificates_AllSliceStates(SliceState sliceState, int expectedCertificateCount)
     {
         // Arrange
-        var registry = await CreateRegistry();
-        var certificate = await CreateCertificate(registry.Id);
+        var registry = _fixture.Create<string>();
+        var certificate = await CreateCertificate(registry);
         var owner = _fixture.Create<string>();
         var wallet = await CreateWallet(owner);
         var depositEndpoint = await CreateDepositEndpoint(wallet);
-        var slice = new Slice(Guid.NewGuid(), depositEndpoint.Id, 1, registry.Id, certificate.Id, _fixture.Create<int>(),
-            _fixture.Create<byte[]>(), SliceState.Available);
+        var slice = new Slice
+        {
+            Id = Guid.NewGuid(),
+            DepositEndpointId = depositEndpoint.Id,
+            DepositEndpointPosition = 1,
+            Registry = registry,
+            CertificateId = certificate.Id,
+            Quantity = _fixture.Create<int>(),
+            RandomR = _fixture.Create<byte[]>(),
+            SliceState = SliceState.Available
+        };
 
         // Act
         await _repository.InsertSlice(slice);
@@ -153,17 +211,26 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
     [Fact]
     public async Task GetAvailableSlice()
     {
-        var registry = await CreateRegistry();
+        var registry = _fixture.Create<string>();
         var wallet1 = await CreateWallet(_fixture.Create<string>());
         var depositEndpointPosition = 1;
         var depositEndpoint = await CreateDepositEndpoint(wallet1);
-        var certificate = await CreateCertificate(registry.Id);
-        var slice = new Slice(Guid.NewGuid(), depositEndpoint.Id, depositEndpointPosition, registry.Id, certificate.Id, _fixture.Create<int>(),
-            _fixture.Create<byte[]>(), SliceState.Available);
+        var certificate = await CreateCertificate(registry);
+        var slice = new Slice
+        {
+            Id = Guid.NewGuid(),
+            DepositEndpointId = depositEndpoint.Id,
+            DepositEndpointPosition = depositEndpointPosition,
+            Registry = registry,
+            CertificateId = certificate.Id,
+            Quantity = _fixture.Create<int>(),
+            RandomR = _fixture.Create<byte[]>(),
+            SliceState = SliceState.Available
+        };
 
         await _repository.InsertSlice(slice);
 
-        var sliceDb = await _repository.GetOwnerAvailableSlices(registry.Name, slice.CertificateId, wallet1.Owner);
+        var sliceDb = await _repository.GetOwnerAvailableSlices(registry, slice.CertificateId, wallet1.Owner);
 
         sliceDb.Should().HaveCount(1);
         sliceDb.Should().ContainEquivalentOf(slice);
@@ -172,20 +239,38 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
     [Fact]
     public async Task GetAvailableSlice_WhenSliceStateOtherThanAvailable_ExpectNull()
     {
-        var registry = await CreateRegistry();
+        var registry = _fixture.Create<string>();
         var wallet1 = await CreateWallet(_fixture.Create<string>());
         var depositEndpointPosition = 1;
         var depositEndpoint = await CreateDepositEndpoint(wallet1);
-        var certificate = await CreateCertificate(registry.Id);
-        var slice1 = new Slice(Guid.NewGuid(), depositEndpoint.Id, depositEndpointPosition, registry.Id, certificate.Id, _fixture.Create<int>(),
-            _fixture.Create<byte[]>(), SliceState.Sliced);
-        var slice2 = new Slice(Guid.NewGuid(), depositEndpoint.Id, depositEndpointPosition, registry.Id, certificate.Id, _fixture.Create<int>(),
-            _fixture.Create<byte[]>(), SliceState.Slicing);
+        var certificate = await CreateCertificate(registry);
+        var slice1 = new Slice
+        {
+            Id = Guid.NewGuid(),
+            DepositEndpointId = depositEndpoint.Id,
+            DepositEndpointPosition = depositEndpointPosition,
+            Registry = registry,
+            CertificateId = certificate.Id,
+            Quantity = _fixture.Create<int>(),
+            RandomR = _fixture.Create<byte[]>(),
+            SliceState = SliceState.Sliced
+        };
+        var slice2 = new Slice
+        {
+            Id = Guid.NewGuid(),
+            DepositEndpointId = depositEndpoint.Id,
+            DepositEndpointPosition = depositEndpointPosition,
+            Registry = registry,
+            CertificateId = certificate.Id,
+            Quantity = _fixture.Create<int>(),
+            RandomR = _fixture.Create<byte[]>(),
+            SliceState = SliceState.Slicing
+        };
 
         await _repository.InsertSlice(slice1);
         await _repository.InsertSlice(slice2);
 
-        var sliceDb = await _repository.GetOwnerAvailableSlices(registry.Name, certificate.Id, wallet1.Owner);
+        var sliceDb = await _repository.GetOwnerAvailableSlices(registry, certificate.Id, wallet1.Owner);
 
         sliceDb.Should().BeEmpty();
     }
@@ -193,13 +278,22 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
     [Fact]
     public async Task SetSliceState()
     {
-        var registry = await CreateRegistry();
+        var registry = _fixture.Create<string>();
         var wallet1 = await CreateWallet(_fixture.Create<string>());
         var depositEndpointPosition = 1;
         var depositEndpoint = await CreateDepositEndpoint(wallet1);
-        var certificate = await CreateCertificate(registry.Id);
-        var slice = new Slice(Guid.NewGuid(), depositEndpoint.Id, depositEndpointPosition, registry.Id, certificate.Id, _fixture.Create<int>(),
-            _fixture.Create<byte[]>(), SliceState.Available);
+        var certificate = await CreateCertificate(registry);
+        var slice = new Slice
+        {
+            Id = Guid.NewGuid(),
+            DepositEndpointId = depositEndpoint.Id,
+            DepositEndpointPosition = depositEndpointPosition,
+            Registry = registry,
+            CertificateId = certificate.Id,
+            Quantity = _fixture.Create<int>(),
+            RandomR = _fixture.Create<byte[]>(),
+            SliceState = SliceState.Available
+        };
 
         await _repository.InsertSlice(slice);
 

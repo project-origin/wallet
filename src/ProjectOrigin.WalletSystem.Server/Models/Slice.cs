@@ -2,20 +2,14 @@ using System;
 
 namespace ProjectOrigin.WalletSystem.Server.Models;
 
-public enum SliceState
+public record Slice
 {
-    Available = 1,
-    Slicing = 2, // Reserved
-    Registering = 3,
-    Sliced = 4,
-    Transferred = 5,
+    public required Guid Id { get; init; }
+    public required Guid DepositEndpointId { get; init; }
+    public required int DepositEndpointPosition { get; init; }
+    public required string Registry { get; init; }
+    public required Guid CertificateId { get; init; }
+    public required long Quantity { get; init; }
+    public required byte[] RandomR { get; init; }
+    public required SliceState SliceState { get; init; }
 }
-
-public record Slice(Guid Id,
-                    Guid DepositEndpointId,
-                    int DepositEndpointPosition,
-                    Guid RegistryId,
-                    Guid CertificateId,
-                    long Quantity,
-                    byte[] RandomR,
-                    SliceState SliceState);

@@ -4,6 +4,6 @@ namespace ProjectOrigin.WalletSystem.Server.Models;
 
 public record SliceViewModel
 {
-    public Guid SliceId { get; init; }
-    public long Quantity { get; init; }
+    public required Guid SliceId { get; init; }
+    public required long Quantity { get; init; }
 }
