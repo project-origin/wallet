@@ -90,8 +90,7 @@ public class Startup
                     .Handle<RegistryTransactionStillProcessingException>());
             });
 
-            var messageBrokerOptions = _configuration.GetSection("MessageBroker").GetValid<MessageBrokerOptions>();
-            o.ConfigureMassTransitTransport(messageBrokerOptions);
+            o.ConfigureMassTransitTransport(_configuration.GetSection("MessageBroker").GetValid<MessageBrokerOptions>());
         });
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();

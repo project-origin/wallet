@@ -1,4 +1,3 @@
-
 using System;
 using MassTransit;
 using ProjectOrigin.WalletSystem.Server.Options;
@@ -34,7 +33,7 @@ public static class IBusRegistrationConfiguratorExtensions
                 break;
 
             default:
-                throw new NotSupportedException($"Persistance type ”{options.Type}” not supported");
+                throw new NotSupportedException($"Message broker type ”{options.Type}” not supported");
         }
 
     }
