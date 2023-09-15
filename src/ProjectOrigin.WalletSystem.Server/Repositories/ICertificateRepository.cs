@@ -15,4 +15,7 @@ public interface ICertificateRepository
     Task<IEnumerable<Slice>> GetToBeAvailable(string registryName, Guid certificateId, string owner);
     Task<Slice> GetSlice(Guid sliceId);
     Task SetSliceState(Guid sliceId, SliceState state);
+
+    Task<ReceivedSlice?> GetTop1ReceivedSlice();
+    Task RemoveReceivedSlice(ReceivedSlice receivedSlice);
 }

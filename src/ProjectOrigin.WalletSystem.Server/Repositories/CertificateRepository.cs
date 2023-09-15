@@ -96,6 +96,16 @@ public class CertificateRepository : ICertificateRepository
         return certsDictionary.Values;
     }
 
+    public Task<ReceivedSlice?> GetTop1ReceivedSlice()
+    {
+        return _connection.QueryFirstOrDefaultAsync<ReceivedSlice?>("SELECT * FROM ReceivedSlices LIMIT 1 FOR UPDATE");
+    }
+
+    public Task RemoveReceivedSlice(ReceivedSlice receivedSlice)
+    {
+        return _connection.ExecuteAsync("DELETE FROM ReceivedSlices WHERE Id = @id", new { receivedSlice.Id });
+    }
+
     public Task<IEnumerable<Slice>> GetOwnerAvailableSlices(string registryName, Guid certificateId, string owner)
     {
         var sql = $@"SELECT s.*
