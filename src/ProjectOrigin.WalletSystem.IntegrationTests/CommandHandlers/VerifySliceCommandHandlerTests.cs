@@ -123,13 +123,13 @@ public class VerifySliceCommandHandlerTests : IAsyncLifetime
         message.Exception.Should().BeNull();
 
         await _certificateRepository.Received(1).InsertCertificate(Arg.Is<Certificate>(x => x.Id == certId
-                                                                                                && x.StartDate == issuedEvent.Period.Start.ToDateTimeOffset()
-                                                                                                && x.EndDate == issuedEvent.Period.End.ToDateTimeOffset()));
+                                                                                            && x.StartDate == issuedEvent.Period.Start.ToDateTimeOffset()
+                                                                                            && x.EndDate == issuedEvent.Period.End.ToDateTimeOffset()));
         var blindingValueArray = commitment.BlindingValue.ToArray();
         await _certificateRepository.Received(1).InsertSlice(Arg.Is<Slice>(x => x.CertificateId == certId
-                                                                                    && x.Quantity == commitment.Message
-                                                                                    && x.RandomR.SequenceEqual(blindingValueArray)
-                                                                                    && x.SliceState == SliceState.Available));
+                                                                                && x.Quantity == commitment.Message
+                                                                                && x.RandomR.SequenceEqual(blindingValueArray)
+                                                                                && x.SliceState == SliceState.Available));
     }
 
     [Fact]
