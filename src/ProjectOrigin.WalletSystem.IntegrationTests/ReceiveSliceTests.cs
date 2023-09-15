@@ -5,11 +5,13 @@ using System.Threading.Tasks;
 using ProjectOrigin.WalletSystem.V1;
 using Xunit;
 using Google.Protobuf;
-using Npgsql;
-using Dapper;
-using ProjectOrigin.WalletSystem.Server.Models;
 using Xunit.Abstractions;
 using AutoFixture;
+using MassTransit.Testing;
+using ProjectOrigin.WalletSystem.Server.CommandHandlers;
+using FluentAssertions;
+using System.Linq;
+using MassTransit;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests
 {
@@ -27,6 +29,10 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
                   outputHelper,
                   null)
         {
+            grpcFixture.ConfigureTestServices += services =>
+            {
+                services.AddMassTransitTestHarness();
+            };
         }
 
         [Fact]
@@ -51,16 +57,23 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
                 RandomR = ByteString.CopyFrom(new byte[] { 0x01, 0x02, 0x03, 0x04 }),
             };
 
+            var harness = _grpcFixture.GetRequiredService<ITestHarness>();
+
             //Act
-            var response = await client.ReceiveSliceAsync(request);
+            await client.ReceiveSliceAsync(request);
 
             //Assert
-            using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
-            {
-                // Verify slice created in database
-                var slice = await connection.QueryFirstOrDefaultAsync<ReceivedSlice>("SELECT * FROM ReceivedSlices WHERE certificateId = @id", new { id = certId });
-                Assert.NotNull(slice);
-            }
+            var publishedMessage = await harness.Published.SelectAsync<VerifySliceCommand>().First();
+
+            publishedMessage.MessageObject.Should().BeOfType<VerifySliceCommand>();
+            var command = (VerifySliceCommand)publishedMessage.MessageObject;
+
+            command.DepositEndpointId.Should().Be(depositEndpoint.Id);
+            command.DepositEndpointPosition.Should().Be(2);
+            command.Registry.Should().Be(registryName);
+            command.CertificateId.Should().Be(certId);
+            command.Quantity.Should().Be(240);
+            command.RandomR.Should().BeEquivalentTo(new byte[] { 0x01, 0x02, 0x03, 0x04 });
         }
     }
 }

@@ -9,7 +9,7 @@ using ProjectOrigin.WalletSystem.Server.Models;
 
 namespace ProjectOrigin.WalletSystem.Server.Repositories;
 
-public class CertificateRepository
+public class CertificateRepository : ICertificateRepository
 {
     private IDbConnection _connection;
 
@@ -22,12 +22,6 @@ public class CertificateRepository
     {
         return _connection.ExecuteAsync(@"INSERT INTO Slices(Id, DepositEndpointId, DepositEndpointPosition, RegistryId, CertificateId, Quantity, RandomR, SliceState) VALUES (@id, @depositEndpointId, @depositEndpointPosition, @registryId, @certificateId, @quantity, @randomR, @sliceState)", new { newSlice.Id, newSlice.DepositEndpointId, newSlice.DepositEndpointPosition, newSlice.RegistryId, newSlice.CertificateId, newSlice.Quantity, newSlice.RandomR, newSlice.SliceState });
     }
-
-    public Task InsertReceivedSlice(ReceivedSlice receivedSlice)
-    {
-        return _connection.ExecuteAsync(@"INSERT INTO ReceivedSlices(Id, DepositEndpointId, DepositEndpointPosition, Registry, CertificateId, Quantity, RandomR) VALUES (@id, @walletSectionId, @walletSectionPosition, @registry, @certificateId, @quantity, @randomR)", new { receivedSlice.Id, WalletSectionId = receivedSlice.DepositEndpointId, WalletSectionPosition = receivedSlice.DepositEndpointPosition, receivedSlice.Registry, receivedSlice.CertificateId, receivedSlice.Quantity, receivedSlice.RandomR });
-    }
-
     public async Task InsertCertificate(Certificate certificate)
     {
         await _connection.ExecuteAsync(@"INSERT INTO Certificates(Id, RegistryId, StartDate, EndDate, GridArea, CertificateType) VALUES (@id, @registryId, @startDate, @endDate, @gridArea, @certificateType)",
@@ -76,7 +70,7 @@ public class CertificateRepository
                     JOIN Slices s ON de.Id = s.DepositEndpointId
                     JOIN Certificates c ON s.CertificateId = c.Id
                     LEFT JOIN Attributes a ON c.Id = a.CertificateId AND c.RegistryId = a.RegistryId
-                    JOIN Registries r ON c.RegistryId = r.Id 
+                    JOIN Registries r ON c.RegistryId = r.Id
                     WHERE w.Owner = @owner AND s.SliceState = {(int)SliceState.Available}";
 
         var certsDictionary = new Dictionary<Guid, CertificateViewModel>();
@@ -102,30 +96,14 @@ public class CertificateRepository
         return certsDictionary.Values;
     }
 
-    public Task<IEnumerable<ReceivedSlice>> GetAllReceivedSlices()
-    {
-        return _connection.QueryAsync<ReceivedSlice>("SELECT * FROM ReceivedSlices");
-    }
-
     public Task<ReceivedSlice?> GetTop1ReceivedSlice()
     {
-        return _connection.QueryFirstOrDefaultAsync<ReceivedSlice?>("SELECT * FROM ReceivedSlices LIMIT 1");
-    }
-
-    public Task RemoveReceivedSlices(List<ReceivedSlice> receivedSlices)
-    {
-        var ids = receivedSlices.Select(x => x.Id).ToList();
-        return _connection.ExecuteAsync("DELETE FROM ReceivedSlices WHERE Id = ANY(@ids)", new { ids });
+        return _connection.QueryFirstOrDefaultAsync<ReceivedSlice?>("SELECT * FROM ReceivedSlices LIMIT 1 FOR UPDATE");
     }
 
     public Task RemoveReceivedSlice(ReceivedSlice receivedSlice)
     {
         return _connection.ExecuteAsync("DELETE FROM ReceivedSlices WHERE Id = @id", new { receivedSlice.Id });
-    }
-
-    public Task<IEnumerable<ReceivedSlice>> GetReceivedSlices(List<Guid> ids)
-    {
-        return _connection.QueryAsync<ReceivedSlice>("SELECT * FROM ReceivedSlices WHERE Id = ANY(@ids)", new { ids });
     }
 
     public Task<IEnumerable<Slice>> GetOwnerAvailableSlices(string registryName, Guid certificateId, string owner)

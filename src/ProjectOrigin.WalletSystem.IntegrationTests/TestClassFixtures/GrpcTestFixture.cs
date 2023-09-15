@@ -40,6 +40,7 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures
         private HttpMessageHandler? _handler;
         private GrpcChannel? _channel;
         private Dictionary<string, string?>? _configurationDictionary;
+        public event Action<IServiceCollection>? ConfigureTestServices;
 
         public event LogMessage? LoggedMessage;
         public GrpcChannel Channel => _channel ??= CreateChannel();
@@ -92,6 +93,11 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures
                             .UseTestServer()
                             .UseEnvironment("Development")
                             .UseStartup<TStartup>();
+                    })
+                    .ConfigureServices(services =>
+                    {
+                        if (ConfigureTestServices != null)
+                            ConfigureTestServices.Invoke(services);
                     });
 
                 _host = builder.Start();

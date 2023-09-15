@@ -15,10 +15,10 @@ public record UpdateSliceStateArguments()
 
 public class UpdateSliceStateActivity : IExecuteActivity<UpdateSliceStateArguments>
 {
-    private UnitOfWork _unitOfWork;
+    private IUnitOfWork _unitOfWork;
     private ILogger<UpdateSliceStateActivity> _logger;
 
-    public UpdateSliceStateActivity(UnitOfWork unitOfWork, ILogger<UpdateSliceStateActivity> logger)
+    public UpdateSliceStateActivity(IUnitOfWork unitOfWork, ILogger<UpdateSliceStateActivity> logger)
     {
         _unitOfWork = unitOfWork;
         _logger = logger;

@@ -18,7 +18,7 @@ public record TransferCertificateCommand(string Owner, string Registry, Guid Cer
 
 public class TransferCertificateCommandHandler : IConsumer<TransferCertificateCommand>
 {
-    private readonly UnitOfWork _unitOfWork;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<TransferCertificateCommandHandler> _logger;
     private readonly IOptions<RegistryOptions> _registryOptions;
     private readonly IOptions<ServiceOptions> _walletSystemOptions;
@@ -26,7 +26,7 @@ public class TransferCertificateCommandHandler : IConsumer<TransferCertificateCo
     private TimeSpan timeout = TimeSpan.FromMinutes(1);
 
     public TransferCertificateCommandHandler(
-        UnitOfWork unitOfWork,
+        IUnitOfWork unitOfWork,
         ILogger<TransferCertificateCommandHandler> logger,
         IOptions<RegistryOptions> registryOptions,
         IOptions<ServiceOptions> walletSystemOptions,

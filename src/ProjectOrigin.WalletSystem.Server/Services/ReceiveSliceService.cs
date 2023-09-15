@@ -1,27 +1,27 @@
 using System;
 using System.Threading.Tasks;
 using Grpc.Core;
+using MassTransit;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.Extensions.Logging;
 using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
+using ProjectOrigin.WalletSystem.Server.CommandHandlers;
 using ProjectOrigin.WalletSystem.Server.Database;
-using ProjectOrigin.WalletSystem.Server.Models;
 using ProjectOrigin.WalletSystem.V1;
 
 namespace ProjectOrigin.WalletSystem.Server.Services;
 
 [AllowAnonymous]
-public class ReceiveSliceService : ProjectOrigin.WalletSystem.V1.ReceiveSliceService.ReceiveSliceServiceBase
+public class ReceiveSliceService : V1.ReceiveSliceService.ReceiveSliceServiceBase
 {
-    private readonly ILogger<ReceiveSliceService> _logger;
-    private readonly UnitOfWork _unitOfWork;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IHDAlgorithm _hdAlgorithm;
+    private readonly IBus _bus;
 
-    public ReceiveSliceService(ILogger<ReceiveSliceService> logger, UnitOfWork unitOfWork, IHDAlgorithm hdAlgorithm)
+    public ReceiveSliceService(IUnitOfWork unitOfWork, IHDAlgorithm hdAlgorithm, IBus bus)
     {
-        _logger = logger;
         _unitOfWork = unitOfWork;
         _hdAlgorithm = hdAlgorithm;
+        _bus = bus;
     }
 
     public override async Task<ReceiveResponse> ReceiveSlice(ReceiveRequest request, ServerCallContext context)
@@ -32,7 +32,7 @@ public class ReceiveSliceService : ProjectOrigin.WalletSystem.V1.ReceiveSliceSer
         if (depositEndpoint == null)
             throw new RpcException(new Status(StatusCode.InvalidArgument, "DepositEndpoint not found for public key."));
 
-        var newSlice = new ReceivedSlice(Guid.NewGuid(),
+        var newSliceCommand = new VerifySliceCommand(Guid.NewGuid(),
             depositEndpoint.Id,
             (int)request.WalletDepositEndpointPosition,
             request.CertificateId.Registry,
@@ -40,9 +40,7 @@ public class ReceiveSliceService : ProjectOrigin.WalletSystem.V1.ReceiveSliceSer
             request.Quantity,
             request.RandomR.ToByteArray());
 
-        await _unitOfWork.CertificateRepository.InsertReceivedSlice(newSlice);
-
-        _unitOfWork.Commit();
+        await _bus.Publish(newSliceCommand);
 
         return new ReceiveResponse();
     }

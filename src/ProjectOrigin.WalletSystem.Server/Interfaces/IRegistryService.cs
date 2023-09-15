@@ -14,5 +14,5 @@ public abstract record GetCertificateResult()
     public sealed record Success(GranularCertificate GranularCertificate) : GetCertificateResult;
     public sealed record NotFound() : GetCertificateResult;
     public sealed record Failure(Exception Exception) : GetCertificateResult;
-    public sealed record TransientFailure(Exception exception) : GetCertificateResult;
+    public sealed record TransientFailure(Exception Exception) : GetCertificateResult;
 }

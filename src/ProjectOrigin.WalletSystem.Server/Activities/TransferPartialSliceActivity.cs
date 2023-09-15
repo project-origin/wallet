@@ -21,12 +21,12 @@ public record TransferPartialSliceArguments(Guid SourceSliceId, Guid ReceiverDep
 
 public class TransferPartialSliceActivity : IExecuteActivity<TransferPartialSliceArguments>
 {
-    private readonly UnitOfWork _unitOfWork;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<TransferPartialSliceActivity> _logger;
     private readonly IEndpointNameFormatter _formatter;
 
     public TransferPartialSliceActivity(
-        UnitOfWork unitOfWork,
+        IUnitOfWork unitOfWork,
         ILogger<TransferPartialSliceActivity> logger,
         IEndpointNameFormatter formatter)
     {
