@@ -86,9 +86,9 @@ public abstract class AbstractRepositoryTests : IClassFixture<PostgresDatabaseFi
 
         var attributes = new List<CertificateAttribute>
         {
-            new (){ Key="AssetId", Value="571234567890123456"},
-            new (){ Key="TechCode", Value="T070000"},
-            new (){ Key="FuelCode", Value="F00000000"}
+            new(){ Key="AssetId", Value="571234567890123456"},
+            new(){ Key="TechCode", Value="T070000"},
+            new(){ Key="FuelCode", Value="F00000000"},
         };
         var certificate = new Certificate
         {

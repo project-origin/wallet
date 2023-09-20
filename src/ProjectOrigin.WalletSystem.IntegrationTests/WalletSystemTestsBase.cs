@@ -83,9 +83,9 @@ public abstract class WalletSystemTestsBase : IClassFixture<GrpcTestFixture<Star
             var certificateRepository = new CertificateRepository(connection);
             var attributes = new List<CertificateAttribute>
             {
-                new () {Key="AssetId", Value= "571234567890123456"},
-                new () {Key="TechCode", Value= "T070000"},
-                new () {Key="FuelCode", Value= "F00000000"}
+                new(){ Key="AssetId", Value="571234567890123456"},
+                new(){ Key="TechCode", Value="T070000"},
+                new(){ Key="FuelCode", Value="F00000000"},
             };
             var cert = new Certificate
             {
@@ -125,7 +125,7 @@ public abstract class WalletSystemTestsBase : IClassFixture<GrpcTestFixture<Star
             await certificateRepository.InsertCertificate(certificate);
         }
 
-        var receivedSlice = new Slice
+        var slice = new Slice
         {
             Id = Guid.NewGuid(),
             DepositEndpointId = depositEndpoint.Id,
@@ -137,6 +137,6 @@ public abstract class WalletSystemTestsBase : IClassFixture<GrpcTestFixture<Star
             SliceState = SliceState.Available
         };
 
-        await certificateRepository.InsertSlice(receivedSlice);
+        await certificateRepository.InsertSlice(slice);
     }
 }
