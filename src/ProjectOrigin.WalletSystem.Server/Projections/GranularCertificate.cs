@@ -70,7 +70,11 @@ public class GranularCertificate
 
     protected void AddAvailableSlice(Electricity.V1.Commitment commitment, Electricity.V1.PublicKey publicKey)
     {
-        var slice = new CertificateSlice(commitment, publicKey);
+        var slice = new CertificateSlice
+        {
+            Commitment = commitment,
+            Owner = publicKey
+        };
         var sliceHash = ByteString.CopyFrom(SHA256.HashData(commitment.Content.ToByteArray()));
         _availableSlices.Add(sliceHash, slice);
     }
@@ -78,8 +82,14 @@ public class GranularCertificate
     protected void AllocateSlice(ByteString sliceHash, Electricity.V1.AllocatedEvent e)
     {
         var oldSlice = TakeAvailableSlice(sliceHash);
-        var newSlice = new AllocationSlice(oldSlice.Commitment, oldSlice.Owner, e.AllocationId, e.ProductionCertificateId, e.ConsumptionCertificateId);
+        var newSlice = new AllocationSlice
+        {
+            Commitment = oldSlice.Commitment,
+            Owner = oldSlice.Owner,
+            AllocationId = e.AllocationId,
+            ProductionCertificateId = e.ProductionCertificateId,
+            ConsumptionCertificateId = e.ConsumptionCertificateId
+        };
         _allocationSlices.Add(e.AllocationId, newSlice);
     }
-
 }

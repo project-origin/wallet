@@ -15,7 +15,11 @@ using ProjectOrigin.WalletSystem.Server.Models;
 
 namespace ProjectOrigin.WalletSystem.Server.Activities;
 
-public record TransferFullSliceArguments(Guid SourceSliceId, Guid ReceiverDepositEndpointId);
+public record TransferFullSliceArguments
+{
+    public required Guid SourceSliceId { get; init; }
+    public required Guid ReceiverDepositEndpointId { get; init; }
+}
 
 public class TransferFullSliceActivity : IExecuteActivity<TransferFullSliceArguments>
 {
@@ -46,12 +50,21 @@ public class TransferFullSliceActivity : IExecuteActivity<TransferFullSliceArgum
             var nextReceiverPosition = await _unitOfWork.WalletRepository.GetNextNumberForId(receiverDepositEndpoint.Id);
             var receiverPublicKey = receiverDepositEndpoint.PublicKey.Derive(nextReceiverPosition).GetPublicKey();
 
-            var transferredSlice = new Slice(Guid.NewGuid(), receiverDepositEndpoint.Id, nextReceiverPosition, sourceSlice.RegistryId, sourceSlice.CertificateId, sourceSlice.Quantity, sourceSlice.RandomR, SliceState.Registering);
+            var transferredSlice = new Slice
+            {
+                Id = Guid.NewGuid(),
+                DepositEndpointId = receiverDepositEndpoint.Id,
+                DepositEndpointPosition = nextReceiverPosition,
+                Registry = sourceSlice.Registry,
+                CertificateId = sourceSlice.CertificateId,
+                Quantity = sourceSlice.Quantity,
+                RandomR = sourceSlice.RandomR,
+                SliceState = SliceState.Registering
+            };
             await _unitOfWork.CertificateRepository.InsertSlice(transferredSlice);
 
-            var registry = await _unitOfWork.RegistryRepository.GetRegistryFromId(sourceSlice.RegistryId);
 
-            var transferredEvent = CreateTransferEvent(registry.Name, sourceSlice, receiverPublicKey);
+            var transferredEvent = CreateTransferEvent(sourceSlice, receiverPublicKey);
 
             var sourceSlicePrivateKey = await _unitOfWork.WalletRepository.GetPrivateKeyForSlice(sourceSlice.Id);
             var transaction = CreateAndSignTransaction(transferredEvent.CertificateId, transferredEvent, sourceSlicePrivateKey);
@@ -107,13 +120,13 @@ public class TransferFullSliceActivity : IExecuteActivity<TransferFullSliceArgum
         });
     }
 
-    private TransferredEvent CreateTransferEvent(string registryName, Slice sourceSlice, IPublicKey receiverPublicKey)
+    private TransferredEvent CreateTransferEvent(Slice sourceSlice, IPublicKey receiverPublicKey)
     {
         var sliceCommitment = new PedersenCommitment.SecretCommitmentInfo((uint)sourceSlice.Quantity, sourceSlice.RandomR);
 
         var certificateId = new FederatedStreamId
         {
-            Registry = registryName,
+            Registry = sourceSlice.Registry,
             StreamId = new Uuid { Value = sourceSlice.CertificateId.ToString() }
         };
 

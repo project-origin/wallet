@@ -10,5 +10,4 @@ public interface IUnitOfWork : IDisposable
 
     IWalletRepository WalletRepository { get; }
     ICertificateRepository CertificateRepository { get; }
-    IRegistryRepository RegistryRepository { get; }
 }

@@ -32,13 +32,16 @@ public class ReceiveSliceService : V1.ReceiveSliceService.ReceiveSliceServiceBas
         if (depositEndpoint == null)
             throw new RpcException(new Status(StatusCode.InvalidArgument, "DepositEndpoint not found for public key."));
 
-        var newSliceCommand = new VerifySliceCommand(Guid.NewGuid(),
-            depositEndpoint.Id,
-            (int)request.WalletDepositEndpointPosition,
-            request.CertificateId.Registry,
-            Guid.Parse(request.CertificateId.StreamId.Value),
-            request.Quantity,
-            request.RandomR.ToByteArray());
+        var newSliceCommand = new VerifySliceCommand
+        {
+            Id = Guid.NewGuid(),
+            DepositEndpointId = depositEndpoint.Id,
+            DepositEndpointPosition = (int)request.WalletDepositEndpointPosition,
+            Registry = request.CertificateId.Registry,
+            CertificateId = Guid.Parse(request.CertificateId.StreamId.Value),
+            Quantity = request.Quantity,
+            RandomR = request.RandomR.ToByteArray()
+        };
 
         await _bus.Publish(newSliceCommand);
 

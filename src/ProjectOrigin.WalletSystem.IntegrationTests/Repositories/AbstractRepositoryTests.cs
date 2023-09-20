@@ -46,23 +46,17 @@ public abstract class AbstractRepositoryTests : IClassFixture<PostgresDatabaseFi
         return connection;
     }
 
-    protected async Task<RegistryModel> CreateRegistry()
-    {
-        using var connection = CreateConnection();
-        var registryRepository = new RegistryRepository(connection);
-
-        var registry = new RegistryModel(Guid.NewGuid(), _fixture.Create<string>());
-        await registryRepository.InsertRegistry(registry);
-
-        return registry;
-    }
-
     protected async Task<Wallet> CreateWallet(string owner)
     {
         using var connection = CreateConnection();
         var walletRepository = new WalletRepository(connection);
 
-        var wallet = new Wallet(Guid.NewGuid(), owner, _algorithm.GenerateNewPrivateKey());
+        var wallet = new Wallet
+        {
+            Id = Guid.NewGuid(),
+            Owner = owner,
+            PrivateKey = _algorithm.GenerateNewPrivateKey()
+        };
         await walletRepository.Create(wallet);
 
         return wallet;
@@ -85,18 +79,27 @@ public abstract class AbstractRepositoryTests : IClassFixture<PostgresDatabaseFi
         return await walletRepository.CreateReceiverDepositEndpoint(owner, publicKey, referenceText, endpoint);
     }
 
-    protected async Task<Certificate> CreateCertificate(Guid registryId, GranularCertificateType type = GranularCertificateType.Production)
+    protected async Task<Certificate> CreateCertificate(string registryName, GranularCertificateType type = GranularCertificateType.Production)
     {
         using var connection = CreateConnection();
         var certificateRepository = new CertificateRepository(connection);
 
         var attributes = new List<CertificateAttribute>
         {
-            new ("AssetId", "571234567890123456"),
-            new ("TechCode", "T070000"),
-            new ("FuelCode", "F00000000")
+            new(){ Key="AssetId", Value="571234567890123456"},
+            new(){ Key="TechCode", Value="T070000"},
+            new(){ Key="FuelCode", Value="F00000000"},
         };
-        var certificate = new Certificate(Guid.NewGuid(), registryId, DateTimeOffset.Now.ToUtcTime(), DateTimeOffset.Now.AddDays(1).ToUtcTime(), "DK1", type, attributes);
+        var certificate = new Certificate
+        {
+            Id = Guid.NewGuid(),
+            Registry = registryName,
+            StartDate = DateTimeOffset.Now.ToUtcTime(),
+            EndDate = DateTimeOffset.Now.AddDays(1).ToUtcTime(),
+            GridArea = "DK1",
+            CertificateType = type,
+            Attributes = attributes
+        };
         await certificateRepository.InsertCertificate(certificate);
 
         return certificate;

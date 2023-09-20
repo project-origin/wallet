@@ -35,14 +35,16 @@ public class VerifySlicesWorker : BackgroundService
                 var receivedSlice = await _unitOfWork.CertificateRepository.GetTop1ReceivedSlice();
                 if (receivedSlice is not null)
                 {
-                    var command = new VerifySliceCommand(
-                        receivedSlice.Id,
-                        receivedSlice.DepositEndpointId,
-                        receivedSlice.DepositEndpointPosition,
-                        receivedSlice.Registry,
-                        receivedSlice.CertificateId,
-                        receivedSlice.Quantity,
-                        receivedSlice.RandomR);
+                    var command = new VerifySliceCommand
+                    {
+                        Id = receivedSlice.Id,
+                        DepositEndpointId = receivedSlice.DepositEndpointId,
+                        DepositEndpointPosition = receivedSlice.DepositEndpointPosition,
+                        Registry = receivedSlice.Registry,
+                        CertificateId = receivedSlice.CertificateId,
+                        Quantity = receivedSlice.Quantity,
+                        RandomR = receivedSlice.RandomR,
+                    };
                     await _bus.Publish(command);
                     await _unitOfWork.CertificateRepository.RemoveReceivedSlice(receivedSlice);
                     _unitOfWork.Commit(); // unit of work is automatically reset after commit

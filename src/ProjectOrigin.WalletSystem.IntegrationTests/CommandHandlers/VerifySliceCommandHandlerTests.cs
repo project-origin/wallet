@@ -82,7 +82,17 @@ public class VerifySliceCommandHandlerTests : IAsyncLifetime
         var depositPosition = 1;
         var commitment = new SecretCommitmentInfo(150);
 
-        var depositEndpoint = new DepositEndpoint(Guid.NewGuid(), Guid.NewGuid(), walletPosition, privateKey.Derive(walletPosition).Neuter(), string.Empty, string.Empty, string.Empty);
+        var depositEndpoint = new DepositEndpoint
+        {
+            Id = Guid.NewGuid(),
+            WalletId = Guid.NewGuid(),
+            WalletPosition = walletPosition,
+            PublicKey = privateKey.Derive(walletPosition).Neuter(),
+            Owner = string.Empty,
+            ReferenceText = string.Empty,
+            Endpoint = string.Empty
+        };
+
         _walletRepository.GetDepositEndpoint(depositEndpoint.Id).Returns(depositEndpoint);
 
         var issuedEvent = CreateIssuedEvent(certId, commitment, depositEndpoint.PublicKey.Derive(depositPosition).GetPublicKey());
@@ -93,14 +103,16 @@ public class VerifySliceCommandHandlerTests : IAsyncLifetime
         var harness = _provider.GetRequiredService<ITestHarness>();
         await harness.Start();
 
-        var command = new VerifySliceCommand(
-                Guid.NewGuid(),
-                depositEndpoint.Id,
-                depositPosition,
-                RegistryName,
-                certId,
-                commitment.Message,
-                commitment.BlindingValue.ToArray());
+        var command = new VerifySliceCommand
+        {
+            Id = Guid.NewGuid(),
+            DepositEndpointId = depositEndpoint.Id,
+            DepositEndpointPosition = depositPosition,
+            Registry = RegistryName,
+            CertificateId = certId,
+            Quantity = commitment.Message,
+            RandomR = commitment.BlindingValue.ToArray()
+        };
 
         await harness.Bus.Publish(command);
 
@@ -130,7 +142,16 @@ public class VerifySliceCommandHandlerTests : IAsyncLifetime
         var depositPosition = 1;
         var commitment = new SecretCommitmentInfo(150);
 
-        var depositEndpoint = new DepositEndpoint(Guid.NewGuid(), Guid.NewGuid(), walletPosition, privateKey.Derive(walletPosition).Neuter(), string.Empty, string.Empty, string.Empty);
+        var depositEndpoint = new DepositEndpoint
+        {
+            Id = Guid.NewGuid(),
+            WalletId = Guid.NewGuid(),
+            WalletPosition = walletPosition,
+            PublicKey = privateKey.Derive(walletPosition).Neuter(),
+            Owner = string.Empty,
+            ReferenceText = string.Empty,
+            Endpoint = string.Empty
+        };
         _walletRepository.GetDepositEndpoint(depositEndpoint.Id).Returns(depositEndpoint);
 
         _registryService.GetGranularCertificate(RegistryName, certId).Returns(new GetCertificateResult.NotFound());  // <-- failure
@@ -138,14 +159,16 @@ public class VerifySliceCommandHandlerTests : IAsyncLifetime
         var harness = _provider.GetRequiredService<ITestHarness>();
         await harness.Start();
 
-        var command = new VerifySliceCommand(
-                Guid.NewGuid(),
-                depositEndpoint.Id,
-                depositPosition,
-                RegistryName,
-                certId,
-                commitment.Message,
-                commitment.BlindingValue.ToArray());
+        var command = new VerifySliceCommand
+        {
+            Id = Guid.NewGuid(),
+            DepositEndpointId = depositEndpoint.Id,
+            DepositEndpointPosition = depositPosition,
+            Registry = RegistryName,
+            CertificateId = certId,
+            Quantity = commitment.Message,
+            RandomR = commitment.BlindingValue.ToArray()
+        };
 
         await harness.Bus.Publish(command);
 
@@ -173,7 +196,16 @@ public class VerifySliceCommandHandlerTests : IAsyncLifetime
         var depositPosition = 1;
         var commitment = new SecretCommitmentInfo(150);
 
-        var depositEndpoint = new DepositEndpoint(Guid.NewGuid(), Guid.NewGuid(), walletPosition, privateKey.Derive(walletPosition).Neuter(), string.Empty, string.Empty, string.Empty);
+        var depositEndpoint = new DepositEndpoint
+        {
+            Id = Guid.NewGuid(),
+            WalletId = Guid.NewGuid(),
+            WalletPosition = walletPosition,
+            PublicKey = privateKey.Derive(walletPosition).Neuter(),
+            Owner = string.Empty,
+            ReferenceText = string.Empty,
+            Endpoint = string.Empty
+        };
         _walletRepository.GetDepositEndpoint(depositEndpoint.Id).Returns(depositEndpoint);
 
         _registryService.GetGranularCertificate(RegistryName, certId).Returns(new GetCertificateResult.TransientFailure(innerException));  // <-- failure
@@ -181,14 +213,16 @@ public class VerifySliceCommandHandlerTests : IAsyncLifetime
         var harness = _provider.GetRequiredService<ITestHarness>();
         await harness.Start();
 
-        var command = new VerifySliceCommand(
-                Guid.NewGuid(),
-                depositEndpoint.Id,
-                depositPosition,
-                RegistryName,
-                certId,
-                commitment.Message,
-                commitment.BlindingValue.ToArray());
+        var command = new VerifySliceCommand
+        {
+            Id = Guid.NewGuid(),
+            DepositEndpointId = depositEndpoint.Id,
+            DepositEndpointPosition = depositPosition,
+            Registry = RegistryName,
+            CertificateId = certId,
+            Quantity = commitment.Message,
+            RandomR = commitment.BlindingValue.ToArray()
+        };
 
         await harness.Bus.Publish(command);
 
@@ -217,7 +251,16 @@ public class VerifySliceCommandHandlerTests : IAsyncLifetime
         var depositPosition = 1;
         var commitment = new SecretCommitmentInfo(150);
 
-        var depositEndpoint = new DepositEndpoint(Guid.NewGuid(), Guid.NewGuid(), walletPosition, privateKey.Derive(walletPosition).Neuter(), string.Empty, string.Empty, string.Empty);
+        var depositEndpoint = new DepositEndpoint
+        {
+            Id = Guid.NewGuid(),
+            WalletId = Guid.NewGuid(),
+            WalletPosition = walletPosition,
+            PublicKey = privateKey.Derive(walletPosition).Neuter(),
+            Owner = string.Empty,
+            ReferenceText = string.Empty,
+            Endpoint = string.Empty
+        };
         _walletRepository.GetDepositEndpoint(depositEndpoint.Id).Returns(depositEndpoint);
 
         _registryService.GetGranularCertificate(RegistryName, certId).Returns(new GetCertificateResult.Failure(innerException)); // <-- failure
@@ -225,14 +268,16 @@ public class VerifySliceCommandHandlerTests : IAsyncLifetime
         var harness = _provider.GetRequiredService<ITestHarness>();
         await harness.Start();
 
-        var command = new VerifySliceCommand(
-                Guid.NewGuid(),
-                depositEndpoint.Id,
-                depositPosition,
-                RegistryName,
-                certId,
-                commitment.Message,
-                commitment.BlindingValue.ToArray());
+        var command = new VerifySliceCommand
+        {
+            Id = Guid.NewGuid(),
+            DepositEndpointId = depositEndpoint.Id,
+            DepositEndpointPosition = depositPosition,
+            Registry = RegistryName,
+            CertificateId = certId,
+            Quantity = commitment.Message,
+            RandomR = commitment.BlindingValue.ToArray()
+        };
 
         await harness.Bus.Publish(command);
 
@@ -260,7 +305,16 @@ public class VerifySliceCommandHandlerTests : IAsyncLifetime
         var commitmentIssued = new SecretCommitmentInfo(150);
         var commitmentSent = new SecretCommitmentInfo(150);
 
-        var depositEndpoint = new DepositEndpoint(Guid.NewGuid(), Guid.NewGuid(), walletPosition, privateKey.Derive(walletPosition).Neuter(), string.Empty, string.Empty, string.Empty);
+        var depositEndpoint = new DepositEndpoint
+        {
+            Id = Guid.NewGuid(),
+            WalletId = Guid.NewGuid(),
+            WalletPosition = walletPosition,
+            PublicKey = privateKey.Derive(walletPosition).Neuter(),
+            Owner = string.Empty,
+            ReferenceText = string.Empty,
+            Endpoint = string.Empty
+        };
         _walletRepository.GetDepositEndpoint(depositEndpoint.Id).Returns(depositEndpoint);
 
         var issuedEvent = CreateIssuedEvent(certId, commitmentIssued, depositEndpoint.PublicKey.Derive(depositPosition).GetPublicKey());
@@ -271,14 +325,16 @@ public class VerifySliceCommandHandlerTests : IAsyncLifetime
         var harness = _provider.GetRequiredService<ITestHarness>();
         await harness.Start();
 
-        var command = new VerifySliceCommand(
-                Guid.NewGuid(),
-                depositEndpoint.Id,
-                depositPosition,
-                RegistryName,
-                certId,
-                commitmentSent.Message, // <-- Wrong commitment
-                commitmentSent.BlindingValue.ToArray());
+        var command = new VerifySliceCommand
+        {
+            Id = Guid.NewGuid(),
+            DepositEndpointId = depositEndpoint.Id,
+            DepositEndpointPosition = depositPosition,
+            Registry = RegistryName,
+            CertificateId = certId,
+            Quantity = commitmentSent.Message, // <-- Wrong commitment
+            RandomR = commitmentSent.BlindingValue.ToArray()
+        };
 
         await harness.Bus.Publish(command);
 
@@ -305,7 +361,16 @@ public class VerifySliceCommandHandlerTests : IAsyncLifetime
         var depositPosition = 1;
         var commitment = new SecretCommitmentInfo(150);
 
-        var depositEndpoint = new DepositEndpoint(Guid.NewGuid(), Guid.NewGuid(), walletPosition, privateKey.Derive(walletPosition).Neuter(), string.Empty, string.Empty, string.Empty);
+        var depositEndpoint = new DepositEndpoint
+        {
+            Id = Guid.NewGuid(),
+            WalletId = Guid.NewGuid(),
+            WalletPosition = walletPosition,
+            PublicKey = privateKey.Derive(walletPosition).Neuter(),
+            Owner = string.Empty,
+            ReferenceText = string.Empty,
+            Endpoint = string.Empty
+        };
         _walletRepository.GetDepositEndpoint(depositEndpoint.Id).Returns(depositEndpoint);
 
         var issuedEvent = CreateIssuedEvent(certId, commitment, depositEndpoint.PublicKey.Derive(depositPosition).GetPublicKey());
@@ -316,14 +381,16 @@ public class VerifySliceCommandHandlerTests : IAsyncLifetime
         var harness = _provider.GetRequiredService<ITestHarness>();
         await harness.Start();
 
-        var command = new VerifySliceCommand(
-                Guid.NewGuid(),
-                depositEndpoint.Id,
-                depositPosition + 1, // <-- Wrong position thereby key
-                RegistryName,
-                certId,
-                commitment.Message,
-                commitment.BlindingValue.ToArray());
+        var command = new VerifySliceCommand
+        {
+            Id = Guid.NewGuid(),
+            DepositEndpointId = depositEndpoint.Id,
+            DepositEndpointPosition = depositPosition + 1, // <-- Wrong position thereby key
+            Registry = RegistryName,
+            CertificateId = certId,
+            Quantity = commitment.Message,
+            RandomR = commitment.BlindingValue.ToArray()
+        };
 
         await harness.Bus.Publish(command);
 

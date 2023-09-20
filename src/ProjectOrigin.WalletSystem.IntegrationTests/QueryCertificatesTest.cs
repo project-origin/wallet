@@ -56,8 +56,18 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
             using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
             {
                 var walletRepository = new WalletRepository(connection);
-                var wallet = new Wallet(Guid.NewGuid(), owner, Algorithm.GenerateNewPrivateKey());
-                var notOwnedWallet = new Wallet(Guid.NewGuid(), someOtherOwner, Algorithm.GenerateNewPrivateKey());
+                var wallet = new Wallet
+                {
+                    Id = Guid.NewGuid(),
+                    Owner = owner,
+                    PrivateKey = Algorithm.GenerateNewPrivateKey()
+                };
+                var notOwnedWallet = new Wallet
+                {
+                    Id = Guid.NewGuid(),
+                    Owner = someOtherOwner,
+                    PrivateKey = Algorithm.GenerateNewPrivateKey()
+                };
                 await walletRepository.Create(wallet);
                 await walletRepository.Create(notOwnedWallet);
 
@@ -65,28 +75,93 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
                 var notOwnedDepositEndpoint = await walletRepository.CreateDepositEndpoint(notOwnedWallet.Id, string.Empty);
 
                 var regName = _fixture.Create<string>();
-                var registry = new RegistryModel(Guid.NewGuid(), regName);
                 var certificateRepository = new CertificateRepository(connection);
-                var registryRepository = new RegistryRepository(connection);
-                await registryRepository.InsertRegistry(registry);
 
                 var attributes = new List<CertificateAttribute>
                 {
-                    new ("AssetId", "571234567890123456"),
-                    new ("TechCode", "T070000"),
-                    new ("FuelCode", "F00000000")
+                    new(){ Key="AssetId", Value="571234567890123456"},
+                    new(){ Key="TechCode", Value="T070000"},
+                    new(){ Key="FuelCode", Value="F00000000"},
                 };
-                var certificate1 = new Certificate(Guid.NewGuid(), registry.Id, DateTimeOffset.Now, DateTimeOffset.Now.AddDays(1), "DK1", GranularCertificateType.Production, attributes);
-                var certificate2 = new Certificate(Guid.NewGuid(), registry.Id, DateTimeOffset.Now, DateTimeOffset.Now.AddDays(1), "DK1", GranularCertificateType.Production, attributes);
-                var notOwnedCertificate = new Certificate(Guid.NewGuid(), registry.Id, DateTimeOffset.Now, DateTimeOffset.Now.AddDays(1), "DK1", GranularCertificateType.Production, attributes);
+
+                var certificate1 = new Certificate
+                {
+                    Id = Guid.NewGuid(),
+                    Registry = regName,
+                    StartDate = DateTimeOffset.Now,
+                    EndDate = DateTimeOffset.Now.AddDays(1),
+                    GridArea = "DK1",
+                    CertificateType = GranularCertificateType.Production,
+                    Attributes = attributes
+                };
+                var certificate2 = new Certificate
+                {
+                    Id = Guid.NewGuid(),
+                    Registry = regName,
+                    StartDate = DateTimeOffset.Now,
+                    EndDate = DateTimeOffset.Now.AddDays(1),
+                    GridArea = "DK1",
+                    CertificateType = GranularCertificateType.Production,
+                    Attributes = attributes
+                };
+                var notOwnedCertificate = new Certificate
+                {
+                    Id = Guid.NewGuid(),
+                    Registry = regName,
+                    StartDate = DateTimeOffset.Now,
+                    EndDate = DateTimeOffset.Now.AddDays(1),
+                    GridArea = "DK1",
+                    CertificateType = GranularCertificateType.Production,
+                    Attributes = attributes
+                };
                 await certificateRepository.InsertCertificate(certificate1);
                 await certificateRepository.InsertCertificate(certificate2);
                 await certificateRepository.InsertCertificate(notOwnedCertificate);
 
-                var slice1 = new Slice(Guid.NewGuid(), depositEndpoint.Id, 1, registry.Id, certificate1.Id, quantity1, _fixture.Create<byte[]>(), SliceState.Available);
-                var slice2 = new Slice(Guid.NewGuid(), depositEndpoint.Id, 1, registry.Id, certificate1.Id, quantity2, _fixture.Create<byte[]>(), SliceState.Available);
-                var slice3 = new Slice(Guid.NewGuid(), depositEndpoint.Id, 1, registry.Id, certificate2.Id, quantity3, _fixture.Create<byte[]>(), SliceState.Available);
-                var notOwnedSlice = new Slice(Guid.NewGuid(), notOwnedDepositEndpoint.Id, 1, registry.Id, notOwnedCertificate.Id, _fixture.Create<long>(), _fixture.Create<byte[]>(), SliceState.Available);
+                var slice1 = new Slice
+                {
+                    Id = Guid.NewGuid(),
+                    DepositEndpointId = depositEndpoint.Id,
+                    DepositEndpointPosition = 1,
+                    Registry = regName,
+                    CertificateId = certificate1.Id,
+                    Quantity = quantity1,
+                    RandomR = _fixture.Create<byte[]>(),
+                    SliceState = SliceState.Available
+                };
+                var slice2 = new Slice
+                {
+                    Id = Guid.NewGuid(),
+                    DepositEndpointId = depositEndpoint.Id,
+                    DepositEndpointPosition = 1,
+                    Registry = regName,
+                    CertificateId = certificate1.Id,
+                    Quantity = quantity2,
+                    RandomR = _fixture.Create<byte[]>(),
+                    SliceState = SliceState.Available
+                };
+                var slice3 = new Slice
+                {
+                    Id = Guid.NewGuid(),
+                    DepositEndpointId = depositEndpoint.Id,
+                    DepositEndpointPosition = 1,
+                    Registry = regName,
+                    CertificateId = certificate2.Id,
+                    Quantity = quantity3,
+                    RandomR = _fixture.Create<byte[]>(),
+                    SliceState = SliceState.Available
+                };
+                var notOwnedSlice = new Slice
+                {
+                    Id = Guid.NewGuid(),
+                    DepositEndpointId = notOwnedDepositEndpoint.Id,
+                    DepositEndpointPosition = 1,
+                    Registry = regName,
+                    CertificateId = notOwnedCertificate.Id,
+                    Quantity = _fixture.Create<long>(),
+                    RandomR = _fixture.Create<byte[]>(),
+                    SliceState = SliceState.Available
+                };
                 await certificateRepository.InsertSlice(slice1);
                 await certificateRepository.InsertSlice(slice2);
                 await certificateRepository.InsertSlice(slice3);
@@ -117,7 +192,12 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
             using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
             {
                 var walletRepository = new WalletRepository(connection);
-                var wallet = new Wallet(Guid.NewGuid(), owner, Algorithm.GenerateNewPrivateKey());
+                var wallet = new Wallet
+                {
+                    Id = Guid.NewGuid(),
+                    Owner = owner,
+                    PrivateKey = Algorithm.GenerateNewPrivateKey()
+                };
                 await walletRepository.Create(wallet);
 
                 var depositEndpoint = await walletRepository.CreateDepositEndpoint(wallet.Id, string.Empty);
@@ -143,21 +223,38 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
             using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
             {
                 var walletRepository = new WalletRepository(connection);
-                var wallet = new Wallet(Guid.NewGuid(), owner, Algorithm.GenerateNewPrivateKey());
+
+                var wallet = new Wallet
+                {
+                    Id = Guid.NewGuid(),
+                    Owner = owner,
+                    PrivateKey = Algorithm.GenerateNewPrivateKey()
+                };
                 await walletRepository.Create(wallet);
 
                 var depositEndpoint = await walletRepository.CreateDepositEndpoint(wallet.Id, string.Empty);
 
                 var regName = _fixture.Create<string>();
-                var registry = new RegistryModel(Guid.NewGuid(), regName);
-                var registryRepository = new RegistryRepository(connection);
-                await registryRepository.InsertRegistry(registry);
 
                 var certId = Guid.NewGuid();
-                await connection.ExecuteAsync(@"INSERT INTO Certificates(Id, RegistryId, StartDate, EndDate, GridArea, CertificateType) VALUES (@id, @registryId, @startDate, @endDate, @gridArea, @certificateType)",
-                    new { id = certId, registryId = registry.Id, startDate = DateTimeOffset.Now.ToUtcTime(), endDate = DateTimeOffset.Now.AddDays(1).ToUtcTime(), gridArea = "SomeGridArea", certificateType = 0 });
+                var registryId = Guid.NewGuid();
 
-                var slice1 = new Slice(Guid.NewGuid(), depositEndpoint.Id, 1, registry.Id, certId, 42, _fixture.Create<byte[]>(), SliceState.Available);
+                await connection.ExecuteAsync(@"INSERT INTO Registries(Id, Name) VALUES (@registryId, @regName)", new { registryId, regName });
+
+                await connection.ExecuteAsync(@"INSERT INTO Certificates(Id, RegistryId, StartDate, EndDate, GridArea, CertificateType) VALUES (@id, @registryId, @startDate, @endDate, @gridArea, @certificateType)",
+                    new { id = certId, registryId, startDate = DateTimeOffset.Now.ToUtcTime(), endDate = DateTimeOffset.Now.AddDays(1).ToUtcTime(), gridArea = "SomeGridArea", certificateType = 0 });
+
+                var slice1 = new Slice
+                {
+                    Id = Guid.NewGuid(),
+                    DepositEndpointId = depositEndpoint.Id,
+                    DepositEndpointPosition = 1,
+                    Registry = regName,
+                    CertificateId = certId,
+                    Quantity = 42,
+                    RandomR = _fixture.Create<byte[]>(),
+                    SliceState = SliceState.Available
+                };
                 var certificateRepository = new CertificateRepository(connection);
                 await certificateRepository.InsertSlice(slice1);
             }

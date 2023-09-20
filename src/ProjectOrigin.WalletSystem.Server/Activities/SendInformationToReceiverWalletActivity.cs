@@ -53,7 +53,6 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
         try
         {
             _logger.LogTrace("Preparing to send information to receiver");
-            var registry = await _unitOfWork.RegistryRepository.GetRegistryFromId(newSlice.RegistryId);
 
             var request = new V1.ReceiveRequest
             {
@@ -61,7 +60,7 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
                 WalletDepositEndpointPosition = (uint)newSlice.DepositEndpointPosition,
                 CertificateId = new FederatedStreamId
                 {
-                    Registry = registry.Name,
+                    Registry = newSlice.Registry,
                     StreamId = new Uuid { Value = newSlice.CertificateId.ToString() }
                 },
                 Quantity = (uint)newSlice.Quantity,
@@ -92,14 +91,17 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
         var receiverEndpoint = await _unitOfWork.WalletRepository.GetDepositEndpointFromPublicKey(receiverDepositEndpoint.PublicKey)
             ?? throw new Exception("Local receiver wallet could not be found");
 
-        var slice = new Slice(Guid.NewGuid(),
-                              receiverEndpoint.Id,
-                              newSlice.DepositEndpointPosition,
-                              newSlice.RegistryId,
-                              newSlice.CertificateId,
-                              newSlice.Quantity,
-                              newSlice.RandomR,
-                              SliceState.Available);
+        var slice = new Slice
+        {
+            Id = Guid.NewGuid(),
+            DepositEndpointId = receiverEndpoint.Id,
+            DepositEndpointPosition = newSlice.DepositEndpointPosition,
+            Registry = newSlice.Registry,
+            CertificateId = newSlice.CertificateId,
+            Quantity = newSlice.Quantity,
+            RandomR = newSlice.RandomR,
+            SliceState = SliceState.Available
+        };
 
         await _unitOfWork.CertificateRepository.InsertSlice(slice);
         _unitOfWork.Commit();

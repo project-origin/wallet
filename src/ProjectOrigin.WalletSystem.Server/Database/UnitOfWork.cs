@@ -9,7 +9,6 @@ public class UnitOfWork : IUnitOfWork
 {
     public IWalletRepository WalletRepository => GetRepository(connection => new WalletRepository(connection));
     public ICertificateRepository CertificateRepository => GetRepository(connection => new CertificateRepository(connection));
-    public IRegistryRepository RegistryRepository => GetRepository(connection => new RegistryRepository(connection));
 
     private Lazy<IDbConnection> _lazyConnection;
     private Lazy<IDbTransaction> _lazyTransaction;

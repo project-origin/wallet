@@ -34,7 +34,16 @@ public class WalletRepository : IWalletRepository
         var wallet = await GetWallet(walletId);
         var key = wallet.PrivateKey.Derive(position).Neuter();
 
-        var newEndpoint = new DepositEndpoint(Guid.NewGuid(), walletId, position, key, wallet.Owner, referenceText, string.Empty);
+        var newEndpoint = new DepositEndpoint
+        {
+            Id = Guid.NewGuid(),
+            WalletId = walletId,
+            WalletPosition = position,
+            PublicKey = key,
+            Owner = wallet.Owner,
+            ReferenceText = referenceText,
+            Endpoint = string.Empty
+        };
 
         await CreateDepositEndpoint(newEndpoint);
         return newEndpoint;
@@ -42,7 +51,16 @@ public class WalletRepository : IWalletRepository
 
     public async Task<DepositEndpoint> CreateReceiverDepositEndpoint(string owner, IHDPublicKey ownerPublicKey, string referenceText, string endpoint)
     {
-        var newEndpoint = new DepositEndpoint(Guid.NewGuid(), null, null, ownerPublicKey, owner, referenceText, endpoint);
+        var newEndpoint = new DepositEndpoint
+        {
+            Id = Guid.NewGuid(),
+            WalletId = null,
+            WalletPosition = null,
+            PublicKey = ownerPublicKey,
+            Owner = owner,
+            ReferenceText = referenceText,
+            Endpoint = endpoint
+        };
         await CreateDepositEndpoint(newEndpoint);
         return newEndpoint;
     }
@@ -83,7 +101,16 @@ public class WalletRepository : IWalletRepository
             var wallet = await GetWallet(walletId);
             var nextWalletPosition = await GetNextNumberForId(walletId);
             var publicKey = wallet.PrivateKey.Derive(nextWalletPosition).Neuter();
-            remainderEndpoint = new DepositEndpoint(Guid.NewGuid(), walletId, nextWalletPosition, publicKey, wallet.Owner, referenceText, string.Empty);
+            remainderEndpoint = new DepositEndpoint
+            {
+                Id = Guid.NewGuid(),
+                WalletId = walletId,
+                WalletPosition = nextWalletPosition,
+                PublicKey = publicKey,
+                Owner = wallet.Owner,
+                ReferenceText = referenceText,
+                Endpoint = string.Empty
+            };
             await CreateDepositEndpoint(remainderEndpoint);
         }
 

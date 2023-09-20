@@ -14,7 +14,14 @@ using ProjectOrigin.WalletSystem.Server.Options;
 
 namespace ProjectOrigin.WalletSystem.Server.CommandHandlers;
 
-public record TransferCertificateCommand(string Owner, string Registry, Guid CertificateId, uint Quantity, Guid Receiver);
+public record TransferCertificateCommand
+{
+    public required string Owner { get; init; }
+    public required string Registry { get; init; }
+    public required Guid CertificateId { get; init; }
+    public required uint Quantity { get; init; }
+    public required Guid Receiver { get; init; }
+}
 
 public class TransferCertificateCommandHandler : IConsumer<TransferCertificateCommand>
 {
@@ -74,13 +81,22 @@ public class TransferCertificateCommandHandler : IConsumer<TransferCertificateCo
                 if (slice.Quantity <= remainderToTransfer)
                 {
                     builder.AddActivity<TransferFullSliceActivity, TransferFullSliceArguments>(_formatter,
-                        new(slice.Id, receiverDepositEndpoint.Id));
+                        new()
+                        {
+                            SourceSliceId = slice.Id,
+                            ReceiverDepositEndpointId = receiverDepositEndpoint.Id
+                        });
                     remainderToTransfer -= (uint)slice.Quantity;
                 }
                 else
                 {
                     builder.AddActivity<TransferPartialSliceActivity, TransferPartialSliceArguments>(_formatter,
-                        new(slice.Id, receiverDepositEndpoint.Id, remainderToTransfer));
+                        new()
+                        {
+                            SourceSliceId = slice.Id,
+                            ReceiverDepositEndpointId = receiverDepositEndpoint.Id,
+                            Quantity = remainderToTransfer
+                        });
                 }
 
                 var routingSlip = builder.Build();
