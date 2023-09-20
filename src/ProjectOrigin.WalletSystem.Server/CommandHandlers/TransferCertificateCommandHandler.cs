@@ -1,16 +1,12 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using MassTransit;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using ProjectOrigin.WalletSystem.Server.Activities;
-using ProjectOrigin.WalletSystem.Server.Activities.Exceptions;
 using ProjectOrigin.WalletSystem.Server.Database;
 using ProjectOrigin.WalletSystem.Server.Extensions;
 using ProjectOrigin.WalletSystem.Server.Models;
-using ProjectOrigin.WalletSystem.Server.Options;
 
 namespace ProjectOrigin.WalletSystem.Server.CommandHandlers;
 
@@ -27,22 +23,15 @@ public class TransferCertificateCommandHandler : IConsumer<TransferCertificateCo
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<TransferCertificateCommandHandler> _logger;
-    private readonly IOptions<RegistryOptions> _registryOptions;
-    private readonly IOptions<ServiceOptions> _walletSystemOptions;
     private readonly IEndpointNameFormatter _formatter;
-    private TimeSpan timeout = TimeSpan.FromMinutes(1);
 
     public TransferCertificateCommandHandler(
         IUnitOfWork unitOfWork,
         ILogger<TransferCertificateCommandHandler> logger,
-        IOptions<RegistryOptions> registryOptions,
-        IOptions<ServiceOptions> walletSystemOptions,
         IEndpointNameFormatter formatter)
     {
         _unitOfWork = unitOfWork;
         _logger = logger;
-        _registryOptions = registryOptions;
-        _walletSystemOptions = walletSystemOptions;
         _formatter = formatter;
     }
 
@@ -57,20 +46,7 @@ public class TransferCertificateCommandHandler : IConsumer<TransferCertificateCo
             var receiverDepositEndpoint = await _unitOfWork.WalletRepository.GetDepositEndpoint(msg.Receiver)
                 ?? throw new InvalidOperationException($"The receiver deposit endpoint was not found for this transfer");
 
-            var availableSlices = await _unitOfWork.CertificateRepository.GetOwnerAvailableSlices(msg.Registry, msg.CertificateId, msg.Owner);
-            if (availableSlices.IsEmpty())
-                throw new InvalidOperationException($"Owner has no available slices to transfer");
-
-            if (availableSlices.Sum(slice => slice.Quantity) < msg.Quantity)
-            {
-                var b = await _unitOfWork.CertificateRepository.GetToBeAvailable(msg.Registry, msg.CertificateId, msg.Owner);
-                if (b.Sum(slice => slice.Quantity) < msg.Quantity)
-                    throw new InvalidOperationException($"Owner has less to transfer than available");
-                else
-                    throw new TransientException($"Owner has more to transfer than available, but it is not yet available");
-            }
-
-            IEnumerable<Slice> reservedSlices = await ReserveRequiredSlices(availableSlices, msg.Quantity);
+            IEnumerable<Slice> reservedSlices = await _unitOfWork.CertificateRepository.ReserveQuantity(msg.Owner, msg.Registry, msg.CertificateId, msg.Quantity);
 
             var remainderToTransfer = msg.Quantity;
             List<Task> tasks = new();
@@ -104,37 +80,18 @@ public class TransferCertificateCommandHandler : IConsumer<TransferCertificateCo
             }
 
             await Task.WhenAll(tasks);
-
+            _unitOfWork.Commit();
             _logger.LogTrace($"Transfer command complete.");
         }
         catch (InvalidOperationException ex)
         {
+            _unitOfWork.Rollback();
             _logger.LogWarning(ex, "Transfer is not allowed.");
         }
         catch (Exception ex)
         {
+            _unitOfWork.Rollback();
             _logger.LogError(ex, "failed to handle transfer");
         }
-    }
-
-    private async Task<IEnumerable<Slice>> ReserveRequiredSlices(IEnumerable<Slice> slices, uint quantity)
-    {
-        _logger.LogTrace($"Reserving slices to transfer.");
-
-        var sumSlicesTaken = 0L;
-        var takenSlices = slices
-            .OrderBy(slice => slice.Quantity)
-            .TakeWhile(slice => { var needsMore = sumSlicesTaken < quantity; sumSlicesTaken += slice.Quantity; return needsMore; })
-            .ToList();
-
-        foreach (var slice in takenSlices)
-        {
-            await _unitOfWork.CertificateRepository.SetSliceState(slice.Id, SliceState.Slicing);
-        }
-        _unitOfWork.Commit();
-
-        _logger.LogTrace($"{takenSlices.Count} slices reserved.");
-
-        return takenSlices;
     }
 }

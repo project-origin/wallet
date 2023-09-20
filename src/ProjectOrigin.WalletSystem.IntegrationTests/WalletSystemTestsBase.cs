@@ -4,12 +4,7 @@ using System.Collections.Generic;
 using Xunit;
 using Xunit.Abstractions;
 using System;
-using Npgsql;
-using ProjectOrigin.WalletSystem.Server.Models;
-using ProjectOrigin.WalletSystem.Server.Repositories;
-using System.Threading.Tasks;
 using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
-using ProjectOrigin.PedersenCommitment;
 using System.Linq;
 using MassTransit;
 
@@ -57,86 +52,5 @@ public abstract class WalletSystemTestsBase : IClassFixture<GrpcTestFixture<Star
     public void Dispose()
     {
         _logger.Dispose();
-    }
-
-    protected async Task<DepositEndpoint> CreateWalletDepositEndpoint(string owner)
-    {
-        using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
-        {
-            var walletRepository = new WalletRepository(connection);
-            var wallet = new Wallet
-            {
-                Id = Guid.NewGuid(),
-                Owner = owner,
-                PrivateKey = Algorithm.GenerateNewPrivateKey()
-            };
-            await walletRepository.Create(wallet);
-
-            return await walletRepository.CreateDepositEndpoint(wallet.Id, string.Empty);
-        }
-    }
-
-    protected async Task<Certificate> CreateCertificate(Guid id, string registryName)
-    {
-        using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
-        {
-            var certificateRepository = new CertificateRepository(connection);
-            var attributes = new List<CertificateAttribute>
-            {
-                new(){ Key="AssetId", Value="571234567890123456"},
-                new(){ Key="TechCode", Value="T070000"},
-                new(){ Key="FuelCode", Value="F00000000"},
-            };
-            var cert = new Certificate
-            {
-                Id = id,
-                Registry = registryName,
-                StartDate = DateTimeOffset.Now,
-                EndDate = DateTimeOffset.Now.AddDays(1),
-                GridArea = "DK1",
-                CertificateType = GranularCertificateType.Production,
-                Attributes = attributes
-            };
-            await certificateRepository.InsertCertificate(cert);
-
-            return cert;
-        }
-    }
-
-    protected async Task InsertSlice(DepositEndpoint depositEndpoint, int position, Electricity.V1.IssuedEvent issuedEvent, SecretCommitmentInfo commitment)
-    {
-        using var connection = new NpgsqlConnection(_dbFixture.ConnectionString);
-        var certificateRepository = new CertificateRepository(connection);
-
-        var certificate = await certificateRepository.GetCertificate(issuedEvent.CertificateId.Registry, Guid.Parse(issuedEvent.CertificateId.StreamId.Value));
-
-        if (certificate is null)
-        {
-            certificate = new Certificate
-            {
-                Id = Guid.Parse(issuedEvent.CertificateId.StreamId.Value),
-                Registry = issuedEvent.CertificateId.Registry,
-                StartDate = issuedEvent.Period.Start.ToDateTimeOffset(),
-                EndDate = issuedEvent.Period.End.ToDateTimeOffset(),
-                GridArea = issuedEvent.GridArea,
-                CertificateType = (GranularCertificateType)issuedEvent.Type
-            };
-
-            await certificateRepository.InsertCertificate(certificate);
-        }
-
-        var slice = new Slice
-        {
-            Id = Guid.NewGuid(),
-            DepositEndpointId = depositEndpoint.Id,
-            DepositEndpointPosition = position,
-            Registry = certificate.Registry,
-            CertificateId = certificate.Id,
-            Quantity = commitment.Message,
-            RandomR = commitment.BlindingValue.ToArray(),
-            SliceState = SliceState.Available
-        };
-
-        await certificateRepository.InsertSlice(slice);
     }
 }

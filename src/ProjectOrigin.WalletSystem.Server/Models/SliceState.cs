@@ -7,4 +7,6 @@ public enum SliceState
     Registering = 3,
     Sliced = 4,
     Transferred = 5,
+    Claimed = 7,
+    Reserved = 10,
 }

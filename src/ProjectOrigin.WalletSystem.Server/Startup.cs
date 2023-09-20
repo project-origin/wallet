@@ -94,6 +94,7 @@ public class Startup
         });
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+        services.AddScoped<IRegistryProcessBuilder, RegistryProcessBuilder>();
         services.AddSingleton<IDbConnectionFactory, PostgresConnectionFactory>();
         services.AddSingleton<IHDAlgorithm, Secp256k1Algorithm>();
 

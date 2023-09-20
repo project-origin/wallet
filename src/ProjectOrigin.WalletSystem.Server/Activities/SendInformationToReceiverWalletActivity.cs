@@ -5,8 +5,8 @@ using Grpc.Net.Client;
 using MassTransit;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using ProjectOrigin.Common.V1;
 using ProjectOrigin.WalletSystem.Server.Database;
+using ProjectOrigin.WalletSystem.Server.Extensions;
 using ProjectOrigin.WalletSystem.Server.Models;
 using ProjectOrigin.WalletSystem.Server.Options;
 
@@ -58,11 +58,7 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
             {
                 WalletDepositEndpointPublicKey = ByteString.CopyFrom(receiverDepositEndpoint.PublicKey.Export()),
                 WalletDepositEndpointPosition = (uint)newSlice.DepositEndpointPosition,
-                CertificateId = new FederatedStreamId
-                {
-                    Registry = newSlice.Registry,
-                    StreamId = new Uuid { Value = newSlice.CertificateId.ToString() }
-                },
+                CertificateId = newSlice.GetFederatedStreamId(),
                 Quantity = (uint)newSlice.Quantity,
                 RandomR = ByteString.CopyFrom(newSlice.RandomR)
             };

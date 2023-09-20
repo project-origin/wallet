@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Google.Protobuf;
 using MassTransit;
 using Microsoft.Extensions.Logging;
-using ProjectOrigin.Common.V1;
 using ProjectOrigin.Electricity.V1;
 using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
 using ProjectOrigin.PedersenCommitment;
@@ -92,7 +91,7 @@ public class TransferPartialSliceActivity : IExecuteActivity<TransferPartialSlic
 
             var slicedEvent = CreateSliceEvent(sourceSlice, new NewSlice(commitmentQuantity, receiverPublicKey), new NewSlice(commitmentRemainder, remainderPublicKey));
             var sourceSlicePrivateKey = await _unitOfWork.WalletRepository.GetPrivateKeyForSlice(sourceSlice.Id);
-            Transaction transaction = CreateAndSignTransaction(slicedEvent.CertificateId, slicedEvent, sourceSlicePrivateKey);
+            Transaction transaction = sourceSlicePrivateKey.SignTransaction(slicedEvent.CertificateId, slicedEvent);
 
             _unitOfWork.Commit();
 
@@ -153,11 +152,7 @@ public class TransferPartialSliceActivity : IExecuteActivity<TransferPartialSlic
         if (newSlices.Sum(s => s.ci.Message) != sourceSlice.Quantity)
             throw new InvalidOperationException();
 
-        var certificateId = new ProjectOrigin.Common.V1.FederatedStreamId
-        {
-            Registry = sourceSlice.Registry,
-            StreamId = new ProjectOrigin.Common.V1.Uuid { Value = sourceSlice.CertificateId.ToString() }
-        };
+        var certificateId = sourceSlice.GetFederatedStreamId();
 
         var sourceSliceCommitment = new PedersenCommitment.SecretCommitmentInfo((uint)sourceSlice.Quantity, sourceSlice.RandomR);
         var sumOfNewSlices = newSlices.Select(newSlice => newSlice.ci).Aggregate((left, right) => left + right);
@@ -189,25 +184,5 @@ public class TransferPartialSliceActivity : IExecuteActivity<TransferPartialSlic
         }
 
         return slicedEvent;
-    }
-
-    private static Transaction CreateAndSignTransaction(FederatedStreamId certificateId, IMessage @event, IHDPrivateKey slicePrivateKey)
-    {
-        var header = new TransactionHeader
-        {
-            FederatedStreamId = certificateId,
-            PayloadType = @event.Descriptor.FullName,
-            PayloadSha512 = ByteString.CopyFrom(SHA512.HashData(@event.ToByteArray())),
-            Nonce = Guid.NewGuid().ToString(),
-        };
-
-        var transaction = new Transaction
-        {
-            Header = header,
-            HeaderSignature = ByteString.CopyFrom(slicePrivateKey.Sign(header.ToByteArray())),
-            Payload = @event.ToByteString()
-        };
-
-        return transaction;
     }
 }
