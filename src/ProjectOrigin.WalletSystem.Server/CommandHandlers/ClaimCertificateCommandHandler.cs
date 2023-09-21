@@ -94,15 +94,7 @@ public class ClaimCertificateCommandHandler : IConsumer<ClaimCertificateCommand>
                     consumptionRemainderSlice = quantitySlice;
                 }
 
-                if (productionRemainderSlice.Quantity == consumptionRemainderSlice.Quantity)
-                {
-                    await _processBuilder.Claim(productionRemainderSlice, consumptionRemainderSlice);
-
-                    remainderToClaim -= consumptionRemainderSlice.Quantity;
-                    productionRemainderSlice = null; // production slice is fully claimed
-                    consumptionRemainderSlice = null; // consumption slice is fully claimed
-                }
-                else if (productionRemainderSlice.Quantity < consumptionRemainderSlice.Quantity)
+                if (productionRemainderSlice.Quantity < consumptionRemainderSlice.Quantity)
                 {
                     var (quantitySlice, remainderSlice) = await _processBuilder.SplitSlice(consumptionRemainderSlice, productionRemainderSlice.Quantity);
                     await _processBuilder.Claim(productionRemainderSlice, quantitySlice);
@@ -120,9 +112,13 @@ public class ClaimCertificateCommandHandler : IConsumer<ClaimCertificateCommand>
                     productionRemainderSlice = remainderSlice;
                     consumptionRemainderSlice = null; // consumption slice is fully claimed
                 }
-                else
+                else // productionRemainderSlice.Quantity == consumptionRemainderSlice.Quantity
                 {
-                    throw new NotSupportedException("Ilogical case");
+                    await _processBuilder.Claim(productionRemainderSlice, consumptionRemainderSlice);
+
+                    remainderToClaim -= consumptionRemainderSlice.Quantity;
+                    productionRemainderSlice = null; // production slice is fully claimed
+                    consumptionRemainderSlice = null; // consumption slice is fully claimed
                 }
             }
         }
