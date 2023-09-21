@@ -133,20 +133,30 @@ public class CertificateRepository : ICertificateRepository
 
     public Task<long> GetToBeAvailable(string registryName, Guid certificateId, string owner)
     {
-        var sql = $@"SELECT SUM(s.quantity)
-                    FROM Certificates c
-                    INNER JOIN Slices s on c.Id = s.CertificateId
-                    INNER JOIN Registries r on s.RegistryId = r.Id
-                    INNER JOIN DepositEndpoints de on s.DepositEndpointId = de.Id
-                    INNER JOIN Wallets w on de.WalletId = w.Id
-                    WHERE r.Name = @registryName
-                    AND s.CertificateId = @certificateId
-                    AND w.owner = @owner
-                    AND (s.SliceState = {(int)SliceState.Available} OR s.SliceState = {(int)SliceState.Registering})";
-
-        return _connection.QuerySingleAsync<long>(sql, new { registryName, certificateId, owner });
+        return _connection.QuerySingleAsync<long>(
+            @"SELECT SUM(s.quantity)
+              FROM Certificates c
+              INNER JOIN Slices s
+                ON c.Id = s.CertificateId
+              INNER JOIN Registries r
+                ON s.RegistryId = r.Id
+              INNER JOIN DepositEndpoints de
+                ON s.DepositEndpointId = de.Id
+              INNER JOIN Wallets w
+                ON de.WalletId = w.Id
+              WHERE r.Name = @registryName
+                AND s.CertificateId = @certificateId
+                AND w.owner = @owner
+                AND (s.SliceState = @availableState OR s.SliceState = @registeringState)",
+            new
+            {
+                registryName,
+                certificateId,
+                owner,
+                availableState = (int)SliceState.Available,
+                registeringState = (int)SliceState.Registering
+            });
     }
-
     public Task<Slice> GetSlice(Guid sliceId)
     {
         var sql = @"SELECT s.*, r.Name as Registry
