@@ -13,43 +13,43 @@ namespace ProjectOrigin.WalletSystem.Server;
 
 public partial class RegistryProcessBuilder
 {
-    public async Task Claim(Slice prodSlice, Slice consSlice)
+    public async Task Claim(Slice productionSlice, Slice consumptionSlice)
     {
-        if (prodSlice.Quantity != consSlice.Quantity)
+        if (productionSlice.Quantity != consumptionSlice.Quantity)
             throw new InvalidOperationException("Production and consumption slices must have the same quantity");
 
         var allocationId = Guid.NewGuid();
 
-        var productionKey = await _unitOfWork.WalletRepository.GetPrivateKeyForSlice(prodSlice.Id);
-        var consumptionKey = await _unitOfWork.WalletRepository.GetPrivateKeyForSlice(consSlice.Id);
+        var productionKey = await _unitOfWork.WalletRepository.GetPrivateKeyForSlice(productionSlice.Id);
+        var consumptionKey = await _unitOfWork.WalletRepository.GetPrivateKeyForSlice(consumptionSlice.Id);
 
-        var prodId = prodSlice.GetFederatedStreamId();
-        var consId = consSlice.GetFederatedStreamId();
+        var produictionId = productionSlice.GetFederatedStreamId();
+        var consumptionId = consumptionSlice.GetFederatedStreamId();
 
-        var allocatedEvent = CreateAllocatedEvent(allocationId, consSlice, prodSlice);
-        AddTransactionActivity(productionKey.SignTransaction(prodId, allocatedEvent));
-        AddTransactionActivity(consumptionKey.SignTransaction(consId, allocatedEvent));
+        var allocatedEvent = CreateAllocatedEvent(allocationId, consumptionSlice, productionSlice);
+        AddTransactionActivity(productionKey.SignTransaction(produictionId, allocatedEvent));
+        AddTransactionActivity(consumptionKey.SignTransaction(consumptionId, allocatedEvent));
 
         var newClaim = new Claim
         {
             Id = allocationId,
-            ProductionSliceId = prodSlice.Id,
-            ConsumptionSliceId = consSlice.Id,
+            ProductionSliceId = productionSlice.Id,
+            ConsumptionSliceId = consumptionSlice.Id,
             State = ClaimState.Created,
         };
         await _unitOfWork.CertificateRepository.InsertClaim(newClaim);
 
-        var prodClaimedEvent = CreateClaimedEvent(allocationId, prodId);
-        AddTransactionActivity(productionKey.SignTransaction(prodId, prodClaimedEvent));
+        var prodClaimedEvent = CreateClaimedEvent(allocationId, produictionId);
+        AddTransactionActivity(productionKey.SignTransaction(produictionId, prodClaimedEvent));
 
-        var consClaimedEvent = CreateClaimedEvent(allocationId, consId);
-        AddTransactionActivity(consumptionKey.SignTransaction(consId, consClaimedEvent));
+        var consClaimedEvent = CreateClaimedEvent(allocationId, consumptionId);
+        AddTransactionActivity(consumptionKey.SignTransaction(consumptionId, consClaimedEvent));
 
         AddActivity<UpdateSliceStateActivity, UpdateSliceStateArguments>(new UpdateSliceStateArguments
         {
             SliceStates = new(){
-                {prodSlice.Id, SliceState.Claimed},
-                {consSlice.Id, SliceState.Claimed},
+                {productionSlice.Id, SliceState.Claimed},
+                {consumptionSlice.Id, SliceState.Claimed},
             }
         });
 

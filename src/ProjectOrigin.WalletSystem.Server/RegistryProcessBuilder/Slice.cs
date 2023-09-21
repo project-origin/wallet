@@ -75,7 +75,7 @@ public partial class RegistryProcessBuilder
         });
     }
 
-    private record NewSlice(SecretCommitmentInfo ci, IPublicKey Key);
+    private sealed record NewSlice(SecretCommitmentInfo ci, IPublicKey Key);
 
     private static SlicedEvent CreateSliceEvent(Slice sourceSlice, params NewSlice[] newSlices)
     {

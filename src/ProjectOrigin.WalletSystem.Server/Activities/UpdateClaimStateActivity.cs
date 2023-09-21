@@ -15,8 +15,8 @@ public record UpdateClaimStateArguments()
 
 public class UpdateClaimStateActivity : IExecuteActivity<UpdateClaimStateArguments>
 {
-    private IUnitOfWork _unitOfWork;
-    private ILogger<UpdateClaimStateActivity> _logger;
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly ILogger<UpdateClaimStateActivity> _logger;
 
     public UpdateClaimStateActivity(IUnitOfWork unitOfWork, ILogger<UpdateClaimStateActivity> logger)
     {
