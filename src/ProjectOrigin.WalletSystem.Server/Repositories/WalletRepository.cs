@@ -91,12 +91,6 @@ public class WalletRepository : IWalletRepository
         return _connection.ExecuteScalarAsync<int>("SELECT * FROM IncrementNumberForId(@in_id);", new { in_id = id });
     }
 
-    public async Task<DepositEndpoint> GetWalletRemainderDepositEndpoint(string owner)
-    {
-        var wallet = await GetWalletByOwner(owner) ?? throw new Exception($"Wallet for owner {owner} not found");
-        return await GetWalletRemainderDepositEndpoint(wallet.Id);
-    }
-
     public async Task<DepositEndpoint> GetWalletRemainderDepositEndpoint(Guid walletId)
     {
         var referenceText = RemainderReferenceText;
