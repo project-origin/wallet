@@ -1,4 +1,5 @@
 using System;
+using System.Data.Common;
 using System.Threading.Tasks;
 using Google.Protobuf;
 using Grpc.Core;
@@ -121,5 +122,31 @@ public class WalletService : V1.WalletService.WalletServiceBase
         _bus.Publish(command);
 
         return Task.FromResult(new TransferResponse());
+    }
+
+    public override Task<ClaimResponse> ClaimCertificates(ClaimRequest request, ServerCallContext context)
+    {
+        var owner = context.GetSubject();
+
+        var command = new ClaimCertificateCommand
+        {
+            Owner = owner,
+            ClaimId = Guid.NewGuid(),
+            ConsumptionRegistry = request.ConsumptionCertificateId.Registry,
+            ConsumptionCertificateId = Guid.Parse(request.ConsumptionCertificateId.StreamId.Value),
+            ProductionRegistry = request.ProductionCertificateId.Registry,
+            ProductionCertificateId = Guid.Parse(request.ProductionCertificateId.StreamId.Value),
+            Quantity = request.Quantity,
+        };
+
+        _bus.Publish(command);
+
+        return Task.FromResult(new ClaimResponse()
+        {
+            ClaimId = new Uuid
+            {
+                Value = command.ClaimId.ToString()
+            }
+        });
     }
 }

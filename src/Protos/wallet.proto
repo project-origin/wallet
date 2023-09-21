@@ -83,8 +83,9 @@ message ClaimRequest {
     uint32 quantity = 3;
 }
 
-message ClaimResponse {} // not yet sure what to return
-
+message ClaimResponse {
+    project_origin.common.v1.Uuid claim_id = 1;
+}
 
 message GranularCertificate {
     project_origin.common.v1.FederatedStreamId federated_id = 1;

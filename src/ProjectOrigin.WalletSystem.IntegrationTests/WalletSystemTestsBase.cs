@@ -7,6 +7,8 @@ using System;
 using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
 using System.Linq;
 using MassTransit;
+using Grpc.Core;
+using AutoFixture;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests;
 
@@ -18,6 +20,7 @@ public abstract class WalletSystemTestsBase : IClassFixture<GrpcTestFixture<Star
     protected readonly PostgresDatabaseFixture _dbFixture;
     protected readonly JwtGenerator _tokenGenerator;
     private readonly IDisposable _logger;
+    private readonly Fixture _fixture;
 
     protected IHDAlgorithm Algorithm => _grpcFixture.GetRequiredService<IHDAlgorithm>();
 
@@ -33,6 +36,7 @@ public abstract class WalletSystemTestsBase : IClassFixture<GrpcTestFixture<Star
         _dbFixture = dbFixture;
         _logger = grpcFixture.GetTestLogger(outputHelper);
         _tokenGenerator = new JwtGenerator();
+        _fixture = new Fixture();
 
         var config = new Dictionary<string, string?>()
         {
@@ -52,5 +56,20 @@ public abstract class WalletSystemTestsBase : IClassFixture<GrpcTestFixture<Star
     public void Dispose()
     {
         _logger.Dispose();
+    }
+
+    protected (string, Metadata) GenerateUserHeader()
+    {
+        var subject = _fixture.Create<string>();
+        var name = _fixture.Create<string>();
+
+        var token = _tokenGenerator.GenerateToken(subject, name);
+
+        var headers = new Metadata
+        {
+            { "Authorization", $"Bearer {token}" }
+        };
+
+        return (subject, headers);
     }
 }

@@ -20,7 +20,6 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests;
 public class TransferCertificateTests : WalletSystemTestsBase, IClassFixture<RegistryFixture>, IClassFixture<InMemoryFixture>
 {
     private readonly RegistryFixture _registryFixture;
-    private readonly Fixture _fixture;
 
     public TransferCertificateTests(
             GrpcTestFixture<Startup> grpcFixture,
@@ -36,7 +35,6 @@ public class TransferCertificateTests : WalletSystemTestsBase, IClassFixture<Reg
                   registryFixture)
     {
         _registryFixture = registryFixture;
-        _fixture = new Fixture();
     }
 
     [Fact]
@@ -164,20 +162,5 @@ public class TransferCertificateTests : WalletSystemTestsBase, IClassFixture<Reg
             await Task.Delay(1000);
         }
         slicesFound.Should().Be(number, "correct number of slices should be found");
-    }
-
-    private (string, Metadata) GenerateUserHeader()
-    {
-        var subject = _fixture.Create<string>();
-        var name = _fixture.Create<string>();
-
-        var token = _tokenGenerator.GenerateToken(subject, name);
-
-        var headers = new Metadata
-        {
-            { "Authorization", $"Bearer {token}" }
-        };
-
-        return (subject, headers);
     }
 }

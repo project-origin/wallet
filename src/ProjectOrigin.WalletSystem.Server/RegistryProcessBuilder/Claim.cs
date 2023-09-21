@@ -21,7 +21,7 @@ public partial class RegistryProcessBuilder
         var allocationId = Guid.NewGuid();
 
         var productionKey = await _unitOfWork.WalletRepository.GetPrivateKeyForSlice(prodSlice.Id);
-        var consumptionKey = await _unitOfWork.WalletRepository.GetPrivateKeyForSlice(prodSlice.Id);
+        var consumptionKey = await _unitOfWork.WalletRepository.GetPrivateKeyForSlice(consSlice.Id);
 
         var prodId = prodSlice.GetFederatedStreamId();
         var consId = consSlice.GetFederatedStreamId();

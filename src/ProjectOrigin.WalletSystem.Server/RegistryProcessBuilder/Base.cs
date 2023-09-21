@@ -16,19 +16,24 @@ public partial class RegistryProcessBuilder : IRegistryProcessBuilder
     private readonly IEndpointNameFormatter _formatter;
     private readonly IRoutingSlipBuilder _slipBuilder;
 
-    public RegistryProcessBuilder(IUnitOfWork unitOfWork, IEndpointNameFormatter formatter)
+    public RegistryProcessBuilder(IUnitOfWork unitOfWork, IEndpointNameFormatter formatter, Guid routingSlipId)
     {
         _unitOfWork = unitOfWork;
         _formatter = formatter;
-        _slipBuilder = new RoutingSlipBuilder(NewId.NextGuid());
+        _slipBuilder = new RoutingSlipBuilder(routingSlipId);
     }
 
-    public void AddActivity<T, TArguments>(TArguments arguments)
+    internal void AddActivity<T, TArguments>(TArguments arguments)
         where T : class, IExecuteActivity<TArguments>
         where TArguments : class
     {
         var uri = new Uri($"exchange:{_formatter.ExecuteActivity<T, TArguments>()}");
         _slipBuilder.AddActivity(typeof(T).Name, uri, arguments);
+    }
+
+    public RoutingSlip Build()
+    {
+        return _slipBuilder.Build();
     }
 
     private void AddTransactionActivity(Transaction transaction)
@@ -44,11 +49,6 @@ public partial class RegistryProcessBuilder : IRegistryProcessBuilder
             RegistryName = transaction.Header.FederatedStreamId.Registry,
             TransactionId = transaction.ToShaId()
         });
-    }
-
-    public RoutingSlip Build()
-    {
-        return _slipBuilder.Build();
     }
 
     public void SetSliceStates(Dictionary<Guid, SliceState> newStates)

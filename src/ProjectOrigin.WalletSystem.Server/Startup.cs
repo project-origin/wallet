@@ -37,6 +37,7 @@ public class Startup
         services.AddGrpc();
 
         services.AddTransient<IStreamProjector<GranularCertificate>, GranularCertificateProjector>();
+        services.AddTransient<IRegistryProcessBuilderFactory, RegistryProcessBuilderFactory>();
         services.AddTransient<IRegistryService, RegistryService>();
 
         services.AddOptions<ServiceOptions>()
@@ -83,6 +84,12 @@ public class Startup
                     .Handle<TransientException>());
             });
 
+            o.AddConsumer<ClaimCertificateCommandHandler>(cfg =>
+            {
+                cfg.UseMessageRetry(r => r.Interval(100, TimeSpan.FromMinutes(1))
+                    .Handle<TransientException>());
+            });
+
             o.AddActivitiesFromNamespaceContaining<TransferFullSliceActivity>();
             o.AddExecuteActivity<WaitCommittedRegistryTransactionActivity, WaitCommittedTransactionArguments>(cfg =>
             {
@@ -94,7 +101,6 @@ public class Startup
         });
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
-        services.AddScoped<IRegistryProcessBuilder, RegistryProcessBuilder>();
         services.AddSingleton<IDbConnectionFactory, PostgresConnectionFactory>();
         services.AddSingleton<IHDAlgorithm, Secp256k1Algorithm>();
 

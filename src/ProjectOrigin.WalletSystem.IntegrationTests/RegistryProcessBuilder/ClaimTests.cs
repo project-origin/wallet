@@ -1,10 +1,9 @@
 using System;
 using System.Threading.Tasks;
 using AutoFixture;
-using Dapper;
 using FluentAssertions;
+using Google.Protobuf;
 using MassTransit;
-using Npgsql;
 using NSubstitute;
 using ProjectOrigin.Electricity.V1;
 using ProjectOrigin.PedersenCommitment;
@@ -34,7 +33,8 @@ public class ClaimTests : IClassFixture<PostgresDatabaseFixture>
         _unitOfWork = _dbFixture.CreateUnitOfWork();
         _processBuilder = new RegistryProcessBuilder(
             _unitOfWork,
-            Substitute.For<IEndpointNameFormatter>()
+            Substitute.For<IEndpointNameFormatter>(),
+            Guid.NewGuid()
         );
     }
 
@@ -47,10 +47,12 @@ public class ClaimTests : IClassFixture<PostgresDatabaseFixture>
         var prodCert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _registryName, Server.Models.GranularCertificateType.Production);
         var prodSecret = new SecretCommitmentInfo(150);
         var prodSlice = await _dbFixture.CreateSlice(depositEndpoint, prodCert, prodSecret);
+        var prodPublicKey = depositEndpoint.PublicKey.Derive(prodSlice.DepositEndpointPosition);
 
         var consCert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _registryName, Server.Models.GranularCertificateType.Consumption);
         var consSecret = new SecretCommitmentInfo(150);
         var consSlice = await _dbFixture.CreateSlice(depositEndpoint, consCert, consSecret);
+        var consPublicKey = depositEndpoint.PublicKey.Derive(consSlice.DepositEndpointPosition);
 
         // Act
         await _processBuilder.Claim(prodSlice, consSlice);
@@ -62,7 +64,8 @@ public class ClaimTests : IClassFixture<PostgresDatabaseFixture>
         var (t1, a1) = slip.Itinerary[0].ShouldBeTransactionWithEvent<AllocatedEvent>(
             transaction =>
                 transaction.Header.FederatedStreamId.Registry == _registryName &&
-                transaction.Header.FederatedStreamId.StreamId.Value == prodCert.Id.ToString(),
+                transaction.Header.FederatedStreamId.StreamId.Value == prodCert.Id.ToString() &&
+                prodPublicKey.Verify(transaction.Header.ToByteArray(), transaction.HeaderSignature.ToByteArray()),
             payload =>
                 payload.ConsumptionCertificateId.Registry == _registryName &&
                 payload.ConsumptionCertificateId.StreamId.Value == consCert.Id.ToString() &&
@@ -74,7 +77,8 @@ public class ClaimTests : IClassFixture<PostgresDatabaseFixture>
         var (t2, _) = slip.Itinerary[2].ShouldBeTransactionWithEvent<AllocatedEvent>(
             transaction =>
                 transaction.Header.FederatedStreamId.Registry == _registryName &&
-                transaction.Header.FederatedStreamId.StreamId.Value == consCert.Id.ToString(),
+                transaction.Header.FederatedStreamId.StreamId.Value == consCert.Id.ToString() &&
+                consPublicKey.Verify(transaction.Header.ToByteArray(), transaction.HeaderSignature.ToByteArray()),
             payload =>
                 payload.ConsumptionCertificateId.Registry == _registryName &&
                 payload.ConsumptionCertificateId.StreamId.Value == consCert.Id.ToString() &&
@@ -87,7 +91,8 @@ public class ClaimTests : IClassFixture<PostgresDatabaseFixture>
         var (t3, _) = slip.Itinerary[4].ShouldBeTransactionWithEvent<ClaimedEvent>(
             transaction =>
                 transaction.Header.FederatedStreamId.Registry == _registryName &&
-                transaction.Header.FederatedStreamId.StreamId.Value == prodCert.Id.ToString(),
+                transaction.Header.FederatedStreamId.StreamId.Value == prodCert.Id.ToString() &&
+                prodPublicKey.Verify(transaction.Header.ToByteArray(), transaction.HeaderSignature.ToByteArray()),
             payload =>
                 payload.CertificateId.Registry == _registryName &&
                 payload.CertificateId.StreamId.Value == prodCert.Id.ToString() &&
@@ -98,7 +103,8 @@ public class ClaimTests : IClassFixture<PostgresDatabaseFixture>
         var (t4, _) = slip.Itinerary[6].ShouldBeTransactionWithEvent<ClaimedEvent>(
             transaction =>
                 transaction.Header.FederatedStreamId.Registry == _registryName &&
-                transaction.Header.FederatedStreamId.StreamId.Value == consCert.Id.ToString(),
+                transaction.Header.FederatedStreamId.StreamId.Value == consCert.Id.ToString() &&
+                consPublicKey.Verify(transaction.Header.ToByteArray(), transaction.HeaderSignature.ToByteArray()),
             payload =>
                 payload.CertificateId.Registry == _registryName &&
                 payload.CertificateId.StreamId.Value == consCert.Id.ToString() &&

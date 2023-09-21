@@ -2,8 +2,8 @@ using System;
 using System.Threading.Tasks;
 using AutoFixture;
 using FluentAssertions;
+using Google.Protobuf;
 using MassTransit;
-using Npgsql;
 using NSubstitute;
 using ProjectOrigin.Electricity.V1;
 using ProjectOrigin.PedersenCommitment;
@@ -32,7 +32,8 @@ public class SplitTests : IClassFixture<PostgresDatabaseFixture>
         _unitOfWork = _dbFixture.CreateUnitOfWork();
         _processBuilder = new RegistryProcessBuilder(
             _unitOfWork,
-            Substitute.For<IEndpointNameFormatter>()
+            Substitute.For<IEndpointNameFormatter>(),
+            Guid.NewGuid()
         );
     }
 
@@ -45,6 +46,7 @@ public class SplitTests : IClassFixture<PostgresDatabaseFixture>
         var cert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _registryName, Server.Models.GranularCertificateType.Production);
         var secret = new SecretCommitmentInfo(150);
         var sourceSlice = await _dbFixture.CreateSlice(depositEndpoint, cert, secret);
+        var publicKey = depositEndpoint.PublicKey.Derive(sourceSlice.DepositEndpointPosition).GetPublicKey();
 
         // Act
         var (newSlice1, newSlice2) = await _processBuilder.SplitSlice(sourceSlice, 100);
@@ -59,7 +61,8 @@ public class SplitTests : IClassFixture<PostgresDatabaseFixture>
         var (transaction, _) = slip.Itinerary[0].ShouldBeTransactionWithEvent<SlicedEvent>(
             transaction =>
                 transaction.Header.FederatedStreamId.Registry == _registryName &&
-                transaction.Header.FederatedStreamId.StreamId.Value == cert.Id.ToString(),
+                transaction.Header.FederatedStreamId.StreamId.Value == cert.Id.ToString() &&
+                publicKey.Verify(transaction.Header.ToByteArray(), transaction.HeaderSignature.ToByteArray()),
             payload =>
                 payload.NewSlices.Count == 2 &&
                 payload.NewSlices[0].Quantity.IsEqual(commitmentInfo1) &&

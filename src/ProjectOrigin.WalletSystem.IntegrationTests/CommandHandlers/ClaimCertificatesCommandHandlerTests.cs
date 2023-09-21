@@ -32,12 +32,15 @@ public class ClaimCertificatesCommandHandlerTests
         _owner = _fixture.Create<string>();
 
         _processBuilder = Substitute.For<IRegistryProcessBuilder>();
+        var _processBuilderFactory = Substitute.For<IRegistryProcessBuilderFactory>();
+        _processBuilderFactory.Create(Arg.Any<Guid>(), Arg.Any<IUnitOfWork>()).Returns(_processBuilder);
+
         _unitOfWork = Substitute.For<IUnitOfWork>();
 
         _commandHandler = new ClaimCertificateCommandHandler(
             Substitute.For<ILogger<ClaimCertificateCommandHandler>>(),
             _unitOfWork,
-            _processBuilder
+            _processBuilderFactory
         );
         _context = Substitute.For<ConsumeContext<ClaimCertificateCommand>>();
     }
@@ -203,6 +206,7 @@ public class ClaimCertificatesCommandHandlerTests
         var command = new ClaimCertificateCommand
         {
             Owner = _owner,
+            ClaimId = Guid.NewGuid(),
             ConsumptionRegistry = _registryName,
             ConsumptionCertificateId = Guid.NewGuid(),
             ProductionRegistry = _registryName,

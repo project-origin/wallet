@@ -67,6 +67,7 @@ public static class ActivityAssertionExtensions
             ?? throw new InvalidOperationException("Descriptor not found");
 
         var argument = ShouldBeActivity<SendRegistryTransactionActivity, SendTransactionArguments>(activity);
+        argument.Transaction.Should().Match(transactionPredicate);
         var payload = (TEvent)descritor!.Parser.ParseFrom(argument.Transaction.Payload);
 
         payload.Should().Match(payloadPredicate);
