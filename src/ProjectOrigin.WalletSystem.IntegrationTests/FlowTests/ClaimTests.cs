@@ -45,7 +45,7 @@ public class ClaimTests : WalletSystemTestsBase, IClassFixture<RegistryFixture>,
     }
 
     [Fact]
-    public async Task Transfer_SingleSlice_LocalWallet()
+    public async Task Claim150_FromTwoLargerSlices_Success()
     {
         //Arrange
         var client = new WalletService.WalletServiceClient(_grpcFixture.Channel);
@@ -53,7 +53,7 @@ public class ClaimTests : WalletSystemTestsBase, IClassFixture<RegistryFixture>,
         var (owner, header) = GenerateUserHeader();
         var senderDepositEndpoint = await _dbFixture.CreateWalletDepositEndpoint(owner);
 
-        var consumptionId = await IssueCertToDepositEndpoint(senderDepositEndpoint, 150, Electricity.V1.GranularCertificateType.Consumption);
+        var consumptionId = await IssueCertToDepositEndpoint(senderDepositEndpoint, 300, Electricity.V1.GranularCertificateType.Consumption);
         var productionId = await IssueCertToDepositEndpoint(senderDepositEndpoint, 200, Electricity.V1.GranularCertificateType.Production);
 
         //Act
@@ -76,17 +76,17 @@ public class ClaimTests : WalletSystemTestsBase, IClassFixture<RegistryFixture>,
     {
         await using var connection = new NpgsqlConnection(_dbFixture.ConnectionString);
         var startedAt = DateTime.UtcNow;
-        while (DateTime.UtcNow - startedAt < TimeSpan.FromMinutes(1))
+        while (DateTime.UtcNow - startedAt < TimeSpan.FromMinutes(2))
         {
             // Verify slice created in database
             var claim = await connection.QuerySingleOrDefaultAsync<Claim>(
-                @"SELECT c.*
+                $@"SELECT c.*
                   FROM claims c
                   INNER JOIN slices s_prod
                     ON c.production_slice_id = s_prod.id
                   INNER JOIN slices s_cons
                     ON c.consumption_slice_id = s_cons.id
-                WHERE s_prod.certificateId = @prodCertId AND s_cons.certificateId = @consCertId",
+                  WHERE s_prod.certificateId = @prodCertId AND s_cons.certificateId = @consCertId AND c.state = {(int)ClaimState.Claimed}",
                 new { prodCertId, consCertId });
             if (claim is not null)
                 return claim;
