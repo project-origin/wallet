@@ -57,7 +57,7 @@ public class TransferPartialSliceActivity : IExecuteActivity<TransferPartialSlic
             var sourceDepositEndpoint = await _unitOfWork.WalletRepository.GetDepositEndpoint(sourceSlice.DepositEndpointId);
 
             DepositEndpoint remainderDepositEndpoint = await _unitOfWork.WalletRepository.GetWalletRemainderDepositEndpoint(sourceDepositEndpoint.WalletId!.Value);
-            var nextRemainderPosition = await _unitOfWork.WalletRepository.GetNextNumberForId(remainderDepositEndpoint.Id); ;
+            var nextRemainderPosition = await _unitOfWork.WalletRepository.GetNextNumberForId(remainderDepositEndpoint.Id);
             var remainderPublicKey = remainderDepositEndpoint.PublicKey.Derive(nextReceiverPosition).GetPublicKey();
 
             var remainder = (uint)sourceSlice.Quantity - quantity;
@@ -146,7 +146,7 @@ public class TransferPartialSliceActivity : IExecuteActivity<TransferPartialSlic
         });
     }
 
-    private record NewSlice(SecretCommitmentInfo ci, IPublicKey Key);
+    private sealed record NewSlice(SecretCommitmentInfo ci, IPublicKey Key);
 
     private SlicedEvent CreateSliceEvent(Slice sourceSlice, params NewSlice[] newSlices)
     {

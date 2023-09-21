@@ -10,9 +10,9 @@ public class UnitOfWork : IUnitOfWork
     public IWalletRepository WalletRepository => GetRepository(connection => new WalletRepository(connection));
     public ICertificateRepository CertificateRepository => GetRepository(connection => new CertificateRepository(connection));
 
-    private Lazy<IDbConnection> _lazyConnection;
+    private readonly Dictionary<Type, object> _repositories = new Dictionary<Type, object>();
+    private readonly Lazy<IDbConnection> _lazyConnection;
     private Lazy<IDbTransaction> _lazyTransaction;
-    private Dictionary<Type, object> _repositories = new Dictionary<Type, object>();
 
     public UnitOfWork(IDbConnectionFactory connectionFactory)
     {
@@ -22,10 +22,8 @@ public class UnitOfWork : IUnitOfWork
             connection.Open();
             return connection;
         });
-        _lazyTransaction = new Lazy<IDbTransaction>(() =>
-        {
-            return _lazyConnection.Value.BeginTransaction();
-        });
+
+        _lazyTransaction = new Lazy<IDbTransaction>(_lazyConnection.Value.BeginTransaction);
     }
 
     public void Commit()
@@ -90,10 +88,7 @@ public class UnitOfWork : IUnitOfWork
         if (_lazyTransaction.IsValueCreated)
             _lazyTransaction.Value.Dispose();
 
-        _lazyTransaction = new Lazy<IDbTransaction>(() =>
-        {
-            return _lazyConnection.Value.BeginTransaction();
-        });
+        _lazyTransaction = new Lazy<IDbTransaction>(_lazyConnection.Value.BeginTransaction);
 
         _repositories.Clear();
     }

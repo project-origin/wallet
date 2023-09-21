@@ -20,9 +20,9 @@ public record SendInformationToReceiverWalletArgument
 
 public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInformationToReceiverWalletArgument>
 {
-    private IUnitOfWork _unitOfWork;
-    private IOptions<ServiceOptions> _walletSystemOptions;
-    private ILogger<SendInformationToReceiverWalletActivity> _logger;
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly IOptions<ServiceOptions> _walletSystemOptions;
+    private readonly ILogger<SendInformationToReceiverWalletActivity> _logger;
 
     public SendInformationToReceiverWalletActivity(IUnitOfWork unitOfWork, IOptions<ServiceOptions> walletSystemOptions, ILogger<SendInformationToReceiverWalletActivity> logger)
     {

@@ -11,7 +11,7 @@ namespace ProjectOrigin.WalletSystem.Server.Repositories;
 
 public class CertificateRepository : ICertificateRepository
 {
-    private IDbConnection _connection;
+    private readonly IDbConnection _connection;
 
     public CertificateRepository(IDbConnection connection) => this._connection = connection;
 
@@ -51,7 +51,8 @@ public class CertificateRepository : ICertificateRepository
                     WHERE c.Id = @certificateId AND r.Name = @registryName";
 
         var certsDictionary = new Dictionary<Guid, Certificate>();
-        var res = await _connection.QueryAsync<Certificate?, CertificateAttribute, Certificate?>(sql,
+        var res = await _connection.QueryAsync<Certificate?, CertificateAttribute, Certificate?>(
+            sql,
             (cert, atr) =>
             {
                 if (cert == null) return null;
@@ -65,24 +66,38 @@ public class CertificateRepository : ICertificateRepository
                     certificate.Attributes.Add(atr);
 
                 return certificate;
-            }, splitOn: "AttributeId", param: new { certificateId, registryName });
+            },
+            splitOn: "AttributeId",
+            param: new
+            {
+                certificateId,
+                registryName
+            });
 
         return certsDictionary.Values.FirstOrDefault();
     }
 
     public async Task<IEnumerable<CertificateViewModel>> GetAllOwnedCertificates(string owner)
     {
-        var sql = $@"SELECT c.Id, r.Name as Registry, c.StartDate, c. EndDate, c.GridArea, c.CertificateType, s.Id AS SliceId, s.Quantity as Quantity, a.Id AS AttributeId, a.KeyAtr AS Key, a.ValueAtr as Value
+        var sql = @"SELECT c.Id, r.Name as Registry, c.StartDate, c.EndDate, c.GridArea, c.CertificateType, s.Id AS SliceId, s.Quantity as Quantity, a.Id AS AttributeId, a.KeyAtr AS Key, a.ValueAtr as Value
                     FROM Wallets w
-                    JOIN DepositEndpoints de ON w.Id = de.WalletId
-                    JOIN Slices s ON de.Id = s.DepositEndpointId
-                    JOIN Certificates c ON s.CertificateId = c.Id
-                    LEFT JOIN Attributes a ON c.Id = a.CertificateId AND c.RegistryId = a.RegistryId
-                    JOIN Registries r ON c.RegistryId = r.Id
-                    WHERE w.Owner = @owner AND s.SliceState = {(int)SliceState.Available}";
+                    INNER JOIN DepositEndpoints de
+                        ON w.Id = de.WalletId
+                    INNER JOIN Slices s
+                        ON de.Id = s.DepositEndpointId
+                    INNER JOIN Certificates c
+                        ON s.CertificateId = c.Id
+                    INNER JOIN Registries r
+                        ON c.RegistryId = r.Id
+                    LEFT JOIN Attributes a
+                        ON c.Id = a.CertificateId
+                        AND c.RegistryId = a.RegistryId
+                    WHERE w.Owner = @owner
+                        AND s.SliceState = @sliceState";
 
         var certsDictionary = new Dictionary<Guid, CertificateViewModel>();
-        var res = await _connection.QueryAsync<CertificateViewModel, SliceViewModel, CertificateAttribute, CertificateViewModel>(sql,
+        var res = await _connection.QueryAsync<CertificateViewModel, SliceViewModel, CertificateAttribute, CertificateViewModel>(
+            sql,
             (cert, slice, atr) =>
             {
                 if (!certsDictionary.TryGetValue(cert.Id, out var certificate))
@@ -99,7 +114,11 @@ public class CertificateRepository : ICertificateRepository
                 return certificate;
             },
             splitOn: "SliceId, AttributeId",
-            param: new { owner });
+            param: new
+            {
+                owner,
+                sliceState = (int)SliceState.Available
+            });
 
         return certsDictionary.Values;
     }
@@ -116,7 +135,7 @@ public class CertificateRepository : ICertificateRepository
 
     public Task<IEnumerable<Slice>> GetOwnerAvailableSlices(string registryName, Guid certificateId, string owner)
     {
-        var sql = $@"SELECT s.*, r.Name as Registry
+        var sql = @"SELECT s.*, r.Name as Registry
                     FROM Certificates c
                     LEFT JOIN Slices s on c.Id = s.CertificateId
                     LEFT JOIN Registries r on s.RegistryId = r.Id
@@ -125,14 +144,22 @@ public class CertificateRepository : ICertificateRepository
                     WHERE r.Name = @registryName
                     AND s.CertificateId = @certificateId
                     AND w.owner = @owner
-                    AND s.SliceState = {(int)SliceState.Available}";
+                    AND s.SliceState = @sliceState";
 
-        return _connection.QueryAsync<Slice>(sql, new { registryName, certificateId, owner });
+        return _connection.QueryAsync<Slice>(
+            sql,
+            new
+            {
+                registryName,
+                certificateId,
+                owner,
+                sliceState = (int)SliceState.Available
+            });
     }
 
     public Task<IEnumerable<Slice>> GetToBeAvailable(string registryName, Guid certificateId, string owner)
     {
-        var sql = $@"SELECT s.*, r.Name as Registry
+        var sql = @"SELECT s.*, r.Name as Registry
                     FROM Certificates c
                     LEFT JOIN Slices s on c.Id = s.CertificateId
                     LEFT JOIN Registries r on s.RegistryId = r.Id
@@ -141,11 +168,19 @@ public class CertificateRepository : ICertificateRepository
                     WHERE r.Name = @registryName
                     AND s.CertificateId = @certificateId
                     AND w.owner = @owner
-                    AND s.SliceState = {(int)SliceState.Available} OR s.SliceState = {(int)SliceState.Registering}";
+                    AND (s.SliceState = @availableState OR s.SliceState = @registeringState)";
 
-        return _connection.QueryAsync<Slice>(sql, new { registryName, certificateId, owner });
+        return _connection.QueryAsync<Slice>(
+            sql,
+            new
+            {
+                registryName,
+                certificateId,
+                owner,
+                availableState = SliceState.Available,
+                registeringState = SliceState.Registering
+            });
     }
-
 
     public Task<Slice> GetSlice(Guid sliceId)
     {

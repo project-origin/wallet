@@ -67,7 +67,9 @@ public static class IConfigurationExtensions
             .Filter.ByExcluding("RequestPath like '/metrics%'")
             .Enrich.WithSpan();
 
-        switch (configuration.GetValue<string>("LogOutputFormat"))
+        var logOutputFormat = configuration.GetValue<string>("LogOutputFormat");
+
+        switch (logOutputFormat)
         {
             case "json":
                 loggerConfiguration = loggerConfiguration.WriteTo.Console(new JsonFormatter());
@@ -78,7 +80,7 @@ public static class IConfigurationExtensions
                 break;
 
             default:
-                throw new ArgumentOutOfRangeException("LogOutputFormat", "Invalid log output format.");
+                throw new NotSupportedException($"LogOutputFormat of value ”{logOutputFormat}” is not supported");
         }
 
         return loggerConfiguration.CreateLogger();

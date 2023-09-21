@@ -27,22 +27,15 @@ public class TransferCertificateCommandHandler : IConsumer<TransferCertificateCo
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<TransferCertificateCommandHandler> _logger;
-    private readonly IOptions<RegistryOptions> _registryOptions;
-    private readonly IOptions<ServiceOptions> _walletSystemOptions;
     private readonly IEndpointNameFormatter _formatter;
-    private TimeSpan timeout = TimeSpan.FromMinutes(1);
 
     public TransferCertificateCommandHandler(
         IUnitOfWork unitOfWork,
         ILogger<TransferCertificateCommandHandler> logger,
-        IOptions<RegistryOptions> registryOptions,
-        IOptions<ServiceOptions> walletSystemOptions,
         IEndpointNameFormatter formatter)
     {
         _unitOfWork = unitOfWork;
         _logger = logger;
-        _registryOptions = registryOptions;
-        _walletSystemOptions = walletSystemOptions;
         _formatter = formatter;
     }
 

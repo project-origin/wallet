@@ -67,7 +67,7 @@ public class PostgresUpgrader : IRepositoryUpgrader
 
     private class LoggerWrapper : IUpgradeLog
     {
-        private ILogger _logger;
+        private readonly ILogger _logger;
 
         public LoggerWrapper(ILogger logger)
         {
