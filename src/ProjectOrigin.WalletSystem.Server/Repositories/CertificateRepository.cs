@@ -119,10 +119,10 @@ public class CertificateRepository : ICertificateRepository
     {
         var sql = $@"SELECT s.*, r.Name as Registry
                     FROM Certificates c
-                    LEFT JOIN Slices s on c.Id = s.CertificateId
-                    LEFT JOIN Registries r on s.RegistryId = r.Id
-                    LEFT JOIN DepositEndpoints de on s.DepositEndpointId = de.Id
-                    LEFT JOIN Wallets w on de.WalletId = w.Id
+                    INNER JOIN Slices s on c.Id = s.CertificateId
+                    INNER JOIN Registries r on s.RegistryId = r.Id
+                    INNER JOIN DepositEndpoints de on s.DepositEndpointId = de.Id
+                    INNER JOIN Wallets w on de.WalletId = w.Id
                     WHERE r.Name = @registryName
                     AND s.CertificateId = @certificateId
                     AND w.owner = @owner
@@ -131,20 +131,20 @@ public class CertificateRepository : ICertificateRepository
         return _connection.QueryAsync<Slice>(sql, new { registryName, certificateId, owner });
     }
 
-    public Task<IEnumerable<Slice>> GetToBeAvailable(string registryName, Guid certificateId, string owner)
+    public Task<long> GetToBeAvailable(string registryName, Guid certificateId, string owner)
     {
-        var sql = $@"SELECT s.*, r.Name as Registry
+        var sql = $@"SELECT SUM(s.quantity)
                     FROM Certificates c
-                    LEFT JOIN Slices s on c.Id = s.CertificateId
-                    LEFT JOIN Registries r on s.RegistryId = r.Id
-                    LEFT JOIN DepositEndpoints de on s.DepositEndpointId = de.Id
-                    LEFT JOIN Wallets w on de.WalletId = w.Id
+                    INNER JOIN Slices s on c.Id = s.CertificateId
+                    INNER JOIN Registries r on s.RegistryId = r.Id
+                    INNER JOIN DepositEndpoints de on s.DepositEndpointId = de.Id
+                    INNER JOIN Wallets w on de.WalletId = w.Id
                     WHERE r.Name = @registryName
                     AND s.CertificateId = @certificateId
                     AND w.owner = @owner
-                    AND s.SliceState = {(int)SliceState.Available} OR s.SliceState = {(int)SliceState.Registering}";
+                    AND (s.SliceState = {(int)SliceState.Available} OR s.SliceState = {(int)SliceState.Registering})";
 
-        return _connection.QueryAsync<Slice>(sql, new { registryName, certificateId, owner });
+        return _connection.QuerySingleAsync<long>(sql, new { registryName, certificateId, owner });
     }
 
     public Task<Slice> GetSlice(Guid sliceId)
@@ -180,11 +180,11 @@ public class CertificateRepository : ICertificateRepository
 
         if (availableSlices.Sum(slice => slice.Quantity) < quantity)
         {
-            var toBe = await GetToBeAvailable(registry, certificateId, owner);
-            if (toBe.Sum(slice => slice.Quantity) < quantity)
-                throw new InvalidOperationException($"Owner has less to reserve than available");
-            else
+            var toBeAvailable = await GetToBeAvailable(registry, certificateId, owner);
+            if (toBeAvailable > quantity)
                 throw new TransientException($"Owner has enough quantity, but it is not yet available to reserve");
+            else
+                throw new InvalidOperationException($"Owner has less to reserve than available");
         }
 
         var sumSlicesTaken = 0L;

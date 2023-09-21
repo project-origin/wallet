@@ -191,7 +191,6 @@ public class ClaimCertificatesCommandHandlerTests
         _processBuilder.ReceivedCalls().Count().Should().Be(8);
     }
 
-
     /// <summary>
     /// Setup the basics for tests.
     /// </summary>

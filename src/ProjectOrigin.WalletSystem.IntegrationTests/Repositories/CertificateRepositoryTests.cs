@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using ProjectOrigin.WalletSystem.Server.Extensions;
 using Xunit;
 using ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures;
+using ProjectOrigin.WalletSystem.Server.Activities.Exceptions;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests.Repositories;
 
@@ -302,5 +303,152 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         var sliceDb = await _repository.GetSlice(slice.Id);
 
         sliceDb.SliceState.Should().Be(SliceState.Slicing);
+    }
+
+    [Fact]
+    public async Task ReserveSlice()
+    {
+        // Arrange
+        var registry = _fixture.Create<string>();
+        var certificate = await CreateCertificate(registry);
+        var owner = _fixture.Create<string>();
+        var wallet = await CreateWallet(owner);
+        var depositEndpoint = await CreateDepositEndpoint(wallet);
+        var slice = new Slice
+        {
+            Id = Guid.NewGuid(),
+            DepositEndpointId = depositEndpoint.Id,
+            DepositEndpointPosition = 1,
+            Registry = registry,
+            CertificateId = certificate.Id,
+            Quantity = 150,
+            RandomR = _fixture.Create<byte[]>(),
+            SliceState = SliceState.Available
+        };
+        await _repository.InsertSlice(slice);
+
+        // Act
+        var reservedSlices = await _repository.ReserveQuantity(owner, certificate.Registry, certificate.Id, 100);
+
+        // Assert
+        reservedSlices.Should().ContainEquivalentOf(slice);
+    }
+
+    [Fact]
+    public async Task ReserveSlice_NoSlices_ThrowsException()
+    {
+        // Arrange
+        var registry = _fixture.Create<string>();
+        var certificate = await CreateCertificate(registry);
+        var owner = _fixture.Create<string>();
+
+        // Act
+        var act = () => _repository.ReserveQuantity(owner, certificate.Registry, certificate.Id, 200);
+
+        // Assert
+        await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("Owner has no available slices to reserve");
+    }
+
+    [Fact]
+    public async Task ReserveSlice_LessThan_ThrowsException()
+    {
+        // Arrange
+        var registry = _fixture.Create<string>();
+        var certificate = await CreateCertificate(registry);
+        var owner = _fixture.Create<string>();
+        var wallet = await CreateWallet(owner);
+        var depositEndpoint = await CreateDepositEndpoint(wallet);
+        var slice = new Slice
+        {
+            Id = Guid.NewGuid(),
+            DepositEndpointId = depositEndpoint.Id,
+            DepositEndpointPosition = 1,
+            Registry = registry,
+            CertificateId = certificate.Id,
+            Quantity = 150,
+            RandomR = _fixture.Create<byte[]>(),
+            SliceState = SliceState.Available
+        };
+        await _repository.InsertSlice(slice);
+
+        // Act
+        var act = () => _repository.ReserveQuantity(owner, certificate.Registry, certificate.Id, 200);
+
+        // Assert
+        await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("Owner has less to reserve than available");
+    }
+
+    [Fact]
+    public async Task ReserveSlice_ToBe_ThrowsException()
+    {
+        // Arrange
+        var registry = _fixture.Create<string>();
+        var certificate = await CreateCertificate(registry);
+        var owner = _fixture.Create<string>();
+        var wallet = await CreateWallet(owner);
+        var depositEndpoint = await CreateDepositEndpoint(wallet);
+        var slice = new Slice
+        {
+            Id = Guid.NewGuid(),
+            DepositEndpointId = depositEndpoint.Id,
+            DepositEndpointPosition = 1,
+            Registry = registry,
+            CertificateId = certificate.Id,
+            Quantity = 150,
+            RandomR = _fixture.Create<byte[]>(),
+            SliceState = SliceState.Available
+        };
+        await _repository.InsertSlice(slice);
+        await _repository.InsertSlice(slice with
+        {
+            Id = Guid.NewGuid(),
+            DepositEndpointPosition = 2,
+            Quantity = 75,
+            SliceState = SliceState.Registering,
+        });
+
+        // Act
+        var act = () => _repository.ReserveQuantity(owner, certificate.Registry, certificate.Id, 200);
+
+        // Assert
+        await act.Should().ThrowAsync<TransientException>().WithMessage("Owner has enough quantity, but it is not yet available to reserve");
+    }
+
+    [Fact]
+    public async Task Claims_InsertSetState_GetResult()
+    {
+        // Arrange
+        var registry = _fixture.Create<string>();
+        var certificate = await CreateCertificate(registry);
+        var owner = _fixture.Create<string>();
+        var wallet = await CreateWallet(owner);
+        var depositEndpoint = await CreateDepositEndpoint(wallet);
+        var slice = new Slice
+        {
+            Id = Guid.NewGuid(),
+            DepositEndpointId = depositEndpoint.Id,
+            DepositEndpointPosition = 1,
+            Registry = registry,
+            CertificateId = certificate.Id,
+            Quantity = 150,
+            RandomR = _fixture.Create<byte[]>(),
+            SliceState = SliceState.Available
+        };
+        await _repository.InsertSlice(slice);
+        var claim = new Claim
+        {
+            Id = Guid.NewGuid(),
+            ConsumptionSliceId = slice.Id,
+            ProductionSliceId = slice.Id,
+            State = ClaimState.Created
+        };
+
+        // Act
+        await _repository.InsertClaim(claim);
+        await _repository.SetClaimState(claim.Id, ClaimState.Claimed);
+        var insertedClaim = await _repository.GetClaim(claim.Id);
+
+        // Assert
+        insertedClaim.Should().BeEquivalentTo(claim with { State = ClaimState.Claimed });
     }
 }

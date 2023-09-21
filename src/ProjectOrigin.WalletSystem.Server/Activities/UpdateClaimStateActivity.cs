@@ -36,8 +36,9 @@ public class UpdateClaimStateActivity : IExecuteActivity<UpdateClaimStateArgumen
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error while updating slice state");
-            throw;
+            _logger.LogError(ex, "Error while updating claim state");
+            _unitOfWork.Rollback();
+            return context.Faulted(ex);
         }
     }
 }

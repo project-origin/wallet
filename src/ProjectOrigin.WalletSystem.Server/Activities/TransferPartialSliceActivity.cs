@@ -23,7 +23,6 @@ public record TransferPartialSliceArguments
     public required uint Quantity { get; init; }
 }
 
-
 public class TransferPartialSliceActivity : IExecuteActivity<TransferPartialSliceArguments>
 {
     private readonly IUnitOfWork _unitOfWork;
