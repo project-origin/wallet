@@ -105,7 +105,7 @@ public class TransferCertificateCommandHandler : IConsumer<TransferCertificateCo
 
             await Task.WhenAll(tasks);
 
-            _logger.LogTrace($"Transfer command complete.");
+            _logger.LogTrace("Transfer command complete.");
         }
         catch (InvalidOperationException ex)
         {
@@ -119,7 +119,7 @@ public class TransferCertificateCommandHandler : IConsumer<TransferCertificateCo
 
     private async Task<IEnumerable<Slice>> ReserveRequiredSlices(IEnumerable<Slice> slices, uint quantity)
     {
-        _logger.LogTrace($"Reserving slices to transfer.");
+        _logger.LogTrace("Reserving slices to transfer.");
 
         var sumSlicesTaken = 0L;
         var takenSlices = slices
@@ -133,7 +133,7 @@ public class TransferCertificateCommandHandler : IConsumer<TransferCertificateCo
         }
         _unitOfWork.Commit();
 
-        _logger.LogTrace($"{takenSlices.Count} slices reserved.");
+        _logger.LogTrace("{count} slices reserved.", takenSlices.Count);
 
         return takenSlices;
     }

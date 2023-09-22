@@ -56,8 +56,7 @@ public class VerifySliceCommandHandler : IConsumer<VerifySliceCommand>
                 var foundSlice = success.GranularCertificate.GetCertificateSlice(sliceId);
                 if (foundSlice is null)
                 {
-                    var message = $"Slice with id {Convert.ToBase64String(sliceId.Span)} not found in certificate {receivedSlice.CertificateId}";
-                    _logger.LogWarning(message);
+                    _logger.LogWarning("Slice with id {sliceId} not found in certificate {certificateId}", Convert.ToBase64String(sliceId.Span), receivedSlice.CertificateId);
                     return;
                 }
 
@@ -65,8 +64,7 @@ public class VerifySliceCommandHandler : IConsumer<VerifySliceCommand>
                 var positionPublicKey = depositEndpoint.PublicKey.Derive(receivedSlice.DepositEndpointPosition).GetPublicKey();
                 if (!foundSlice.Owner.ImportKey().Equals(positionPublicKey))
                 {
-                    var message = $"Not correct publicKey on {receivedSlice.CertificateId}";
-                    _logger.LogWarning(message);
+                    _logger.LogWarning("Not correct publicKey on {certificateId}", receivedSlice.CertificateId);
                     return;
                 }
 
@@ -75,17 +73,16 @@ public class VerifySliceCommandHandler : IConsumer<VerifySliceCommand>
 
             case GetCertificateResult.TransientFailure:
                 var transient = (GetCertificateResult.TransientFailure)getCertificateResult;
-                var transientMessage = $"Transient failed to get GranularCertificate with id {receivedSlice.CertificateId} on registry {receivedSlice.Registry}";
-                _logger.LogWarning(transient.Exception, transientMessage);
-                throw new TransientException(transientMessage, transient.Exception);
+                _logger.LogWarning(transient.Exception, "Transient failed to get GranularCertificate with id {certificateId} on registry {registryName}", receivedSlice.CertificateId, receivedSlice.Registry);
+                throw new TransientException($"Transient failed to get GranularCertificate with id {receivedSlice.CertificateId} on registry {receivedSlice.Registry}", transient.Exception);
 
             case GetCertificateResult.NotFound:
-                _logger.LogWarning($"GranularCertificate with id {receivedSlice.CertificateId} not found in registry {receivedSlice.Registry}");
+                _logger.LogWarning("GranularCertificate with id {certificateId} not found in registry {registryName}", receivedSlice.CertificateId, receivedSlice.Registry);
                 return;
 
             case GetCertificateResult.Failure:
                 var failure = (GetCertificateResult.Failure)getCertificateResult;
-                _logger.LogError(failure.Exception, $"Failed to get certificate with {receivedSlice.CertificateId}");
+                _logger.LogError(failure.Exception, "Failed to get certificate with {certificateId}", receivedSlice.CertificateId);
                 throw new Exception($"Failed to get certificate with {receivedSlice.CertificateId}", failure.Exception);
 
             default:
@@ -135,6 +132,6 @@ public class VerifySliceCommandHandler : IConsumer<VerifySliceCommand>
 
         _unitOfWork.Commit();
 
-        _logger.LogTrace($"Slice on certificate ”{slice.CertificateId}” inserted into wallet.");
+        _logger.LogTrace("Slice on certificate ”{certificateId}” inserted into wallet.", slice.CertificateId);
     }
 }

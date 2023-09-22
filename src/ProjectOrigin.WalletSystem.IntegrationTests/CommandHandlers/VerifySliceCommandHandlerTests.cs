@@ -11,6 +11,7 @@ using ProjectOrigin.Electricity.V1;
 using ProjectOrigin.HierarchicalDeterministicKeys.Implementations;
 using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
 using ProjectOrigin.PedersenCommitment;
+using ProjectOrigin.WalletSystem.IntegrationTests.TestExtensions;
 using ProjectOrigin.WalletSystem.Server.Activities.Exceptions;
 using ProjectOrigin.WalletSystem.Server.CommandHandlers;
 using ProjectOrigin.WalletSystem.Server.Database;
@@ -178,7 +179,7 @@ public class VerifySliceCommandHandlerTests : IAsyncLifetime
         // Assert
         message.Exception.Should().BeNull();
 
-        _logger.Received(1).LogWarning($"GranularCertificate with id {certId} not found in registry {RegistryName}");
+        _logger.Received(1).CheckWarning($"GranularCertificate with id {certId} not found in registry {RegistryName}");
 
         await _certificateRepository.DidNotReceiveWithAnyArgs().InsertCertificate(default!);
         await _certificateRepository.DidNotReceiveWithAnyArgs().InsertSlice(default!);
@@ -233,7 +234,7 @@ public class VerifySliceCommandHandlerTests : IAsyncLifetime
         message.Exception.Should().NotBeNull();
         message.Exception.Should().BeOfType<TransientException>().Which.InnerException.Should().Be(innerException);
 
-        _logger.Received(1).LogWarning(innerException, $"Transient failed to get GranularCertificate with id {certId} on registry {RegistryName}");
+        _logger.Received(1).CheckWarning(innerException, $"Transient failed to get GranularCertificate with id {certId} on registry {RegistryName}");
 
         await _certificateRepository.DidNotReceiveWithAnyArgs().InsertCertificate(default!);
         await _certificateRepository.DidNotReceiveWithAnyArgs().InsertSlice(default!);
@@ -288,7 +289,7 @@ public class VerifySliceCommandHandlerTests : IAsyncLifetime
         message.Exception.Should().NotBeNull();
         message.Exception.Should().BeOfType<Exception>().Which.InnerException.Should().Be(innerException);
 
-        _logger.Received(1).LogError(innerException, $"Failed to get certificate with {certId}");
+        _logger.Received(1).CheckError(innerException, $"Failed to get certificate with {certId}");
 
         await _certificateRepository.DidNotReceiveWithAnyArgs().InsertCertificate(default!);
         await _certificateRepository.DidNotReceiveWithAnyArgs().InsertSlice(default!);
@@ -345,8 +346,7 @@ public class VerifySliceCommandHandlerTests : IAsyncLifetime
         message.Exception.Should().BeNull();
 
         var sliceId = ByteString.CopyFrom(SHA256.HashData(commitmentSent.Commitment.C));
-        _logger.Received(1).LogWarning($"Slice with id {Convert.ToBase64String(sliceId.Span)} not found in certificate {certId}");
-
+        _logger.Received(1).CheckWarning($"Slice with id {Convert.ToBase64String(sliceId.Span)} not found in certificate {certId}");
         await _certificateRepository.DidNotReceiveWithAnyArgs().InsertCertificate(default!);
         await _certificateRepository.DidNotReceiveWithAnyArgs().InsertSlice(default!);
     }
@@ -401,7 +401,7 @@ public class VerifySliceCommandHandlerTests : IAsyncLifetime
         message.Exception.Should().BeNull();
 
         var sliceId = ByteString.CopyFrom(SHA256.HashData(commitment.Commitment.C));
-        _logger.Received(1).LogWarning($"Not correct publicKey on {certId}");
+        _logger.Received(1).CheckWarning($"Not correct publicKey on {certId}");
 
         await _certificateRepository.DidNotReceiveWithAnyArgs().InsertCertificate(default!);
         await _certificateRepository.DidNotReceiveWithAnyArgs().InsertSlice(default!);
@@ -428,5 +428,4 @@ public class VerifySliceCommandHandlerTests : IAsyncLifetime
             Type = KeyType.Secp256K1
         }
     };
-
 }
