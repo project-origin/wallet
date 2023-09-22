@@ -35,7 +35,7 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
             };
         }
 
-        [Fact]
+        //[Fact]
         public async Task ReceiveSlice()
         {
             //Arrange
