@@ -115,20 +115,25 @@ public class CertificateRepository : ICertificateRepository
         return _connection.ExecuteAsync("DELETE FROM ReceivedSlices WHERE Id = @id", new { receivedSlice.Id });
     }
 
+    static readonly string _getOwnerAvailableSlicesSql = $@"
+        SELECT s.*, r.Name as Registry
+        FROM Certificates c
+        INNER JOIN Slices s
+          ON c.Id = s.CertificateId
+        INNER JOIN Registries r
+          ON s.RegistryId = r.Id
+        INNER JOIN DepositEndpoints de
+          ON s.DepositEndpointId = de.Id
+        INNER JOIN Wallets w
+          ON de.WalletId = w.Id
+        WHERE r.Name = @registryName
+          AND s.CertificateId = @certificateId
+          AND w.owner = @owner
+          AND s.SliceState = {(int)SliceState.Available}";
+
     public Task<IEnumerable<Slice>> GetOwnerAvailableSlices(string registryName, Guid certificateId, string owner)
     {
-        var sql = $@"SELECT s.*, r.Name as Registry
-                    FROM Certificates c
-                    INNER JOIN Slices s on c.Id = s.CertificateId
-                    INNER JOIN Registries r on s.RegistryId = r.Id
-                    INNER JOIN DepositEndpoints de on s.DepositEndpointId = de.Id
-                    INNER JOIN Wallets w on de.WalletId = w.Id
-                    WHERE r.Name = @registryName
-                    AND s.CertificateId = @certificateId
-                    AND w.owner = @owner
-                    AND s.SliceState = {(int)SliceState.Available}";
-
-        return _connection.QueryAsync<Slice>(sql, new { registryName, certificateId, owner });
+        return _connection.QueryAsync<Slice>(_getOwnerAvailableSlicesSql, new { registryName, certificateId, owner });
     }
 
     public Task<long> GetToBeAvailable(string registryName, Guid certificateId, string owner)
