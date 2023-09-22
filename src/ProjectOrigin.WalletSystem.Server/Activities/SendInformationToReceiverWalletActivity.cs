@@ -89,7 +89,7 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
         _logger.LogTrace("Receiver is local.");
 
         var receiverEndpoint = await _unitOfWork.WalletRepository.GetDepositEndpointFromPublicKey(receiverDepositEndpoint.PublicKey)
-            ?? throw new Exception("Local receiver wallet could not be found");
+            ?? throw new NullReferenceException("Local receiver wallet could not be found");
 
         var slice = new Slice
         {

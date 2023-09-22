@@ -22,7 +22,7 @@ public class RegistryService : IRegistryService
     public async Task<GetCertificateResult> GetGranularCertificate(string registryName, Guid certificateId)
     {
         if (!_options.Value.RegistryUrls.TryGetValue(registryName, out var registryUrl))
-            return new GetCertificateResult.Failure(new Exception("Registry with name " + registryName + " not found in configuration."));
+            return new GetCertificateResult.Failure(new ArgumentException("Registry with name " + registryName + " not found in configuration.", nameof(registryName)));
 
         using var channel = GrpcChannel.ForAddress(registryUrl);
         var client = new Registry.V1.RegistryService.RegistryServiceClient(channel);
