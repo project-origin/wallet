@@ -33,7 +33,7 @@ try
 
         var upgrader = app.Services.GetRequiredService<IRepositoryUpgrader>();
         if (await upgrader.IsUpgradeRequired())
-            throw new ApplicationException("Repository is not up to date. Please run with --migrate first.");
+            throw new InvalidOperationException("Repository is not up to date. Please run with --migrate first.");
 
         await app.RunAsync();
         Log.Information("Server stopped.");
