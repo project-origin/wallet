@@ -120,7 +120,7 @@ public class TransferFullSliceActivity : IExecuteActivity<TransferFullSliceArgum
         });
     }
 
-    private TransferredEvent CreateTransferEvent(Slice sourceSlice, IPublicKey receiverPublicKey)
+    private static TransferredEvent CreateTransferEvent(Slice sourceSlice, IPublicKey receiverPublicKey)
     {
         var sliceCommitment = new PedersenCommitment.SecretCommitmentInfo((uint)sourceSlice.Quantity, sourceSlice.RandomR);
 
