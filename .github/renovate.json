@@ -4,8 +4,8 @@
     ],
     "packageRules": [
         {
-            "groupName": "dotnet",
-            "description": "Dotnet packages",
+            "groupName": "nuget",
+            "description": "Dotnet nuget packages",
             "matchDatasources": [
                 "nuget"
             ],
