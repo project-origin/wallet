@@ -1,0 +1,17 @@
+{
+    "labels": [
+        "dependencies"
+    ],
+    "packageRules": [
+        {
+            "groupName": "dotnet",
+            "description": "Dotnet packages",
+            "matchDatasources": [
+                "nuget"
+            ],
+            "matchPackagePatterns": [
+                ".*"
+            ]
+        }
+    ]
+}
