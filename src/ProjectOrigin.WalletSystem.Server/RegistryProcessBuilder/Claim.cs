@@ -23,11 +23,11 @@ public partial class RegistryProcessBuilder
         var productionKey = await _unitOfWork.WalletRepository.GetPrivateKeyForSlice(productionSlice.Id);
         var consumptionKey = await _unitOfWork.WalletRepository.GetPrivateKeyForSlice(consumptionSlice.Id);
 
-        var produictionId = productionSlice.GetFederatedStreamId();
+        var productionId = productionSlice.GetFederatedStreamId();
         var consumptionId = consumptionSlice.GetFederatedStreamId();
 
         var allocatedEvent = CreateAllocatedEvent(allocationId, consumptionSlice, productionSlice);
-        AddTransactionActivity(productionKey.SignTransaction(produictionId, allocatedEvent));
+        AddTransactionActivity(productionKey.SignTransaction(productionId, allocatedEvent));
         AddTransactionActivity(consumptionKey.SignTransaction(consumptionId, allocatedEvent));
 
         var newClaim = new Claim
@@ -39,8 +39,8 @@ public partial class RegistryProcessBuilder
         };
         await _unitOfWork.CertificateRepository.InsertClaim(newClaim);
 
-        var prodClaimedEvent = CreateClaimedEvent(allocationId, produictionId);
-        AddTransactionActivity(productionKey.SignTransaction(produictionId, prodClaimedEvent));
+        var prodClaimedEvent = CreateClaimedEvent(allocationId, productionId);
+        AddTransactionActivity(productionKey.SignTransaction(productionId, prodClaimedEvent));
 
         var consClaimedEvent = CreateClaimedEvent(allocationId, consumptionId);
         AddTransactionActivity(consumptionKey.SignTransaction(consumptionId, consClaimedEvent));
