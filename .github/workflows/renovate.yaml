@@ -3,8 +3,9 @@ name: Renovate
 on:
   schedule:
     - cron: 0 * * * *
-  push: ["*"]
-
+  push:
+    branches:
+      - *
 jobs:
   renovate:
     runs-on: ubuntu-latest
