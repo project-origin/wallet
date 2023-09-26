@@ -14,8 +14,6 @@ jobs:
 
       - name: Setup .NET Core SDK 7
         uses: actions/setup-dotnet@v3
-        with:
-          dotnet-version: "7.0.203"
 
       - name: Print info
         run: make info
