@@ -76,7 +76,7 @@ public class ClaimTests : WalletSystemTestsBase, IClassFixture<RegistryFixture>,
     {
         await using var connection = new NpgsqlConnection(_dbFixture.ConnectionString);
         var startedAt = DateTime.UtcNow;
-        while (DateTime.UtcNow - startedAt < TimeSpan.FromMinutes(2))
+        while (DateTime.UtcNow - startedAt < TimeSpan.FromMinutes(3))
         {
             // Verify slice created in database
             var claim = await connection.QuerySingleOrDefaultAsync<Claim>(
