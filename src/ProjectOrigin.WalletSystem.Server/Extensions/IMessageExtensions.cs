@@ -9,7 +9,7 @@ namespace ProjectOrigin.WalletSystem.Server.Extensions;
 
 public static class IMessageExtensions
 {
-    public static Transaction SignTransaction(this IHDPrivateKey key, FederatedStreamId certificateId, IMessage @event)
+    public static Transaction SignRegistryTransaction(this IHDPrivateKey key, FederatedStreamId certificateId, IMessage @event)
     {
         var header = new TransactionHeader
         {
@@ -28,5 +28,4 @@ public static class IMessageExtensions
 
         return transaction;
     }
-
 }

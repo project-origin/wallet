@@ -11,7 +11,7 @@ public interface ICertificateRepository
     Task InsertCertificate(Certificate certificate);
     Task<Certificate?> GetCertificate(string registryName, Guid certificateId);
     Task<IEnumerable<CertificateViewModel>> GetAllOwnedCertificates(string owner);
-    Task<IEnumerable<Slice>> GetOwnerAvailableSlices(string registryName, Guid certificateId, string owner);
+    Task<IEnumerable<Slice>> GetOwnersAvailableSlices(string registryName, Guid certificateId, string owner);
     Task<IList<Slice>> ReserveQuantity(string owner, string registryName, Guid certificateId, uint quantity);
 
     Task<Slice> GetSlice(Guid sliceId);

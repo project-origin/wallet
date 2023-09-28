@@ -9,12 +9,12 @@ using ProjectOrigin.WalletSystem.Server.Options;
 
 namespace ProjectOrigin.WalletSystem.Server.Activities;
 
-public record SendTransactionArguments
+public record SendRegistryTransactionArguments
 {
     public required Transaction Transaction { get; init; }
 }
 
-public class SendRegistryTransactionActivity : IExecuteActivity<SendTransactionArguments>
+public class SendRegistryTransactionActivity : IExecuteActivity<SendRegistryTransactionArguments>
 {
     private IOptions<RegistryOptions> _registryOptions;
     private ILogger<SendRegistryTransactionActivity> _logger;
@@ -25,7 +25,7 @@ public class SendRegistryTransactionActivity : IExecuteActivity<SendTransactionA
         _logger = logger;
     }
 
-    public async Task<ExecutionResult> Execute(ExecuteContext<SendTransactionArguments> context)
+    public async Task<ExecutionResult> Execute(ExecuteContext<SendRegistryTransactionArguments> context)
     {
         _logger.LogTrace("RoutingSlip {TrackingNumber} - Executing {ActivityName}", context.TrackingNumber, context.ActivityName);
 

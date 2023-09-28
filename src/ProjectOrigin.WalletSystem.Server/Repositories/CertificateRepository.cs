@@ -115,7 +115,7 @@ public class CertificateRepository : ICertificateRepository
         return _connection.ExecuteAsync("DELETE FROM ReceivedSlices WHERE Id = @id", new { receivedSlice.Id });
     }
 
-    static readonly string _getOwnerAvailableSlicesSql = $@"
+    static readonly string _getOwnersAvailableSlicesSql = $@"
         SELECT s.*, r.Name as Registry
         FROM Certificates c
         INNER JOIN Slices s
@@ -131,12 +131,12 @@ public class CertificateRepository : ICertificateRepository
           AND w.owner = @owner
           AND s.SliceState = {(int)SliceState.Available}";
 
-    public Task<IEnumerable<Slice>> GetOwnerAvailableSlices(string registryName, Guid certificateId, string owner)
+    public Task<IEnumerable<Slice>> GetOwnersAvailableSlices(string registryName, Guid certificateId, string owner)
     {
-        return _connection.QueryAsync<Slice>(_getOwnerAvailableSlicesSql, new { registryName, certificateId, owner });
+        return _connection.QueryAsync<Slice>(_getOwnersAvailableSlicesSql, new { registryName, certificateId, owner });
     }
 
-    public Task<long> GetToBeAvailable(string registryName, Guid certificateId, string owner)
+    public Task<long> GetRegisteringAndAvailableQuantity(string registryName, Guid certificateId, string owner)
     {
         return _connection.QuerySingleAsync<long>(
             @"SELECT SUM(s.quantity)
@@ -183,20 +183,20 @@ public class CertificateRepository : ICertificateRepository
     /// <param name="owner">The owner of the slices</param>
     /// <param name="registryName"></param>
     /// <param name="certificateId"></param>
-    /// <param name="quantity"></param>
+    /// <param name="reserveQuantity"></param>
     /// <returns></returns>
     /// <exception cref="InvalidOperationException">Thrown when the owner does not have enough to reserve the requested amount</exception>
     /// <exception cref="TransientException">Thrown when the owner currently does not have enogth available, but will have later</exception>
-    public async Task<IList<Slice>> ReserveQuantity(string owner, string registryName, Guid certificateId, uint quantity)
+    public async Task<IList<Slice>> ReserveQuantity(string owner, string registryName, Guid certificateId, uint reserveQuantity)
     {
-        var availableSlices = await GetOwnerAvailableSlices(registryName, certificateId, owner);
+        var availableSlices = await GetOwnersAvailableSlices(registryName, certificateId, owner);
         if (availableSlices.IsEmpty())
             throw new InvalidOperationException($"Owner has no available slices to reserve");
 
-        if (availableSlices.Sum(slice => slice.Quantity) < quantity)
+        if (availableSlices.Sum(slice => slice.Quantity) < reserveQuantity)
         {
-            var toBeAvailable = await GetToBeAvailable(registryName, certificateId, owner);
-            if (toBeAvailable > quantity)
+            var registeringAvailableQuantity = await GetRegisteringAndAvailableQuantity(registryName, certificateId, owner);
+            if (registeringAvailableQuantity >= reserveQuantity)
                 throw new TransientException($"Owner has enough quantity, but it is not yet available to reserve");
             else
                 throw new InvalidOperationException($"Owner has less to reserve than available");
@@ -205,7 +205,7 @@ public class CertificateRepository : ICertificateRepository
         var sumSlicesTaken = 0L;
         var takenSlices = availableSlices
             .OrderBy(slice => slice.Quantity)
-            .TakeWhile(slice => { var needsMore = sumSlicesTaken < quantity; sumSlicesTaken += slice.Quantity; return needsMore; })
+            .TakeWhile(slice => { var needsMore = sumSlicesTaken < reserveQuantity; sumSlicesTaken += slice.Quantity; return needsMore; })
             .ToList();
 
         foreach (var slice in takenSlices)

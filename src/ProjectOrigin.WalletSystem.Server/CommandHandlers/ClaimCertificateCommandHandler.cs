@@ -30,11 +30,11 @@ public class ClaimCertificateCommandHandler : IConsumer<ClaimCertificateCommand>
     public ClaimCertificateCommandHandler(
         ILogger<ClaimCertificateCommandHandler> logger,
         IUnitOfWork unitOfWork,
-        IRegistryProcessBuilderFactory processBuilderFactory)
+        IRegistryProcessBuilderFactory registryProcessBuilderFactory)
     {
         _logger = logger;
         _unitOfWork = unitOfWork;
-        _processBuilderFactory = processBuilderFactory;
+        _processBuilderFactory = registryProcessBuilderFactory;
     }
 
     public async Task Consume(ConsumeContext<ClaimCertificateCommand> context)

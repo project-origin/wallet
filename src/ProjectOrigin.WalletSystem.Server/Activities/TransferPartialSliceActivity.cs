@@ -90,7 +90,7 @@ public class TransferPartialSliceActivity : IExecuteActivity<TransferPartialSlic
 
             var slicedEvent = CreateSliceEvent(sourceSlice, new NewSlice(commitmentQuantity, receiverPublicKey), new NewSlice(commitmentRemainder, remainderPublicKey));
             var sourceSlicePrivateKey = await _unitOfWork.WalletRepository.GetPrivateKeyForSlice(sourceSlice.Id);
-            Transaction transaction = sourceSlicePrivateKey.SignTransaction(slicedEvent.CertificateId, slicedEvent);
+            Transaction transaction = sourceSlicePrivateKey.SignRegistryTransaction(slicedEvent.CertificateId, slicedEvent);
 
             _unitOfWork.Commit();
 
@@ -114,7 +114,7 @@ public class TransferPartialSliceActivity : IExecuteActivity<TransferPartialSlic
     {
         return context.ReviseItinerary(builder =>
         {
-            builder.AddActivity<SendRegistryTransactionActivity, SendTransactionArguments>(_formatter,
+            builder.AddActivity<SendRegistryTransactionActivity, SendRegistryTransactionArguments>(_formatter,
                 new()
                 {
                     Transaction = transaction

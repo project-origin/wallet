@@ -39,7 +39,7 @@ public class ClaimTests : IClassFixture<PostgresDatabaseFixture>
     }
 
     [Fact]
-    public async Task TestClaimMethod()
+    public async Task TestClaimEqualSize()
     {
         // Arrange
         var depositEndpoint = await _dbFixture.CreateWalletDepositEndpoint(_fixture.Create<string>());

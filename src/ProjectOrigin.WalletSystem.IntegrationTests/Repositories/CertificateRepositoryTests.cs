@@ -231,7 +231,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
 
         await _repository.InsertSlice(slice);
 
-        var sliceDb = await _repository.GetOwnerAvailableSlices(registry, slice.CertificateId, wallet1.Owner);
+        var sliceDb = await _repository.GetOwnersAvailableSlices(registry, slice.CertificateId, wallet1.Owner);
 
         sliceDb.Should().HaveCount(1);
         sliceDb.Should().ContainEquivalentOf(slice);
@@ -271,7 +271,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         await _repository.InsertSlice(slice1);
         await _repository.InsertSlice(slice2);
 
-        var sliceDb = await _repository.GetOwnerAvailableSlices(registry, certificate.Id, wallet1.Owner);
+        var sliceDb = await _repository.GetOwnersAvailableSlices(registry, certificate.Id, wallet1.Owner);
 
         sliceDb.Should().BeEmpty();
     }

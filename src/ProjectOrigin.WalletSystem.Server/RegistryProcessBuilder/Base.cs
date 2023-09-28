@@ -36,10 +36,10 @@ public partial class RegistryProcessBuilder : IRegistryProcessBuilder
         return _slipBuilder.Build();
     }
 
-    private void AddTransactionActivity(Transaction transaction)
+    private void AddRegistryTransactionActivity(Transaction transaction)
     {
-        AddActivity<SendRegistryTransactionActivity, SendTransactionArguments>(
-        new SendTransactionArguments()
+        AddActivity<SendRegistryTransactionActivity, SendRegistryTransactionArguments>(
+        new SendRegistryTransactionArguments()
         {
             Transaction = transaction
         });

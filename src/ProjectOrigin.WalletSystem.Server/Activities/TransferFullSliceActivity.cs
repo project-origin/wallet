@@ -66,7 +66,7 @@ public class TransferFullSliceActivity : IExecuteActivity<TransferFullSliceArgum
             var transferredEvent = CreateTransferEvent(sourceSlice, receiverPublicKey);
 
             var sourceSlicePrivateKey = await _unitOfWork.WalletRepository.GetPrivateKeyForSlice(sourceSlice.Id);
-            var transaction = sourceSlicePrivateKey.SignTransaction(transferredEvent.CertificateId, transferredEvent);
+            var transaction = sourceSlicePrivateKey.SignRegistryTransaction(transferredEvent.CertificateId, transferredEvent);
 
             _unitOfWork.Commit();
 
@@ -89,7 +89,7 @@ public class TransferFullSliceActivity : IExecuteActivity<TransferFullSliceArgum
     {
         return context.ReviseItinerary(builder =>
         {
-            builder.AddActivity<SendRegistryTransactionActivity, SendTransactionArguments>(_formatter,
+            builder.AddActivity<SendRegistryTransactionActivity, SendRegistryTransactionArguments>(_formatter,
                 new()
                 {
                     Transaction = transaction
