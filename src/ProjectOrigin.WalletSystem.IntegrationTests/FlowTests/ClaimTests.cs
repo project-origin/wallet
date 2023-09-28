@@ -75,7 +75,7 @@ public class ClaimTests : WalletSystemTestsBase, IClassFixture<RegistryFixture>,
         queryClaims.Claims.Single().ProductionCertificate.FederatedId.Should().BeEquivalentTo(productionId);
     }
 
-    private async Task<T> Timeout<T>(Func<Task<T>> func, TimeSpan timeout)
+    private static async Task<T> Timeout<T>(Func<Task<T>> func, TimeSpan timeout)
     {
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
         while (stopwatch.Elapsed < timeout)

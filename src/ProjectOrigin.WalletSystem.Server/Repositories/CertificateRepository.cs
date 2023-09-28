@@ -419,7 +419,7 @@ public class CertificateRepository : ICertificateRepository
 
     private sealed record ExtendedAttribute : CertificateAttribute
     {
-        public required string RegistryName { get; init; }
-        public required Guid CertificateId { get; init; }
+        public required string RegistryName { get; set; }
+        public required Guid CertificateId { get; set; }
     }
 }
