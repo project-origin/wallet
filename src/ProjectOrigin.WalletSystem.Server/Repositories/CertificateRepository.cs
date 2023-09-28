@@ -331,4 +331,95 @@ public class CertificateRepository : ICertificateRepository
     {
         return _connection.QuerySingleAsync<Claim>("SELECT * FROM claims WHERE id = @claimId", new { claimId });
     }
+
+    public async Task<IEnumerable<ClaimViewModel>> GetClaims(string owner, ClaimFilter claimFilter)
+    {
+        string sql = @"
+        CREATE TEMPORARY TABLE claims_work_table ON COMMIT DROP AS (
+            SELECT
+                claims.Id,
+                slice_cons.quantity AS Quantity,
+
+                registry_prod.name AS ProductionRegistryName,
+                slice_prod.certificateId AS ProductionCertificateId,
+                cert_prod.startDate AS ProductionStartDate,
+                cert_prod.endDate AS ProductionEndDate,
+                cert_prod.gridArea AS ProductionGridArea,
+
+                registry_cons.name AS ConsumptionRegistryName,
+                slice_cons.certificateId AS ConsumptionCertificateId,
+                cert_cons.startDate AS ConsumptionStartDate,
+                cert_cons.endDate AS ConsumptionEndDate,
+                cert_cons.gridArea AS ConsumptionGridArea
+
+            FROM claims
+
+            INNER JOIN slices slice_prod
+                ON claims.production_slice_id = slice_prod.Id
+            INNER JOIN certificates cert_prod
+                ON slice_prod.certificateId = cert_prod.Id
+                AND slice_prod.registryId = cert_prod.registryId
+            INNER JOIN registries registry_prod
+                ON slice_prod.registryId = registry_prod.Id
+
+            INNER JOIN slices slice_cons
+                ON claims.consumption_slice_id = slice_cons.Id
+            INNER JOIN certificates cert_cons
+                ON slice_cons.certificateId = cert_cons.Id
+                AND slice_cons.registryId = cert_cons.registryId
+            INNER JOIN registries registry_cons
+                ON slice_cons.registryId = registry_cons.Id
+
+            INNER JOIN depositendpoints dep_cons
+                ON slice_cons.depositendpointId = dep_cons.Id
+            INNER JOIN wallets wallet_cons
+                ON dep_cons.walletId = wallet_cons.Id
+
+            WHERE
+                claims.state = @state
+                AND (@start IS NULL OR cert_prod.startDate >= @start)
+                AND (@end IS NULL OR cert_prod.endDate <= @end)
+                AND (@start IS NULL OR cert_cons.startDate >= @start)
+                AND (@end IS NULL OR cert_cons.endDate <= @end)
+                AND wallet_cons.owner = @owner
+        );
+        SELECT * FROM claims_work_table;
+        SELECT registries.name AS RegistryName, attributes.CertificateId, attributes.KeyAtr AS Key, attributes.ValueAtr AS Value
+        FROM attributes
+        INNER JOIN registries
+            ON attributes.registryId = registries.Id
+        WHERE (registries.name, CertificateId) IN (SELECT ConsumptionRegistryName, ConsumptionCertificateId FROM claims_work_table)
+            OR (registries.name, CertificateId) IN (SELECT ProductionRegistryName, ProductionCertificateId FROM claims_work_table);
+        ";
+        using (var gridReader = await _connection.QueryMultipleAsync(sql, new
+        {
+            owner,
+            state = (int)ClaimState.Claimed,
+            start = claimFilter.Start,
+            end = claimFilter.End,
+        }))
+        {
+            var claims = gridReader.Read<ClaimViewModel>();
+            var attributes = gridReader.Read<ExtendedAttribute>();
+
+            foreach (var claim in claims)
+            {
+                claim.ProductionAttributes.AddRange(attributes
+                    .Where(attr => attr.RegistryName == claim.ProductionRegistryName
+                            && attr.CertificateId == claim.ProductionCertificateId));
+
+                claim.ConsumptionAttributes.AddRange(attributes
+                    .Where(attr => attr.RegistryName == claim.ConsumptionRegistryName
+                            && attr.CertificateId == claim.ConsumptionCertificateId));
+            }
+
+            return claims;
+        }
+    }
+
+    private sealed record ExtendedAttribute : CertificateAttribute
+    {
+        public required string RegistryName { get; init; }
+        public required Guid CertificateId { get; init; }
+    }
 }

@@ -2,16 +2,14 @@ using ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures;
 using ProjectOrigin.WalletSystem.Server;
 using System;
 using System.Threading.Tasks;
-using ProjectOrigin.WalletSystem.V1;
 using Xunit;
 using ProjectOrigin.WalletSystem.Server.Models;
 using Xunit.Abstractions;
 using ProjectOrigin.PedersenCommitment;
 using ProjectOrigin.WalletSystem.IntegrationTests.TestExtensions;
 using ProjectOrigin.Common.V1;
-using Npgsql;
-using Dapper;
 using FluentAssertions;
+using System.Linq;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests.FlowTests;
 
@@ -48,7 +46,7 @@ public class ClaimTests : WalletSystemTestsBase, IClassFixture<RegistryFixture>,
     public async Task Claim150_FromTwoLargerSlices_Success()
     {
         //Arrange
-        var client = new WalletService.WalletServiceClient(_grpcFixture.Channel);
+        var client = new V1.WalletService.WalletServiceClient(_grpcFixture.Channel);
 
         var (owner, header) = GenerateUserHeader();
         var senderDepositEndpoint = await _dbFixture.CreateWalletDepositEndpoint(owner);
@@ -57,42 +55,40 @@ public class ClaimTests : WalletSystemTestsBase, IClassFixture<RegistryFixture>,
         var productionId = await IssueCertToDepositEndpoint(senderDepositEndpoint, 200, Electricity.V1.GranularCertificateType.Production);
 
         //Act
-        var response = await client.ClaimCertificatesAsync(new ClaimRequest()
+        var response = await client.ClaimCertificatesAsync(new V1.ClaimRequest()
         {
             ConsumptionCertificateId = consumptionId,
             ProductionCertificateId = productionId,
             Quantity = 150u,
         }, header);
 
-        var claimId = Guid.Parse(response.ClaimId.Value);
-        var claim = await WaitForClaim(Guid.Parse(productionId.StreamId.Value), Guid.Parse(consumptionId.StreamId.Value));
-
         //Assert
-        claim.Should().NotBeNull();
-        claim!.State.Should().Be(ClaimState.Claimed);
-    }
-
-    private async Task<Claim?> WaitForClaim(Guid prodCertId, Guid consCertId)
-    {
-        await using var connection = new NpgsqlConnection(_dbFixture.ConnectionString);
-        var startedAt = DateTime.UtcNow;
-        while (DateTime.UtcNow - startedAt < TimeSpan.FromMinutes(3))
+        var queryClaims = await Timeout(async () =>
         {
-            // Verify slice created in database
-            var claim = await connection.QuerySingleOrDefaultAsync<Claim>(
-                $@"SELECT c.*
-                  FROM claims c
-                  INNER JOIN slices s_prod
-                    ON c.production_slice_id = s_prod.id
-                  INNER JOIN slices s_cons
-                    ON c.consumption_slice_id = s_cons.id
-                  WHERE s_prod.certificateId = @prodCertId AND s_cons.certificateId = @consCertId AND c.state = {(int)ClaimState.Claimed}",
-                new { prodCertId, consCertId });
-            if (claim is not null)
-                return claim;
-            await Task.Delay(1000);
-        }
-        return null;
+            var queryClaims = await client.QueryClaimsAsync(new V1.ClaimQueryRequest(), header);
+            queryClaims.Claims.Should().NotBeEmpty();
+            return queryClaims;
+        }, TimeSpan.FromMinutes(3));
+
+        queryClaims.Claims.Should().HaveCount(1);
+        queryClaims.Claims.Single().ConsumptionCertificate.FederatedId.Should().BeEquivalentTo(consumptionId);
+        queryClaims.Claims.Single().ProductionCertificate.FederatedId.Should().BeEquivalentTo(productionId);
     }
 
+    private static async Task<T> Timeout<T>(Func<Task<T>> func, TimeSpan timeout)
+    {
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        while (stopwatch.Elapsed < timeout)
+        {
+            try
+            {
+                return await func();
+            }
+            catch (Exception)
+            {
+                await Task.Delay(1000);
+            }
+        }
+        throw new TimeoutException();
+    }
 }

@@ -1,5 +1,5 @@
 using System;
-using System.Data.Common;
+using System.Linq;
 using System.Threading.Tasks;
 using Google.Protobuf;
 using Grpc.Core;
@@ -149,5 +149,21 @@ public class WalletService : V1.WalletService.WalletServiceBase
                 Value = command.ClaimId.ToString()
             }
         });
+    }
+
+    public override async Task<ClaimQueryResponse> QueryClaims(ClaimQueryRequest request, ServerCallContext context)
+    {
+        var owner = context.GetSubject();
+
+        var claims = await _unitOfWork.CertificateRepository.GetClaims(owner, new ClaimFilter()
+        {
+            Start = request.Filter?.Start.ToNullableDateTimeOffset(),
+            End = request.Filter?.End.ToNullableDateTimeOffset(),
+        });
+
+        return new ClaimQueryResponse
+        {
+            Claims = { claims.Select(c => c.ToProto()) }
+        };
     }
 }

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using ProjectOrigin.WalletSystem.Server.Models;
+using ProjectOrigin.WalletSystem.Server.Services;
 
 namespace ProjectOrigin.WalletSystem.Server.Repositories;
 
@@ -22,4 +23,5 @@ public interface ICertificateRepository
 
     Task<ReceivedSlice?> GetTop1ReceivedSlice();
     Task RemoveReceivedSlice(ReceivedSlice receivedSlice);
+    Task<IEnumerable<ClaimViewModel>> GetClaims(string owner, ClaimFilter claimFilter);
 }
