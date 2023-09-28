@@ -3,6 +3,9 @@ name: Renovate
 on:
   schedule:
     - cron: 0 * * * *
+  push:
+    branches:
+      - renovate/*
 
 jobs:
   renovate:
