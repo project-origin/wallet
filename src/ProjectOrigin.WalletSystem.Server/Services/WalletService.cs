@@ -150,4 +150,20 @@ public class WalletService : V1.WalletService.WalletServiceBase
             }
         });
     }
+
+    public override async Task<ClaimQueryResponse> QueryClaims(ClaimQueryRequest request, ServerCallContext context)
+    {
+        var owner = context.GetSubject();
+
+        var claims = await _unitOfWork.CertificateRepository.GetClaims(owner, new ClaimFilter()
+        {
+            Start = request.Filter?.Start.ToNullableDateTimeOffset(),
+            End = request.Filter?.End.ToNullableDateTimeOffset(),
+        });
+
+        return new ClaimQueryResponse
+        {
+            Claims = { claims }
+        };
+    }
 }

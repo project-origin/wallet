@@ -21,6 +21,7 @@ service WalletService {
     rpc QueryGranularCertificates(QueryRequest) returns (QueryResponse);
     rpc TransferCertificate(TransferRequest) returns (TransferResponse);
     rpc ClaimCertificates(ClaimRequest) returns (ClaimResponse);
+    rpc QueryClaims(ClaimQueryRequest) returns (ClaimQueryResponse);
 }
 
 message CreateWalletDepositEndpointRequest {}
@@ -85,6 +86,34 @@ message ClaimRequest {
 
 message ClaimResponse {
     project_origin.common.v1.Uuid claim_id = 1;
+}
+
+message ClaimQueryRequest {
+    Filter filter = 1;
+}
+
+message Filter {
+    google.protobuf.Timestamp start = 1;
+    google.protobuf.Timestamp end = 2;
+}
+
+message ClaimQueryResponse {
+    repeated Claim claims = 1;
+}
+
+message Claim {
+    project_origin.common.v1.Uuid claim_id = 1;
+    uint32 quantity = 2;
+    ClaimCertificateInfo consumption_certificate = 3;
+    ClaimCertificateInfo production_certificate = 4;
+
+    message ClaimCertificateInfo {
+        project_origin.common.v1.FederatedStreamId federated_id = 1;
+        google.protobuf.Timestamp start = 2;
+        google.protobuf.Timestamp end = 3;
+        string grid_area = 4;
+        repeated Attribute attributes = 5;
+    }
 }
 
 message GranularCertificate {

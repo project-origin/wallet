@@ -179,6 +179,8 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
     [InlineData(SliceState.Slicing, 0)]
     [InlineData(SliceState.Sliced, 0)]
     [InlineData(SliceState.Transferred, 0)]
+    [InlineData(SliceState.Claimed, 0)]
+    [InlineData(SliceState.Reserved, 0)]
     public async Task GetAllOwnedCertificates_AllSliceStates(SliceState sliceState, int expectedCertificateCount)
     {
         // Arrange
@@ -491,5 +493,146 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
 
         // Assert
         insertedClaim.Should().BeEquivalentTo(claim with { State = ClaimState.Claimed });
+    }
+
+    [Fact]
+    public async Task Claims_Query_Empty()
+    {
+        // Arrange
+        var owner = _fixture.Create<string>();
+
+        // Act
+        var claims = await _repository.GetClaims(owner, new ClaimFilter());
+
+        // Assert
+        claims.Should().NotBeNull();
+        claims.Should().BeEmpty();
+    }
+
+
+    [Fact]
+    public async Task Claims_Query_Success()
+    {
+        // Arrange
+        var owner = _fixture.Create<string>();
+        var startDate = new DateTimeOffset(2023, 7, 1, 0, 0, 0, TimeSpan.Zero);
+        await CreateClaimsAndCerts(owner, 48, startDate);
+
+        // Act
+        var claims = await _repository.GetClaims(owner, new ClaimFilter());
+
+        // Assert
+        claims.Should().NotBeNull();
+        claims.Should().HaveCount(48);
+        claims.Sum(x => x.Quantity).Should().Be(16500);
+    }
+
+    [Fact]
+    public async Task ClaimQuery_Filter_StartDate()
+    {
+        // Arrange
+        var owner = _fixture.Create<string>();
+        var startDate = new DateTimeOffset(2023, 7, 1, 0, 0, 0, TimeSpan.Zero);
+        await CreateClaimsAndCerts(owner, 48, startDate);
+
+        // Act
+        var claims = await _repository.GetClaims(owner, new ClaimFilter()
+        {
+            Start = startDate.AddHours(48 - 4)
+        });
+
+        // Assert
+        claims.Should().NotBeNull();
+        claims.Should().HaveCount(4);
+        claims.Sum(x => x.Quantity).Should().Be(1300);
+    }
+
+    [Fact]
+    public async Task ClaimQuery_Filter_EndDate()
+    {
+        // Arrange
+        var owner = _fixture.Create<string>();
+        var startDate = new DateTimeOffset(2023, 7, 1, 0, 0, 0, TimeSpan.Zero);
+        await CreateClaimsAndCerts(owner, 48, startDate);
+
+        // Act
+        var claims = await _repository.GetClaims(owner, new ClaimFilter()
+        {
+            End = startDate.AddHours(4)
+        });
+
+        // Assert
+        claims.Should().NotBeNull();
+        claims.Should().HaveCount(4);
+        claims.Sum(x => x.Quantity).Should().Be(1200);
+    }
+
+    [Fact]
+    public async Task ClaimQuery_Filter_StartRange()
+    {
+        // Arrange
+        var owner = _fixture.Create<string>();
+        var startDate = new DateTimeOffset(2023, 7, 1, 0, 0, 0, TimeSpan.Zero);
+        await CreateClaimsAndCerts(owner, 48, startDate);
+
+        // Act
+        var claims = await _repository.GetClaims(owner, new ClaimFilter()
+        {
+            Start = startDate.AddHours(10),
+            End = startDate.AddHours(15)
+        });
+
+        // Assert
+        claims.Should().NotBeNull();
+        claims.Should().HaveCount(5);
+        claims.Sum(x => x.Quantity).Should().Be(1750L);
+    }
+
+    private async Task CreateClaimsAndCerts(string owner, int numberOfClaims, DateTimeOffset startDate)
+    {
+        var registry = _fixture.Create<string>();
+        var wallet = await CreateWallet(owner);
+        var depositEndpoint = await CreateDepositEndpoint(wallet);
+
+        var position = 1;
+        for (int i = 0; i < numberOfClaims; i++)
+        {
+            var conCert = await CreateCertificate(registry, GranularCertificateType.Consumption, startDate.AddHours(i));
+            var conSlice = new Slice
+            {
+                Id = Guid.NewGuid(),
+                DepositEndpointId = depositEndpoint.Id,
+                DepositEndpointPosition = position++,
+                Registry = registry,
+                CertificateId = conCert.Id,
+                Quantity = 150 + 100 * (i % 5),
+                RandomR = _fixture.Create<byte[]>(),
+                SliceState = SliceState.Claimed
+            };
+            await _repository.InsertSlice(conSlice);
+
+            var prodCert = await CreateCertificate(registry, GranularCertificateType.Production, startDate.AddHours(i));
+            var prodSlice = new Slice
+            {
+                Id = Guid.NewGuid(),
+                DepositEndpointId = depositEndpoint.Id,
+                DepositEndpointPosition = position++,
+                Registry = registry,
+                CertificateId = prodCert.Id,
+                Quantity = 150 + 100 * (i % 5),
+                RandomR = _fixture.Create<byte[]>(),
+                SliceState = SliceState.Claimed
+            };
+            await _repository.InsertSlice(prodSlice);
+
+            var claim = new Claim
+            {
+                Id = Guid.NewGuid(),
+                ConsumptionSliceId = conSlice.Id,
+                ProductionSliceId = prodSlice.Id,
+                State = ClaimState.Claimed
+            };
+            await _repository.InsertClaim(claim);
+        }
     }
 }
