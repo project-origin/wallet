@@ -15,9 +15,6 @@
         },
         {
             "groupName": "Dockerfile updates",
-            "matchDatasources": [
-                "docker"
-            ],
             "matchFileNames": [
                 "**/Dockerfile"
             ]
