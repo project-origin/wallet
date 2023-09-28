@@ -6,7 +6,7 @@ namespace ProjectOrigin.WalletSystem.Server.Database.Mapping;
 
 public class HDPrivateKeyTypeHandler : SqlMapper.TypeHandler<IHDPrivateKey>
 {
-    private IHDAlgorithm _algorithm;
+    private readonly IHDAlgorithm _algorithm;
 
     public HDPrivateKeyTypeHandler(IHDAlgorithm algorithm)
     {

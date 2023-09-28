@@ -6,7 +6,7 @@ namespace ProjectOrigin.WalletSystem.Server.Database.Postgres;
 
 public class PostgresConnectionFactory : IDbConnectionFactory
 {
-    private PostgresOptions _databaseOptions;
+    private readonly PostgresOptions _databaseOptions;
 
     public PostgresConnectionFactory(IOptions<PostgresOptions> databaseOptions)
     {

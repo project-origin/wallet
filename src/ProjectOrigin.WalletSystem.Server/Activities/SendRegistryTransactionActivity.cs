@@ -16,8 +16,8 @@ public record SendRegistryTransactionArguments
 
 public class SendRegistryTransactionActivity : IExecuteActivity<SendRegistryTransactionArguments>
 {
-    private IOptions<RegistryOptions> _registryOptions;
-    private ILogger<SendRegistryTransactionActivity> _logger;
+    private readonly IOptions<RegistryOptions> _registryOptions;
+    private readonly ILogger<SendRegistryTransactionActivity> _logger;
 
     public SendRegistryTransactionActivity(IOptions<RegistryOptions> registryOptions, ILogger<SendRegistryTransactionActivity> logger)
     {

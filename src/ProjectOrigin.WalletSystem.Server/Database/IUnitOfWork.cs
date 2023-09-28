@@ -1,9 +1,8 @@
-using System;
 using ProjectOrigin.WalletSystem.Server.Repositories;
 
 namespace ProjectOrigin.WalletSystem.Server.Database;
 
-public interface IUnitOfWork : IDisposable
+public interface IUnitOfWork
 {
     void Commit();
     void Rollback();

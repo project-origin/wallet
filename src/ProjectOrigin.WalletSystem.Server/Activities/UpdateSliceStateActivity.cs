@@ -15,8 +15,8 @@ public record UpdateSliceStateArguments()
 
 public class UpdateSliceStateActivity : IExecuteActivity<UpdateSliceStateArguments>
 {
-    private IUnitOfWork _unitOfWork;
-    private ILogger<UpdateSliceStateActivity> _logger;
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly ILogger<UpdateSliceStateActivity> _logger;
 
     public UpdateSliceStateActivity(IUnitOfWork unitOfWork, ILogger<UpdateSliceStateActivity> logger)
     {

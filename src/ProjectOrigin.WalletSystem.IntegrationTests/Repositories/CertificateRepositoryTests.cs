@@ -209,6 +209,47 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         certificates.Should().HaveCount(expectedCertificateCount);
     }
 
+
+    [Fact]
+    public async Task GetTop1ReceivedSlice_WhenNoSlices_ReturnNull()
+    {
+        await _connection.ExecuteAsync("DELETE FROM ReceivedSlices");
+
+        var slice = await _repository.GetTop1ReceivedSlice();
+
+        slice.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task GetTop1ReceivedSlice_ReturnsSlice_AndRemoveSlice()
+    {
+        var owner = _fixture.Create<string>();
+        var wallet = await CreateWallet(owner);
+        var depositEndpoint = await CreateDepositEndpoint(wallet);
+
+        var sliceToInsert = _fixture.Create<ReceivedSlice>() with
+        {
+            DepositEndpointId = depositEndpoint.Id,
+            DepositEndpointPosition = 1
+        };
+
+        await _connection.ExecuteAsync(
+            @"INSERT INTO ReceivedSlices(Id, DepositEndpointId, DepositEndpointPosition, Registry, CertificateId, Quantity, RandomR)
+              VALUES (@id, @depositEndpointId, @depositEndpointPosition, @registry, @certificateId, @quantity, @randomR)",
+            sliceToInsert);
+
+        var resultSlice = await _repository.GetTop1ReceivedSlice();
+
+        resultSlice.Should().NotBeNull();
+        resultSlice.Should().BeEquivalentTo(sliceToInsert);
+
+        await _repository.RemoveReceivedSlice(resultSlice!);
+
+        var resultSliceAfterRemove = await _repository.GetTop1ReceivedSlice();
+
+        resultSliceAfterRemove.Should().BeNull();
+    }
+
     [Fact]
     public async Task GetAvailableSlice()
     {
