@@ -13,5 +13,6 @@ public static class ApplicationBuilderExtension
 
         SqlMapper.AddTypeHandler(new HDPrivateKeyTypeHandler(algorithm));
         SqlMapper.AddTypeHandler(new HDPublicKeyTypeHandler(algorithm));
+        DefaultTypeMap.MatchNamesWithUnderscores = true;
     }
 }

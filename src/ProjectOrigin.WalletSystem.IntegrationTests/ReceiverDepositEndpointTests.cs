@@ -145,18 +145,5 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
 
             await sutMethod.Should().ThrowAsync<RpcException>().WithMessage("""Status(StatusCode="InvalidArgument", Detail="Cannot create receiver deposit endpoint to self.")""");
         }
-
-        private (string, Metadata) GenerateUserHeader()
-        {
-            var subject = _fixture.Create<string>();
-            var name = _fixture.Create<string>();
-
-            var token = _tokenGenerator.GenerateToken(subject, name);
-
-            var headers = new Metadata();
-            headers.Add("Authorization", $"Bearer {token}");
-
-            return (subject, headers);
-        }
     }
 }

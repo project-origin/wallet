@@ -4,6 +4,7 @@ using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using Dapper;
+using ProjectOrigin.WalletSystem.Server.Activities.Exceptions;
 using ProjectOrigin.WalletSystem.Server.Extensions;
 using ProjectOrigin.WalletSystem.Server.Models;
 
@@ -196,7 +197,7 @@ public class CertificateRepository : ICertificateRepository
             });
     }
 
-    public Task<IEnumerable<Slice>> GetOwnerAvailableSlices(string registryName, Guid certificateId, string owner)
+    public Task<IEnumerable<Slice>> GetOwnersAvailableSlices(string registryName, Guid certificateId, string owner)
     {
         return _connection.QueryAsync<Slice>(
             @"SELECT s.*, r.Name as Registry
@@ -222,10 +223,10 @@ public class CertificateRepository : ICertificateRepository
             });
     }
 
-    public Task<IEnumerable<Slice>> GetToBeAvailable(string registryName, Guid certificateId, string owner)
+    public Task<long> GetRegisteringAndAvailableQuantity(string registryName, Guid certificateId, string owner)
     {
-        return _connection.QueryAsync<Slice>(
-            @"SELECT s.*, r.Name as Registry
+        return _connection.QuerySingleAsync<long>(
+            @"SELECT SUM(s.quantity)
               FROM Certificates c
               INNER JOIN Slices s
                 ON c.Id = s.CertificateId
@@ -244,8 +245,8 @@ public class CertificateRepository : ICertificateRepository
                 registryName,
                 certificateId,
                 owner,
-                availableState = SliceState.Available,
-                registeringState = SliceState.Registering
+                availableState = (int)SliceState.Available,
+                registeringState = (int)SliceState.Registering
             });
     }
 
@@ -274,5 +275,60 @@ public class CertificateRepository : ICertificateRepository
                 sliceId,
                 state
             });
+    }
+
+    /// <summary>
+    /// Reserves the requested quantity of slices of the given certificate by the given owner
+    /// </summary>
+    /// <param name="owner">The owner of the slices</param>
+    /// <param name="registryName"></param>
+    /// <param name="certificateId"></param>
+    /// <param name="reserveQuantity"></param>
+    /// <returns></returns>
+    /// <exception cref="InvalidOperationException">Thrown when the owner does not have enough to reserve the requested amount</exception>
+    /// <exception cref="TransientException">Thrown when the owner currently does not have enogth available, but will have later</exception>
+    public async Task<IList<Slice>> ReserveQuantity(string owner, string registryName, Guid certificateId, uint reserveQuantity)
+    {
+        var availableSlices = await GetOwnersAvailableSlices(registryName, certificateId, owner);
+        if (availableSlices.IsEmpty())
+            throw new InvalidOperationException($"Owner has no available slices to reserve");
+
+        if (availableSlices.Sum(slice => slice.Quantity) < reserveQuantity)
+        {
+            var registeringAvailableQuantity = await GetRegisteringAndAvailableQuantity(registryName, certificateId, owner);
+            if (registeringAvailableQuantity >= reserveQuantity)
+                throw new TransientException($"Owner has enough quantity, but it is not yet available to reserve");
+            else
+                throw new InvalidOperationException($"Owner has less to reserve than available");
+        }
+
+        var sumSlicesTaken = 0L;
+        var takenSlices = availableSlices
+            .OrderBy(slice => slice.Quantity)
+            .TakeWhile(slice => { var needsMore = sumSlicesTaken < reserveQuantity; sumSlicesTaken += slice.Quantity; return needsMore; })
+            .ToList();
+
+        foreach (var slice in takenSlices)
+        {
+            await SetSliceState(slice.Id, SliceState.Reserved);
+        }
+
+        return takenSlices;
+    }
+
+    public Task InsertClaim(Claim newClaim)
+    {
+        return _connection.ExecuteAsync(@"INSERT INTO claims(id, production_slice_id, consumption_slice_id, state) VALUES (@id, @productionSliceId, @consumptionSliceId, @state)",
+            new { newClaim.Id, newClaim.ProductionSliceId, newClaim.ConsumptionSliceId, newClaim.State });
+    }
+
+    public Task SetClaimState(Guid claimId, ClaimState state)
+    {
+        return _connection.ExecuteAsync("UPDATE claims SET state = @state WHERE id = @claimId", new { claimId, state });
+    }
+
+    public Task<Claim> GetClaim(Guid claimId)
+    {
+        return _connection.QuerySingleAsync<Claim>("SELECT * FROM claims WHERE id = @claimId", new { claimId });
     }
 }

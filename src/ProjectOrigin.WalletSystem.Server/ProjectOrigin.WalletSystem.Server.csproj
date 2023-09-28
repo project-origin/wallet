@@ -23,6 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="Database\Scripts\202309151300-create-claims-tables.sql" />
     <EmbeddedResource Include="Database\Scripts\202308280900-migrate-number-increment.sql" />
     <EmbeddedResource Include="Database\Scripts\202308041301-number-increment.sql" />
     <EmbeddedResource Include="Database\Scripts\202308021200-add-slice-state.sql" />

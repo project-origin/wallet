@@ -37,6 +37,7 @@ public class Startup
         services.AddGrpc();
 
         services.AddTransient<IStreamProjector<GranularCertificate>, GranularCertificateProjector>();
+        services.AddTransient<IRegistryProcessBuilderFactory, RegistryProcessBuilderFactory>();
         services.AddTransient<IRegistryService, RegistryService>();
 
         services.AddOptions<ServiceOptions>()
@@ -78,6 +79,12 @@ public class Startup
             });
 
             o.AddConsumer<VerifySliceCommandHandler>(cfg =>
+            {
+                cfg.UseMessageRetry(r => r.Interval(100, TimeSpan.FromMinutes(1))
+                    .Handle<TransientException>());
+            });
+
+            o.AddConsumer<ClaimCertificateCommandHandler>(cfg =>
             {
                 cfg.UseMessageRetry(r => r.Interval(100, TimeSpan.FromMinutes(1))
                     .Handle<TransientException>());

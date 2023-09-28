@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Google.Protobuf;
 using MassTransit;
 using Microsoft.Extensions.Logging;
-using ProjectOrigin.Common.V1;
 using ProjectOrigin.Electricity.V1;
 using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
 using ProjectOrigin.Registry.V1;
@@ -67,7 +66,7 @@ public class TransferFullSliceActivity : IExecuteActivity<TransferFullSliceArgum
             var transferredEvent = CreateTransferEvent(sourceSlice, receiverPublicKey);
 
             var sourceSlicePrivateKey = await _unitOfWork.WalletRepository.GetPrivateKeyForSlice(sourceSlice.Id);
-            var transaction = CreateAndSignTransaction(transferredEvent.CertificateId, transferredEvent, sourceSlicePrivateKey);
+            var transaction = sourceSlicePrivateKey.SignRegistryTransaction(transferredEvent.CertificateId, transferredEvent);
 
             _unitOfWork.Commit();
 
@@ -90,7 +89,7 @@ public class TransferFullSliceActivity : IExecuteActivity<TransferFullSliceArgum
     {
         return context.ReviseItinerary(builder =>
         {
-            builder.AddActivity<SendRegistryTransactionActivity, SendTransactionArguments>(_formatter,
+            builder.AddActivity<SendRegistryTransactionActivity, SendRegistryTransactionArguments>(_formatter,
                 new()
                 {
                     Transaction = transaction
@@ -124,15 +123,9 @@ public class TransferFullSliceActivity : IExecuteActivity<TransferFullSliceArgum
     {
         var sliceCommitment = new PedersenCommitment.SecretCommitmentInfo((uint)sourceSlice.Quantity, sourceSlice.RandomR);
 
-        var certificateId = new FederatedStreamId
-        {
-            Registry = sourceSlice.Registry,
-            StreamId = new Uuid { Value = sourceSlice.CertificateId.ToString() }
-        };
-
         var transferredEvent = new TransferredEvent
         {
-            CertificateId = certificateId,
+            CertificateId = sourceSlice.GetFederatedStreamId(),
             NewOwner = new PublicKey
             {
                 Content = ByteString.CopyFrom(receiverPublicKey.Export()),
@@ -141,25 +134,5 @@ public class TransferFullSliceActivity : IExecuteActivity<TransferFullSliceArgum
             SourceSliceHash = ByteString.CopyFrom(SHA256.HashData(sliceCommitment.Commitment.C))
         };
         return transferredEvent;
-    }
-
-    private static Transaction CreateAndSignTransaction(FederatedStreamId certificateId, IMessage @event, IHDPrivateKey slicePrivateKey)
-    {
-        var header = new TransactionHeader
-        {
-            FederatedStreamId = certificateId,
-            PayloadType = @event.Descriptor.FullName,
-            PayloadSha512 = ByteString.CopyFrom(SHA512.HashData(@event.ToByteArray())),
-            Nonce = Guid.NewGuid().ToString(),
-        };
-
-        var transaction = new Transaction
-        {
-            Header = header,
-            HeaderSignature = ByteString.CopyFrom(slicePrivateKey.Sign(header.ToByteArray())),
-            Payload = @event.ToByteString()
-        };
-
-        return transaction;
     }
 }

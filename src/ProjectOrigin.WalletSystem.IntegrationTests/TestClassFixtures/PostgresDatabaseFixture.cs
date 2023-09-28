@@ -1,7 +1,9 @@
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using ProjectOrigin.HierarchicalDeterministicKeys.Implementations;
 using ProjectOrigin.WalletSystem.Server.Database;
+using ProjectOrigin.WalletSystem.Server.Database.Mapping;
 using ProjectOrigin.WalletSystem.Server.Database.Postgres;
 using Testcontainers.PostgreSql;
 using Xunit;
@@ -24,6 +26,11 @@ public class PostgresDatabaseFixture : IAsyncLifetime
         {
             builder.AddConsole();
         });
+
+        var algorithm = new Secp256k1Algorithm();
+        Dapper.SqlMapper.AddTypeHandler(new HDPrivateKeyTypeHandler(algorithm));
+        Dapper.SqlMapper.AddTypeHandler(new HDPublicKeyTypeHandler(algorithm));
+        Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
     }
 
     public async Task InitializeAsync()

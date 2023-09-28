@@ -13,13 +13,13 @@ using ProjectOrigin.PedersenCommitment;
 using Grpc.Core;
 using System.Linq;
 using FluentAssertions;
+using ProjectOrigin.WalletSystem.IntegrationTests.TestExtensions;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests;
 
 public class TransferCertificateTests : WalletSystemTestsBase, IClassFixture<RegistryFixture>, IClassFixture<InMemoryFixture>
 {
     private readonly RegistryFixture _registryFixture;
-    private readonly Fixture _fixture;
 
     public TransferCertificateTests(
             GrpcTestFixture<Startup> grpcFixture,
@@ -35,7 +35,6 @@ public class TransferCertificateTests : WalletSystemTestsBase, IClassFixture<Reg
                   registryFixture)
     {
         _registryFixture = registryFixture;
-        _fixture = new Fixture();
     }
 
     [Fact]
@@ -48,11 +47,11 @@ public class TransferCertificateTests : WalletSystemTestsBase, IClassFixture<Reg
 
         var (sender, senderHeader) = GenerateUserHeader();
         var commitment = new SecretCommitmentInfo(issuedAmount);
-        var senderDepositEndpoint = await CreateWalletDepositEndpoint(sender);
+        var senderDepositEndpoint = await _dbFixture.CreateWalletDepositEndpoint(sender);
         var position = 1;
         var issuedEvent = await _registryFixture.IssueCertificate(Electricity.V1.GranularCertificateType.Production, commitment, senderDepositEndpoint.PublicKey.Derive(position).GetPublicKey());
         var certId = Guid.Parse(issuedEvent.CertificateId.StreamId.Value);
-        await InsertSlice(senderDepositEndpoint, position, issuedEvent, commitment);
+        await _dbFixture.InsertSlice(senderDepositEndpoint, position, issuedEvent, commitment);
 
         var (recipient, recipientHeader) = GenerateUserHeader();
         var createEndpointResponse = await client.CreateWalletDepositEndpointAsync(new CreateWalletDepositEndpointRequest(), recipientHeader);
@@ -82,14 +81,14 @@ public class TransferCertificateTests : WalletSystemTestsBase, IClassFixture<Reg
 
         // Create sender wallet
         var (sender, senderHeader) = GenerateUserHeader();
-        var depositEndpoint = await CreateWalletDepositEndpoint(sender);
+        var depositEndpoint = await _dbFixture.CreateWalletDepositEndpoint(sender);
 
         // Issue certificate to sender
         var position = 1;
         var issuedAmount = 500u;
         var commitment = new SecretCommitmentInfo(issuedAmount);
         var issuedEvent = await _registryFixture.IssueCertificate(Electricity.V1.GranularCertificateType.Production, commitment, depositEndpoint.PublicKey.Derive(position).GetPublicKey());
-        await InsertSlice(depositEndpoint, position, issuedEvent, commitment);
+        await _dbFixture.InsertSlice(depositEndpoint, position, issuedEvent, commitment);
         var certId = Guid.Parse(issuedEvent.CertificateId.StreamId.Value);
 
         // Create intermidiate wallet
@@ -156,27 +155,12 @@ public class TransferCertificateTests : WalletSystemTestsBase, IClassFixture<Reg
         while (DateTime.UtcNow - startedAt < TimeSpan.FromMinutes(1))
         {
             // Verify slice created in database
-            var slices = await connection.QueryAsync<Slice>("SELECT * FROM Slices WHERE CertificateId = @certificateId", new { certificateId = certId });
+            var slices = await connection.QueryAsync<Slice>("SELECT s.*, r.Name as Registry  FROM Slices s INNER JOIN Registries r on s.RegistryId = r.Id WHERE CertificateId = @certificateId", new { certificateId = certId });
             slicesFound = slices.Count();
             if (slicesFound >= number)
                 break;
             await Task.Delay(1000);
         }
         slicesFound.Should().Be(number, "correct number of slices should be found");
-    }
-
-    private (string, Metadata) GenerateUserHeader()
-    {
-        var subject = _fixture.Create<string>();
-        var name = _fixture.Create<string>();
-
-        var token = _tokenGenerator.GenerateToken(subject, name);
-
-        var headers = new Metadata
-        {
-            { "Authorization", $"Bearer {token}" }
-        };
-
-        return (subject, headers);
     }
 }

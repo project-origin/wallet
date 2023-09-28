@@ -12,6 +12,7 @@ using ProjectOrigin.WalletSystem.Server.CommandHandlers;
 using FluentAssertions;
 using System.Linq;
 using MassTransit;
+using ProjectOrigin.WalletSystem.IntegrationTests.TestExtensions;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests
 {
@@ -42,7 +43,7 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
             var certId = Guid.NewGuid();
             var owner = "John";
             var registryName = new Fixture().Create<string>();
-            var depositEndpoint = await CreateWalletDepositEndpoint(owner);
+            var depositEndpoint = await _dbFixture.CreateWalletDepositEndpoint(owner);
             var client = new ReceiveSliceService.ReceiveSliceServiceClient(_grpcFixture.Channel);
             var request = new ReceiveRequest()
             {
