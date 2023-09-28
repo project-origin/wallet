@@ -332,7 +332,7 @@ public class CertificateRepository : ICertificateRepository
         return _connection.QuerySingleAsync<Claim>("SELECT * FROM claims WHERE id = @claimId", new { claimId });
     }
 
-    public async Task<IEnumerable<V1.Claim>> GetClaims(string owner, ClaimFilter claimFilter)
+    public async Task<IEnumerable<ClaimViewModel>> GetClaims(string owner, ClaimFilter claimFilter)
     {
         string sql = @"
         CREATE TEMPORARY TABLE claims_work_table ON COMMIT DROP AS (
@@ -341,14 +341,12 @@ public class CertificateRepository : ICertificateRepository
                 slice_cons.quantity AS Quantity,
 
                 registry_prod.name AS ProductionRegistryName,
-                slice_prod.registryId AS ProductionRegistryId,
                 slice_prod.certificateId AS ProductionCertificateId,
                 cert_prod.startDate AS ProductionStartDate,
                 cert_prod.endDate AS ProductionEndDate,
                 cert_prod.gridArea AS ProductionGridArea,
 
                 registry_cons.name AS ConsumptionRegistryName,
-                slice_cons.registryId AS ConsumptionRegistryId,
                 slice_cons.certificateId AS ConsumptionCertificateId,
                 cert_cons.startDate AS ConsumptionStartDate,
                 cert_cons.endDate AS ConsumptionEndDate,
@@ -386,11 +384,13 @@ public class CertificateRepository : ICertificateRepository
                 AND wallet_cons.owner = @owner
         );
         SELECT * FROM claims_work_table;
-        SELECT * FROM attributes
-            WHERE (RegistryId, CertificateId) IN (SELECT ConsumptionRegistryId, ConsumptionCertificateId FROM claims_work_table)
-               OR (RegistryId, CertificateId) IN (SELECT ProductionRegistryId, ProductionCertificateId FROM claims_work_table);
+        SELECT registries.name AS RegistryName, attributes.CertificateId, attributes.KeyAtr AS Key, attributes.ValueAtr AS Value
+        FROM attributes
+        INNER JOIN registries
+            ON attributes.registryId = registries.Id
+        WHERE (registries.name, CertificateId) IN (SELECT ConsumptionRegistryName, ConsumptionCertificateId FROM claims_work_table)
+            OR (registries.name, CertificateId) IN (SELECT ProductionRegistryName, ProductionCertificateId FROM claims_work_table);
         ";
-
         using (var gridReader = await _connection.QueryMultipleAsync(sql, new
         {
             owner,
@@ -399,83 +399,27 @@ public class CertificateRepository : ICertificateRepository
             end = claimFilter.End,
         }))
         {
-            var claims = gridReader.Read<ClaimQueryResult>();
-            var attributes = gridReader.Read<ClaimAttributeResult>();
+            var claims = gridReader.Read<ClaimViewModel>();
+            var attributes = gridReader.Read<ExtendedAttribute>();
 
-            return claims.Select(c => new V1.Claim
+            foreach (var claim in claims)
             {
-                ClaimId = new Common.V1.Uuid() { Value = c.Id.ToString() },
-                Quantity = c.Quantity,
-                ProductionCertificate = new V1.Claim.Types.ClaimCertificateInfo()
-                {
-                    FederatedId = new Common.V1.FederatedStreamId()
-                    {
-                        Registry = c.ProductionRegistryName,
-                        StreamId = new Common.V1.Uuid() { Value = c.ProductionCertificateId.ToString() }
-                    },
-                    Start = Google.Protobuf.WellKnownTypes.Timestamp.FromDateTimeOffset(c.ProductionStart),
-                    End = Google.Protobuf.WellKnownTypes.Timestamp.FromDateTimeOffset(c.ProductionEnd),
-                    GridArea = c.ProductionGridArea,
-                    Attributes = {
-                    attributes
-                        .Where(attr => attr.RegistryId == c.ProductionRegistryId
-                            && attr.CertificateId == c.ProductionCertificateId)
-                        .Select(attr =>
-                            new V1.Attribute{
-                                Key = attr.KeyAtr,
-                                Value = attr.ValueAtr
-                            })}
-                },
-                ConsumptionCertificate = new V1.Claim.Types.ClaimCertificateInfo()
-                {
-                    FederatedId = new Common.V1.FederatedStreamId()
-                    {
-                        Registry = c.ConsumptionRegistryName,
-                        StreamId = new Common.V1.Uuid() { Value = c.ConsumptionCertificateId.ToString() }
-                    },
-                    Start = Google.Protobuf.WellKnownTypes.Timestamp.FromDateTimeOffset(c.ConsumptionStart),
-                    End = Google.Protobuf.WellKnownTypes.Timestamp.FromDateTimeOffset(c.ConsumptionEnd),
-                    GridArea = c.ConsumptionGridArea,
-                    Attributes = {
-                    attributes
-                        .Where(attr => attr.RegistryId == c.ConsumptionRegistryId
-                            && attr.CertificateId == c.ConsumptionCertificateId)
-                        .Select(attr =>
-                            new V1.Attribute{
-                                Key = attr.KeyAtr,
-                                Value = attr.ValueAtr
-                            })}
-                }
+                claim.ProductionAttributes.AddRange(attributes
+                    .Where(attr => attr.RegistryName == claim.ProductionRegistryName
+                            && attr.CertificateId == claim.ProductionCertificateId));
 
-            });
+                claim.ConsumptionAttributes.AddRange(attributes
+                    .Where(attr => attr.RegistryName == claim.ConsumptionRegistryName
+                            && attr.CertificateId == claim.ConsumptionCertificateId));
+            }
+
+            return claims;
         }
     }
 
-    private sealed record ClaimQueryResult
+    private sealed record ExtendedAttribute : CertificateAttribute
     {
-        public required Guid Id { get; init; }
-        public required uint Quantity { get; init; }
-
-        public required string ProductionRegistryName { get; init; }
-        public required Guid ProductionRegistryId { get; init; }
-        public required Guid ProductionCertificateId { get; init; }
-        public required DateTimeOffset ProductionStart { get; init; }
-        public required DateTimeOffset ProductionEnd { get; init; }
-        public required string ProductionGridArea { get; init; }
-
-        public required string ConsumptionRegistryName { get; init; }
-        public required Guid ConsumptionRegistryId { get; init; }
-        public required Guid ConsumptionCertificateId { get; init; }
-        public required DateTimeOffset ConsumptionStart { get; init; }
-        public required DateTimeOffset ConsumptionEnd { get; init; }
-        public required string ConsumptionGridArea { get; init; }
-    }
-
-    private sealed record ClaimAttributeResult
-    {
+        public required string RegistryName { get; init; }
         public required Guid CertificateId { get; init; }
-        public required Guid RegistryId { get; init; }
-        public required string KeyAtr { get; init; }
-        public required string ValueAtr { get; init; }
     }
 }

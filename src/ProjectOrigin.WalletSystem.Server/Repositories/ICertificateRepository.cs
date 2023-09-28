@@ -23,5 +23,5 @@ public interface ICertificateRepository
 
     Task<ReceivedSlice?> GetTop1ReceivedSlice();
     Task RemoveReceivedSlice(ReceivedSlice receivedSlice);
-    Task<IEnumerable<V1.Claim>> GetClaims(string owner, ClaimFilter claimFilter);
+    Task<IEnumerable<ClaimViewModel>> GetClaims(string owner, ClaimFilter claimFilter);
 }

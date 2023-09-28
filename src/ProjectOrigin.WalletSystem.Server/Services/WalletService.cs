@@ -1,5 +1,5 @@
 using System;
-using System.Data.Common;
+using System.Linq;
 using System.Threading.Tasks;
 using Google.Protobuf;
 using Grpc.Core;
@@ -163,7 +163,7 @@ public class WalletService : V1.WalletService.WalletServiceBase
 
         return new ClaimQueryResponse
         {
-            Claims = { claims }
+            Claims = { claims.Select(c => c.ToProto()) }
         };
     }
 }

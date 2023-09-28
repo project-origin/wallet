@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Google.Protobuf.WellKnownTypes;
 using ProjectOrigin.Common.V1;
-using ProjectOrigin.WalletSystem.V1;
 
 namespace ProjectOrigin.WalletSystem.Server.Models;
 
@@ -18,7 +17,7 @@ public record CertificateViewModel
     public List<CertificateAttribute> Attributes { get; } = new();
     public List<SliceViewModel> Slices { get; } = new();
 
-    public GranularCertificate ToProto()
+    public V1.GranularCertificate ToProto()
     {
         var fedId = new FederatedStreamId
         {
@@ -29,32 +28,17 @@ public record CertificateViewModel
             }
         };
 
-        var res = new GranularCertificate
+        var res = new V1.GranularCertificate
         {
             FederatedId = fedId,
             Quantity = (uint)Slices.Sum(x => x.Quantity),
             End = Timestamp.FromDateTimeOffset(EndDate),
             Start = Timestamp.FromDateTimeOffset(StartDate),
             GridArea = GridArea,
-            Type = ToDto(CertificateType),
+            Type = CertificateType.ToProto(),
+            Attributes = { Attributes.Select(att => att.ToProto()) }
         };
 
-        foreach (var atr in Attributes)
-        {
-            res.Attributes.Add(new V1.Attribute { Key = atr.Key, Value = atr.Value });
-        }
-
         return res;
-    }
-
-    private V1.GranularCertificateType ToDto(GranularCertificateType type)
-    {
-        if (type == GranularCertificateType.Production)
-            return V1.GranularCertificateType.Production;
-
-        if (type == GranularCertificateType.Consumption)
-            return V1.GranularCertificateType.Consumption;
-
-        throw new ArgumentException("GranularCertificateType not supported. Type: " + type);
     }
 }
