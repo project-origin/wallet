@@ -8,7 +8,7 @@ metadata:
   labels:
     app: po-wallet
 spec:
-  replicas: 3
+  replicas: {{ .Values.wallet.replicaCount }}
   selector:
     matchLabels:
       app: po-wallet

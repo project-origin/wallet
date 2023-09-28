@@ -33,7 +33,8 @@ messageBroker:
 
 # wallet defines the service configuration for the wallet server
 wallet:
-
+  # replicas defines the number of wallet server instances to run
+  replicaCount: 3
   # externalUrl defines the external url to use for the wallet server
   externalUrl:
 
