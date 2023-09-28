@@ -19,8 +19,8 @@ public record WaitCommittedTransactionArguments
 
 public class WaitCommittedRegistryTransactionActivity : IExecuteActivity<WaitCommittedTransactionArguments>
 {
-    private IOptions<RegistryOptions> _registryOptions;
-    private ILogger<WaitCommittedRegistryTransactionActivity> _logger;
+    private readonly IOptions<RegistryOptions> _registryOptions;
+    private readonly ILogger<WaitCommittedRegistryTransactionActivity> _logger;
 
     public WaitCommittedRegistryTransactionActivity(IOptions<RegistryOptions> registryOptions, ILogger<WaitCommittedRegistryTransactionActivity> logger)
     {

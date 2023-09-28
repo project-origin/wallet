@@ -14,15 +14,15 @@ begin;
 
 	ALTER TABLE DepositEndpoints ALTER COLUMN Owner SET NOT NULL;
 
-    UPDATE DepositEndpoints SET ReferenceText = '';
+    UPDATE DepositEndpoints SET ReferenceText = '' WHERE ReferenceText IS NULL;
     ALTER TABLE DepositEndpoints ALTER COLUMN ReferenceText SET NOT NULL;
 
-    UPDATE DepositEndpoints SET Endpoint = '';
+    UPDATE DepositEndpoints SET Endpoint = '' WHERE Endpoint IS NULL;
     ALTER TABLE DepositEndpoints ALTER COLUMN Endpoint SET NOT NULL;
 
     ALTER TABLE Slices RENAME COLUMN WalletSectionId TO DepositEndpointId;
     ALTER TABLE Slices RENAME COLUMN WalletSectionPosition TO DepositEndpointPosition;
-    
+
     ALTER TABLE ReceivedSlices RENAME COLUMN WalletSectionId TO DepositEndpointId;
     ALTER TABLE ReceivedSlices RENAME COLUMN WalletSectionPosition TO DepositEndpointPosition;
 commit;

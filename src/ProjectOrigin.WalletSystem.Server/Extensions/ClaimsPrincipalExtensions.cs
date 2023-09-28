@@ -1,6 +1,8 @@
 using System.Security.Claims;
 using Grpc.Core;
 
+namespace ProjectOrigin.WalletSystem.Server.Extensions;
+
 public static class ClaimsPrincipalExtensions
 {
     public static string GetSubject(this ServerCallContext context)

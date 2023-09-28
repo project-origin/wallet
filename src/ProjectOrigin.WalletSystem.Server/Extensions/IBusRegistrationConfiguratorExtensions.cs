@@ -3,6 +3,8 @@ using MassTransit;
 using ProjectOrigin.WalletSystem.Server.Options;
 using ProjectOrigin.WalletSystem.Server.Serialization;
 
+namespace ProjectOrigin.WalletSystem.Server.Extensions;
+
 public static class IBusRegistrationConfiguratorExtensions
 {
     public static void ConfigureMassTransitTransport(this IBusRegistrationConfigurator busConfig, MessageBrokerOptions options)

@@ -27,22 +27,15 @@ public class TransferCertificateCommandHandler : IConsumer<TransferCertificateCo
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<TransferCertificateCommandHandler> _logger;
-    private readonly IOptions<RegistryOptions> _registryOptions;
-    private readonly IOptions<ServiceOptions> _walletSystemOptions;
     private readonly IEndpointNameFormatter _formatter;
-    private TimeSpan timeout = TimeSpan.FromMinutes(1);
 
     public TransferCertificateCommandHandler(
         IUnitOfWork unitOfWork,
         ILogger<TransferCertificateCommandHandler> logger,
-        IOptions<RegistryOptions> registryOptions,
-        IOptions<ServiceOptions> walletSystemOptions,
         IEndpointNameFormatter formatter)
     {
         _unitOfWork = unitOfWork;
         _logger = logger;
-        _registryOptions = registryOptions;
-        _walletSystemOptions = walletSystemOptions;
         _formatter = formatter;
     }
 
@@ -105,7 +98,7 @@ public class TransferCertificateCommandHandler : IConsumer<TransferCertificateCo
 
             await Task.WhenAll(tasks);
 
-            _logger.LogTrace($"Transfer command complete.");
+            _logger.LogTrace("Transfer command complete.");
         }
         catch (InvalidOperationException ex)
         {
@@ -119,7 +112,7 @@ public class TransferCertificateCommandHandler : IConsumer<TransferCertificateCo
 
     private async Task<IEnumerable<Slice>> ReserveRequiredSlices(IEnumerable<Slice> slices, uint quantity)
     {
-        _logger.LogTrace($"Reserving slices to transfer.");
+        _logger.LogTrace("Reserving slices to transfer.");
 
         var sumSlicesTaken = 0L;
         var takenSlices = slices
@@ -133,7 +126,7 @@ public class TransferCertificateCommandHandler : IConsumer<TransferCertificateCo
         }
         _unitOfWork.Commit();
 
-        _logger.LogTrace($"{takenSlices.Count} slices reserved.");
+        _logger.LogTrace("{count} slices reserved.", takenSlices.Count);
 
         return takenSlices;
     }

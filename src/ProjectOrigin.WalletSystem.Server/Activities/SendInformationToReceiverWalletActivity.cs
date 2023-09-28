@@ -20,9 +20,9 @@ public record SendInformationToReceiverWalletArgument
 
 public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInformationToReceiverWalletArgument>
 {
-    private IUnitOfWork _unitOfWork;
-    private IOptions<ServiceOptions> _walletSystemOptions;
-    private ILogger<SendInformationToReceiverWalletActivity> _logger;
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly IOptions<ServiceOptions> _walletSystemOptions;
+    private readonly ILogger<SendInformationToReceiverWalletActivity> _logger;
 
     public SendInformationToReceiverWalletActivity(IUnitOfWork unitOfWork, IOptions<ServiceOptions> walletSystemOptions, ILogger<SendInformationToReceiverWalletActivity> logger)
     {
@@ -88,8 +88,13 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
     {
         _logger.LogTrace("Receiver is local.");
 
-        var receiverEndpoint = await _unitOfWork.WalletRepository.GetDepositEndpointFromPublicKey(receiverDepositEndpoint.PublicKey)
-            ?? throw new Exception("Local receiver wallet could not be found");
+        var receiverEndpoint = await _unitOfWork.WalletRepository.GetDepositEndpointFromPublicKey(receiverDepositEndpoint.PublicKey);
+
+        if (receiverEndpoint is null)
+        {
+            _logger.LogError("Local receiver wallet could not be found for reciever wallet {ReceiverWalletId}", receiverDepositEndpoint.Id);
+            return context.Faulted(new Exception($"Local receiver wallet could not be found for reciever wallet {receiverDepositEndpoint.Id}"));
+        }
 
         var slice = new Slice
         {

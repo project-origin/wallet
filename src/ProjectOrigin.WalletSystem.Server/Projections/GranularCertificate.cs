@@ -7,16 +7,16 @@ namespace ProjectOrigin.WalletSystem.Server.Projections;
 
 public class GranularCertificate
 {
+    private readonly Electricity.V1.IssuedEvent _issued;
+    private readonly Dictionary<ByteString, CertificateSlice> _availableSlices = new Dictionary<ByteString, CertificateSlice>();
+    private readonly Dictionary<Common.V1.Uuid, AllocationSlice> _allocationSlices = new Dictionary<Common.V1.Uuid, AllocationSlice>();
+    private readonly Dictionary<Common.V1.Uuid, AllocationSlice> _claimedSlices = new Dictionary<Common.V1.Uuid, AllocationSlice>();
+
     public Common.V1.FederatedStreamId Id => _issued.CertificateId;
     public Electricity.V1.GranularCertificateType Type => _issued.Type;
     public Electricity.V1.DateInterval Period => _issued.Period;
     public IEnumerable<Electricity.V1.Attribute> Attributes => _issued.Attributes;
     public string GridArea => _issued.GridArea;
-
-    private Electricity.V1.IssuedEvent _issued;
-    private Dictionary<ByteString, CertificateSlice> _availableSlices = new Dictionary<ByteString, CertificateSlice>();
-    private Dictionary<Common.V1.Uuid, AllocationSlice> _allocationSlices = new Dictionary<Common.V1.Uuid, AllocationSlice>();
-    private Dictionary<Common.V1.Uuid, AllocationSlice> _claimedSlices = new Dictionary<Common.V1.Uuid, AllocationSlice>();
 
     public GranularCertificate(Electricity.V1.IssuedEvent e)
     {
@@ -42,7 +42,7 @@ public class GranularCertificate
 
     public void Apply(Electricity.V1.ClaimedEvent e)
     {
-        var slice = GetAllocation(e.AllocationId) ?? throw new Exception("Invalid state");
+        var slice = GetAllocation(e.AllocationId) ?? throw new InvalidOperationException("Invalid state");
         _allocationSlices.Remove(e.AllocationId);
         _claimedSlices.Add(e.AllocationId, slice);
     }
@@ -63,7 +63,7 @@ public class GranularCertificate
 
     protected CertificateSlice TakeAvailableSlice(ByteString sliceHash)
     {
-        var oldSlice = GetCertificateSlice(sliceHash) ?? throw new Exception("Invalid state");
+        var oldSlice = GetCertificateSlice(sliceHash) ?? throw new InvalidOperationException("Invalid state");
         _availableSlices.Remove(sliceHash);
         return oldSlice;
     }

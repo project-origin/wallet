@@ -26,7 +26,7 @@ public class VerifySlicesWorker : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger.LogInformation($"{nameof(VerifySlicesWorker)} moving all receivedSlices to messageBroker.");
+        _logger.LogInformation("VerifySlicesWorker moving all receivedSlices to messageBroker.");
 
         while (!stoppingToken.IsCancellationRequested)
         {
