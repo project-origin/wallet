@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using FluentAssertions;
 using Google.Protobuf;
 using Google.Protobuf.Reflection;
@@ -46,7 +47,7 @@ public static class ActivityAssertionExtensions
         var obj = Activator.CreateInstance<T>();
         foreach (var kvp in dictionary)
         {
-            var keyUpper = kvp.Key[0].ToString().ToUpper() + kvp.Key.Substring(1);
+            string keyUpper = kvp.Key.ToUpperFirstChar();
             var property = typeof(T).GetProperty(kvp.Key) ?? typeof(T).GetProperty(keyUpper);
             if (property != null && property.CanWrite)
             {
@@ -73,5 +74,12 @@ public static class ActivityAssertionExtensions
         payload.Should().Match(payloadPredicate);
 
         return (argument.Transaction, payload);
+    }
+
+    private static string ToUpperFirstChar(this string value)
+    {
+        var keyFirstUpper = new Span<char>(new char[1]);
+        value.AsSpan(0, 1).ToUpperInvariant(keyFirstUpper);
+        return string.Concat(keyFirstUpper, value.AsSpan(1));
     }
 }

@@ -75,7 +75,7 @@ public class ClaimCertificateCommandHandler : IConsumer<ClaimCertificateCommand>
     /// </summary>
     /// <param name="reservedConsumptionSlices"></param>
     /// <param name="reservedProductionSlices"></param>
-    private async Task<RoutingSlip> BuildClaimRoutingSlip(IRegistryProcessBuilder processBuilder, long quantity, IList<Slice> reservedConsumptionSlices, IList<Slice> reservedProductionSlices)
+    private static async Task<RoutingSlip> BuildClaimRoutingSlip(IRegistryProcessBuilder processBuilder, long quantity, IList<Slice> reservedConsumptionSlices, IList<Slice> reservedProductionSlices)
     {
         var remainderToClaim = quantity;
         Slice? productionRemainderSlice = null;
