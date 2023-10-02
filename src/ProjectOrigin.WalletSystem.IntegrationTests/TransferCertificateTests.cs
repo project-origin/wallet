@@ -8,9 +8,7 @@ using Npgsql;
 using Dapper;
 using ProjectOrigin.WalletSystem.Server.Models;
 using Xunit.Abstractions;
-using AutoFixture;
 using ProjectOrigin.PedersenCommitment;
-using Grpc.Core;
 using System.Linq;
 using FluentAssertions;
 using ProjectOrigin.WalletSystem.IntegrationTests.TestExtensions;
@@ -70,7 +68,7 @@ public class TransferCertificateTests : WalletSystemTestsBase, IClassFixture<Reg
         await client.TransferCertificateAsync(request, senderHeader);
 
         //Assert
-        await WaitForCertCount(certId, 4);
+        await WaitForCertCount(certId, 3);
     }
 
     [Fact]
@@ -108,7 +106,7 @@ public class TransferCertificateTests : WalletSystemTestsBase, IClassFixture<Reg
         }, senderHeader);
 
         //Assert
-        await WaitForCertCount(certId, 4);
+        await WaitForCertCount(certId, 3);
 
         await client.TransferCertificateAsync(new TransferRequest()
         {
@@ -118,7 +116,7 @@ public class TransferCertificateTests : WalletSystemTestsBase, IClassFixture<Reg
         }, senderHeader);
 
         //Assert
-        await WaitForCertCount(certId, 7);
+        await WaitForCertCount(certId, 5);
 
         // Create recipient wallet
         var (recipient, recipientHeader) = GenerateUserHeader();
@@ -137,7 +135,7 @@ public class TransferCertificateTests : WalletSystemTestsBase, IClassFixture<Reg
         };
         await client.TransferCertificateAsync(request, intermidiateHeader);
 
-        await WaitForCertCount(certId, 12);
+        await WaitForCertCount(certId, 8);
     }
 
     [Fact(Skip = "Not implemented")]
@@ -155,7 +153,7 @@ public class TransferCertificateTests : WalletSystemTestsBase, IClassFixture<Reg
         while (DateTime.UtcNow - startedAt < TimeSpan.FromMinutes(1))
         {
             // Verify slice created in database
-            var slices = await connection.QueryAsync<Slice>("SELECT s.*, r.Name as Registry  FROM Slices s INNER JOIN Registries r on s.RegistryId = r.Id WHERE CertificateId = @certificateId", new { certificateId = certId });
+            var slices = await connection.QueryAsync<ReceivedSlice>("SELECT * FROM received_slices s WHERE certificate_id = @certificateId", new { certificateId = certId });
             slicesFound = slices.Count();
             if (slicesFound >= number)
                 break;

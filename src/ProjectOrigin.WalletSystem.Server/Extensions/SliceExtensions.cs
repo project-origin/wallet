@@ -5,5 +5,5 @@ namespace ProjectOrigin.WalletSystem.Server.Extensions;
 
 public static class SliceExtensions
 {
-    public static FederatedStreamId GetFederatedStreamId(this Slice slice) => new FederatedStreamId { Registry = slice.Registry, StreamId = new Uuid { Value = slice.CertificateId.ToString() } };
+    public static FederatedStreamId GetFederatedStreamId(this BaseSlice slice) => new FederatedStreamId { Registry = slice.RegistryName, StreamId = new Uuid { Value = slice.CertificateId.ToString() } };
 }

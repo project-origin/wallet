@@ -9,7 +9,7 @@ namespace ProjectOrigin.WalletSystem.Server;
 public interface IRegistryProcessBuilder
 {
     RoutingSlip Build();
-    Task Claim(Slice productionSlice, Slice consumptionSlice);
-    Task<(Slice quantitySlice, Slice remainderSlice)> SplitSlice(Slice source, long quantity);
-    void SetSliceStates(Dictionary<Guid, SliceState> newStates);
+    Task Claim(ReceivedSlice productionSlice, ReceivedSlice consumptionSlice);
+    Task<(ReceivedSlice quantitySlice, ReceivedSlice remainderSlice)> SplitSlice(ReceivedSlice source, long quantity);
+    void SetSliceStates(Dictionary<Guid, ReceivedSliceState> newStates);
 }

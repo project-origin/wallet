@@ -1,9 +1,8 @@
-using Dapper;
 using FluentAssertions;
 using Grpc.Core;
 using ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures;
 using ProjectOrigin.WalletSystem.Server;
-using ProjectOrigin.WalletSystem.Server.Models;
+using ProjectOrigin.WalletSystem.Server.Repositories;
 using ProjectOrigin.WalletSystem.V1;
 using System;
 using System.Threading.Tasks;
@@ -49,15 +48,19 @@ public class GrpcTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
         depositEndpoint.WalletDepositEndpoint.Endpoint.Should().Be(endpoint);
         depositEndpoint.WalletDepositEndpoint.PublicKey.Should().NotBeNullOrEmpty();
 
+
         using (var connection = _dbFixture.GetConnectionFactory().CreateConnection())
         {
-            var foundDepositEndpoint = connection.QuerySingle<DepositEndpoint>("SELECT * FROM DepositEndpoints");
+            var walletRepository = new WalletRepository(connection);
 
-            depositEndpoint.WalletDepositEndpoint.PublicKey.Should().Equal(foundDepositEndpoint.PublicKey.Export().ToArray());
+            var publicKey = Algorithm.ImportHDPublicKey(depositEndpoint.WalletDepositEndpoint.PublicKey.Span);
+            var endpoint = await walletRepository.GetReceiveEndpoint(publicKey);
 
-            var foundWallet = connection.QuerySingle<Wallet>("SELECT * FROM Wallets where owner = @owner", new { owner = subject });
-            // Wallet should be implicitly created
-            foundWallet.Should().NotBeNull();
+            endpoint.Should().NotBeNull();
+
+            var wallet = await walletRepository.GetWallet(endpoint!.WalletId);
+            wallet.Should().NotBeNull();
+            wallet.Owner.Should().Be(subject);
         }
     }
 

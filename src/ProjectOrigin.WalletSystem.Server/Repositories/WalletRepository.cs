@@ -170,20 +170,20 @@ public class WalletRepository : IWalletRepository
 
     public async Task<IHDPrivateKey> GetPrivateKeyForSlice(Guid sliceId)
     {
-        var keyInfo = await _connection.QuerySingleAsync<(IHDPrivateKey PrivateKey, int WalletPosition, int DepositEndpointPosition)>(
-            @"SELECT w.PrivateKey, e.WalletPosition, s.DepositEndpointPosition
+        var keyInfo = await _connection.QuerySingleAsync<(IHDPrivateKey PrivateKey, int WalletPosition, int EndpointPosition)>(
+            @"SELECT w.private_key, re.wallet_position, s.receive_endpoint_position
               FROM received_slices s
-              INNER JOIN receive_endpoints e
-                ON s.receive_endpoint_id = e.id
+              INNER JOIN receive_endpoints re
+                ON s.receive_endpoint_id = re.id
               INNER JOIN wallets w
-                ON de.wallet_id = w.id
+                ON re.wallet_id = w.id
               WHERE s.id = @sliceId",
             new
             {
                 sliceId
             });
 
-        return keyInfo.PrivateKey.Derive(keyInfo.WalletPosition).Derive(keyInfo.DepositEndpointPosition);
+        return keyInfo.PrivateKey.Derive(keyInfo.WalletPosition).Derive(keyInfo.EndpointPosition);
     }
 
     private Task CreateReceiveEndpoint(ReceiveEndpoint endpoint)

@@ -46,7 +46,7 @@ public class SplitTests : IClassFixture<PostgresDatabaseFixture>
         var cert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _registryName, Server.Models.GranularCertificateType.Production);
         var secret = new SecretCommitmentInfo(150);
         var sourceSlice = await _dbFixture.CreateSlice(endpoint, cert, secret);
-        var publicKey = endpoint.PublicKey.Derive(sourceSlice.DepositEndpointPosition).GetPublicKey();
+        var publicKey = endpoint.PublicKey.Derive(sourceSlice.ReceiveEndpointPosition).GetPublicKey();
 
         // Act
         var (newSlice1, newSlice2) = await _processBuilder.SplitSlice(sourceSlice, 100);
@@ -71,16 +71,16 @@ public class SplitTests : IClassFixture<PostgresDatabaseFixture>
         slip.Itinerary[1].ShouldWaitFor(transaction);
 
         slip.Itinerary[2].ShouldSetStates(new(){
-            { newSlice1.Id, SliceState.Reserved },
-            { newSlice2.Id, SliceState.Reserved },
-            { sourceSlice.Id, SliceState.Sliced }
+            { newSlice1.Id, ReceivedSliceState.Reserved },
+            { newSlice2.Id, ReceivedSliceState.Reserved },
+            { sourceSlice.Id, ReceivedSliceState.Sliced }
         });
 
         slip.Itinerary.Count.Should().Be(3);
 
-        (await _unitOfWork.CertificateRepository.GetSlice(sourceSlice.Id)).SliceState.Should().Be(SliceState.Slicing);
-        (await _unitOfWork.CertificateRepository.GetSlice(newSlice1.Id)).SliceState.Should().Be(SliceState.Registering);
-        (await _unitOfWork.CertificateRepository.GetSlice(newSlice2.Id)).SliceState.Should().Be(SliceState.Registering);
+        (await _unitOfWork.CertificateRepository.GetReceivedSlice(sourceSlice.Id)).SliceState.Should().Be(ReceivedSliceState.Slicing);
+        (await _unitOfWork.CertificateRepository.GetReceivedSlice(newSlice1.Id)).SliceState.Should().Be(ReceivedSliceState.Registering);
+        (await _unitOfWork.CertificateRepository.GetReceivedSlice(newSlice2.Id)).SliceState.Should().Be(ReceivedSliceState.Registering);
     }
 
     [Theory]

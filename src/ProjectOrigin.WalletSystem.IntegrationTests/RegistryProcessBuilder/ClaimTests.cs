@@ -47,12 +47,12 @@ public class ClaimTests : IClassFixture<PostgresDatabaseFixture>
         var prodCert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _registryName, Server.Models.GranularCertificateType.Production);
         var prodSecret = new SecretCommitmentInfo(150);
         var prodSlice = await _dbFixture.CreateSlice(endpoint, prodCert, prodSecret);
-        var prodPublicKey = endpoint.PublicKey.Derive(prodSlice.DepositEndpointPosition);
+        var prodPublicKey = endpoint.PublicKey.Derive(prodSlice.ReceiveEndpointPosition);
 
         var consCert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _registryName, Server.Models.GranularCertificateType.Consumption);
         var consSecret = new SecretCommitmentInfo(150);
         var consSlice = await _dbFixture.CreateSlice(endpoint, consCert, consSecret);
-        var consPublicKey = endpoint.PublicKey.Derive(consSlice.DepositEndpointPosition);
+        var consPublicKey = endpoint.PublicKey.Derive(consSlice.ReceiveEndpointPosition);
 
         // Act
         await _processBuilder.Claim(prodSlice, consSlice);
@@ -113,8 +113,8 @@ public class ClaimTests : IClassFixture<PostgresDatabaseFixture>
         slip.Itinerary[7].ShouldWaitFor(t4);
 
         slip.Itinerary[8].ShouldSetStates(new(){
-            { prodSlice.Id, SliceState.Claimed },
-            { consSlice.Id, SliceState.Claimed },
+            { prodSlice.Id, ReceivedSliceState.Claimed },
+            { consSlice.Id, ReceivedSliceState.Claimed },
         });
 
         slip.Itinerary[9].ShouldBeActivity<UpdateClaimStateActivity, UpdateClaimStateArguments>()

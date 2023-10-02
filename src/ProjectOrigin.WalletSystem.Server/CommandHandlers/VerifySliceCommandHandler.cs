@@ -92,19 +92,19 @@ public class VerifySliceCommandHandler : IConsumer<VerifySliceCommand>
 
     private async Task InsertIntoWallet(VerifySliceCommand receivedSlice, GranularCertificate certificateProjection)
     {
-        var slice = new Slice
+        var slice = new ReceivedSlice
         {
             Id = Guid.NewGuid(),
-            DepositEndpointId = receivedSlice.DepositEndpointId,
-            DepositEndpointPosition = receivedSlice.DepositEndpointPosition,
-            Registry = receivedSlice.Registry,
+            ReceiveEndpointId = receivedSlice.DepositEndpointId,
+            ReceiveEndpointPosition = receivedSlice.DepositEndpointPosition,
+            RegistryName = receivedSlice.Registry,
             CertificateId = receivedSlice.CertificateId,
             Quantity = receivedSlice.Quantity,
             RandomR = receivedSlice.RandomR,
-            SliceState = SliceState.Available
+            SliceState = ReceivedSliceState.Available
         };
 
-        var certificate = await _unitOfWork.CertificateRepository.GetCertificate(slice.Registry, slice.CertificateId);
+        var certificate = await _unitOfWork.CertificateRepository.GetCertificate(slice.RegistryName, slice.CertificateId);
         if (certificate == null)
         {
             var attributes = certificateProjection.Attributes
@@ -118,7 +118,7 @@ public class VerifySliceCommandHandler : IConsumer<VerifySliceCommand>
             certificate = new Certificate
             {
                 Id = slice.CertificateId,
-                Registry = receivedSlice.Registry,
+                RegistryName = receivedSlice.Registry,
                 StartDate = certificateProjection.Period.Start.ToDateTimeOffset(),
                 EndDate = certificateProjection.Period.End.ToDateTimeOffset(),
                 GridArea = certificateProjection.GridArea,
@@ -128,7 +128,7 @@ public class VerifySliceCommandHandler : IConsumer<VerifySliceCommand>
             await _unitOfWork.CertificateRepository.InsertCertificate(certificate);
         }
 
-        await _unitOfWork.CertificateRepository.InsertSlice(slice);
+        await _unitOfWork.CertificateRepository.InsertReceivedSlice(slice);
 
         _unitOfWork.Commit();
 

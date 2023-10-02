@@ -125,10 +125,10 @@ public class VerifySliceCommandHandlerTests : IAsyncLifetime
                                                                                             && x.StartDate == issuedEvent.Period.Start.ToDateTimeOffset()
                                                                                             && x.EndDate == issuedEvent.Period.End.ToDateTimeOffset()));
         var blindingValueArray = commitment.BlindingValue.ToArray();
-        await _certificateRepository.Received(1).InsertSlice(Arg.Is<Slice>(x => x.CertificateId == certId
+        await _certificateRepository.Received(1).InsertReceivedSlice(Arg.Is<ReceivedSlice>(x => x.CertificateId == certId
                                                                                 && x.Quantity == commitment.Message
                                                                                 && x.RandomR.SequenceEqual(blindingValueArray)
-                                                                                && x.SliceState == SliceState.Available));
+                                                                                && x.SliceState == ReceivedSliceState.Available));
     }
 
     [Fact]
@@ -178,7 +178,7 @@ public class VerifySliceCommandHandlerTests : IAsyncLifetime
         _logger.Received(1).CheckWarning($"GranularCertificate with id {certId} not found in registry {RegistryName}");
 
         await _certificateRepository.DidNotReceiveWithAnyArgs().InsertCertificate(default!);
-        await _certificateRepository.DidNotReceiveWithAnyArgs().InsertSlice(default!);
+        await _certificateRepository.DidNotReceiveWithAnyArgs().InsertReceivedSlice(default!);
     }
 
     [Fact]
@@ -231,7 +231,7 @@ public class VerifySliceCommandHandlerTests : IAsyncLifetime
         _logger.Received(1).CheckWarning(innerException, $"Transient failed to get GranularCertificate with id {certId} on registry {RegistryName}");
 
         await _certificateRepository.DidNotReceiveWithAnyArgs().InsertCertificate(default!);
-        await _certificateRepository.DidNotReceiveWithAnyArgs().InsertSlice(default!);
+        await _certificateRepository.DidNotReceiveWithAnyArgs().InsertReceivedSlice(default!);
     }
 
     [Fact]
@@ -284,7 +284,7 @@ public class VerifySliceCommandHandlerTests : IAsyncLifetime
         _logger.Received(1).CheckError(innerException, $"Failed to get certificate with {certId}");
 
         await _certificateRepository.DidNotReceiveWithAnyArgs().InsertCertificate(default!);
-        await _certificateRepository.DidNotReceiveWithAnyArgs().InsertSlice(default!);
+        await _certificateRepository.DidNotReceiveWithAnyArgs().InsertReceivedSlice(default!);
     }
 
     [Fact]
@@ -338,7 +338,7 @@ public class VerifySliceCommandHandlerTests : IAsyncLifetime
         var sliceId = ByteString.CopyFrom(SHA256.HashData(commitmentSent.Commitment.C));
         _logger.Received(1).CheckWarning($"Slice with id {Convert.ToBase64String(sliceId.Span)} not found in certificate {certId}");
         await _certificateRepository.DidNotReceiveWithAnyArgs().InsertCertificate(default!);
-        await _certificateRepository.DidNotReceiveWithAnyArgs().InsertSlice(default!);
+        await _certificateRepository.DidNotReceiveWithAnyArgs().InsertReceivedSlice(default!);
     }
 
     [Fact]
@@ -392,7 +392,7 @@ public class VerifySliceCommandHandlerTests : IAsyncLifetime
         _logger.Received(1).CheckWarning($"Not correct publicKey on {certId}");
 
         await _certificateRepository.DidNotReceiveWithAnyArgs().InsertCertificate(default!);
-        await _certificateRepository.DidNotReceiveWithAnyArgs().InsertSlice(default!);
+        await _certificateRepository.DidNotReceiveWithAnyArgs().InsertReceivedSlice(default!);
     }
 
     private static IssuedEvent CreateIssuedEvent(Guid certId, SecretCommitmentInfo commitment, IPublicKey publicKey) => new IssuedEvent

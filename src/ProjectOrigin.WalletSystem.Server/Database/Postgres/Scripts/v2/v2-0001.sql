@@ -30,7 +30,7 @@ CREATE TABLE deposit_endpoints
 (
     id uuid NOT NULL PRIMARY KEY,
     owner VARCHAR(64) NOT NULL,
-    public_key bytea NOT NULL UNIQUE,
+    public_key bytea NOT NULL,
     reference_text VARCHAR(256) NOT NULL,
     endpoint VARCHAR(512) NOT NULL
 );

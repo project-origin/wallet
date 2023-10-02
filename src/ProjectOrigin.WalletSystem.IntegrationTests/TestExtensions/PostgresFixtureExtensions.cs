@@ -69,7 +69,7 @@ public static class PostgresFixtureExtensions
             var cert = new Certificate
             {
                 Id = id,
-                Registry = registryName,
+                RegistryName = registryName,
                 StartDate = DateTimeOffset.Now,
                 EndDate = DateTimeOffset.Now.AddDays(1),
                 GridArea = "DK1",
@@ -82,25 +82,25 @@ public static class PostgresFixtureExtensions
         }
     }
 
-    public static async Task<Slice> CreateSlice(this PostgresDatabaseFixture _dbFixture, ReceiveEndpoint depositEndpoint, Certificate certificate, SecretCommitmentInfo secretCommitmentInfo)
+    public static async Task<ReceivedSlice> CreateSlice(this PostgresDatabaseFixture _dbFixture, ReceiveEndpoint depositEndpoint, Certificate certificate, SecretCommitmentInfo secretCommitmentInfo)
     {
         using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
         {
             var certificateRepository = new CertificateRepository(connection);
             var walletRepository = new WalletRepository(connection);
-            var slice = new Slice
+            var slice = new ReceivedSlice
             {
                 Id = Guid.NewGuid(),
-                DepositEndpointId = depositEndpoint.Id,
-                DepositEndpointPosition = await walletRepository.GetNextNumberForId(depositEndpoint.Id),
-                Registry = certificate.Registry,
+                ReceiveEndpointId = depositEndpoint.Id,
+                ReceiveEndpointPosition = await walletRepository.GetNextNumberForId(depositEndpoint.Id),
+                RegistryName = certificate.RegistryName,
                 CertificateId = certificate.Id,
                 Quantity = secretCommitmentInfo.Message,
                 RandomR = secretCommitmentInfo.BlindingValue.ToArray(),
-                SliceState = SliceState.Available
+                SliceState = ReceivedSliceState.Available
             };
 
-            await certificateRepository.InsertSlice(slice);
+            await certificateRepository.InsertReceivedSlice(slice);
 
             return slice;
         }
@@ -118,7 +118,7 @@ public static class PostgresFixtureExtensions
             certificate = new Certificate
             {
                 Id = Guid.Parse(issuedEvent.CertificateId.StreamId.Value),
-                Registry = issuedEvent.CertificateId.Registry,
+                RegistryName = issuedEvent.CertificateId.Registry,
                 StartDate = issuedEvent.Period.Start.ToDateTimeOffset(),
                 EndDate = issuedEvent.Period.End.ToDateTimeOffset(),
                 GridArea = issuedEvent.GridArea,
@@ -128,19 +128,19 @@ public static class PostgresFixtureExtensions
             await certificateRepository.InsertCertificate(certificate);
         }
 
-        var receivedSlice = new Slice
+        var receivedSlice = new ReceivedSlice
         {
             Id = Guid.NewGuid(),
-            DepositEndpointId = endpoint.Id,
-            DepositEndpointPosition = position,
-            Registry = certificate.Registry,
+            ReceiveEndpointId = endpoint.Id,
+            ReceiveEndpointPosition = position,
+            RegistryName = certificate.RegistryName,
             CertificateId = certificate.Id,
             Quantity = commitment.Message,
             RandomR = commitment.BlindingValue.ToArray(),
-            SliceState = SliceState.Available
+            SliceState = ReceivedSliceState.Available
         };
 
-        await certificateRepository.InsertSlice(receivedSlice);
+        await certificateRepository.InsertReceivedSlice(receivedSlice);
     }
 
 

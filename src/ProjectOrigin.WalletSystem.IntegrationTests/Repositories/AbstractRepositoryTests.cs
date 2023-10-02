@@ -93,7 +93,7 @@ public abstract class AbstractRepositoryTests : IClassFixture<PostgresDatabaseFi
         var certificate = new Certificate
         {
             Id = Guid.NewGuid(),
-            Registry = registryName,
+            RegistryName = registryName,
             StartDate = startDate?.ToUtcTime() ?? DateTimeOffset.Now.ToUtcTime(),
             EndDate = startDate?.AddHours(1).ToUtcTime() ?? DateTimeOffset.Now.AddDays(1).ToUtcTime(),
             GridArea = "DK1",
