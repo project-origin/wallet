@@ -71,8 +71,8 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
                 await walletRepository.Create(wallet);
                 await walletRepository.Create(notOwnedWallet);
 
-                var depositEndpoint = await walletRepository.CreateDepositEndpoint(wallet.Id, string.Empty);
-                var notOwnedDepositEndpoint = await walletRepository.CreateDepositEndpoint(notOwnedWallet.Id, string.Empty);
+                var endpoint = await walletRepository.CreateReceiveEndpoint(wallet.Id);
+                var notOwnedendpoint = await walletRepository.CreateReceiveEndpoint(notOwnedWallet.Id);
 
                 var regName = _fixture.Create<string>();
                 var certificateRepository = new CertificateRepository(connection);
@@ -121,7 +121,7 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
                 var slice1 = new Slice
                 {
                     Id = Guid.NewGuid(),
-                    DepositEndpointId = depositEndpoint.Id,
+                    DepositEndpointId = endpoint.Id,
                     DepositEndpointPosition = 1,
                     Registry = regName,
                     CertificateId = certificate1.Id,
@@ -132,7 +132,7 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
                 var slice2 = new Slice
                 {
                     Id = Guid.NewGuid(),
-                    DepositEndpointId = depositEndpoint.Id,
+                    DepositEndpointId = endpoint.Id,
                     DepositEndpointPosition = 1,
                     Registry = regName,
                     CertificateId = certificate1.Id,
@@ -143,7 +143,7 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
                 var slice3 = new Slice
                 {
                     Id = Guid.NewGuid(),
-                    DepositEndpointId = depositEndpoint.Id,
+                    DepositEndpointId = endpoint.Id,
                     DepositEndpointPosition = 1,
                     Registry = regName,
                     CertificateId = certificate2.Id,
@@ -154,7 +154,7 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
                 var notOwnedSlice = new Slice
                 {
                     Id = Guid.NewGuid(),
-                    DepositEndpointId = notOwnedDepositEndpoint.Id,
+                    DepositEndpointId = notOwnedendpoint.Id,
                     DepositEndpointPosition = 1,
                     Registry = regName,
                     CertificateId = notOwnedCertificate.Id,
@@ -200,7 +200,7 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
                 };
                 await walletRepository.Create(wallet);
 
-                var depositEndpoint = await walletRepository.CreateDepositEndpoint(wallet.Id, string.Empty);
+                var endpoint = await walletRepository.CreateReceiveEndpoint(wallet.Id);
             }
 
             var someOwnerName = _fixture.Create<string>();
@@ -232,7 +232,7 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
                 };
                 await walletRepository.Create(wallet);
 
-                var depositEndpoint = await walletRepository.CreateDepositEndpoint(wallet.Id, string.Empty);
+                var endpoint = await walletRepository.CreateReceiveEndpoint(wallet.Id);
 
                 var regName = _fixture.Create<string>();
 
@@ -247,7 +247,7 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
                 var slice1 = new Slice
                 {
                     Id = Guid.NewGuid(),
-                    DepositEndpointId = depositEndpoint.Id,
+                    DepositEndpointId = endpoint.Id,
                     DepositEndpointPosition = 1,
                     Registry = regName,
                     CertificateId = certId,

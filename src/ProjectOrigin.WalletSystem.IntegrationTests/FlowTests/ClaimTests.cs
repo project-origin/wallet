@@ -33,12 +33,12 @@ public class ClaimTests : WalletSystemTestsBase, IClassFixture<RegistryFixture>,
         _registryFixture = registryFixture;
     }
 
-    private async Task<FederatedStreamId> IssueCertToDepositEndpoint(DepositEndpoint senderDepositEndpoint, uint issuedAmount, Electricity.V1.GranularCertificateType type)
+    private async Task<FederatedStreamId> IssueCertToReceiveEndpoint(ReceiveEndpoint endpoint, uint issuedAmount, Electricity.V1.GranularCertificateType type)
     {
         var prodCommitment = new SecretCommitmentInfo(issuedAmount);
         var position = 1;
-        var issuedEvent = await _registryFixture.IssueCertificate(type, prodCommitment, senderDepositEndpoint.PublicKey.Derive(position).GetPublicKey());
-        await _dbFixture.InsertSlice(senderDepositEndpoint, position, issuedEvent, prodCommitment);
+        var issuedEvent = await _registryFixture.IssueCertificate(type, prodCommitment, endpoint.PublicKey.Derive(position).GetPublicKey());
+        await _dbFixture.InsertSlice(endpoint, position, issuedEvent, prodCommitment);
         return issuedEvent.CertificateId;
     }
 
@@ -49,10 +49,10 @@ public class ClaimTests : WalletSystemTestsBase, IClassFixture<RegistryFixture>,
         var client = new V1.WalletService.WalletServiceClient(_grpcFixture.Channel);
 
         var (owner, header) = GenerateUserHeader();
-        var senderDepositEndpoint = await _dbFixture.CreateWalletDepositEndpoint(owner);
+        var senderEndpoint = await _dbFixture.CreateReceiveEndpoint(owner);
 
-        var consumptionId = await IssueCertToDepositEndpoint(senderDepositEndpoint, 300, Electricity.V1.GranularCertificateType.Consumption);
-        var productionId = await IssueCertToDepositEndpoint(senderDepositEndpoint, 200, Electricity.V1.GranularCertificateType.Production);
+        var consumptionId = await IssueCertToReceiveEndpoint(senderEndpoint, 300, Electricity.V1.GranularCertificateType.Consumption);
+        var productionId = await IssueCertToReceiveEndpoint(senderEndpoint, 200, Electricity.V1.GranularCertificateType.Production);
 
         //Act
         var response = await client.ClaimCertificatesAsync(new V1.ClaimRequest()

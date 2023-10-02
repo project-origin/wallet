@@ -84,9 +84,9 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
     {
         _logger.LogTrace("Receiver is local.");
 
-        var receiverEndpoint = await _unitOfWork.WalletRepository.GetDepositEndpointFromPublicKey(receiverDepositEndpoint.PublicKey);
+        var endpoint = await _unitOfWork.WalletRepository.GetReceiveEndpoint(receiverDepositEndpoint.PublicKey);
 
-        if (receiverEndpoint is null)
+        if (endpoint is null)
         {
             _logger.LogError("Local receiver wallet could not be found for reciever wallet {ReceiverWalletId}", receiverDepositEndpoint.Id);
             return context.Faulted(new Exception($"Local receiver wallet could not be found for reciever wallet {receiverDepositEndpoint.Id}"));
@@ -95,7 +95,7 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
         var slice = new Slice
         {
             Id = Guid.NewGuid(),
-            DepositEndpointId = receiverEndpoint.Id,
+            DepositEndpointId = endpoint.Id,
             DepositEndpointPosition = newSlice.DepositEndpointPosition,
             Registry = newSlice.Registry,
             CertificateId = newSlice.CertificateId,

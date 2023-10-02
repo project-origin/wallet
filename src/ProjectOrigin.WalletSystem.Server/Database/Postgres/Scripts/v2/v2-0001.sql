@@ -12,7 +12,7 @@ CREATE TABLE receive_endpoints
     wallet_id uuid NOT NULL,
     wallet_position integer NOT NULL,
     public_key bytea NOT NULL UNIQUE,
-    reference_text VARCHAR(256) NOT NULL,
+    is_remainder_endpoint boolean NOT NULL,
     UNIQUE (wallet_id, wallet_position),
     UNIQUE (public_key),
     FOREIGN KEY (wallet_id)
@@ -21,6 +21,10 @@ CREATE TABLE receive_endpoints
         ON DELETE NO ACTION
         NOT VALID
 );
+
+CREATE UNIQUE INDEX idx_unique_remainder_endpoint
+    ON receive_endpoints (wallet_id)
+    WHERE is_remainder_endpoint IS TRUE;
 
 CREATE TABLE deposit_endpoints
 (
@@ -58,7 +62,7 @@ CREATE TABLE attributes (
 CREATE TABLE deposit_slices (
     id uuid NOT NULL PRIMARY KEY,
     certificate_id uuid NOT NULL,
-    registry_name uuid NOT NULL,
+    registry_name VARCHAR(64) NOT NULL,
     deposit_endpoint_id uuid NOT NULL,
     deposit_endpoint_position integer NOT NULL,
     slice_state integer NOT NULL,
@@ -79,7 +83,7 @@ CREATE TABLE deposit_slices (
 CREATE TABLE received_slices (
     id uuid NOT NULL PRIMARY KEY,
     certificate_id uuid NOT NULL,
-    registry_name uuid NOT NULL,
+    registry_name VARCHAR(64) NOT NULL,
     receive_endpoint_id uuid NOT NULL,
     receive_endpoint_position integer NOT NULL,
     slice_state integer NOT NULL,

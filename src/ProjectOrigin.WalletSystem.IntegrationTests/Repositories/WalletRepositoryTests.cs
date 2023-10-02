@@ -88,7 +88,7 @@ public class WalletRepositoryTests : AbstractRepositoryTests
 
         for (int position = 1; position <= sections; position++)
         {
-            await repository.CreateDepositEndpoint(wallet.Id, string.Empty);
+            await repository.CreateReceiveEndpoint(wallet.Id);
         }
 
         // Act
@@ -104,17 +104,17 @@ public class WalletRepositoryTests : AbstractRepositoryTests
         // Arrange
         var subject = _fixture.Create<string>();
         var wallet = await CreateWallet(subject);
-        var depositEndpoint1 = await CreateDepositEndpoint(wallet);
-        var depositEndpoint2 = await CreateDepositEndpoint(wallet);
-        var depositEndpoint3 = await CreateDepositEndpoint(wallet);
+        var endpoint1 = await CreateReceiveEndpoint(wallet);
+        var endpoint2 = await CreateReceiveEndpoint(wallet);
+        var endpoint3 = await CreateReceiveEndpoint(wallet);
 
         // Act
         var publicKey = wallet.PrivateKey.Derive(2).Neuter();
-        var depositEndpoint = await _repository.GetDepositEndpointFromPublicKey(publicKey);
+        var endpoint = await _repository.GetReceiveEndpoint(publicKey);
 
         // Assert
-        depositEndpoint.Should().NotBeNull();
-        depositEndpoint!.Id.Should().Be(depositEndpoint2.Id);
+        endpoint.Should().NotBeNull();
+        endpoint!.Id.Should().Be(endpoint2.Id);
     }
 
     [Fact]
@@ -124,26 +124,24 @@ public class WalletRepositoryTests : AbstractRepositoryTests
         var publicKey = _algorithm.GenerateNewPrivateKey().Derive(1).Neuter();
 
         // Act
-        var depositEndpoint = await _repository.GetDepositEndpointFromPublicKey(publicKey);
+        var endpoint = await _repository.GetReceiveEndpoint(publicKey);
 
         // Assert
-        depositEndpoint.Should().BeNull();
+        endpoint.Should().BeNull();
     }
 
     [Fact]
-    public async Task GetReceiverDepositEndpoint()
+    public async Task GetDepositEndpoint()
     {
         // Arrange
         var subject = _fixture.Create<string>();
-        var depositEndpoint = await CreateReceiverDepositEndpoint(subject, _fixture.Create<string>(), _fixture.Create<string>());
+        var endpoint = await CreateDepositEndpoint(subject, _fixture.Create<string>(), _fixture.Create<string>());
 
         // Act
-        var deDb = await _repository.GetDepositEndpoint(depositEndpoint.Id);
+        var deDb = await _repository.GetDepositEndpoint(endpoint.Id);
 
         // Assert
         deDb.Should().NotBeNull();
-        deDb.WalletPosition.Should().BeNull();
-        deDb.WalletId.Should().BeNull();
     }
 
     [Fact]

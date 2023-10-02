@@ -60,8 +60,8 @@ public class VerifySliceCommandHandler : IConsumer<VerifySliceCommand>
                     return;
                 }
 
-                var depositEndpoint = await _unitOfWork.WalletRepository.GetDepositEndpoint(receivedSlice.DepositEndpointId);
-                var positionPublicKey = depositEndpoint.PublicKey.Derive(receivedSlice.DepositEndpointPosition).GetPublicKey();
+                var endpoint = await _unitOfWork.WalletRepository.GetReceiveEndpoint(receivedSlice.DepositEndpointId);
+                var positionPublicKey = endpoint.PublicKey.Derive(receivedSlice.DepositEndpointPosition).GetPublicKey();
                 if (!foundSlice.Owner.ImportKey().Equals(positionPublicKey))
                 {
                     _logger.LogWarning("Not correct publicKey on {certificateId}", receivedSlice.CertificateId);

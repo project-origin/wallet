@@ -39,19 +39,19 @@ public static class PostgresFixtureExtensions
         }
     }
 
-    public static async Task<DepositEndpoint> CreateDepositEndpoint(this PostgresDatabaseFixture _dbFixture, Wallet wallet)
+    public static async Task<ReceiveEndpoint> CreateReceiveEndpoint(this PostgresDatabaseFixture _dbFixture, Wallet wallet)
     {
         using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
         {
             var walletRepository = new WalletRepository(connection);
-            return await walletRepository.CreateDepositEndpoint(wallet.Id, string.Empty);
+            return await walletRepository.CreateReceiveEndpoint(wallet.Id);
         }
     }
 
-    public static async Task<DepositEndpoint> CreateWalletDepositEndpoint(this PostgresDatabaseFixture _dbFixture, string owner)
+    public static async Task<ReceiveEndpoint> CreateReceiveEndpoint(this PostgresDatabaseFixture _dbFixture, string owner)
     {
         var wallet = await CreateWallet(_dbFixture, owner);
-        return await CreateDepositEndpoint(_dbFixture, wallet);
+        return await CreateReceiveEndpoint(_dbFixture, wallet);
     }
 
     public static async Task<Certificate> CreateCertificate(this PostgresDatabaseFixture _dbFixture, Guid id, string registryName, GranularCertificateType type)
@@ -82,7 +82,7 @@ public static class PostgresFixtureExtensions
         }
     }
 
-    public static async Task<Slice> CreateSlice(this PostgresDatabaseFixture _dbFixture, DepositEndpoint depositEndpoint, Certificate certificate, SecretCommitmentInfo secretCommitmentInfo)
+    public static async Task<Slice> CreateSlice(this PostgresDatabaseFixture _dbFixture, ReceiveEndpoint depositEndpoint, Certificate certificate, SecretCommitmentInfo secretCommitmentInfo)
     {
         using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
         {
@@ -106,7 +106,7 @@ public static class PostgresFixtureExtensions
         }
     }
 
-    public static async Task InsertSlice(this PostgresDatabaseFixture _dbFixture, DepositEndpoint depositEndpoint, int position, Electricity.V1.IssuedEvent issuedEvent, SecretCommitmentInfo commitment)
+    public static async Task InsertSlice(this PostgresDatabaseFixture _dbFixture, ReceiveEndpoint endpoint, int position, Electricity.V1.IssuedEvent issuedEvent, SecretCommitmentInfo commitment)
     {
         using var connection = new NpgsqlConnection(_dbFixture.ConnectionString);
         var certificateRepository = new CertificateRepository(connection);
@@ -131,7 +131,7 @@ public static class PostgresFixtureExtensions
         var receivedSlice = new Slice
         {
             Id = Guid.NewGuid(),
-            DepositEndpointId = depositEndpoint.Id,
+            DepositEndpointId = endpoint.Id,
             DepositEndpointPosition = position,
             Registry = certificate.Registry,
             CertificateId = certificate.Id,

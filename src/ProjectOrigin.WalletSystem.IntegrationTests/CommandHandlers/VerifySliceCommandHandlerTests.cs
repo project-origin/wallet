@@ -83,20 +83,18 @@ public class VerifySliceCommandHandlerTests : IAsyncLifetime
         var depositPosition = 1;
         var commitment = new SecretCommitmentInfo(150);
 
-        var depositEndpoint = new DepositEndpoint
+        var endpoint = new ReceiveEndpoint
         {
             Id = Guid.NewGuid(),
             WalletId = Guid.NewGuid(),
             WalletPosition = walletPosition,
             PublicKey = privateKey.Derive(walletPosition).Neuter(),
-            Owner = string.Empty,
-            ReferenceText = string.Empty,
-            Endpoint = string.Empty
+            IsRemainderEndpoint = false,
         };
 
-        _walletRepository.GetDepositEndpoint(depositEndpoint.Id).Returns(depositEndpoint);
+        _walletRepository.GetReceiveEndpoint(endpoint.Id).Returns(endpoint);
 
-        var issuedEvent = CreateIssuedEvent(certId, commitment, depositEndpoint.PublicKey.Derive(depositPosition).GetPublicKey());
+        var issuedEvent = CreateIssuedEvent(certId, commitment, endpoint.PublicKey.Derive(depositPosition).GetPublicKey());
         var certificate = new GranularCertificate(issuedEvent);
 
         _registryService.GetGranularCertificate(RegistryName, certId).Returns(new GetCertificateResult.Success(certificate));
@@ -107,7 +105,7 @@ public class VerifySliceCommandHandlerTests : IAsyncLifetime
         var command = new VerifySliceCommand
         {
             Id = Guid.NewGuid(),
-            DepositEndpointId = depositEndpoint.Id,
+            DepositEndpointId = endpoint.Id,
             DepositEndpointPosition = depositPosition,
             Registry = RegistryName,
             CertificateId = certId,
@@ -143,17 +141,15 @@ public class VerifySliceCommandHandlerTests : IAsyncLifetime
         var depositPosition = 1;
         var commitment = new SecretCommitmentInfo(150);
 
-        var depositEndpoint = new DepositEndpoint
+        var endpoint = new ReceiveEndpoint
         {
             Id = Guid.NewGuid(),
             WalletId = Guid.NewGuid(),
             WalletPosition = walletPosition,
             PublicKey = privateKey.Derive(walletPosition).Neuter(),
-            Owner = string.Empty,
-            ReferenceText = string.Empty,
-            Endpoint = string.Empty
+            IsRemainderEndpoint = false,
         };
-        _walletRepository.GetDepositEndpoint(depositEndpoint.Id).Returns(depositEndpoint);
+        _walletRepository.GetReceiveEndpoint(endpoint.Id).Returns(endpoint);
 
         _registryService.GetGranularCertificate(RegistryName, certId).Returns(new GetCertificateResult.NotFound());  // <-- failure
 
@@ -163,7 +159,7 @@ public class VerifySliceCommandHandlerTests : IAsyncLifetime
         var command = new VerifySliceCommand
         {
             Id = Guid.NewGuid(),
-            DepositEndpointId = depositEndpoint.Id,
+            DepositEndpointId = endpoint.Id,
             DepositEndpointPosition = depositPosition,
             Registry = RegistryName,
             CertificateId = certId,
@@ -197,17 +193,15 @@ public class VerifySliceCommandHandlerTests : IAsyncLifetime
         var depositPosition = 1;
         var commitment = new SecretCommitmentInfo(150);
 
-        var depositEndpoint = new DepositEndpoint
+        var endpoint = new ReceiveEndpoint
         {
             Id = Guid.NewGuid(),
             WalletId = Guid.NewGuid(),
             WalletPosition = walletPosition,
             PublicKey = privateKey.Derive(walletPosition).Neuter(),
-            Owner = string.Empty,
-            ReferenceText = string.Empty,
-            Endpoint = string.Empty
+            IsRemainderEndpoint = false,
         };
-        _walletRepository.GetDepositEndpoint(depositEndpoint.Id).Returns(depositEndpoint);
+        _walletRepository.GetReceiveEndpoint(endpoint.Id).Returns(endpoint);
 
         _registryService.GetGranularCertificate(RegistryName, certId).Returns(new GetCertificateResult.TransientFailure(innerException));  // <-- failure
 
@@ -217,7 +211,7 @@ public class VerifySliceCommandHandlerTests : IAsyncLifetime
         var command = new VerifySliceCommand
         {
             Id = Guid.NewGuid(),
-            DepositEndpointId = depositEndpoint.Id,
+            DepositEndpointId = endpoint.Id,
             DepositEndpointPosition = depositPosition,
             Registry = RegistryName,
             CertificateId = certId,
@@ -252,17 +246,15 @@ public class VerifySliceCommandHandlerTests : IAsyncLifetime
         var depositPosition = 1;
         var commitment = new SecretCommitmentInfo(150);
 
-        var depositEndpoint = new DepositEndpoint
+        var endpoint = new ReceiveEndpoint
         {
             Id = Guid.NewGuid(),
             WalletId = Guid.NewGuid(),
             WalletPosition = walletPosition,
             PublicKey = privateKey.Derive(walletPosition).Neuter(),
-            Owner = string.Empty,
-            ReferenceText = string.Empty,
-            Endpoint = string.Empty
+            IsRemainderEndpoint = false,
         };
-        _walletRepository.GetDepositEndpoint(depositEndpoint.Id).Returns(depositEndpoint);
+        _walletRepository.GetReceiveEndpoint(endpoint.Id).Returns(endpoint);
 
         _registryService.GetGranularCertificate(RegistryName, certId).Returns(new GetCertificateResult.Failure(innerException)); // <-- failure
 
@@ -272,7 +264,7 @@ public class VerifySliceCommandHandlerTests : IAsyncLifetime
         var command = new VerifySliceCommand
         {
             Id = Guid.NewGuid(),
-            DepositEndpointId = depositEndpoint.Id,
+            DepositEndpointId = endpoint.Id,
             DepositEndpointPosition = depositPosition,
             Registry = RegistryName,
             CertificateId = certId,
@@ -306,19 +298,17 @@ public class VerifySliceCommandHandlerTests : IAsyncLifetime
         var commitmentIssued = new SecretCommitmentInfo(150);
         var commitmentSent = new SecretCommitmentInfo(150);
 
-        var depositEndpoint = new DepositEndpoint
+        var endpoint = new ReceiveEndpoint
         {
             Id = Guid.NewGuid(),
             WalletId = Guid.NewGuid(),
             WalletPosition = walletPosition,
             PublicKey = privateKey.Derive(walletPosition).Neuter(),
-            Owner = string.Empty,
-            ReferenceText = string.Empty,
-            Endpoint = string.Empty
+            IsRemainderEndpoint = false,
         };
-        _walletRepository.GetDepositEndpoint(depositEndpoint.Id).Returns(depositEndpoint);
+        _walletRepository.GetReceiveEndpoint(endpoint.Id).Returns(endpoint);
 
-        var issuedEvent = CreateIssuedEvent(certId, commitmentIssued, depositEndpoint.PublicKey.Derive(depositPosition).GetPublicKey());
+        var issuedEvent = CreateIssuedEvent(certId, commitmentIssued, endpoint.PublicKey.Derive(depositPosition).GetPublicKey());
         var certificate = new GranularCertificate(issuedEvent);
 
         _registryService.GetGranularCertificate(RegistryName, certId).Returns(new GetCertificateResult.Success(certificate));
@@ -329,7 +319,7 @@ public class VerifySliceCommandHandlerTests : IAsyncLifetime
         var command = new VerifySliceCommand
         {
             Id = Guid.NewGuid(),
-            DepositEndpointId = depositEndpoint.Id,
+            DepositEndpointId = endpoint.Id,
             DepositEndpointPosition = depositPosition,
             Registry = RegistryName,
             CertificateId = certId,
@@ -361,19 +351,17 @@ public class VerifySliceCommandHandlerTests : IAsyncLifetime
         var depositPosition = 1;
         var commitment = new SecretCommitmentInfo(150);
 
-        var depositEndpoint = new DepositEndpoint
+        var endpoint = new ReceiveEndpoint
         {
             Id = Guid.NewGuid(),
             WalletId = Guid.NewGuid(),
             WalletPosition = walletPosition,
             PublicKey = privateKey.Derive(walletPosition).Neuter(),
-            Owner = string.Empty,
-            ReferenceText = string.Empty,
-            Endpoint = string.Empty
+            IsRemainderEndpoint = false,
         };
-        _walletRepository.GetDepositEndpoint(depositEndpoint.Id).Returns(depositEndpoint);
+        _walletRepository.GetReceiveEndpoint(endpoint.Id).Returns(endpoint);
 
-        var issuedEvent = CreateIssuedEvent(certId, commitment, depositEndpoint.PublicKey.Derive(depositPosition).GetPublicKey());
+        var issuedEvent = CreateIssuedEvent(certId, commitment, endpoint.PublicKey.Derive(depositPosition).GetPublicKey());
         var certificate = new GranularCertificate(issuedEvent);
 
         _registryService.GetGranularCertificate(RegistryName, certId).Returns(new GetCertificateResult.Success(certificate));
@@ -384,7 +372,7 @@ public class VerifySliceCommandHandlerTests : IAsyncLifetime
         var command = new VerifySliceCommand
         {
             Id = Guid.NewGuid(),
-            DepositEndpointId = depositEndpoint.Id,
+            DepositEndpointId = endpoint.Id,
             DepositEndpointPosition = depositPosition + 1, // <-- Wrong position thereby key
             Registry = RegistryName,
             CertificateId = certId,

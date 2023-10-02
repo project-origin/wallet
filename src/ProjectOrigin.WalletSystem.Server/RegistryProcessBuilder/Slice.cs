@@ -21,9 +21,8 @@ public partial class RegistryProcessBuilder
         if (source.Quantity <= quantity)
             throw new InvalidOperationException("Cannot split slice with quantity less than or equal to the requested quantity");
 
-        var sliceDepositEndpoint = await _unitOfWork.WalletRepository.GetDepositEndpoint(source.DepositEndpointId);
-        var remainderEndpoint = await _unitOfWork.WalletRepository.GetWalletRemainderDepositEndpoint(sliceDepositEndpoint.WalletId ??
-            throw new InvalidOperationException("Deposit endpoint must have a wallet id"));
+        var sliceEndpoint = await _unitOfWork.WalletRepository.GetReceiveEndpoint(source.DepositEndpointId);
+        var remainderEndpoint = await _unitOfWork.WalletRepository.GetWalletRemainderEndpoint(sliceEndpoint.WalletId);
 
         Slice claimSlice = await CreateAndInsertSlice(source, remainderEndpoint, (uint)quantity);
         Slice remainderSlice = await CreateAndInsertSlice(source, remainderEndpoint, (uint)(source.Quantity - quantity));
@@ -36,7 +35,7 @@ public partial class RegistryProcessBuilder
         return (claimSlice, remainderSlice);
     }
 
-    private async Task<Slice> CreateAndInsertSlice(Slice source, DepositEndpoint remainderEndpoint, uint quantity)
+    private async Task<Slice> CreateAndInsertSlice(Slice source, ReceiveEndpoint remainderEndpoint, uint quantity)
     {
         var newSecretCommitmentInfo = new SecretCommitmentInfo(quantity);
         var newSlice = source with
@@ -53,7 +52,7 @@ public partial class RegistryProcessBuilder
         return newSlice;
     }
 
-    private void BuildSliceRoutingSlip(DepositEndpoint remainderEndpoint, Slice sourceSlice, IHDPrivateKey privateKey, params Slice[] newSlices)
+    private void BuildSliceRoutingSlip(ReceiveEndpoint remainderEndpoint, Slice sourceSlice, IHDPrivateKey privateKey, params Slice[] newSlices)
     {
         var mappedSlices = newSlices.Select(s =>
         {

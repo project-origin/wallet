@@ -47,11 +47,11 @@ public class TransferCertificateTests : WalletSystemTestsBase, IClassFixture<Reg
 
         var (sender, senderHeader) = GenerateUserHeader();
         var commitment = new SecretCommitmentInfo(issuedAmount);
-        var senderDepositEndpoint = await _dbFixture.CreateWalletDepositEndpoint(sender);
+        var senderEndpoint = await _dbFixture.CreateReceiveEndpoint(sender);
         var position = 1;
-        var issuedEvent = await _registryFixture.IssueCertificate(Electricity.V1.GranularCertificateType.Production, commitment, senderDepositEndpoint.PublicKey.Derive(position).GetPublicKey());
+        var issuedEvent = await _registryFixture.IssueCertificate(Electricity.V1.GranularCertificateType.Production, commitment, senderEndpoint.PublicKey.Derive(position).GetPublicKey());
         var certId = Guid.Parse(issuedEvent.CertificateId.StreamId.Value);
-        await _dbFixture.InsertSlice(senderDepositEndpoint, position, issuedEvent, commitment);
+        await _dbFixture.InsertSlice(senderEndpoint, position, issuedEvent, commitment);
 
         var (recipient, recipientHeader) = GenerateUserHeader();
         var createEndpointResponse = await client.CreateWalletDepositEndpointAsync(new CreateWalletDepositEndpointRequest(), recipientHeader);
@@ -81,14 +81,14 @@ public class TransferCertificateTests : WalletSystemTestsBase, IClassFixture<Reg
 
         // Create sender wallet
         var (sender, senderHeader) = GenerateUserHeader();
-        var depositEndpoint = await _dbFixture.CreateWalletDepositEndpoint(sender);
+        var endpoint = await _dbFixture.CreateReceiveEndpoint(sender);
 
         // Issue certificate to sender
         var position = 1;
         var issuedAmount = 500u;
         var commitment = new SecretCommitmentInfo(issuedAmount);
-        var issuedEvent = await _registryFixture.IssueCertificate(Electricity.V1.GranularCertificateType.Production, commitment, depositEndpoint.PublicKey.Derive(position).GetPublicKey());
-        await _dbFixture.InsertSlice(depositEndpoint, position, issuedEvent, commitment);
+        var issuedEvent = await _registryFixture.IssueCertificate(Electricity.V1.GranularCertificateType.Production, commitment, endpoint.PublicKey.Derive(position).GetPublicKey());
+        await _dbFixture.InsertSlice(endpoint, position, issuedEvent, commitment);
         var certId = Guid.Parse(issuedEvent.CertificateId.StreamId.Value);
 
         // Create intermidiate wallet

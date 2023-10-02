@@ -41,12 +41,12 @@ public class SplitTests : IClassFixture<PostgresDatabaseFixture>
     public async Task TestSplitMethod()
     {
         // Arrange
-        var depositEndpoint = await _dbFixture.CreateWalletDepositEndpoint(_fixture.Create<string>());
+        var endpoint = await _dbFixture.CreateReceiveEndpoint(_fixture.Create<string>());
 
         var cert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _registryName, Server.Models.GranularCertificateType.Production);
         var secret = new SecretCommitmentInfo(150);
-        var sourceSlice = await _dbFixture.CreateSlice(depositEndpoint, cert, secret);
-        var publicKey = depositEndpoint.PublicKey.Derive(sourceSlice.DepositEndpointPosition).GetPublicKey();
+        var sourceSlice = await _dbFixture.CreateSlice(endpoint, cert, secret);
+        var publicKey = endpoint.PublicKey.Derive(sourceSlice.DepositEndpointPosition).GetPublicKey();
 
         // Act
         var (newSlice1, newSlice2) = await _processBuilder.SplitSlice(sourceSlice, 100);
@@ -89,11 +89,11 @@ public class SplitTests : IClassFixture<PostgresDatabaseFixture>
     public async Task TestSplitMethodWithQuantityEqualToSliceQuantity(uint sliceSize, int splitQuanity)
     {
         // Arrange
-        var depositEndpoint = await _dbFixture.CreateWalletDepositEndpoint(_fixture.Create<string>());
+        var endpoint = await _dbFixture.CreateReceiveEndpoint(_fixture.Create<string>());
 
         var cert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _registryName, Server.Models.GranularCertificateType.Production);
         var secret = new SecretCommitmentInfo(sliceSize);
-        var slice = await _dbFixture.CreateSlice(depositEndpoint, cert, secret);
+        var slice = await _dbFixture.CreateSlice(endpoint, cert, secret);
 
         // Act
         Func<Task> act = async () => await _processBuilder.SplitSlice(slice, splitQuanity);

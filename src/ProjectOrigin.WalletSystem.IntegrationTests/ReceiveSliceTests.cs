@@ -43,7 +43,7 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
             var certId = Guid.NewGuid();
             var owner = "John";
             var registryName = new Fixture().Create<string>();
-            var depositEndpoint = await _dbFixture.CreateWalletDepositEndpoint(owner);
+            var endpoint = await _dbFixture.CreateReceiveEndpoint(owner);
             var client = new ReceiveSliceService.ReceiveSliceServiceClient(_grpcFixture.Channel);
             var request = new ReceiveRequest()
             {
@@ -52,7 +52,7 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
                     Registry = registryName,
                     StreamId = new Common.V1.Uuid() { Value = certId.ToString() },
                 },
-                WalletDepositEndpointPublicKey = ByteString.CopyFrom(depositEndpoint.PublicKey.Export()),
+                WalletDepositEndpointPublicKey = ByteString.CopyFrom(endpoint.PublicKey.Export()),
                 WalletDepositEndpointPosition = 2,
                 Quantity = 240,
                 RandomR = ByteString.CopyFrom(new byte[] { 0x01, 0x02, 0x03, 0x04 }),
@@ -69,7 +69,7 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
             publishedMessage.MessageObject.Should().BeOfType<VerifySliceCommand>();
             var command = (VerifySliceCommand)publishedMessage.MessageObject;
 
-            command.DepositEndpointId.Should().Be(depositEndpoint.Id);
+            command.DepositEndpointId.Should().Be(endpoint.Id);
             command.DepositEndpointPosition.Should().Be(2);
             command.Registry.Should().Be(registryName);
             command.CertificateId.Should().Be(certId);

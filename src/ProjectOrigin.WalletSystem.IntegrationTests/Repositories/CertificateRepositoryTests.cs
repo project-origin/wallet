@@ -71,16 +71,16 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
     public async Task CreateSlice_InsertsSlice()
     {
         // Arrange
-        var depositEndpointPosition = 1;
+        var endpointPosition = 1;
         var registry = _fixture.Create<string>();
         var certificate = await CreateCertificate(registry);
         var wallet = await CreateWallet(registry);
-        var depositEndpoint = await CreateDepositEndpoint(wallet);
+        var endpoint = await CreateReceiveEndpoint(wallet);
         var slice = new Slice
         {
             Id = Guid.NewGuid(),
-            DepositEndpointId = depositEndpoint.Id,
-            DepositEndpointPosition = depositEndpointPosition,
+            DepositEndpointId = endpoint.Id,
+            DepositEndpointPosition = endpointPosition,
             Registry = registry,
             CertificateId = certificate.Id,
             Quantity = _fixture.Create<int>(),
@@ -100,24 +100,24 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
     public async Task GetAllOwnedCertificates()
     {
         // Arrange
-        var deposintEndpointPosition = 1;
+        var endpointPosition = 1;
         var registry = _fixture.Create<string>();
         var certificate1 = await CreateCertificate(registry);
         var certificate2 = await CreateCertificate(registry, GranularCertificateType.Consumption);
         var certificate3 = await CreateCertificate(registry);
         var owner1 = _fixture.Create<string>();
         var wallet1 = await CreateWallet(owner1);
-        var depositEndpoint1 = await CreateDepositEndpoint(wallet1);
-        var depositEndpoint2 = await CreateDepositEndpoint(wallet1);
+        var endpoint1 = await CreateReceiveEndpoint(wallet1);
+        var endpoint2 = await CreateReceiveEndpoint(wallet1);
         var owner2 = _fixture.Create<string>();
         var wallet2 = await CreateWallet(owner2);
-        var depositEndpoint3 = await CreateDepositEndpoint(wallet2);
+        var endpoint3 = await CreateReceiveEndpoint(wallet2);
         //Wallet1
         var slice1 = new Slice
         {
             Id = Guid.NewGuid(),
-            DepositEndpointId = depositEndpoint1.Id,
-            DepositEndpointPosition = deposintEndpointPosition,
+            DepositEndpointId = endpoint1.Id,
+            DepositEndpointPosition = endpointPosition,
             Registry = registry,
             CertificateId = certificate1.Id,
             Quantity = _fixture.Create<int>(),
@@ -127,8 +127,8 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         var slice2 = new Slice
         {
             Id = Guid.NewGuid(),
-            DepositEndpointId = depositEndpoint1.Id,
-            DepositEndpointPosition = deposintEndpointPosition + 1,
+            DepositEndpointId = endpoint1.Id,
+            DepositEndpointPosition = endpointPosition + 1,
             Registry = registry,
             CertificateId = certificate1.Id,
             Quantity = _fixture.Create<int>(),
@@ -139,8 +139,8 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         var slice3 = new Slice
         {
             Id = Guid.NewGuid(),
-            DepositEndpointId = depositEndpoint2.Id,
-            DepositEndpointPosition = deposintEndpointPosition,
+            DepositEndpointId = endpoint2.Id,
+            DepositEndpointPosition = endpointPosition,
             Registry = registry,
             CertificateId = certificate2.Id,
             Quantity = _fixture.Create<int>(),
@@ -151,8 +151,8 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         var sliceWithDifferentOwner = new Slice
         {
             Id = Guid.NewGuid(),
-            DepositEndpointId = depositEndpoint3.Id,
-            DepositEndpointPosition = deposintEndpointPosition,
+            DepositEndpointId = endpoint3.Id,
+            DepositEndpointPosition = endpointPosition,
             Registry = registry,
             CertificateId = certificate3.Id,
             Quantity = _fixture.Create<int>(),
@@ -188,11 +188,11 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         var certificate = await CreateCertificate(registry);
         var owner = _fixture.Create<string>();
         var wallet = await CreateWallet(owner);
-        var depositEndpoint = await CreateDepositEndpoint(wallet);
+        var endpoint = await CreateReceiveEndpoint(wallet);
         var slice = new Slice
         {
             Id = Guid.NewGuid(),
-            DepositEndpointId = depositEndpoint.Id,
+            DepositEndpointId = endpoint.Id,
             DepositEndpointPosition = 1,
             Registry = registry,
             CertificateId = certificate.Id,
@@ -227,11 +227,11 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
     {
         var owner = _fixture.Create<string>();
         var wallet = await CreateWallet(owner);
-        var depositEndpoint = await CreateDepositEndpoint(wallet);
+        var endpoint = await CreateReceiveEndpoint(wallet);
 
         var sliceToInsert = _fixture.Create<ReceivedSlice>() with
         {
-            DepositEndpointId = depositEndpoint.Id,
+            DepositEndpointId = endpoint.Id,
             DepositEndpointPosition = 1
         };
 
@@ -257,14 +257,14 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
     {
         var registry = _fixture.Create<string>();
         var wallet1 = await CreateWallet(_fixture.Create<string>());
-        var depositEndpointPosition = 1;
-        var depositEndpoint = await CreateDepositEndpoint(wallet1);
+        var endpointPosition = 1;
+        var endpoint = await CreateReceiveEndpoint(wallet1);
         var certificate = await CreateCertificate(registry);
         var slice = new Slice
         {
             Id = Guid.NewGuid(),
-            DepositEndpointId = depositEndpoint.Id,
-            DepositEndpointPosition = depositEndpointPosition,
+            DepositEndpointId = endpoint.Id,
+            DepositEndpointPosition = endpointPosition,
             Registry = registry,
             CertificateId = certificate.Id,
             Quantity = _fixture.Create<int>(),
@@ -285,14 +285,14 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
     {
         var registry = _fixture.Create<string>();
         var wallet1 = await CreateWallet(_fixture.Create<string>());
-        var depositEndpointPosition = 1;
-        var depositEndpoint = await CreateDepositEndpoint(wallet1);
+        var endpointPosition = 1;
+        var endpoint = await CreateReceiveEndpoint(wallet1);
         var certificate = await CreateCertificate(registry);
         var slice1 = new Slice
         {
             Id = Guid.NewGuid(),
-            DepositEndpointId = depositEndpoint.Id,
-            DepositEndpointPosition = depositEndpointPosition,
+            DepositEndpointId = endpoint.Id,
+            DepositEndpointPosition = endpointPosition,
             Registry = registry,
             CertificateId = certificate.Id,
             Quantity = _fixture.Create<int>(),
@@ -302,8 +302,8 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         var slice2 = new Slice
         {
             Id = Guid.NewGuid(),
-            DepositEndpointId = depositEndpoint.Id,
-            DepositEndpointPosition = depositEndpointPosition,
+            DepositEndpointId = endpoint.Id,
+            DepositEndpointPosition = endpointPosition,
             Registry = registry,
             CertificateId = certificate.Id,
             Quantity = _fixture.Create<int>(),
@@ -324,14 +324,14 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
     {
         var registry = _fixture.Create<string>();
         var wallet1 = await CreateWallet(_fixture.Create<string>());
-        var depositEndpointPosition = 1;
-        var depositEndpoint = await CreateDepositEndpoint(wallet1);
+        var endpointPosition = 1;
+        var endpoint = await CreateReceiveEndpoint(wallet1);
         var certificate = await CreateCertificate(registry);
         var slice = new Slice
         {
             Id = Guid.NewGuid(),
-            DepositEndpointId = depositEndpoint.Id,
-            DepositEndpointPosition = depositEndpointPosition,
+            DepositEndpointId = endpoint.Id,
+            DepositEndpointPosition = endpointPosition,
             Registry = registry,
             CertificateId = certificate.Id,
             Quantity = _fixture.Create<int>(),
@@ -356,11 +356,11 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         var certificate = await CreateCertificate(registry);
         var owner = _fixture.Create<string>();
         var wallet = await CreateWallet(owner);
-        var depositEndpoint = await CreateDepositEndpoint(wallet);
+        var endpoint = await CreateReceiveEndpoint(wallet);
         var slice = new Slice
         {
             Id = Guid.NewGuid(),
-            DepositEndpointId = depositEndpoint.Id,
+            DepositEndpointId = endpoint.Id,
             DepositEndpointPosition = 1,
             Registry = registry,
             CertificateId = certificate.Id,
@@ -400,11 +400,11 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         var certificate = await CreateCertificate(registry);
         var owner = _fixture.Create<string>();
         var wallet = await CreateWallet(owner);
-        var depositEndpoint = await CreateDepositEndpoint(wallet);
+        var endpoint = await CreateReceiveEndpoint(wallet);
         var slice = new Slice
         {
             Id = Guid.NewGuid(),
-            DepositEndpointId = depositEndpoint.Id,
+            DepositEndpointId = endpoint.Id,
             DepositEndpointPosition = 1,
             Registry = registry,
             CertificateId = certificate.Id,
@@ -429,11 +429,11 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         var certificate = await CreateCertificate(registry);
         var owner = _fixture.Create<string>();
         var wallet = await CreateWallet(owner);
-        var depositEndpoint = await CreateDepositEndpoint(wallet);
+        var endpoint = await CreateReceiveEndpoint(wallet);
         var slice = new Slice
         {
             Id = Guid.NewGuid(),
-            DepositEndpointId = depositEndpoint.Id,
+            DepositEndpointId = endpoint.Id,
             DepositEndpointPosition = 1,
             Registry = registry,
             CertificateId = certificate.Id,
@@ -465,11 +465,11 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         var certificate = await CreateCertificate(registry);
         var owner = _fixture.Create<string>();
         var wallet = await CreateWallet(owner);
-        var depositEndpoint = await CreateDepositEndpoint(wallet);
+        var endpoint = await CreateReceiveEndpoint(wallet);
         var slice = new Slice
         {
             Id = Guid.NewGuid(),
-            DepositEndpointId = depositEndpoint.Id,
+            DepositEndpointId = endpoint.Id,
             DepositEndpointPosition = 1,
             Registry = registry,
             CertificateId = certificate.Id,
@@ -592,7 +592,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
     {
         var registry = _fixture.Create<string>();
         var wallet = await CreateWallet(owner);
-        var depositEndpoint = await CreateDepositEndpoint(wallet);
+        var endpoint = await CreateReceiveEndpoint(wallet);
 
         var position = 1;
         for (int i = 0; i < numberOfClaims; i++)
@@ -601,7 +601,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
             var conSlice = new Slice
             {
                 Id = Guid.NewGuid(),
-                DepositEndpointId = depositEndpoint.Id,
+                DepositEndpointId = endpoint.Id,
                 DepositEndpointPosition = position++,
                 Registry = registry,
                 CertificateId = conCert.Id,
@@ -615,7 +615,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
             var prodSlice = new Slice
             {
                 Id = Guid.NewGuid(),
-                DepositEndpointId = depositEndpoint.Id,
+                DepositEndpointId = endpoint.Id,
                 DepositEndpointPosition = position++,
                 Registry = registry,
                 CertificateId = prodCert.Id,

@@ -9,12 +9,13 @@ public interface IWalletRepository
 {
     Task<int> Create(Wallet wallet);
     Task<Wallet?> GetWalletByOwner(string owner);
-    Task<DepositEndpoint> CreateDepositEndpoint(Guid walletId, string referenceText);
-    Task<DepositEndpoint> CreateReceiverDepositEndpoint(string owner, IHDPublicKey ownerPublicKey, string referenceText, string endpoint);
-    Task<DepositEndpoint?> GetDepositEndpointFromPublicKey(IHDPublicKey publicKey);
-    Task<DepositEndpoint> GetDepositEndpoint(Guid depositEndpointId);
+    Task<ReceiveEndpoint> CreateReceiveEndpoint(Guid walletId);
+    Task<DepositEndpoint> CreateDepositEndpoint(string owner, IHDPublicKey ownerPublicKey, string referenceText, string endpoint);
+    Task<ReceiveEndpoint?> GetReceiveEndpoint(IHDPublicKey publicKey);
+    Task<ReceiveEndpoint> GetReceiveEndpoint(Guid depositEndpointId);
     Task<Wallet> GetWallet(Guid walletId);
     Task<int> GetNextNumberForId(Guid id);
-    Task<DepositEndpoint> GetWalletRemainderDepositEndpoint(Guid walletId);
+    Task<ReceiveEndpoint> GetWalletRemainderEndpoint(Guid walletId);
     Task<IHDPrivateKey> GetPrivateKeyForSlice(Guid sliceId);
+    Task<DepositEndpoint> GetDepositEndpoint(Guid receiverDepositEndpointId);
 }
