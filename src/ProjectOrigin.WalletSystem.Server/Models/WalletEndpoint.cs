@@ -3,7 +3,7 @@ using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
 
 namespace ProjectOrigin.WalletSystem.Server.Models;
 
-public record ReceiveEndpoint
+public record WalletEndpoint
 {
     public required Guid Id { get; init; }
     public required Guid WalletId { get; init; }

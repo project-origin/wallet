@@ -39,16 +39,16 @@ public static class PostgresFixtureExtensions
         }
     }
 
-    public static async Task<ReceiveEndpoint> CreateReceiveEndpoint(this PostgresDatabaseFixture _dbFixture, Wallet wallet)
+    public static async Task<WalletEndpoint> CreateReceiveEndpoint(this PostgresDatabaseFixture _dbFixture, Wallet wallet)
     {
         using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
         {
             var walletRepository = new WalletRepository(connection);
-            return await walletRepository.CreateReceiveEndpoint(wallet.Id);
+            return await walletRepository.CreateWalletEndpoint(wallet.Id);
         }
     }
 
-    public static async Task<ReceiveEndpoint> CreateReceiveEndpoint(this PostgresDatabaseFixture _dbFixture, string owner)
+    public static async Task<WalletEndpoint> CreateReceiveEndpoint(this PostgresDatabaseFixture _dbFixture, string owner)
     {
         var wallet = await CreateWallet(_dbFixture, owner);
         return await CreateReceiveEndpoint(_dbFixture, wallet);
@@ -82,31 +82,31 @@ public static class PostgresFixtureExtensions
         }
     }
 
-    public static async Task<ReceivedSlice> CreateSlice(this PostgresDatabaseFixture _dbFixture, ReceiveEndpoint depositEndpoint, Certificate certificate, SecretCommitmentInfo secretCommitmentInfo)
+    public static async Task<WalletSlice> CreateSlice(this PostgresDatabaseFixture _dbFixture, WalletEndpoint outboxEndpoint, Certificate certificate, SecretCommitmentInfo secretCommitmentInfo)
     {
         using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
         {
             var certificateRepository = new CertificateRepository(connection);
             var walletRepository = new WalletRepository(connection);
-            var slice = new ReceivedSlice
+            var slice = new WalletSlice
             {
                 Id = Guid.NewGuid(),
-                ReceiveEndpointId = depositEndpoint.Id,
-                ReceiveEndpointPosition = await walletRepository.GetNextNumberForId(depositEndpoint.Id),
+                WalletEndpointId = outboxEndpoint.Id,
+                WalletEndpointPosition = await walletRepository.GetNextNumberForId(outboxEndpoint.Id),
                 RegistryName = certificate.RegistryName,
                 CertificateId = certificate.Id,
                 Quantity = secretCommitmentInfo.Message,
                 RandomR = secretCommitmentInfo.BlindingValue.ToArray(),
-                SliceState = ReceivedSliceState.Available
+                SliceState = WalletSliceState.Available
             };
 
-            await certificateRepository.InsertReceivedSlice(slice);
+            await certificateRepository.InsertWalletSlice(slice);
 
             return slice;
         }
     }
 
-    public static async Task InsertSlice(this PostgresDatabaseFixture _dbFixture, ReceiveEndpoint endpoint, int position, Electricity.V1.IssuedEvent issuedEvent, SecretCommitmentInfo commitment)
+    public static async Task InsertSlice(this PostgresDatabaseFixture _dbFixture, WalletEndpoint endpoint, int position, Electricity.V1.IssuedEvent issuedEvent, SecretCommitmentInfo commitment)
     {
         using var connection = new NpgsqlConnection(_dbFixture.ConnectionString);
         var certificateRepository = new CertificateRepository(connection);
@@ -128,19 +128,19 @@ public static class PostgresFixtureExtensions
             await certificateRepository.InsertCertificate(certificate);
         }
 
-        var receivedSlice = new ReceivedSlice
+        var receivedSlice = new WalletSlice
         {
             Id = Guid.NewGuid(),
-            ReceiveEndpointId = endpoint.Id,
-            ReceiveEndpointPosition = position,
+            WalletEndpointId = endpoint.Id,
+            WalletEndpointPosition = position,
             RegistryName = certificate.RegistryName,
             CertificateId = certificate.Id,
             Quantity = commitment.Message,
             RandomR = commitment.BlindingValue.ToArray(),
-            SliceState = ReceivedSliceState.Available
+            SliceState = WalletSliceState.Available
         };
 
-        await certificateRepository.InsertReceivedSlice(receivedSlice);
+        await certificateRepository.InsertWalletSlice(receivedSlice);
     }
 
 

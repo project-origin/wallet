@@ -43,10 +43,10 @@ public class TransferCertificateCommandHandler : IConsumer<TransferCertificateCo
         {
             var msg = context.Message;
 
-            var receiverEndpoint = await _unitOfWork.WalletRepository.GetDepositEndpoint(msg.Receiver)
-                ?? throw new InvalidOperationException($"The receiver deposit endpoint was not found for this transfer");
+            var receiverEndpoint = await _unitOfWork.WalletRepository.GetOutboxEndpoint(msg.Receiver)
+                ?? throw new InvalidOperationException($"The outbox endpoint was not found for this transfer");
 
-            IEnumerable<ReceivedSlice> reservedSlices = await _unitOfWork.CertificateRepository.ReserveQuantity(msg.Owner, msg.Registry, msg.CertificateId, msg.Quantity);
+            IEnumerable<WalletSlice> reservedSlices = await _unitOfWork.CertificateRepository.ReserveQuantity(msg.Owner, msg.Registry, msg.CertificateId, msg.Quantity);
 
             var remainderToTransfer = msg.Quantity;
             List<Task> tasks = new();
@@ -60,7 +60,7 @@ public class TransferCertificateCommandHandler : IConsumer<TransferCertificateCo
                         new()
                         {
                             SourceSliceId = slice.Id,
-                            ReceiverDepositEndpointId = receiverEndpoint.Id
+                            OutboxEndpointId = receiverEndpoint.Id
                         });
                     remainderToTransfer -= (uint)slice.Quantity;
                 }
@@ -70,7 +70,7 @@ public class TransferCertificateCommandHandler : IConsumer<TransferCertificateCo
                         new()
                         {
                             SourceSliceId = slice.Id,
-                            ReceiverDepositEndpointId = receiverEndpoint.Id,
+                            OutboxEndpointId = receiverEndpoint.Id,
                             Quantity = remainderToTransfer
                         });
                 }

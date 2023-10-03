@@ -1,7 +1,7 @@
 ```mermaid
 erDiagram
 
-    claims }o--|| received_slices : "consists of"
+    claims }o--|| wallet_slices : "consists of"
     claims {
         uuid id PK "Unique id of a claim"
         uuid production_slice_id FK "Unique id of a production slice"
@@ -10,13 +10,13 @@ erDiagram
     }
 
     wallets {
-        uuid id PK "Un2que id of a wallet"
+        uuid id PK "Unique id of a wallet"
         text owner "Identifies the owner subject"
         bytea private_key "The private key of the owner/wallet"
     }
 
-    wallets ||--o{ receive_endpoints : contains
-    receive_endpoints {
+    wallets ||--o{ wallet_endpoints : contains
+    wallet_endpoints {
         uuid id PK "Unique id of a receive endpoint"
         uuid wallet_id FK "The wallet that owns the receive endpoint"
         int wallet_position "The position of the receive endpoint in the wallet"
@@ -33,19 +33,18 @@ erDiagram
         int certificate_type "Enum type of the certificate (production | consumption)"
     }
 
-    certficates ||--o{ received_slices : has
-    receive_endpoints ||--o{ received_slices : contains
-    received_slices {
+    certficates ||--o{ wallet_slices : has
+    wallet_endpoints ||--o{ wallet_slices : contains
+    wallet_slices {
         uuid id PK "Unique id of a slice"
         uuid certificate_id FK "Unique id of a certificate"
         text registry_name FK "string name of the registry"
-        uuid receive_endpoint_id FK "The receive endpoint that owns the slice"
-        int receive_endpoint_position "The position of the slice in the receive endpoint"
+        uuid wallet_endpoint_id FK "The receive endpoint that owns the slice"
+        int wallet_endpoint_position "The position of the slice in the receive endpoint"
         int slice_state "Holds the state of the slice"
         bigint quantity "The quantity of watt-hours on the slice"
         bytea random_r "The random R is the blinding factor for the commitment"
     }
-
 
     certficates ||--o{ attributes : has
     attributes {
@@ -56,25 +55,24 @@ erDiagram
         text value_atr "The value of the attribute"
     }
 
-    deposit_endpoints {
-        uuid id PK "Unique id of a deposit endpoint"
+    outbox_endpoints {
+        uuid id PK "Unique id of a outbox endpoint"
         text owner "Identifies the owner subject"
-        bytea public_key "The public key of the deposit endpoint"
-        text reference_text "Textural reference of the depositEndpoint"
-        text endpoint "The URL of where the wallet system of deposit endpoint is placed"
+        bytea public_key "The public key of the outbox endpoint"
+        text reference_text "Textural reference of the outbox endpoint"
+        text endpoint "The URL of where the wallet system of outbox endpoint is placed"
     }
 
-    certficates ||--o{ deposit_slices : has
-    deposit_endpoints ||--o{ deposit_slices : contains
-    deposit_slices {
+    certficates ||--o{ outbox_slices : has
+    outbox_endpoints ||--o{ outbox_slices : contains
+    outbox_slices {
         uuid id PK "Unique id of a slice"
         uuid certificate_id FK "Unique id of a certificate"
         text registry_name FK "string name of the registry"
-        uuid deposit_endpoint_id FK "The receive endpoint that owns the slice"
-        int deposit_endpoint_position "The position of the slice in the receive endpoint"
+        uuid outbox_endpoint_id FK "The receive endpoint that owns the slice"
+        int outbox_endpoint_position "The position of the slice in the receive endpoint"
         int slice_state "Holds the state of the slice"
         bigint quantity "The quantity of watt-hours on the slice"
         bytea random_r "The random R is the blinding factor for the commitment"
     }
-
 ```

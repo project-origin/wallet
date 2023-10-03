@@ -10,7 +10,7 @@ namespace ProjectOrigin.WalletSystem.Server.Activities;
 
 public record UpdateSliceStateArguments()
 {
-    public required Dictionary<Guid, ReceivedSliceState> SliceStates { get; init; }
+    public required Dictionary<Guid, WalletSliceState> SliceStates { get; init; }
 }
 
 public class UpdateSliceStateActivity : IExecuteActivity<UpdateSliceStateArguments>
@@ -33,7 +33,7 @@ public class UpdateSliceStateActivity : IExecuteActivity<UpdateSliceStateArgumen
 
             foreach (var (id, state) in context.Arguments.SliceStates)
             {
-                await _unitOfWork.CertificateRepository.SetReceivedSliceState(id, state);
+                await _unitOfWork.CertificateRepository.SetWalletSliceState(id, state);
             }
             _unitOfWork.Commit();
             return context.Completed();

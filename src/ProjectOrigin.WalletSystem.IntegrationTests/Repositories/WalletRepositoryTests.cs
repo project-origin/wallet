@@ -39,7 +39,7 @@ public class WalletRepositoryTests : AbstractRepositoryTests
         await repository.Create(wallet);
 
         // Assert
-        var walletDb = await repository.GetWalletByOwner(subject);
+        var walletDb = await repository.GetWallet(subject);
         walletDb.Should().BeEquivalentTo(wallet);
     }
 
@@ -60,7 +60,7 @@ public class WalletRepositoryTests : AbstractRepositoryTests
         await repository.Create(wallet);
 
         // Act
-        var walletResponse = await repository.GetWalletByOwner(subject);
+        var walletResponse = await repository.GetWallet(subject);
 
         // Assert
         walletResponse.Should().NotBeNull();
@@ -71,7 +71,7 @@ public class WalletRepositoryTests : AbstractRepositoryTests
     [InlineData(0, 1)]
     [InlineData(1, 2)]
     [InlineData(3, 4)]
-    public async Task Query_CreateDepositEndpoint_GetNextWalletPosition_Valid(int sections, int next)
+    public async Task Query_CreateWalletEndpoint_GetNextWalletPosition_Valid(int sections, int next)
     {
         // Arrange
         var subject = Guid.NewGuid().ToString();
@@ -88,7 +88,7 @@ public class WalletRepositoryTests : AbstractRepositoryTests
 
         for (int position = 1; position <= sections; position++)
         {
-            await repository.CreateReceiveEndpoint(wallet.Id);
+            await repository.CreateWalletEndpoint(wallet.Id);
         }
 
         // Act
@@ -99,18 +99,18 @@ public class WalletRepositoryTests : AbstractRepositoryTests
     }
 
     [Fact]
-    public async Task GetWalletDepositEndpointFromPublicKey_Success()
+    public async Task GetWalletEndpointFromPublicKey_Success()
     {
         // Arrange
         var subject = _fixture.Create<string>();
         var wallet = await CreateWallet(subject);
-        var endpoint1 = await CreateReceiveEndpoint(wallet);
-        var endpoint2 = await CreateReceiveEndpoint(wallet);
-        var endpoint3 = await CreateReceiveEndpoint(wallet);
+        var endpoint1 = await CreateWalletEndpoint(wallet);
+        var endpoint2 = await CreateWalletEndpoint(wallet);
+        var endpoint3 = await CreateWalletEndpoint(wallet);
 
         // Act
         var publicKey = wallet.PrivateKey.Derive(2).Neuter();
-        var endpoint = await _repository.GetReceiveEndpoint(publicKey);
+        var endpoint = await _repository.GetWalletEndpoint(publicKey);
 
         // Assert
         endpoint.Should().NotBeNull();
@@ -118,27 +118,27 @@ public class WalletRepositoryTests : AbstractRepositoryTests
     }
 
     [Fact]
-    public async Task GetWalletDepositEndpointFromPublicKey_ReturnNull()
+    public async Task GetWalletEndpointFromPublicKey_ReturnNull()
     {
         // Arrange
         var publicKey = _algorithm.GenerateNewPrivateKey().Derive(1).Neuter();
 
         // Act
-        var endpoint = await _repository.GetReceiveEndpoint(publicKey);
+        var endpoint = await _repository.GetWalletEndpoint(publicKey);
 
         // Assert
         endpoint.Should().BeNull();
     }
 
     [Fact]
-    public async Task GetDepositEndpoint()
+    public async Task GetOutboxEndpoint()
     {
         // Arrange
         var subject = _fixture.Create<string>();
-        var endpoint = await CreateDepositEndpoint(subject, _fixture.Create<string>(), _fixture.Create<string>());
+        var endpoint = await CreateOutboxEndpoint(subject, _fixture.Create<string>(), _fixture.Create<string>());
 
         // Act
-        var deDb = await _repository.GetDepositEndpoint(endpoint.Id);
+        var deDb = await _repository.GetOutboxEndpoint(endpoint.Id);
 
         // Assert
         deDb.Should().NotBeNull();

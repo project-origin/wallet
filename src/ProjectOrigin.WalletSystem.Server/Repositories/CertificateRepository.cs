@@ -16,19 +16,19 @@ public class CertificateRepository : ICertificateRepository
 
     public CertificateRepository(IDbConnection connection) => this._connection = connection;
 
-    public async Task InsertReceivedSlice(ReceivedSlice newSlice)
+    public async Task InsertWalletSlice(WalletSlice newSlice)
     {
         await _connection.ExecuteAsync(
-            @"INSERT INTO received_slices(id, certificate_id, registry_name, receive_endpoint_id, receive_endpoint_position, slice_state, quantity, random_r)
-              VALUES (@id, @certificateId, @registryName, @receiveEndpointId, @receiveEndpointPosition, @sliceState, @quantity, @randomR)",
+            @"INSERT INTO wallet_slices(id, certificate_id, registry_name, wallet_endpoint_id, wallet_endpoint_position, slice_state, quantity, random_r)
+              VALUES (@id, @certificateId, @registryName, @walletEndpointId, @walletEndpointPosition, @sliceState, @quantity, @randomR)",
             newSlice);
     }
 
-    public async Task InsertDepositSlice(DepositSlice newSlice)
+    public async Task InsertOutboxSlice(OutboxSlice newSlice)
     {
         await _connection.ExecuteAsync(
-            @"INSERT INTO deposit_slices(id, certificate_id, registry_name, deposit_endpoint_id, deposit_endpoint_position, slice_state, quantity, random_r)
-              VALUES (@id, @certificateId, @registryName, @depositEndpointId, @depositEndpointPosition, @sliceState, @quantity, @randomR)",
+            @"INSERT INTO outbox_slices(id, certificate_id, registry_name, outbox_endpoint_id, outbox_endpoint_position, slice_state, quantity, random_r)
+              VALUES (@id, @certificateId, @registryName, @outboxEndpointId, @outboxEndpointPosition, @sliceState, @quantity, @randomR)",
             newSlice);
     }
 
@@ -105,10 +105,10 @@ public class CertificateRepository : ICertificateRepository
         await _connection.QueryAsync<CertificateViewModel, SliceViewModel, CertificateAttribute, CertificateViewModel>(
             @"SELECT c.*, s.Id AS slice_id, s.quantity, a.Id AS attribute_id, a.key_atr AS key, a.value_atr as value
               FROM Wallets w
-              INNER JOIN receive_endpoints re
+              INNER JOIN wallet_endpoints re
                 ON w.id = re.wallet_id
-              INNER JOIN received_slices s
-                ON re.Id = s.receive_endpoint_id
+              INNER JOIN wallet_slices s
+                ON re.Id = s.wallet_endpoint_id
               INNER JOIN certificates c
                 ON s.certificate_id = c.id
               LEFT JOIN attributes a
@@ -135,21 +135,21 @@ public class CertificateRepository : ICertificateRepository
             param: new
             {
                 owner,
-                sliceState = (int)ReceivedSliceState.Available
+                sliceState = (int)WalletSliceState.Available
             });
 
         return certsDictionary.Values;
     }
 
-    public Task<IEnumerable<ReceivedSlice>> GetOwnersAvailableSlices(string registryName, Guid certificateId, string owner)
+    public Task<IEnumerable<WalletSlice>> GetOwnersAvailableSlices(string registryName, Guid certificateId, string owner)
     {
-        return _connection.QueryAsync<ReceivedSlice>(
+        return _connection.QueryAsync<WalletSlice>(
             @"SELECT s.*
               FROM certificates c
-              INNER JOIN received_slices s
+              INNER JOIN wallet_slices s
                 ON c.id = s.certificate_id
-              INNER JOIN receive_endpoints re
-                ON s.receive_endpoint_id = re.id
+              INNER JOIN wallet_endpoints re
+                ON s.wallet_endpoint_id = re.id
               INNER JOIN wallets w
                 ON re.wallet_id = w.id
               WHERE s.registry_name = @registryName
@@ -161,7 +161,7 @@ public class CertificateRepository : ICertificateRepository
                 registryName,
                 certificateId,
                 owner,
-                sliceState = (int)ReceivedSliceState.Available
+                sliceState = (int)WalletSliceState.Available
             });
     }
 
@@ -170,10 +170,10 @@ public class CertificateRepository : ICertificateRepository
         return _connection.QuerySingleAsync<long>(
             @"SELECT SUM(s.quantity)
               FROM certificates c
-              INNER JOIN received_slices s
+              INNER JOIN wallet_slices s
                 ON c.id = s.certificate_id
-              INNER JOIN receive_endpoints re
-                ON s.receive_endpoint_id = re.Id
+              INNER JOIN wallet_endpoints re
+                ON s.wallet_endpoint_id = re.Id
               INNER JOIN wallets w
                 ON re.wallet_id = w.id
               WHERE s.registry_name = @registryName
@@ -185,16 +185,16 @@ public class CertificateRepository : ICertificateRepository
                 registryName,
                 certificateId,
                 owner,
-                availableState = (int)ReceivedSliceState.Available,
-                registeringState = (int)ReceivedSliceState.Registering
+                availableState = (int)WalletSliceState.Available,
+                registeringState = (int)WalletSliceState.Registering
             });
     }
 
-    public Task<ReceivedSlice> GetReceivedSlice(Guid sliceId)
+    public Task<WalletSlice> GetWalletSlice(Guid sliceId)
     {
-        return _connection.QuerySingleAsync<ReceivedSlice>(
+        return _connection.QuerySingleAsync<WalletSlice>(
             @"SELECT s.*
-              FROM received_slices s
+              FROM wallet_slices s
               WHERE s.id = @sliceId",
             new
             {
@@ -202,11 +202,11 @@ public class CertificateRepository : ICertificateRepository
             });
     }
 
-    public Task<DepositSlice> GetDepositSlice(Guid sliceId)
+    public Task<OutboxSlice> GetOutboxSlice(Guid sliceId)
     {
-        return _connection.QuerySingleAsync<DepositSlice>(
+        return _connection.QuerySingleAsync<OutboxSlice>(
             @"SELECT s.*
-              FROM deposit_slices s
+              FROM outbox_slices s
               WHERE s.id = @sliceId",
             new
             {
@@ -214,10 +214,10 @@ public class CertificateRepository : ICertificateRepository
             });
     }
 
-    public async Task SetReceivedSliceState(Guid sliceId, ReceivedSliceState state)
+    public async Task SetWalletSliceState(Guid sliceId, WalletSliceState state)
     {
         var rowsChanged = await _connection.ExecuteAsync(
-            @"UPDATE received_slices
+            @"UPDATE wallet_slices
               SET slice_state = @state
               WHERE id = @sliceId",
             new
@@ -230,10 +230,10 @@ public class CertificateRepository : ICertificateRepository
             throw new InvalidOperationException($"Slice with id {sliceId} could not be found");
     }
 
-    public async Task SetDepositSliceState(Guid sliceId, DepositSliceState state)
+    public async Task SetOutboxSliceState(Guid sliceId, OutboxSliceState state)
     {
         var rowsChanged = await _connection.ExecuteAsync(
-            @"UPDATE deposit_slices
+            @"UPDATE outbox_slices
               SET slice_state = @state
               WHERE id = @sliceId",
             new
@@ -256,7 +256,7 @@ public class CertificateRepository : ICertificateRepository
     /// <returns></returns>
     /// <exception cref="InvalidOperationException">Thrown when the owner does not have enough to reserve the requested amount</exception>
     /// <exception cref="TransientException">Thrown when the owner currently does not have enogth available, but will have later</exception>
-    public async Task<IList<ReceivedSlice>> ReserveQuantity(string owner, string registryName, Guid certificateId, uint reserveQuantity)
+    public async Task<IList<WalletSlice>> ReserveQuantity(string owner, string registryName, Guid certificateId, uint reserveQuantity)
     {
         var availableSlices = await GetOwnersAvailableSlices(registryName, certificateId, owner);
         if (availableSlices.IsEmpty())
@@ -279,7 +279,7 @@ public class CertificateRepository : ICertificateRepository
 
         foreach (var slice in takenSlices)
         {
-            await SetReceivedSliceState(slice.Id, ReceivedSliceState.Reserved);
+            await SetWalletSliceState(slice.Id, WalletSliceState.Reserved);
         }
 
         return takenSlices;
@@ -346,20 +346,20 @@ public class CertificateRepository : ICertificateRepository
 
             FROM claims
 
-            INNER JOIN received_slices slice_prod
+            INNER JOIN wallet_slices slice_prod
                 ON claims.production_slice_id = slice_prod.id
             INNER JOIN certificates cert_prod
                 ON slice_prod.certificate_id = cert_prod.id
                 AND slice_prod.registry_name = cert_prod.registry_name
 
-            INNER JOIN received_slices slice_cons
+            INNER JOIN wallet_slices slice_cons
                 ON claims.consumption_slice_id = slice_cons.id
             INNER JOIN certificates cert_cons
                 ON slice_cons.certificate_id = cert_cons.id
                 AND slice_cons.registry_name = cert_cons.registry_name
 
-            INNER JOIN receive_endpoints dep_cons
-                ON slice_cons.receive_endpoint_id = dep_cons.id
+            INNER JOIN wallet_endpoints dep_cons
+                ON slice_cons.wallet_endpoint_id = dep_cons.id
             INNER JOIN wallets wallet_cons
                 ON dep_cons.wallet_id = wallet_cons.id
 

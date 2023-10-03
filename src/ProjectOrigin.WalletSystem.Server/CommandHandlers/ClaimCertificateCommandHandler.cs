@@ -75,14 +75,14 @@ public class ClaimCertificateCommandHandler : IConsumer<ClaimCertificateCommand>
     /// </summary>
     /// <param name="reservedConsumptionSlices"></param>
     /// <param name="reservedProductionSlices"></param>
-    private static async Task<RoutingSlip> BuildClaimRoutingSlip(IRegistryProcessBuilder processBuilder, long quantity, IList<ReceivedSlice> reservedConsumptionSlices, IList<ReceivedSlice> reservedProductionSlices)
+    private static async Task<RoutingSlip> BuildClaimRoutingSlip(IRegistryProcessBuilder processBuilder, long quantity, IList<WalletSlice> reservedConsumptionSlices, IList<WalletSlice> reservedProductionSlices)
     {
         var remainderToClaim = quantity;
-        ReceivedSlice? productionRemainderSlice = null;
+        WalletSlice? productionRemainderSlice = null;
 
         foreach (var loopConsumptionSlice in reservedConsumptionSlices)
         {
-            ReceivedSlice? consumptionRemainderSlice = loopConsumptionSlice;
+            WalletSlice? consumptionRemainderSlice = loopConsumptionSlice;
             while (consumptionRemainderSlice is not null)
             {
                 if (productionRemainderSlice is null)
@@ -93,7 +93,7 @@ public class ClaimCertificateCommandHandler : IConsumer<ClaimCertificateCommand>
                 if (consumptionRemainderSlice.Quantity > remainderToClaim)
                 {
                     var (quantitySlice, remainderSlice) = await processBuilder.SplitSlice(consumptionRemainderSlice, remainderToClaim);
-                    processBuilder.SetSliceStates(new() { { remainderSlice.Id, ReceivedSliceState.Available } });
+                    processBuilder.SetWalletSliceStates(new() { { remainderSlice.Id, WalletSliceState.Available } });
                     consumptionRemainderSlice = quantitySlice;
                 }
 
@@ -129,7 +129,7 @@ public class ClaimCertificateCommandHandler : IConsumer<ClaimCertificateCommand>
         if (productionRemainderSlice is not null)
         {
             // if last production slice has remainder, it should be returned to the available
-            processBuilder.SetSliceStates(new() { { productionRemainderSlice.Id, ReceivedSliceState.Available } });
+            processBuilder.SetWalletSliceStates(new() { { productionRemainderSlice.Id, WalletSliceState.Available } });
         }
 
         return processBuilder.Build();

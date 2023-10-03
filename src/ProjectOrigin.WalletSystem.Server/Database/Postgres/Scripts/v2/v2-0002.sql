@@ -9,12 +9,12 @@ BEGIN
     END IF;
 
     IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'old_deposit_endpoints') THEN
-        INSERT INTO deposit_endpoints (id, owner, public_key, reference_text, endpoint)
+        INSERT INTO outbox_endpoints (id, owner, public_key, reference_text, endpoint)
         SELECT old.Id, old.Owner, old.PublicKey, old.ReferenceText, old.Endpoint
         FROM old_deposit_endpoints AS old
         WHERE old.WalletId IS NULL;
 
-        INSERT INTO receive_endpoints (id, wallet_id, wallet_position, public_key, is_remainder_endpoint)
+        INSERT INTO wallet_endpoints (id, wallet_id, wallet_position, public_key, is_remainder_endpoint)
         SELECT old.Id, old.WalletId, old.WalletPosition, old.PublicKey, (old.ReferenceText = 'RemainderSection')
         FROM old_deposit_endpoints AS old
         WHERE old.WalletId IS NOT NULL;
@@ -35,7 +35,7 @@ BEGIN
     END IF;
 
     IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'old_slices') THEN
-        INSERT INTO received_slices (id, receive_endpoint_id, receive_endpoint_position, slice_state, registry_name, certificate_id, quantity, random_r)
+        INSERT INTO wallet_slices (id, wallet_endpoint_id, wallet_endpoint_position, slice_state, registry_name, certificate_id, quantity, random_r)
         SELECT old.Id, old.DepositEndpointId, old.DepositEndpointPosition, old.SliceState, old_registries.Name, old.CertificateId, old.Quantity, old.RandomR
         FROM old_slices AS old
         INNER JOIN old_registries ON old.RegistryId = old_registries.id
@@ -43,7 +43,7 @@ BEGIN
         WHERE
             old_deposit_endpoints.WalletId IS NOT NULL;
 
-        INSERT INTO deposit_slices (id, deposit_endpoint_id, deposit_endpoint_position, slice_state, registry_name, certificate_id, quantity, random_r)
+        INSERT INTO outbox_slices (id, outbox_endpoint_id, outbox_endpoint_position, slice_state, registry_name, certificate_id, quantity, random_r)
         SELECT old.Id, old.DepositEndpointId, old.DepositEndpointPosition, old.SliceState, old_registries.Name, old.CertificateId, old.Quantity, old.RandomR
         FROM old_slices AS old
         INNER JOIN old_registries ON old.RegistryId = old_registries.id

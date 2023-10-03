@@ -38,7 +38,7 @@ public class WalletService : V1.WalletService.WalletServiceBase
     {
         var subject = context.GetSubject();
 
-        var wallet = await _unitOfWork.WalletRepository.GetWalletByOwner(subject);
+        var wallet = await _unitOfWork.WalletRepository.GetWallet(subject);
 
         if (wallet is null)
         {
@@ -53,7 +53,7 @@ public class WalletService : V1.WalletService.WalletServiceBase
             await _unitOfWork.WalletRepository.Create(wallet);
         }
 
-        var endpoint = await _unitOfWork.WalletRepository.CreateReceiveEndpoint(wallet.Id);
+        var endpoint = await _unitOfWork.WalletRepository.CreateWalletEndpoint(wallet.Id);
         _unitOfWork.Commit();
 
         return new V1.CreateWalletDepositEndpointResponse
@@ -87,7 +87,7 @@ public class WalletService : V1.WalletService.WalletServiceBase
         var subject = context.GetSubject();
         var ownerPublicKey = new Secp256k1Algorithm().ImportHDPublicKey(request.WalletDepositEndpoint.PublicKey.Span);
 
-        var foundDepositEndpoint = await _unitOfWork.WalletRepository.GetReceiveEndpoint(ownerPublicKey);
+        var foundDepositEndpoint = await _unitOfWork.WalletRepository.GetWalletEndpoint(ownerPublicKey);
         if (foundDepositEndpoint is not null)
         {
             var wallet = await _unitOfWork.WalletRepository.GetWallet(foundDepositEndpoint.WalletId);
@@ -97,7 +97,7 @@ public class WalletService : V1.WalletService.WalletServiceBase
             }
         }
 
-        var receiverDepositEndpoint = await _unitOfWork.WalletRepository.CreateDepositEndpoint(subject, ownerPublicKey, request.Reference, request.WalletDepositEndpoint.Endpoint);
+        var receiverDepositEndpoint = await _unitOfWork.WalletRepository.CreateOutboxEndpoint(subject, ownerPublicKey, request.Reference, request.WalletDepositEndpoint.Endpoint);
         _unitOfWork.Commit();
 
         return new V1.CreateReceiverDepositEndpointResponse

@@ -36,7 +36,7 @@ public class WalletRepository : IWalletRepository
             });
     }
 
-    public Task<Wallet?> GetWalletByOwner(string owner)
+    public Task<Wallet?> GetWallet(string owner)
     {
         return _connection.QuerySingleOrDefaultAsync<Wallet?>(
             @"SELECT *
@@ -48,14 +48,14 @@ public class WalletRepository : IWalletRepository
             });
     }
 
-    public async Task<ReceiveEndpoint> CreateReceiveEndpoint(Guid walletId)
+    public async Task<WalletEndpoint> CreateWalletEndpoint(Guid walletId)
     {
         var position = await GetNextNumberForId(walletId);
 
         var wallet = await GetWallet(walletId);
         var key = wallet.PrivateKey.Derive(position).Neuter();
 
-        var newEndpoint = new ReceiveEndpoint
+        var newEndpoint = new WalletEndpoint
         {
             Id = Guid.NewGuid(),
             WalletId = walletId,
@@ -69,9 +69,9 @@ public class WalletRepository : IWalletRepository
         return newEndpoint;
     }
 
-    public async Task<DepositEndpoint> CreateDepositEndpoint(string owner, IHDPublicKey ownerPublicKey, string referenceText, string endpoint)
+    public async Task<OutboxEndpoint> CreateOutboxEndpoint(string owner, IHDPublicKey ownerPublicKey, string referenceText, string endpoint)
     {
-        var newEndpoint = new DepositEndpoint
+        var newEndpoint = new OutboxEndpoint
         {
             Id = Guid.NewGuid(),
             Owner = owner,
@@ -81,18 +81,18 @@ public class WalletRepository : IWalletRepository
         };
 
         await _connection.ExecuteAsync(
-            @"INSERT INTO deposit_endpoints(id, owner, public_key, reference_text, endpoint)
+            @"INSERT INTO outbox_endpoints(id, owner, public_key, reference_text, endpoint)
               VALUES (@id, @owner, @publicKey, @referenceText, @endpoint)",
             newEndpoint);
 
         return newEndpoint;
     }
 
-    public async Task<ReceiveEndpoint?> GetReceiveEndpoint(IHDPublicKey publicKey)
+    public async Task<WalletEndpoint?> GetWalletEndpoint(IHDPublicKey publicKey)
     {
-        return await _connection.QuerySingleOrDefaultAsync<ReceiveEndpoint>(
+        return await _connection.QuerySingleOrDefaultAsync<WalletEndpoint>(
             @"SELECT *
-              FROM receive_endpoints
+              FROM wallet_endpoints
               WHERE public_key = @publicKey",
             new
             {
@@ -100,11 +100,11 @@ public class WalletRepository : IWalletRepository
             });
     }
 
-    public Task<ReceiveEndpoint> GetReceiveEndpoint(Guid endpointId)
+    public Task<WalletEndpoint> GetWalletEndpoint(Guid endpointId)
     {
-        return _connection.QuerySingleAsync<ReceiveEndpoint>(
+        return _connection.QuerySingleAsync<WalletEndpoint>(
             @"SELECT *
-              FROM receive_endpoints
+              FROM wallet_endpoints
               WHERE id = @endpointId",
             new
             {
@@ -112,11 +112,11 @@ public class WalletRepository : IWalletRepository
             });
     }
 
-    public Task<DepositEndpoint> GetDepositEndpoint(Guid endpointId)
+    public Task<OutboxEndpoint> GetOutboxEndpoint(Guid endpointId)
     {
-        return _connection.QuerySingleAsync<DepositEndpoint>(
+        return _connection.QuerySingleAsync<OutboxEndpoint>(
             @"SELECT *
-              FROM deposit_endpoints
+              FROM outbox_endpoints
               WHERE id = @endpointId",
             new
             {
@@ -135,11 +135,11 @@ public class WalletRepository : IWalletRepository
             });
     }
 
-    public async Task<ReceiveEndpoint> GetWalletRemainderEndpoint(Guid walletId)
+    public async Task<WalletEndpoint> GetWalletRemainderEndpoint(Guid walletId)
     {
-        var endpoint = await _connection.QuerySingleOrDefaultAsync<ReceiveEndpoint?>(
+        var endpoint = await _connection.QuerySingleOrDefaultAsync<WalletEndpoint?>(
             @"SELECT *
-              FROM receive_endpoints
+              FROM wallet_endpoints
               WHERE wallet_id = @walletId
                 AND is_remainder_endpoint is TRUE",
             new
@@ -153,7 +153,7 @@ public class WalletRepository : IWalletRepository
             var nextWalletPosition = await GetNextNumberForId(walletId);
             var publicKey = wallet.PrivateKey.Derive(nextWalletPosition).Neuter();
 
-            endpoint = new ReceiveEndpoint
+            endpoint = new WalletEndpoint
             {
                 Id = Guid.NewGuid(),
                 WalletId = walletId,
@@ -171,10 +171,10 @@ public class WalletRepository : IWalletRepository
     public async Task<IHDPrivateKey> GetPrivateKeyForSlice(Guid sliceId)
     {
         var keyInfo = await _connection.QuerySingleAsync<(IHDPrivateKey PrivateKey, int WalletPosition, int EndpointPosition)>(
-            @"SELECT w.private_key, re.wallet_position, s.receive_endpoint_position
-              FROM received_slices s
-              INNER JOIN receive_endpoints re
-                ON s.receive_endpoint_id = re.id
+            @"SELECT w.private_key, re.wallet_position, s.wallet_endpoint_position
+              FROM wallet_slices s
+              INNER JOIN wallet_endpoints re
+                ON s.wallet_endpoint_id = re.id
               INNER JOIN wallets w
                 ON re.wallet_id = w.id
               WHERE s.id = @sliceId",
@@ -186,10 +186,10 @@ public class WalletRepository : IWalletRepository
         return keyInfo.PrivateKey.Derive(keyInfo.WalletPosition).Derive(keyInfo.EndpointPosition);
     }
 
-    private Task CreateReceiveEndpoint(ReceiveEndpoint endpoint)
+    private Task CreateReceiveEndpoint(WalletEndpoint endpoint)
     {
         return _connection.ExecuteAsync(
-            @"INSERT INTO receive_endpoints(id, wallet_id, wallet_position, public_key, is_remainder_endpoint)
+            @"INSERT INTO wallet_endpoints(id, wallet_id, wallet_position, public_key, is_remainder_endpoint)
               VALUES (@id, @walletId, @walletPosition, @publicKey, @isRemainderEndpoint)",
               endpoint);
     }

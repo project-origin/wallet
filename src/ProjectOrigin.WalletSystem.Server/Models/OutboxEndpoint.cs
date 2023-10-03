@@ -3,7 +3,7 @@ using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
 
 namespace ProjectOrigin.WalletSystem.Server.Models;
 
-public record DepositEndpoint
+public record OutboxEndpoint
 {
     public required Guid Id { get; init; }
     public required IHDPublicKey PublicKey { get; init; }

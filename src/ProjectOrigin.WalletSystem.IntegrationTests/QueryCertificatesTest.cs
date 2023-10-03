@@ -71,8 +71,8 @@ public class QueryCertificatesTest : WalletSystemTestsBase, IClassFixture<InMemo
             await walletRepository.Create(wallet);
             await walletRepository.Create(notOwnedWallet);
 
-            var endpoint = await walletRepository.CreateReceiveEndpoint(wallet.Id);
-            var notOwnedendpoint = await walletRepository.CreateReceiveEndpoint(notOwnedWallet.Id);
+            var endpoint = await walletRepository.CreateWalletEndpoint(wallet.Id);
+            var notOwnedendpoint = await walletRepository.CreateWalletEndpoint(notOwnedWallet.Id);
 
             var regName = _fixture.Create<string>();
             var certificateRepository = new CertificateRepository(connection);
@@ -118,54 +118,54 @@ public class QueryCertificatesTest : WalletSystemTestsBase, IClassFixture<InMemo
             await certificateRepository.InsertCertificate(certificate2);
             await certificateRepository.InsertCertificate(notOwnedCertificate);
 
-            var slice1 = new ReceivedSlice
+            var slice1 = new WalletSlice
             {
                 Id = Guid.NewGuid(),
-                ReceiveEndpointId = endpoint.Id,
-                ReceiveEndpointPosition = 1,
+                WalletEndpointId = endpoint.Id,
+                WalletEndpointPosition = 1,
                 RegistryName = regName,
                 CertificateId = certificate1.Id,
                 Quantity = quantity1,
                 RandomR = _fixture.Create<byte[]>(),
-                SliceState = ReceivedSliceState.Available
+                SliceState = WalletSliceState.Available
             };
-            var slice2 = new ReceivedSlice
+            var slice2 = new WalletSlice
             {
                 Id = Guid.NewGuid(),
-                ReceiveEndpointId = endpoint.Id,
-                ReceiveEndpointPosition = 1,
+                WalletEndpointId = endpoint.Id,
+                WalletEndpointPosition = 1,
                 RegistryName = regName,
                 CertificateId = certificate1.Id,
                 Quantity = quantity2,
                 RandomR = _fixture.Create<byte[]>(),
-                SliceState = ReceivedSliceState.Available
+                SliceState = WalletSliceState.Available
             };
-            var slice3 = new ReceivedSlice
+            var slice3 = new WalletSlice
             {
                 Id = Guid.NewGuid(),
-                ReceiveEndpointId = endpoint.Id,
-                ReceiveEndpointPosition = 1,
+                WalletEndpointId = endpoint.Id,
+                WalletEndpointPosition = 1,
                 RegistryName = regName,
                 CertificateId = certificate2.Id,
                 Quantity = quantity3,
                 RandomR = _fixture.Create<byte[]>(),
-                SliceState = ReceivedSliceState.Available
+                SliceState = WalletSliceState.Available
             };
-            var notOwnedSlice = new ReceivedSlice
+            var notOwnedSlice = new WalletSlice
             {
                 Id = Guid.NewGuid(),
-                ReceiveEndpointId = notOwnedendpoint.Id,
-                ReceiveEndpointPosition = 1,
+                WalletEndpointId = notOwnedendpoint.Id,
+                WalletEndpointPosition = 1,
                 RegistryName = regName,
                 CertificateId = notOwnedCertificate.Id,
                 Quantity = _fixture.Create<long>(),
                 RandomR = _fixture.Create<byte[]>(),
-                SliceState = ReceivedSliceState.Available
+                SliceState = WalletSliceState.Available
             };
-            await certificateRepository.InsertReceivedSlice(slice1);
-            await certificateRepository.InsertReceivedSlice(slice2);
-            await certificateRepository.InsertReceivedSlice(slice3);
-            await certificateRepository.InsertReceivedSlice(notOwnedSlice);
+            await certificateRepository.InsertWalletSlice(slice1);
+            await certificateRepository.InsertWalletSlice(slice2);
+            await certificateRepository.InsertWalletSlice(slice3);
+            await certificateRepository.InsertWalletSlice(notOwnedSlice);
         }
 
         var someOwnerName = _fixture.Create<string>();
@@ -200,7 +200,7 @@ public class QueryCertificatesTest : WalletSystemTestsBase, IClassFixture<InMemo
             };
             await walletRepository.Create(wallet);
 
-            var endpoint = await walletRepository.CreateReceiveEndpoint(wallet.Id);
+            var endpoint = await walletRepository.CreateWalletEndpoint(wallet.Id);
         }
 
         var someOwnerName = _fixture.Create<string>();
@@ -232,7 +232,7 @@ public class QueryCertificatesTest : WalletSystemTestsBase, IClassFixture<InMemo
             };
             await walletRepository.Create(wallet);
 
-            var endpoint = await walletRepository.CreateReceiveEndpoint(wallet.Id);
+            var endpoint = await walletRepository.CreateWalletEndpoint(wallet.Id);
 
             var regName = _fixture.Create<string>();
 
@@ -241,19 +241,19 @@ public class QueryCertificatesTest : WalletSystemTestsBase, IClassFixture<InMemo
             await connection.ExecuteAsync(@"INSERT INTO Certificates(id, registry_name, start_date, end_date, grid_area, certificate_type) VALUES (@id, @regName, @startDate, @endDate, @gridArea, @certificateType)",
                 new { id = certId, regName, startDate = DateTimeOffset.Now.ToUtcTime(), endDate = DateTimeOffset.Now.AddDays(1).ToUtcTime(), gridArea = "SomeGridArea", certificateType = 0 });
 
-            var slice1 = new ReceivedSlice
+            var slice1 = new WalletSlice
             {
                 Id = Guid.NewGuid(),
-                ReceiveEndpointId = endpoint.Id,
-                ReceiveEndpointPosition = 1,
+                WalletEndpointId = endpoint.Id,
+                WalletEndpointPosition = 1,
                 RegistryName = regName,
                 CertificateId = certId,
                 Quantity = 42,
                 RandomR = _fixture.Create<byte[]>(),
-                SliceState = ReceivedSliceState.Available
+                SliceState = WalletSliceState.Available
             };
             var certificateRepository = new CertificateRepository(connection);
-            await certificateRepository.InsertReceivedSlice(slice1);
+            await certificateRepository.InsertWalletSlice(slice1);
         }
 
         var someOwnerName = _fixture.Create<string>();

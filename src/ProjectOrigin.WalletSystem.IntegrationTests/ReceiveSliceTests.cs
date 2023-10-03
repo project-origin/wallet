@@ -69,8 +69,8 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
             publishedMessage.MessageObject.Should().BeOfType<VerifySliceCommand>();
             var command = (VerifySliceCommand)publishedMessage.MessageObject;
 
-            command.DepositEndpointId.Should().Be(endpoint.Id);
-            command.DepositEndpointPosition.Should().Be(2);
+            command.WalletEndpointId.Should().Be(endpoint.Id);
+            command.WalletEndpointPosition.Should().Be(2);
             command.Registry.Should().Be(registryName);
             command.CertificateId.Should().Be(certId);
             command.Quantity.Should().Be(240);

@@ -6,7 +6,7 @@ CREATE TABLE wallets (
     private_key bytea NOT NULL
 );
 
-CREATE TABLE receive_endpoints
+CREATE TABLE wallet_endpoints
 (
     id uuid NOT NULL PRIMARY KEY,
     wallet_id uuid NOT NULL,
@@ -23,10 +23,10 @@ CREATE TABLE receive_endpoints
 );
 
 CREATE UNIQUE INDEX idx_unique_remainder_endpoint
-    ON receive_endpoints (wallet_id)
+    ON wallet_endpoints (wallet_id)
     WHERE is_remainder_endpoint IS TRUE;
 
-CREATE TABLE deposit_endpoints
+CREATE TABLE outbox_endpoints
 (
     id uuid NOT NULL PRIMARY KEY,
     owner VARCHAR(64) NOT NULL,
@@ -59,17 +59,17 @@ CREATE TABLE attributes (
         NOT VALID
 );
 
-CREATE TABLE deposit_slices (
+CREATE TABLE outbox_slices (
     id uuid NOT NULL PRIMARY KEY,
     certificate_id uuid NOT NULL,
     registry_name VARCHAR(64) NOT NULL,
-    deposit_endpoint_id uuid NOT NULL,
-    deposit_endpoint_position integer NOT NULL,
+    outbox_endpoint_id uuid NOT NULL,
+    outbox_endpoint_position integer NOT NULL,
     slice_state integer NOT NULL,
     quantity bigint NOT NULL,
     random_r bytea NOT NULL,
-    FOREIGN KEY (deposit_endpoint_id)
-        REFERENCES deposit_endpoints (id) MATCH SIMPLE
+    FOREIGN KEY (outbox_endpoint_id)
+        REFERENCES outbox_endpoints (id) MATCH SIMPLE
         ON UPDATE NO ACTION
         ON DELETE NO ACTION
         NOT VALID,
@@ -80,17 +80,17 @@ CREATE TABLE deposit_slices (
         NOT VALID
 );
 
-CREATE TABLE received_slices (
+CREATE TABLE wallet_slices (
     id uuid NOT NULL PRIMARY KEY,
     certificate_id uuid NOT NULL,
     registry_name VARCHAR(64) NOT NULL,
-    receive_endpoint_id uuid NOT NULL,
-    receive_endpoint_position integer NOT NULL,
+    wallet_endpoint_id uuid NOT NULL,
+    wallet_endpoint_position integer NOT NULL,
     slice_state integer NOT NULL,
     quantity bigint NOT NULL,
     random_r bytea NOT NULL,
-    FOREIGN KEY (receive_endpoint_id)
-        REFERENCES receive_endpoints (id) MATCH SIMPLE
+    FOREIGN KEY (wallet_endpoint_id)
+        REFERENCES wallet_endpoints (id) MATCH SIMPLE
         ON UPDATE NO ACTION
         ON DELETE NO ACTION
         NOT VALID,
@@ -107,12 +107,12 @@ CREATE TABLE claims (
     consumption_slice_id uuid NOT NULL,
     state integer NOT NULL,
     FOREIGN KEY (production_slice_id)
-        REFERENCES received_slices (Id) MATCH SIMPLE
+        REFERENCES wallet_slices (Id) MATCH SIMPLE
         ON UPDATE NO ACTION
         ON DELETE NO ACTION
         NOT VALID,
     FOREIGN KEY (consumption_slice_id)
-        REFERENCES received_slices (Id) MATCH SIMPLE
+        REFERENCES wallet_slices (Id) MATCH SIMPLE
         ON UPDATE NO ACTION
         ON DELETE NO ACTION
         NOT VALID

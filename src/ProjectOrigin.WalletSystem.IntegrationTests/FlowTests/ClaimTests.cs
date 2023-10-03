@@ -33,7 +33,7 @@ public class ClaimTests : WalletSystemTestsBase, IClassFixture<RegistryFixture>,
         _registryFixture = registryFixture;
     }
 
-    private async Task<FederatedStreamId> IssueCertToReceiveEndpoint(ReceiveEndpoint endpoint, uint issuedAmount, Electricity.V1.GranularCertificateType type)
+    private async Task<FederatedStreamId> IssueCertToReceiveEndpoint(WalletEndpoint endpoint, uint issuedAmount, Electricity.V1.GranularCertificateType type)
     {
         var prodCommitment = new SecretCommitmentInfo(issuedAmount);
         var position = 1;

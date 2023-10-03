@@ -51,7 +51,7 @@ public partial class RegistryProcessBuilder : IRegistryProcessBuilder
         });
     }
 
-    public void SetSliceStates(Dictionary<Guid, ReceivedSliceState> newStates)
+    public void SetWalletSliceStates(Dictionary<Guid, WalletSliceState> newStates)
     {
         AddActivity<UpdateSliceStateActivity, UpdateSliceStateArguments>(
             new UpdateSliceStateArguments

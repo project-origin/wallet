@@ -153,7 +153,7 @@ public class TransferCertificateTests : WalletSystemTestsBase, IClassFixture<Reg
         while (DateTime.UtcNow - startedAt < TimeSpan.FromMinutes(1))
         {
             // Verify slice created in database
-            var slices = await connection.QueryAsync<ReceivedSlice>("SELECT * FROM received_slices s WHERE certificate_id = @certificateId", new { certificateId = certId });
+            var slices = await connection.QueryAsync<WalletSlice>("SELECT * FROM wallet_slices s WHERE certificate_id = @certificateId", new { certificateId = certId });
             slicesFound = slices.Count();
             if (slicesFound >= number)
                 break;
