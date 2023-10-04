@@ -7,7 +7,6 @@ namespace ProjectOrigin.WalletSystem.Server.Repositories;
 
 public interface ICertificateRepository
 {
-
     Task InsertCertificate(Certificate certificate);
     Task<Certificate?> GetCertificate(string registryName, Guid certificateId);
     Task<IEnumerable<CertificateViewModel>> GetAllOwnedCertificates(string owner);

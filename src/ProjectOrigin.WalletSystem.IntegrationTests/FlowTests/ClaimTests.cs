@@ -33,7 +33,7 @@ public class ClaimTests : WalletSystemTestsBase, IClassFixture<RegistryFixture>,
         _registryFixture = registryFixture;
     }
 
-    private async Task<FederatedStreamId> IssueCertToReceiveEndpoint(WalletEndpoint endpoint, uint issuedAmount, Electricity.V1.GranularCertificateType type)
+    private async Task<FederatedStreamId> IssueCertIntoWalletEndpoint(WalletEndpoint endpoint, uint issuedAmount, Electricity.V1.GranularCertificateType type)
     {
         var prodCommitment = new SecretCommitmentInfo(issuedAmount);
         var position = 1;
@@ -51,8 +51,8 @@ public class ClaimTests : WalletSystemTestsBase, IClassFixture<RegistryFixture>,
         var (owner, header) = GenerateUserHeader();
         var senderEndpoint = await _dbFixture.CreateReceiveEndpoint(owner);
 
-        var consumptionId = await IssueCertToReceiveEndpoint(senderEndpoint, 300, Electricity.V1.GranularCertificateType.Consumption);
-        var productionId = await IssueCertToReceiveEndpoint(senderEndpoint, 200, Electricity.V1.GranularCertificateType.Production);
+        var consumptionId = await IssueCertIntoWalletEndpoint(senderEndpoint, 300, Electricity.V1.GranularCertificateType.Consumption);
+        var productionId = await IssueCertIntoWalletEndpoint(senderEndpoint, 200, Electricity.V1.GranularCertificateType.Production);
 
         //Act
         var response = await client.ClaimCertificatesAsync(new V1.ClaimRequest()
