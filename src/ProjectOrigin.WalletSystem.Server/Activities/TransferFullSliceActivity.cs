@@ -17,7 +17,7 @@ namespace ProjectOrigin.WalletSystem.Server.Activities;
 public record TransferFullSliceArguments
 {
     public required Guid SourceSliceId { get; init; }
-    public required Guid OutboxEndpointId { get; init; }
+    public required Guid ExternalEndpointsId { get; init; }
 }
 
 public class TransferFullSliceActivity : IExecuteActivity<TransferFullSliceArguments>
@@ -44,23 +44,23 @@ public class TransferFullSliceActivity : IExecuteActivity<TransferFullSliceArgum
         try
         {
             var sourceSlice = await _unitOfWork.CertificateRepository.GetWalletSlice(context.Arguments.SourceSliceId);
-            var outboxEndpoint = await _unitOfWork.WalletRepository.GetOutboxEndpoint(context.Arguments.OutboxEndpointId);
+            var externalEndpoints = await _unitOfWork.WalletRepository.GetExternalEndpoints(context.Arguments.ExternalEndpointsId);
 
-            var nextReceiverPosition = await _unitOfWork.WalletRepository.GetNextNumberForId(outboxEndpoint.Id);
-            var receiverPublicKey = outboxEndpoint.PublicKey.Derive(nextReceiverPosition).GetPublicKey();
+            var nextReceiverPosition = await _unitOfWork.WalletRepository.GetNextNumberForId(externalEndpoints.Id);
+            var receiverPublicKey = externalEndpoints.PublicKey.Derive(nextReceiverPosition).GetPublicKey();
 
-            var transferredSlice = new OutboxSlice
+            var transferredSlice = new TransferredSlice
             {
                 Id = Guid.NewGuid(),
-                OutboxEndpointId = outboxEndpoint.Id,
-                OutboxEndpointPosition = nextReceiverPosition,
+                ExternalEndpointsId = externalEndpoints.Id,
+                ExternalEndpointsPosition = nextReceiverPosition,
                 RegistryName = sourceSlice.RegistryName,
                 CertificateId = sourceSlice.CertificateId,
                 Quantity = sourceSlice.Quantity,
                 RandomR = sourceSlice.RandomR,
-                SliceState = OutboxSliceState.Registering
+                SliceState = TransferredSliceState.Registering
             };
-            await _unitOfWork.CertificateRepository.InsertOutboxSlice(transferredSlice);
+            await _unitOfWork.CertificateRepository.InsertTransferredSlice(transferredSlice);
 
 
             var transferredEvent = CreateTransferEvent(sourceSlice, receiverPublicKey);
@@ -74,7 +74,7 @@ public class TransferFullSliceActivity : IExecuteActivity<TransferFullSliceArgum
                 { sourceSlice.Id, WalletSliceState.Sliced }
             };
 
-            return AddTransferRequiredActivities(context, outboxEndpoint, transferredSlice, transaction, states);
+            return AddTransferRequiredActivities(context, externalEndpoints, transferredSlice, transaction, states);
         }
         catch (Exception ex)
         {
@@ -84,7 +84,7 @@ public class TransferFullSliceActivity : IExecuteActivity<TransferFullSliceArgum
         }
     }
 
-    private ExecutionResult AddTransferRequiredActivities(ExecuteContext context, OutboxEndpoint outboxEndpoint, BaseSlice transferredSlice, Transaction transaction, Dictionary<Guid, WalletSliceState> states)
+    private ExecutionResult AddTransferRequiredActivities(ExecuteContext context, ExternalEndpoints externalEndpoints, BaseSlice transferredSlice, Transaction transaction, Dictionary<Guid, WalletSliceState> states)
     {
         return context.ReviseItinerary(builder =>
         {
@@ -110,7 +110,7 @@ public class TransferFullSliceActivity : IExecuteActivity<TransferFullSliceArgum
             builder.AddActivity<SendInformationToReceiverWalletActivity, SendInformationToReceiverWalletArgument>(_formatter,
                 new()
                 {
-                    OutboxEndpointId = outboxEndpoint.Id,
+                    ExternalEndpointsId = externalEndpoints.Id,
                     SliceId = transferredSlice.Id,
                 });
 

@@ -43,8 +43,8 @@ public class TransferCertificateCommandHandler : IConsumer<TransferCertificateCo
         {
             var msg = context.Message;
 
-            var receiverEndpoint = await _unitOfWork.WalletRepository.GetOutboxEndpoint(msg.Receiver)
-                ?? throw new InvalidOperationException($"The outbox endpoint was not found for this transfer");
+            var receiverEndpoint = await _unitOfWork.WalletRepository.GetExternalEndpoints(msg.Receiver)
+                ?? throw new InvalidOperationException($"The external endpoint was not found for this transfer");
 
             IEnumerable<WalletSlice> reservedSlices = await _unitOfWork.CertificateRepository.ReserveQuantity(msg.Owner, msg.Registry, msg.CertificateId, msg.Quantity);
 
@@ -60,7 +60,7 @@ public class TransferCertificateCommandHandler : IConsumer<TransferCertificateCo
                         new()
                         {
                             SourceSliceId = slice.Id,
-                            OutboxEndpointId = receiverEndpoint.Id
+                            ExternalEndpointsId = receiverEndpoint.Id
                         });
                     remainderToTransfer -= (uint)slice.Quantity;
                 }
@@ -70,7 +70,7 @@ public class TransferCertificateCommandHandler : IConsumer<TransferCertificateCo
                         new()
                         {
                             SourceSliceId = slice.Id,
-                            OutboxEndpointId = receiverEndpoint.Id,
+                            ExternalEndpointsId = receiverEndpoint.Id,
                             Quantity = remainderToTransfer
                         });
                 }

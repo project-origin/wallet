@@ -18,9 +18,9 @@ public interface ICertificateRepository
     Task<IList<WalletSlice>> ReserveQuantity(string owner, string registryName, Guid certificateId, uint reserveQuantity);
     Task SetWalletSliceState(Guid sliceId, WalletSliceState state);
 
-    Task InsertOutboxSlice(OutboxSlice newSlice);
-    Task<OutboxSlice> GetOutboxSlice(Guid sliceId);
-    Task SetOutboxSliceState(Guid sliceId, OutboxSliceState state);
+    Task InsertTransferredSlice(TransferredSlice newSlice);
+    Task<TransferredSlice> GetTransferredSlice(Guid sliceId);
+    Task SetTransferredSliceState(Guid sliceId, TransferredSliceState state);
 
     Task InsertClaim(Claim newClaim);
     Task SetClaimState(Guid claimId, ClaimState state);

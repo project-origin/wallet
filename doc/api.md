@@ -14,34 +14,21 @@ The public API allows anonymous access to deposit slices into wallets.
 | - | - |
 | [ReceiveSlice](api/receive_slice.md) | Enables a wallet to receive a slice from either an issuer or another wallet, the slice is verified based on data from the registry. |
 
-### Granular Certificate API
+### Wallet API
 
-The granular certificate API allows a wallet to interact with a granular certificate (GC) abstraction.
-On this API the commands are translated to primitive slice commands.
+The Wallet API allows a wallet to interact with the wallet system.
 
 All commands require the request to be authenticated by a JWT token.
 
 | Name | Description |
 | ---- | ----------- |
 | CreateWallet | Creates a new wallet for a user. Only one wallet per user is currently allowed, but multiple wallets per user may be allowed in the future. |
-| CreateWalletSection | Creates a new section in a user's [wallet](concepts/wallet.md). |
-| [QueryGranularCertificates](api/query-certificates.md) | List the certificates owned by the wallet, in time filters should be supported |
-| TransferCertificate | Transfers a number of Wh from ther certificate from one wallet to another. |
+| CreateWalletEndpoint | Creates a new endpoint in a user's [wallet](concepts/wallet.md), which can be shared to enable transfer to the wallet. |
+| CreateExternalEndpoints | Creates a reference to another users wallet, so that the wallet can send slices to the other wallet. |
+| [QueryGranularCertificates](api/query-certificates.md) | List the certificates owned by the owner, in time filters will be supported |
+| TransferCertificate | Transfers a number of Wh from ther certificate from one wallet to a other wallet. |
 | ClaimCertificates | Claims a number of Wh from a production certificate to a consumption certificate. |
-
-### Slice API
-
-The slice API allows one to interact with slices directly,
-this will be implemented later.
-
-All commands require the request to be authenticated by a JWT token.
-
-| Name | Description |
-| ---- | ----------- |
-| QuerySlices | Queries a user's slices. |
-| CreateSlice | Creates a new slice. |
-| ClaimSlice | Claims ownership of a slice. |
-| TransferSlice | Transfers a slice from one wallet to another. |
+| QueryClaims | List the claims made in a wallet. |
 
 ### Events
 

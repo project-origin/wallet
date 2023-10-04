@@ -24,11 +24,11 @@ public class CertificateRepository : ICertificateRepository
             newSlice);
     }
 
-    public async Task InsertOutboxSlice(OutboxSlice newSlice)
+    public async Task InsertTransferredSlice(TransferredSlice newSlice)
     {
         await _connection.ExecuteAsync(
-            @"INSERT INTO outbox_slices(id, certificate_id, registry_name, outbox_endpoint_id, outbox_endpoint_position, slice_state, quantity, random_r)
-              VALUES (@id, @certificateId, @registryName, @outboxEndpointId, @outboxEndpointPosition, @sliceState, @quantity, @randomR)",
+            @"INSERT INTO transferred_slices(id, certificate_id, registry_name, external_endpoint_id, external_endpoint_position, slice_state, quantity, random_r)
+              VALUES (@id, @certificateId, @registryName, @externalEndpointsId, @externalEndpointsPosition, @sliceState, @quantity, @randomR)",
             newSlice);
     }
 
@@ -202,11 +202,11 @@ public class CertificateRepository : ICertificateRepository
             });
     }
 
-    public Task<OutboxSlice> GetOutboxSlice(Guid sliceId)
+    public Task<TransferredSlice> GetTransferredSlice(Guid sliceId)
     {
-        return _connection.QuerySingleAsync<OutboxSlice>(
+        return _connection.QuerySingleAsync<TransferredSlice>(
             @"SELECT s.*
-              FROM outbox_slices s
+              FROM transferred_slices s
               WHERE s.id = @sliceId",
             new
             {
@@ -230,10 +230,10 @@ public class CertificateRepository : ICertificateRepository
             throw new InvalidOperationException($"Slice with id {sliceId} could not be found");
     }
 
-    public async Task SetOutboxSliceState(Guid sliceId, OutboxSliceState state)
+    public async Task SetTransferredSliceState(Guid sliceId, TransferredSliceState state)
     {
         var rowsChanged = await _connection.ExecuteAsync(
-            @"UPDATE outbox_slices
+            @"UPDATE transferred_slices
               SET slice_state = @state
               WHERE id = @sliceId",
             new

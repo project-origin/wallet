@@ -69,9 +69,9 @@ public class WalletRepository : IWalletRepository
         return newEndpoint;
     }
 
-    public async Task<OutboxEndpoint> CreateOutboxEndpoint(string owner, IHDPublicKey ownerPublicKey, string referenceText, string endpoint)
+    public async Task<ExternalEndpoints> CreateExternalEndpoints(string owner, IHDPublicKey ownerPublicKey, string referenceText, string endpoint)
     {
-        var newEndpoint = new OutboxEndpoint
+        var newEndpoint = new ExternalEndpoints
         {
             Id = Guid.NewGuid(),
             Owner = owner,
@@ -81,7 +81,7 @@ public class WalletRepository : IWalletRepository
         };
 
         await _connection.ExecuteAsync(
-            @"INSERT INTO outbox_endpoints(id, owner, public_key, reference_text, endpoint)
+            @"INSERT INTO external_endpoints(id, owner, public_key, reference_text, endpoint)
               VALUES (@id, @owner, @publicKey, @referenceText, @endpoint)",
             newEndpoint);
 
@@ -112,11 +112,11 @@ public class WalletRepository : IWalletRepository
             });
     }
 
-    public Task<OutboxEndpoint> GetOutboxEndpoint(Guid endpointId)
+    public Task<ExternalEndpoints> GetExternalEndpoints(Guid endpointId)
     {
-        return _connection.QuerySingleAsync<OutboxEndpoint>(
+        return _connection.QuerySingleAsync<ExternalEndpoints>(
             @"SELECT *
-              FROM outbox_endpoints
+              FROM external_endpoints
               WHERE id = @endpointId",
             new
             {

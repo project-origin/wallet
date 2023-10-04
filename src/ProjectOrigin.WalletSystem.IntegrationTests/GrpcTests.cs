@@ -28,7 +28,7 @@ public class GrpcTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
     }
 
     [Fact]
-    public async Task can_create_outbox_endpoint_when_authenticated()
+    public async Task can_create_external_endpoint_when_authenticated()
     {
         // Arrange
         var subject = Guid.NewGuid().ToString();
@@ -40,20 +40,20 @@ public class GrpcTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
         var request = new CreateWalletDepositEndpointRequest();
 
         // Act
-        var outboxEndpoint = await client.CreateWalletDepositEndpointAsync(request, headers);
+        var externalEndpoints = await client.CreateWalletDepositEndpointAsync(request, headers);
 
         // Assert
-        outboxEndpoint.Should().NotBeNull();
-        outboxEndpoint.WalletDepositEndpoint.Version.Should().Be(1);
-        outboxEndpoint.WalletDepositEndpoint.Endpoint.Should().Be(endpoint);
-        outboxEndpoint.WalletDepositEndpoint.PublicKey.Should().NotBeNullOrEmpty();
+        externalEndpoints.Should().NotBeNull();
+        externalEndpoints.WalletDepositEndpoint.Version.Should().Be(1);
+        externalEndpoints.WalletDepositEndpoint.Endpoint.Should().Be(endpoint);
+        externalEndpoints.WalletDepositEndpoint.PublicKey.Should().NotBeNullOrEmpty();
 
 
         using (var connection = _dbFixture.GetConnectionFactory().CreateConnection())
         {
             var walletRepository = new WalletRepository(connection);
 
-            var publicKey = Algorithm.ImportHDPublicKey(outboxEndpoint.WalletDepositEndpoint.PublicKey.Span);
+            var publicKey = Algorithm.ImportHDPublicKey(externalEndpoints.WalletDepositEndpoint.PublicKey.Span);
             var endpoint = await walletRepository.GetWalletEndpoint(publicKey);
 
             endpoint.Should().NotBeNull();

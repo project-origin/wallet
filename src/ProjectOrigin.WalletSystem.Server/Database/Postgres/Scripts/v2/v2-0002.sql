@@ -9,7 +9,7 @@ BEGIN
     END IF;
 
     IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'old_deposit_endpoints') THEN
-        INSERT INTO outbox_endpoints (id, owner, public_key, reference_text, endpoint)
+        INSERT INTO external_endpoints (id, owner, public_key, reference_text, endpoint)
         SELECT old.Id, old.Owner, old.PublicKey, old.ReferenceText, old.Endpoint
         FROM old_deposit_endpoints AS old
         WHERE old.WalletId IS NULL;
@@ -43,7 +43,7 @@ BEGIN
         WHERE
             old_deposit_endpoints.WalletId IS NOT NULL;
 
-        INSERT INTO outbox_slices (id, outbox_endpoint_id, outbox_endpoint_position, slice_state, registry_name, certificate_id, quantity, random_r)
+        INSERT INTO transferred_slices (id, external_endpoint_id, external_endpoint_position, slice_state, registry_name, certificate_id, quantity, random_r)
         SELECT old.Id, old.DepositEndpointId, old.DepositEndpointPosition, old.SliceState, old_registries.Name, old.CertificateId, old.Quantity, old.RandomR
         FROM old_slices AS old
         INNER JOIN old_registries ON old.RegistryId = old_registries.id

@@ -26,7 +26,7 @@ CREATE UNIQUE INDEX idx_unique_remainder_endpoint
     ON wallet_endpoints (wallet_id)
     WHERE is_remainder_endpoint IS TRUE;
 
-CREATE TABLE outbox_endpoints
+CREATE TABLE external_endpoints
 (
     id uuid NOT NULL PRIMARY KEY,
     owner VARCHAR(64) NOT NULL,
@@ -59,17 +59,17 @@ CREATE TABLE attributes (
         NOT VALID
 );
 
-CREATE TABLE outbox_slices (
+CREATE TABLE transferred_slices (
     id uuid NOT NULL PRIMARY KEY,
     certificate_id uuid NOT NULL,
     registry_name VARCHAR(64) NOT NULL,
-    outbox_endpoint_id uuid NOT NULL,
-    outbox_endpoint_position integer NOT NULL,
+    external_endpoint_id uuid NOT NULL,
+    external_endpoint_position integer NOT NULL,
     slice_state integer NOT NULL,
     quantity bigint NOT NULL,
     random_r bytea NOT NULL,
-    FOREIGN KEY (outbox_endpoint_id)
-        REFERENCES outbox_endpoints (id) MATCH SIMPLE
+    FOREIGN KEY (external_endpoint_id)
+        REFERENCES external_endpoints (id) MATCH SIMPLE
         ON UPDATE NO ACTION
         ON DELETE NO ACTION
         NOT VALID,

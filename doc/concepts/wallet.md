@@ -1,4 +1,3 @@
-
 # Wallets and Wallet Sections
 
 A wallet is a fundamental component within the system that enables users to store and manage their ownership of digital assets, specifically Granular Certificates (GCs) and their corresponding slices. It serves as a centralized repository for users to access, view, and control their assets across multiple registries, issuers, and countries.
