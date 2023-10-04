@@ -132,6 +132,6 @@ public class VerifySliceCommandHandler : IConsumer<VerifySliceCommand>
 
         _unitOfWork.Commit();
 
-        _logger.LogTrace("Slice on certificate ”{certificateId}” inserted into wallet.", slice.CertificateId);
+        _logger.LogDebug("Slice on certificate ”{certificateId}” inserted into wallet.", slice.CertificateId);
     }
 }

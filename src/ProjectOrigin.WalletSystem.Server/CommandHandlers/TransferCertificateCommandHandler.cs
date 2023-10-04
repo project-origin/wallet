@@ -81,7 +81,7 @@ public class TransferCertificateCommandHandler : IConsumer<TransferCertificateCo
 
             await Task.WhenAll(tasks);
             _unitOfWork.Commit();
-            _logger.LogTrace("Transfer command complete.");
+            _logger.LogDebug("Transfer command complete.");
         }
         catch (InvalidOperationException ex)
         {

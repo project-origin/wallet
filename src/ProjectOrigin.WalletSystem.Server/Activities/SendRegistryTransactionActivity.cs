@@ -27,7 +27,7 @@ public class SendRegistryTransactionActivity : IExecuteActivity<SendRegistryTran
 
     public async Task<ExecutionResult> Execute(ExecuteContext<SendRegistryTransactionArguments> context)
     {
-        _logger.LogTrace("RoutingSlip {TrackingNumber} - Executing {ActivityName}", context.TrackingNumber, context.ActivityName);
+        _logger.LogDebug("RoutingSlip {TrackingNumber} - Executing {ActivityName}", context.TrackingNumber, context.ActivityName);
 
         try
         {
@@ -44,7 +44,7 @@ public class SendRegistryTransactionActivity : IExecuteActivity<SendRegistryTran
             var client = new RegistryService.RegistryServiceClient(channel);
             await client.SendTransactionsAsync(request);
 
-            _logger.LogTrace("Transaction sent to registry");
+            _logger.LogDebug("Transaction sent to registry");
 
             return context.Completed();
         }

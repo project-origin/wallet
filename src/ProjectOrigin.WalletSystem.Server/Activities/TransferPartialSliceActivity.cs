@@ -41,7 +41,7 @@ public class TransferPartialSliceActivity : IExecuteActivity<TransferPartialSlic
 
     public async Task<ExecutionResult> Execute(ExecuteContext<TransferPartialSliceArguments> context)
     {
-        _logger.LogTrace("RoutingSlip {TrackingNumber} - Executing {ActivityName}", context.TrackingNumber, context.ActivityName);
+        _logger.LogDebug("RoutingSlip {TrackingNumber} - Executing {ActivityName}", context.TrackingNumber, context.ActivityName);
 
         try
         {

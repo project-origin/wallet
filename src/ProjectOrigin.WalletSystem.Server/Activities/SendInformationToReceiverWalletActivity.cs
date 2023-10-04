@@ -33,7 +33,7 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
 
     public async Task<ExecutionResult> Execute(ExecuteContext<SendInformationToReceiverWalletArgument> context)
     {
-        _logger.LogTrace("RoutingSlip {TrackingNumber} - Executing {ActivityName}", context.TrackingNumber, context.ActivityName);
+        _logger.LogDebug("RoutingSlip {TrackingNumber} - Executing {ActivityName}", context.TrackingNumber, context.ActivityName);
 
         var newSlice = await _unitOfWork.CertificateRepository.GetTransferredSlice(context.Arguments.SliceId);
         var externalEndpoints = await _unitOfWork.WalletRepository.GetExternalEndpoints(context.Arguments.ExternalEndpointsId);
@@ -52,7 +52,7 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
     {
         try
         {
-            _logger.LogTrace("Preparing to send information to receiver");
+            _logger.LogDebug("Preparing to send information to receiver");
 
             var request = new V1.ReceiveRequest
             {
@@ -66,12 +66,12 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
             using var channel = GrpcChannel.ForAddress(externalEndpoints.Endpoint);
             var client = new V1.ReceiveSliceService.ReceiveSliceServiceClient(channel);
 
-            _logger.LogTrace("Sending information to receiver");
+            _logger.LogDebug("Sending information to receiver");
             await client.ReceiveSliceAsync(request);
             await _unitOfWork.CertificateRepository.SetTransferredSliceState(newSlice.Id, TransferredSliceState.Transferred);
 
 
-            _logger.LogTrace("Information Sent to receiver");
+            _logger.LogDebug("Information Sent to receiver");
 
             return context.Completed();
         }
@@ -84,7 +84,7 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
 
     private async Task<ExecutionResult> InsertIntoLocalWallet(ExecuteContext<SendInformationToReceiverWalletArgument> context, TransferredSlice newSlice, ExternalEndpoints externalEndpoints)
     {
-        _logger.LogTrace("Receiver is local.");
+        _logger.LogDebug("Receiver is local.");
 
         var endpoint = await _unitOfWork.WalletRepository.GetWalletEndpoint(externalEndpoints.PublicKey);
 
@@ -109,7 +109,7 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
         await _unitOfWork.CertificateRepository.SetTransferredSliceState(newSlice.Id, TransferredSliceState.Transferred);
         _unitOfWork.Commit();
 
-        _logger.LogTrace("Slice inserted locally into receiver wallet.");
+        _logger.LogDebug("Slice inserted locally into receiver wallet.");
 
         return context.Completed();
     }
