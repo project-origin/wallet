@@ -38,7 +38,7 @@ public class ClaimTests : AbstractFlowTests
         var endpoint = await client.CreateWalletDepositEndpointAsync(new V1.CreateWalletDepositEndpointRequest(), header);
 
         var productionId = await IssueCertificateToEndpoint(endpoint, Electricity.V1.GranularCertificateType.Production, new SecretCommitmentInfo(200), position++);
-        var comsumptionId = await IssueCertificateToEndpoint(endpoint, Electricity.V1.GranularCertificateType.Consumption, new SecretCommitmentInfo(300), position++);
+        var consumptionId = await IssueCertificateToEndpoint(endpoint, Electricity.V1.GranularCertificateType.Consumption, new SecretCommitmentInfo(300), position++);
 
         await Timeout(async () =>
         {
@@ -50,7 +50,7 @@ public class ClaimTests : AbstractFlowTests
         //Act
         var response = await client.ClaimCertificatesAsync(new V1.ClaimRequest()
         {
-            ConsumptionCertificateId = comsumptionId,
+            ConsumptionCertificateId = consumptionId,
             ProductionCertificateId = productionId,
             Quantity = 150u,
         }, header);
@@ -64,7 +64,7 @@ public class ClaimTests : AbstractFlowTests
         }, TimeSpan.FromMinutes(2));
 
         queryClaims.Claims.Should().HaveCount(1);
-        queryClaims.Claims.Single().ConsumptionCertificate.FederatedId.Should().BeEquivalentTo(comsumptionId);
+        queryClaims.Claims.Single().ConsumptionCertificate.FederatedId.Should().BeEquivalentTo(consumptionId);
         queryClaims.Claims.Single().ProductionCertificate.FederatedId.Should().BeEquivalentTo(productionId);
     }
 }
