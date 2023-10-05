@@ -54,6 +54,25 @@ public static class PostgresFixtureExtensions
         return await CreateDepositEndpoint(_dbFixture, wallet);
     }
 
+    public static async Task<int> GetNextNumberForId(this PostgresDatabaseFixture _dbFixture, Guid id)
+    {
+        using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
+        {
+            var walletRepository = new WalletRepository(connection);
+
+            return await walletRepository.GetNextNumberForId(id);
+        }
+    }
+
+    public static async Task<DepositEndpoint> GetWalletRemainderEndpoint(this PostgresDatabaseFixture _dbFixture, Guid walletId)
+    {
+        using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
+        {
+            var walletRepository = new WalletRepository(connection);
+            return await walletRepository.GetWalletRemainderDepositEndpoint(walletId);
+        }
+    }
+
     public static async Task<Certificate> CreateCertificate(this PostgresDatabaseFixture _dbFixture, Guid id, string registryName, GranularCertificateType type)
     {
         using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))

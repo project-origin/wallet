@@ -82,13 +82,20 @@ public class TransferCertificateTests : WalletSystemTestsBase, IClassFixture<Reg
         // Create sender wallet
         var (sender, senderHeader) = GenerateUserHeader();
         var depositEndpoint = await _dbFixture.CreateWalletDepositEndpoint(sender);
+        var depositPosition = await _dbFixture.GetNextNumberForId(depositEndpoint.Id);
+
+        // Create remainder endpoint and increment position to force test to fail if positions are calculated incorrectly
+        var remainderEndpoint = await _dbFixture.GetWalletRemainderEndpoint(depositEndpoint.WalletId!.Value);
+        await _dbFixture.GetNextNumberForId(remainderEndpoint.Id);
+        await _dbFixture.GetNextNumberForId(remainderEndpoint.Id);
 
         // Issue certificate to sender
-        var position = 1;
         var issuedAmount = 500u;
         var commitment = new SecretCommitmentInfo(issuedAmount);
-        var issuedEvent = await _registryFixture.IssueCertificate(Electricity.V1.GranularCertificateType.Production, commitment, depositEndpoint.PublicKey.Derive(position).GetPublicKey());
-        await _dbFixture.InsertSlice(depositEndpoint, position, issuedEvent, commitment);
+
+        var issuedEvent = await _registryFixture.IssueCertificate(Electricity.V1.GranularCertificateType.Production, commitment, depositEndpoint.PublicKey.Derive(depositPosition).GetPublicKey());
+        await _dbFixture.InsertSlice(depositEndpoint, depositPosition, issuedEvent, commitment);
+
         var certId = Guid.Parse(issuedEvent.CertificateId.StreamId.Value);
 
         // Create intermidiate wallet
