@@ -1,1 +1,1 @@
-FROM mcr.microsoft.com/devcontainers/dotnet:0.204.13-7.0
+FROM mcr.microsoft.com/devcontainers/dotnet:0.204.14-7.0

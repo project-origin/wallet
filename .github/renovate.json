@@ -12,6 +12,12 @@
             "matchPackagePatterns": [
                 ".*"
             ]
+        },
+        {
+            "groupName": "Dockerfile updates",
+            "matchFileNames": [
+                "**/Dockerfile"
+            ]
         }
     ]
 }

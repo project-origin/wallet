@@ -126,7 +126,7 @@ public class CertificateRepository : ICertificateRepository
                 if (slice != null && !certificate.Slices.Contains(slice))
                     certificate.Slices.Add(slice);
 
-                if (atr != null && !certificate.Attributes.Contains(atr))
+                if (atr != null && atr.Key != null && atr.Value != null && !certificate.Attributes.Contains(atr))
                     certificate.Attributes.Add(atr);
 
                 return certificate;
