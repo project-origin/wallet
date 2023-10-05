@@ -7,6 +7,7 @@ using ProjectOrigin.PedersenCommitment;
 using ProjectOrigin.HierarchicalDeterministicKeys;
 using Google.Protobuf;
 using Xunit;
+using System;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests;
 
@@ -49,5 +50,22 @@ public abstract class AbstractFlowTests : WalletSystemTestsBase, IClassFixture<R
             RandomR = ByteString.CopyFrom(issuedCommitment.BlindingValue),
         });
         return issuedEvent.CertificateId;
+    }
+
+    protected static async Task<T> Timeout<T>(Func<Task<T>> func, TimeSpan timeout)
+    {
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        while (stopwatch.Elapsed < timeout)
+        {
+            try
+            {
+                return await func();
+            }
+            catch (Exception)
+            {
+                await Task.Delay(1000);
+            }
+        }
+        throw new TimeoutException();
     }
 }

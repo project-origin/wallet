@@ -40,6 +40,13 @@ public class ClaimTests : AbstractFlowTests
         var productionId = await IssueCertificateToEndpoint(endpoint, Electricity.V1.GranularCertificateType.Production, new SecretCommitmentInfo(200), position++);
         var comsumptionId = await IssueCertificateToEndpoint(endpoint, Electricity.V1.GranularCertificateType.Consumption, new SecretCommitmentInfo(300), position++);
 
+        await Timeout(async () =>
+        {
+            var result = await client.QueryGranularCertificatesAsync(new V1.QueryRequest(), header);
+            result.GranularCertificates.Should().HaveCount(2);
+            return result.GranularCertificates;
+        }, TimeSpan.FromMinutes(1));
+
         //Act
         var response = await client.ClaimCertificatesAsync(new V1.ClaimRequest()
         {
@@ -54,27 +61,10 @@ public class ClaimTests : AbstractFlowTests
             var queryClaims = await client.QueryClaimsAsync(new V1.ClaimQueryRequest(), header);
             queryClaims.Claims.Should().NotBeEmpty();
             return queryClaims;
-        }, TimeSpan.FromMinutes(3));
+        }, TimeSpan.FromMinutes(2));
 
         queryClaims.Claims.Should().HaveCount(1);
         queryClaims.Claims.Single().ConsumptionCertificate.FederatedId.Should().BeEquivalentTo(comsumptionId);
         queryClaims.Claims.Single().ProductionCertificate.FederatedId.Should().BeEquivalentTo(productionId);
-    }
-
-    private static async Task<T> Timeout<T>(Func<Task<T>> func, TimeSpan timeout)
-    {
-        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-        while (stopwatch.Elapsed < timeout)
-        {
-            try
-            {
-                return await func();
-            }
-            catch (Exception)
-            {
-                await Task.Delay(1000);
-            }
-        }
-        throw new TimeoutException();
     }
 }

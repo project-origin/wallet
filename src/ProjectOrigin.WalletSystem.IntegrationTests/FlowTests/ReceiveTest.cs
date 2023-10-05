@@ -5,6 +5,7 @@ using Xunit;
 using Xunit.Abstractions;
 using ProjectOrigin.PedersenCommitment;
 using FluentAssertions;
+using System;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests.FlowTests;
 
@@ -50,7 +51,12 @@ public class ReceiveTest : AbstractFlowTests
             new SecretCommitmentInfo(150),
             position++);
 
-        await Task.Delay(10000);
+        await Timeout(async () =>
+        {
+            var result = await client.QueryGranularCertificatesAsync(new V1.QueryRequest(), header);
+            result.GranularCertificates.Should().HaveCount(2);
+            return result.GranularCertificates;
+        }, TimeSpan.FromMinutes(1));
 
         var queryResult = await client.QueryGranularCertificatesAsync(new V1.QueryRequest(), header);
 
