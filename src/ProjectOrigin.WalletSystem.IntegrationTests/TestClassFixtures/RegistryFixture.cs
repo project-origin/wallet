@@ -40,10 +40,8 @@ public class RegistryFixture : IAsyncLifetime
     {
         IssuerKey = Algorithms.Ed25519.GenerateNewPrivateKey();
 
-        var networkName = Guid.NewGuid().ToString();
-
         _network = new NetworkBuilder()
-            .WithName(networkName)
+            .WithName(Guid.NewGuid().ToString())
             .Build();
 
         _verifierContainer = new ContainerBuilder()
