@@ -97,7 +97,7 @@ public class WalletService : V1.WalletService.WalletServiceBase
             }
         }
 
-        var receiverDepositEndpoint = await _unitOfWork.WalletRepository.CreateExternalEndpoints(subject, ownerPublicKey, request.Reference, request.WalletDepositEndpoint.Endpoint);
+        var receiverDepositEndpoint = await _unitOfWork.WalletRepository.CreateExternalEndpoint(subject, ownerPublicKey, request.Reference, request.WalletDepositEndpoint.Endpoint);
         _unitOfWork.Commit();
 
         return new V1.CreateReceiverDepositEndpointResponse

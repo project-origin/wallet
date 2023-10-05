@@ -4,8 +4,8 @@ namespace ProjectOrigin.WalletSystem.Server.Models;
 
 public record TransferredSlice : BaseSlice
 {
-    public required Guid ExternalEndpointsId { get; init; }
-    public required int ExternalEndpointsPosition { get; init; }
+    public required Guid ExternalEndpointId { get; init; }
+    public required int ExternalEndpointPosition { get; init; }
     public required TransferredSliceState SliceState { get; init; }
 }
 

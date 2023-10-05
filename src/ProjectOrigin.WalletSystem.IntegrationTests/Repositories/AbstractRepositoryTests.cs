@@ -69,14 +69,14 @@ public abstract class AbstractRepositoryTests : IClassFixture<PostgresDatabaseFi
         return await walletRepository.CreateWalletEndpoint(wallet.Id);
     }
 
-    protected async Task<ExternalEndpoints> CreateExternalEndpoints(string owner, string referenceText, string endpoint)
+    protected async Task<ExternalEndpoint> CreateExternalEndpoint(string owner, string referenceText, string endpoint)
     {
         using var connection = CreateConnection();
         var walletRepository = new WalletRepository(connection);
 
         var key = _algorithm.GenerateNewPrivateKey();
         var publicKey = key.Derive(_fixture.Create<int>()).Neuter();
-        return await walletRepository.CreateExternalEndpoints(owner, publicKey, referenceText, endpoint);
+        return await walletRepository.CreateExternalEndpoint(owner, publicKey, referenceText, endpoint);
     }
 
     protected async Task<Certificate> CreateCertificate(string registryName, GranularCertificateType type = GranularCertificateType.Production, DateTimeOffset? startDate = null)

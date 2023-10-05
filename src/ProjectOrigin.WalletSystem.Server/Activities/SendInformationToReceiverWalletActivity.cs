@@ -14,7 +14,7 @@ namespace ProjectOrigin.WalletSystem.Server.Activities;
 
 public record SendInformationToReceiverWalletArgument
 {
-    public required Guid ExternalEndpointsId { get; init; }
+    public required Guid ExternalEndpointId { get; init; }
     public required Guid SliceId { get; init; }
 }
 
@@ -36,19 +36,19 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
         _logger.LogDebug("RoutingSlip {TrackingNumber} - Executing {ActivityName}", context.TrackingNumber, context.ActivityName);
 
         var newSlice = await _unitOfWork.CertificateRepository.GetTransferredSlice(context.Arguments.SliceId);
-        var externalEndpoints = await _unitOfWork.WalletRepository.GetExternalEndpoints(context.Arguments.ExternalEndpointsId);
+        var externalEndpoint = await _unitOfWork.WalletRepository.GetExternalEndpoint(context.Arguments.ExternalEndpointId);
 
-        if (_walletSystemOptions.Value.EndpointAddress == externalEndpoints.Endpoint)
+        if (_walletSystemOptions.Value.EndpointAddress == externalEndpoint.Endpoint)
         {
-            return await InsertIntoLocalWallet(context, newSlice, externalEndpoints);
+            return await InsertIntoLocalWallet(context, newSlice, externalEndpoint);
         }
         else
         {
-            return await SendOverGrpcToExternalWallet(context, newSlice, externalEndpoints);
+            return await SendOverGrpcToExternalWallet(context, newSlice, externalEndpoint);
         }
     }
 
-    private async Task<ExecutionResult> SendOverGrpcToExternalWallet(ExecuteContext<SendInformationToReceiverWalletArgument> context, TransferredSlice newSlice, ExternalEndpoints externalEndpoints)
+    private async Task<ExecutionResult> SendOverGrpcToExternalWallet(ExecuteContext<SendInformationToReceiverWalletArgument> context, TransferredSlice newSlice, ExternalEndpoint externalEndpoint)
     {
         try
         {
@@ -56,14 +56,14 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
 
             var request = new V1.ReceiveRequest
             {
-                WalletDepositEndpointPublicKey = ByteString.CopyFrom(externalEndpoints.PublicKey.Export()),
-                WalletDepositEndpointPosition = (uint)newSlice.ExternalEndpointsPosition,
+                WalletDepositEndpointPublicKey = ByteString.CopyFrom(externalEndpoint.PublicKey.Export()),
+                WalletDepositEndpointPosition = (uint)newSlice.ExternalEndpointPosition,
                 CertificateId = newSlice.GetFederatedStreamId(),
                 Quantity = (uint)newSlice.Quantity,
                 RandomR = ByteString.CopyFrom(newSlice.RandomR)
             };
 
-            using var channel = GrpcChannel.ForAddress(externalEndpoints.Endpoint);
+            using var channel = GrpcChannel.ForAddress(externalEndpoint.Endpoint);
             var client = new V1.ReceiveSliceService.ReceiveSliceServiceClient(channel);
 
             _logger.LogDebug("Sending information to receiver");
@@ -82,23 +82,23 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
         }
     }
 
-    private async Task<ExecutionResult> InsertIntoLocalWallet(ExecuteContext<SendInformationToReceiverWalletArgument> context, TransferredSlice newSlice, ExternalEndpoints externalEndpoints)
+    private async Task<ExecutionResult> InsertIntoLocalWallet(ExecuteContext<SendInformationToReceiverWalletArgument> context, TransferredSlice newSlice, ExternalEndpoint externalEndpoint)
     {
         _logger.LogDebug("Receiver is local.");
 
-        var endpoint = await _unitOfWork.WalletRepository.GetWalletEndpoint(externalEndpoints.PublicKey);
+        var walletEndpoint = await _unitOfWork.WalletRepository.GetWalletEndpoint(externalEndpoint.PublicKey);
 
-        if (endpoint is null)
+        if (walletEndpoint is null)
         {
-            _logger.LogError("Local receiver wallet could not be found for reciever wallet {ReceiverWalletId}", externalEndpoints.Id);
-            return context.Faulted(new Exception($"Local receiver wallet could not be found for reciever wallet {externalEndpoints.Id}"));
+            _logger.LogError("Local receiver wallet could not be found for reciever wallet {ReceiverWalletId}", externalEndpoint.Id);
+            return context.Faulted(new Exception($"Local receiver wallet could not be found for reciever wallet {externalEndpoint.Id}"));
         }
 
         var slice = new WalletSlice
         {
             Id = Guid.NewGuid(),
-            WalletEndpointId = endpoint.Id,
-            WalletEndpointPosition = newSlice.ExternalEndpointsPosition,
+            WalletEndpointId = walletEndpoint.Id,
+            WalletEndpointPosition = newSlice.ExternalEndpointPosition,
             RegistryName = newSlice.RegistryName,
             CertificateId = newSlice.CertificateId,
             Quantity = newSlice.Quantity,

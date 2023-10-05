@@ -69,9 +69,9 @@ public class WalletRepository : IWalletRepository
         return newEndpoint;
     }
 
-    public async Task<ExternalEndpoints> CreateExternalEndpoints(string owner, IHDPublicKey ownerPublicKey, string referenceText, string endpoint)
+    public async Task<ExternalEndpoint> CreateExternalEndpoint(string owner, IHDPublicKey ownerPublicKey, string referenceText, string endpoint)
     {
-        var newEndpoint = new ExternalEndpoints
+        var newEndpoint = new ExternalEndpoint
         {
             Id = Guid.NewGuid(),
             Owner = owner,
@@ -112,9 +112,9 @@ public class WalletRepository : IWalletRepository
             });
     }
 
-    public Task<ExternalEndpoints> GetExternalEndpoints(Guid endpointId)
+    public Task<ExternalEndpoint> GetExternalEndpoint(Guid endpointId)
     {
-        return _connection.QuerySingleAsync<ExternalEndpoints>(
+        return _connection.QuerySingleAsync<ExternalEndpoint>(
             @"SELECT *
               FROM external_endpoints
               WHERE id = @endpointId",

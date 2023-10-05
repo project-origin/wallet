@@ -19,6 +19,6 @@ public interface IWalletRepository
     Task<int> GetNextNumberForId(Guid id);
     Task<IHDPrivateKey> GetPrivateKeyForSlice(Guid sliceId);
 
-    Task<ExternalEndpoints> CreateExternalEndpoints(string owner, IHDPublicKey ownerPublicKey, string referenceText, string endpoint);
-    Task<ExternalEndpoints> GetExternalEndpoints(Guid endpointId);
+    Task<ExternalEndpoint> CreateExternalEndpoint(string owner, IHDPublicKey ownerPublicKey, string referenceText, string endpoint);
+    Task<ExternalEndpoint> GetExternalEndpoint(Guid endpointId);
 }

@@ -127,13 +127,12 @@ public class TransferCertificateTests : WalletSystemTestsBase, IClassFixture<Reg
         }, intermidiateHeader);
 
         //Act
-        var request = new TransferRequest()
+        await client.TransferCertificateAsync(new TransferRequest()
         {
             CertificateId = issuedEvent.CertificateId,
             Quantity = 200u, // transfer more than a single slice but less that both slices
-            ReceiverId = senderItermidiateCER.ReceiverId
-        };
-        await client.TransferCertificateAsync(request, intermidiateHeader);
+            ReceiverId = intermidiateRecipientCER.ReceiverId
+        }, intermidiateHeader);
 
         await WaitForCertCount(certId, 8);
     }

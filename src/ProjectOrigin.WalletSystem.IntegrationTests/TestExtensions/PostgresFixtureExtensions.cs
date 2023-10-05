@@ -82,7 +82,7 @@ public static class PostgresFixtureExtensions
         }
     }
 
-    public static async Task<WalletSlice> CreateSlice(this PostgresDatabaseFixture _dbFixture, WalletEndpoint externalEndpoints, Certificate certificate, SecretCommitmentInfo secretCommitmentInfo)
+    public static async Task<WalletSlice> CreateSlice(this PostgresDatabaseFixture _dbFixture, WalletEndpoint walletEndpoint, Certificate certificate, SecretCommitmentInfo secretCommitmentInfo)
     {
         using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
         {
@@ -91,8 +91,8 @@ public static class PostgresFixtureExtensions
             var slice = new WalletSlice
             {
                 Id = Guid.NewGuid(),
-                WalletEndpointId = externalEndpoints.Id,
-                WalletEndpointPosition = await walletRepository.GetNextNumberForId(externalEndpoints.Id),
+                WalletEndpointId = walletEndpoint.Id,
+                WalletEndpointPosition = await walletRepository.GetNextNumberForId(walletEndpoint.Id),
                 RegistryName = certificate.RegistryName,
                 CertificateId = certificate.Id,
                 Quantity = secretCommitmentInfo.Message,

@@ -24,7 +24,7 @@ All commands require the request to be authenticated by a JWT token.
 | ---- | ----------- |
 | CreateWallet | Creates a new wallet for a user. Only one wallet per user is currently allowed, but multiple wallets per user may be allowed in the future. |
 | CreateWalletEndpoint | Creates a new endpoint in a user's [wallet](concepts/wallet.md), which can be shared to enable transfer to the wallet. |
-| CreateExternalEndpoints | Creates a reference to another users wallet, so that the wallet can send slices to the other wallet. |
+| CreateExternalEndpoint | Creates a reference to another users wallet, so that the wallet can send slices to the other wallet. |
 | [QueryGranularCertificates](api/query-certificates.md) | List the certificates owned by the owner, in time filters will be supported |
 | TransferCertificate | Transfers a number of Wh from ther certificate from one wallet to a other wallet. |
 | ClaimCertificates | Claims a number of Wh from a production certificate to a consumption certificate. |

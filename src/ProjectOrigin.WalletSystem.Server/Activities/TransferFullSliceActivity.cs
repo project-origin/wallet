@@ -17,7 +17,7 @@ namespace ProjectOrigin.WalletSystem.Server.Activities;
 public record TransferFullSliceArguments
 {
     public required Guid SourceSliceId { get; init; }
-    public required Guid ExternalEndpointsId { get; init; }
+    public required Guid ExternalEndpointId { get; init; }
 }
 
 public class TransferFullSliceActivity : IExecuteActivity<TransferFullSliceArguments>
@@ -36,7 +36,6 @@ public class TransferFullSliceActivity : IExecuteActivity<TransferFullSliceArgum
         _formatter = formatter;
     }
 
-
     public async Task<ExecutionResult> Execute(ExecuteContext<TransferFullSliceArguments> context)
     {
         _logger.LogDebug("RoutingSlip {TrackingNumber} - Executing {ActivityName}", context.TrackingNumber, context.ActivityName);
@@ -44,16 +43,16 @@ public class TransferFullSliceActivity : IExecuteActivity<TransferFullSliceArgum
         try
         {
             var sourceSlice = await _unitOfWork.CertificateRepository.GetWalletSlice(context.Arguments.SourceSliceId);
-            var externalEndpoints = await _unitOfWork.WalletRepository.GetExternalEndpoints(context.Arguments.ExternalEndpointsId);
+            var externalEndpoint = await _unitOfWork.WalletRepository.GetExternalEndpoint(context.Arguments.ExternalEndpointId);
 
-            var nextReceiverPosition = await _unitOfWork.WalletRepository.GetNextNumberForId(externalEndpoints.Id);
-            var receiverPublicKey = externalEndpoints.PublicKey.Derive(nextReceiverPosition).GetPublicKey();
+            var nextReceiverPosition = await _unitOfWork.WalletRepository.GetNextNumberForId(externalEndpoint.Id);
+            var receiverPublicKey = externalEndpoint.PublicKey.Derive(nextReceiverPosition).GetPublicKey();
 
             var transferredSlice = new TransferredSlice
             {
                 Id = Guid.NewGuid(),
-                ExternalEndpointsId = externalEndpoints.Id,
-                ExternalEndpointsPosition = nextReceiverPosition,
+                ExternalEndpointId = externalEndpoint.Id,
+                ExternalEndpointPosition = nextReceiverPosition,
                 RegistryName = sourceSlice.RegistryName,
                 CertificateId = sourceSlice.CertificateId,
                 Quantity = sourceSlice.Quantity,
@@ -74,7 +73,7 @@ public class TransferFullSliceActivity : IExecuteActivity<TransferFullSliceArgum
                 { sourceSlice.Id, WalletSliceState.Sliced }
             };
 
-            return AddTransferRequiredActivities(context, externalEndpoints, transferredSlice, transaction, states);
+            return AddTransferRequiredActivities(context, externalEndpoint, transferredSlice, transaction, states);
         }
         catch (Exception ex)
         {
@@ -84,7 +83,7 @@ public class TransferFullSliceActivity : IExecuteActivity<TransferFullSliceArgum
         }
     }
 
-    private ExecutionResult AddTransferRequiredActivities(ExecuteContext context, ExternalEndpoints externalEndpoints, BaseSlice transferredSlice, Transaction transaction, Dictionary<Guid, WalletSliceState> states)
+    private ExecutionResult AddTransferRequiredActivities(ExecuteContext context, ExternalEndpoint externalEndpoint, BaseSlice transferredSlice, Transaction transaction, Dictionary<Guid, WalletSliceState> states)
     {
         return context.ReviseItinerary(builder =>
         {
@@ -110,7 +109,7 @@ public class TransferFullSliceActivity : IExecuteActivity<TransferFullSliceArgum
             builder.AddActivity<SendInformationToReceiverWalletActivity, SendInformationToReceiverWalletArgument>(_formatter,
                 new()
                 {
-                    ExternalEndpointsId = externalEndpoints.Id,
+                    ExternalEndpointId = externalEndpoint.Id,
                     SliceId = transferredSlice.Id,
                 });
 

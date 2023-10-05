@@ -131,14 +131,14 @@ public class WalletRepositoryTests : AbstractRepositoryTests
     }
 
     [Fact]
-    public async Task GetExternalEndpoints()
+    public async Task GetExternalEndpoint()
     {
         // Arrange
         var subject = _fixture.Create<string>();
-        var endpoint = await CreateExternalEndpoints(subject, _fixture.Create<string>(), _fixture.Create<string>());
+        var endpoint = await CreateExternalEndpoint(subject, _fixture.Create<string>(), _fixture.Create<string>());
 
         // Act
-        var deDb = await _repository.GetExternalEndpoints(endpoint.Id);
+        var deDb = await _repository.GetExternalEndpoint(endpoint.Id);
 
         // Assert
         deDb.Should().NotBeNull();
