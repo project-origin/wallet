@@ -3,20 +3,15 @@ using ProjectOrigin.WalletSystem.Server;
 using System;
 using System.Threading.Tasks;
 using Xunit;
-using ProjectOrigin.WalletSystem.Server.Models;
 using Xunit.Abstractions;
 using ProjectOrigin.PedersenCommitment;
-using ProjectOrigin.WalletSystem.IntegrationTests.TestExtensions;
-using ProjectOrigin.Common.V1;
 using FluentAssertions;
 using System.Linq;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests.FlowTests;
 
-public class ClaimTests : WalletSystemTestsBase, IClassFixture<RegistryFixture>, IClassFixture<InMemoryFixture>
+public class ClaimTests : AbstractFlowTests
 {
-    private readonly RegistryFixture _registryFixture;
-
     public ClaimTests(
             GrpcTestFixture<Startup> grpcFixture,
             PostgresDatabaseFixture dbFixture,
@@ -30,16 +25,6 @@ public class ClaimTests : WalletSystemTestsBase, IClassFixture<RegistryFixture>,
                   outputHelper,
                   registryFixture)
     {
-        _registryFixture = registryFixture;
-    }
-
-    private async Task<FederatedStreamId> IssueCertToDepositEndpoint(DepositEndpoint senderDepositEndpoint, uint issuedAmount, Electricity.V1.GranularCertificateType type)
-    {
-        var prodCommitment = new SecretCommitmentInfo(issuedAmount);
-        var position = 1;
-        var issuedEvent = await _registryFixture.IssueCertificate(type, prodCommitment, senderDepositEndpoint.PublicKey.Derive(position).GetPublicKey());
-        await _dbFixture.InsertSlice(senderDepositEndpoint, position, issuedEvent, prodCommitment);
-        return issuedEvent.CertificateId;
     }
 
     [Fact]
@@ -47,17 +32,18 @@ public class ClaimTests : WalletSystemTestsBase, IClassFixture<RegistryFixture>,
     {
         //Arrange
         var client = new V1.WalletService.WalletServiceClient(_grpcFixture.Channel);
+        var position = 1;
 
         var (owner, header) = GenerateUserHeader();
-        var senderDepositEndpoint = await _dbFixture.CreateWalletDepositEndpoint(owner);
+        var endpoint = await client.CreateWalletDepositEndpointAsync(new V1.CreateWalletDepositEndpointRequest(), header);
 
-        var consumptionId = await IssueCertToDepositEndpoint(senderDepositEndpoint, 300, Electricity.V1.GranularCertificateType.Consumption);
-        var productionId = await IssueCertToDepositEndpoint(senderDepositEndpoint, 200, Electricity.V1.GranularCertificateType.Production);
+        var productionId = await IssueCertificateToEndpoint(endpoint, Electricity.V1.GranularCertificateType.Production, new SecretCommitmentInfo(200), position++);
+        var comsumptionId = await IssueCertificateToEndpoint(endpoint, Electricity.V1.GranularCertificateType.Consumption, new SecretCommitmentInfo(300), position++);
 
         //Act
         var response = await client.ClaimCertificatesAsync(new V1.ClaimRequest()
         {
-            ConsumptionCertificateId = consumptionId,
+            ConsumptionCertificateId = comsumptionId,
             ProductionCertificateId = productionId,
             Quantity = 150u,
         }, header);
@@ -71,7 +57,7 @@ public class ClaimTests : WalletSystemTestsBase, IClassFixture<RegistryFixture>,
         }, TimeSpan.FromMinutes(3));
 
         queryClaims.Claims.Should().HaveCount(1);
-        queryClaims.Claims.Single().ConsumptionCertificate.FederatedId.Should().BeEquivalentTo(consumptionId);
+        queryClaims.Claims.Single().ConsumptionCertificate.FederatedId.Should().BeEquivalentTo(comsumptionId);
         queryClaims.Claims.Single().ProductionCertificate.FederatedId.Should().BeEquivalentTo(productionId);
     }
 

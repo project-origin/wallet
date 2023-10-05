@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
@@ -17,8 +19,8 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures;
 
 public class RegistryFixture : IAsyncLifetime
 {
-    private const string RegistryImage = "ghcr.io/project-origin/registry-server:0.2.0";
-    private const string ElectricityVerifierImage = "ghcr.io/project-origin/electricity-server:0.2.0";
+    private const string RegistryImage = "ghcr.io/project-origin/registry-server:0.2.2";
+    private const string ElectricityVerifierImage = "ghcr.io/project-origin/electricity-server:0.2.2";
     private const int GrpcPort = 80;
     private const string Area = "Narnia";
     private const string RegistryName = "TestRegistry";
@@ -38,17 +40,21 @@ public class RegistryFixture : IAsyncLifetime
     {
         IssuerKey = Algorithms.Ed25519.GenerateNewPrivateKey();
 
+        var networkName = Guid.NewGuid().ToString();
+
         _network = new NetworkBuilder()
-            .WithName(Guid.NewGuid().ToString())
+            .WithName(networkName)
             .Build();
+
+        var postfix = networkName.Substring(0, 8);
 
         _verifierContainer = new ContainerBuilder()
                 .WithImage(ElectricityVerifierImage)
                 .WithNetwork(_network)
-                .WithNetworkAliases(VerifierAlias)
+                .WithNetworkAliases(VerifierAlias + postfix)
                 .WithPortBinding(GrpcPort, true)
                 .WithEnvironment($"Issuers__{IssuerArea}", Convert.ToBase64String(Encoding.UTF8.GetBytes(IssuerKey.PublicKey.ExportPkixText())))
-                .WithEnvironment($"Registries__{RegistryName}__Address", $"http://{RegistryAlias}:{GrpcPort}")
+                .WithEnvironment($"Registries__{RegistryName}__Address", $"http://{RegistryAlias + postfix}:{GrpcPort}")
                 .WithWaitStrategy(
                     Wait.ForUnixContainer()
                         .UntilPortIsAvailable(GrpcPort)
@@ -58,12 +64,13 @@ public class RegistryFixture : IAsyncLifetime
         _registryContainer = new ContainerBuilder()
                     .WithImage(RegistryImage)
                     .WithNetwork(_network)
-                    .WithNetworkAliases(RegistryAlias)
+                    .WithNetworkAliases(RegistryAlias + postfix)
                     .WithPortBinding(GrpcPort, true)
-                    .WithEnvironment($"Verifiers__project_origin.electricity.v1", $"http://{VerifierAlias}:{GrpcPort}")
                     .WithEnvironment($"RegistryName", RegistryName)
-                    .WithEnvironment($"IMMUTABLELOG__TYPE", "log")
-                    .WithEnvironment($"VERIFIABLEEVENTSTORE__BATCHSIZEEXPONENT", "0")
+                    .WithEnvironment($"BlockFinalizer__Interval", "00:00:05")
+                    .WithEnvironment($"Verifiers__project_origin.electricity.v1", $"http://{VerifierAlias + postfix}:{GrpcPort}")
+                    .WithEnvironment($"ImmutableLog__Type", "log")
+                    .WithEnvironment($"Persistance__Type", "in_memory")
                     .WithWaitStrategy(
                         Wait.ForUnixContainer()
                             .UntilPortIsAvailable(GrpcPort)
@@ -95,7 +102,7 @@ public class RegistryFixture : IAsyncLifetime
         await _network.DisposeAsync().ConfigureAwait(false);
     }
 
-    public async Task<Electricity.V1.IssuedEvent> IssueCertificate(Electricity.V1.GranularCertificateType type, SecretCommitmentInfo commitment, IPublicKey ownerKey)
+    public async Task<Electricity.V1.IssuedEvent> IssueCertificate(Electricity.V1.GranularCertificateType type, SecretCommitmentInfo commitment, IPublicKey ownerKey, Dictionary<string, string>? attributes = null)
     {
         var id = new Common.V1.FederatedStreamId
         {
@@ -125,6 +132,9 @@ public class RegistryFixture : IAsyncLifetime
             }
         };
 
+        if (attributes != null)
+            issuedEvent.Attributes.Add(attributes.Select(att => new Electricity.V1.Attribute { Key = att.Key, Value = att.Value }));
+
         var channel = GrpcChannel.ForAddress(RegistryUrl);
         var client = new Registry.V1.RegistryService.RegistryServiceClient(channel);
 
@@ -152,7 +162,7 @@ public class RegistryFixture : IAsyncLifetime
             Id = Convert.ToBase64String(SHA256.HashData(transactions.ToByteArray()))
         };
 
-        var began = DateTime.Now;
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
         while (true)
         {
             var status = await client.GetTransactionStatusAsync(statusRequest);
@@ -161,11 +171,16 @@ public class RegistryFixture : IAsyncLifetime
                 break;
             else if (status.Status == Registry.V1.TransactionState.Failed)
                 throw new Exception("Failed to issue certificate");
-            else
-                await Task.Delay(1000);
 
-            if (DateTime.Now - began > TimeSpan.FromMinutes(1))
-                throw new Exception("Timed out waiting for transaction to commit");
+            if (stopwatch.Elapsed > TimeSpan.FromSeconds(15))
+            {
+                var registryLog = await _registryContainer.GetLogsAsync();
+                var verifierLog = await _verifierContainer.GetLogsAsync();
+
+                throw new Exception($"Timed out waiting for transaction to commit {status.Status},\n\nRegistry Log:\n{registryLog}\n\nVerifier Log:\n{verifierLog}");
+            }
+
+            await Task.Delay(1000);
         }
 
         return issuedEvent;
