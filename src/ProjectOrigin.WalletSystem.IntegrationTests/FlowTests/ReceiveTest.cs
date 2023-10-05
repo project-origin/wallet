@@ -27,7 +27,7 @@ public class ReceiveTest : AbstractFlowTests
     }
 
     [Fact]
-    public async Task Test()
+    public async Task IssueCertWithAndWithoutAttributes_Query_Success()
     {
         var client = new V1.WalletService.WalletServiceClient(_grpcFixture.Channel);
         var position = 1;
@@ -51,23 +51,19 @@ public class ReceiveTest : AbstractFlowTests
             new SecretCommitmentInfo(150),
             position++);
 
-        await Timeout(async () =>
+        var certificates = await Timeout(async () =>
         {
             var result = await client.QueryGranularCertificatesAsync(new V1.QueryRequest(), header);
             result.GranularCertificates.Should().HaveCount(2);
             return result.GranularCertificates;
         }, TimeSpan.FromMinutes(1));
 
-        var queryResult = await client.QueryGranularCertificatesAsync(new V1.QueryRequest(), header);
-
-        queryResult.GranularCertificates.Should().HaveCount(2);
-
-        var gc1 = queryResult.GranularCertificates.Should().Contain(x => x.FederatedId.StreamId.Value == prodCertId.StreamId.Value).Which;
+        var gc1 = certificates.Should().Contain(x => x.FederatedId.StreamId.Value == prodCertId.StreamId.Value).Which;
         gc1.Type.Should().Be(V1.GranularCertificateType.Production);
         gc1.Quantity.Should().Be(250);
         gc1.Attributes.Should().HaveCount(2);
 
-        var gc2 = queryResult.GranularCertificates.Should().Contain(x => x.FederatedId.StreamId.Value == conCertId.StreamId.Value).Which;
+        var gc2 = certificates.Should().Contain(x => x.FederatedId.StreamId.Value == conCertId.StreamId.Value).Which;
         gc2.Type.Should().Be(V1.GranularCertificateType.Consumption);
         gc2.Quantity.Should().Be(150);
         gc2.Attributes.Should().HaveCount(0);
