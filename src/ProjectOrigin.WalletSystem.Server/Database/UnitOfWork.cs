@@ -93,6 +93,8 @@ public class UnitOfWork : IUnitOfWork, IDisposable
     {
         if (disposing && !_disposed)
         {
+            _disposed = true;
+
             if (_lazyTransaction.IsValueCreated)
             {
                 _lazyTransaction.Value.Dispose();
@@ -102,11 +104,8 @@ public class UnitOfWork : IUnitOfWork, IDisposable
             {
                 _lazyConnection.Value.Dispose();
             }
-
-            _disposed = true;
         }
 
         _repositories.Clear();
     }
-
 }
