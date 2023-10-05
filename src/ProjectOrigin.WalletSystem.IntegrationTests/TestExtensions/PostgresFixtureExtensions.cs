@@ -161,6 +161,4 @@ public static class PostgresFixtureExtensions
 
         await certificateRepository.InsertSlice(receivedSlice);
     }
-
-
 }
