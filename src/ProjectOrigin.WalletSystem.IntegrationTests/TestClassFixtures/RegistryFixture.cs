@@ -46,15 +46,13 @@ public class RegistryFixture : IAsyncLifetime
             .WithName(networkName)
             .Build();
 
-        var postfix = networkName.Substring(0, 8);
-
         _verifierContainer = new ContainerBuilder()
                 .WithImage(ElectricityVerifierImage)
                 .WithNetwork(_network)
-                .WithNetworkAliases(VerifierAlias + postfix)
+                .WithNetworkAliases(VerifierAlias)
                 .WithPortBinding(GrpcPort, true)
                 .WithEnvironment($"Issuers__{IssuerArea}", Convert.ToBase64String(Encoding.UTF8.GetBytes(IssuerKey.PublicKey.ExportPkixText())))
-                .WithEnvironment($"Registries__{RegistryName}__Address", $"http://{RegistryAlias + postfix}:{GrpcPort}")
+                .WithEnvironment($"Registries__{RegistryName}__Address", $"http://{RegistryAlias}:{GrpcPort}")
                 .WithWaitStrategy(
                     Wait.ForUnixContainer()
                         .UntilPortIsAvailable(GrpcPort)
@@ -64,11 +62,11 @@ public class RegistryFixture : IAsyncLifetime
         _registryContainer = new ContainerBuilder()
                     .WithImage(RegistryImage)
                     .WithNetwork(_network)
-                    .WithNetworkAliases(RegistryAlias + postfix)
+                    .WithNetworkAliases(RegistryAlias)
                     .WithPortBinding(GrpcPort, true)
                     .WithEnvironment($"RegistryName", RegistryName)
                     .WithEnvironment($"BlockFinalizer__Interval", "00:00:05")
-                    .WithEnvironment($"Verifiers__project_origin.electricity.v1", $"http://{VerifierAlias + postfix}:{GrpcPort}")
+                    .WithEnvironment($"Verifiers__project_origin.electricity.v1", $"http://{VerifierAlias}:{GrpcPort}")
                     .WithEnvironment($"ImmutableLog__Type", "log")
                     .WithEnvironment($"Persistance__Type", "in_memory")
                     .WithWaitStrategy(
