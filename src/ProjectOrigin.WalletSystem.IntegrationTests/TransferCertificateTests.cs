@@ -45,7 +45,7 @@ public class TransferCertificateTests : WalletSystemTestsBase, IClassFixture<Reg
 
         var (sender, senderHeader) = GenerateUserHeader();
         var commitment = new SecretCommitmentInfo(issuedAmount);
-        var senderEndpoint = await _dbFixture.CreateReceiveEndpoint(sender);
+        var senderEndpoint = await _dbFixture.CreateWalletEndpoint(sender);
         var position = 1;
         var issuedEvent = await _registryFixture.IssueCertificate(Electricity.V1.GranularCertificateType.Production, commitment, senderEndpoint.PublicKey.Derive(position).GetPublicKey());
         var certId = Guid.Parse(issuedEvent.CertificateId.StreamId.Value);
@@ -79,11 +79,11 @@ public class TransferCertificateTests : WalletSystemTestsBase, IClassFixture<Reg
 
         // Create sender wallet
         var (sender, senderHeader) = GenerateUserHeader();
-        var depositEndpoint = await _dbFixture.CreateWalletDepositEndpoint(sender);
-        var depositPosition = await _dbFixture.GetNextNumberForId(depositEndpoint.Id);
+        var endpoint = await _dbFixture.CreateWalletEndpoint(sender);
+        var position = await _dbFixture.GetNextNumberForId(endpoint.Id);
 
         // Create remainder endpoint and increment position to force test to fail if positions are calculated incorrectly
-        var remainderEndpoint = await _dbFixture.GetWalletRemainderEndpoint(depositEndpoint.WalletId!.Value);
+        var remainderEndpoint = await _dbFixture.GetWalletRemainderEndpoint(endpoint.WalletId);
         await _dbFixture.GetNextNumberForId(remainderEndpoint.Id);
         await _dbFixture.GetNextNumberForId(remainderEndpoint.Id);
 

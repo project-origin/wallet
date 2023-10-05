@@ -42,7 +42,7 @@ public class ClaimTests : IClassFixture<PostgresDatabaseFixture>
     public async Task TestClaimEqualSize()
     {
         // Arrange
-        var endpoint = await _dbFixture.CreateReceiveEndpoint(_fixture.Create<string>());
+        var endpoint = await _dbFixture.CreateWalletEndpoint(_fixture.Create<string>());
 
         var prodCert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _registryName, Server.Models.GranularCertificateType.Production);
         var prodSecret = new SecretCommitmentInfo(150);
@@ -136,7 +136,7 @@ public class ClaimTests : IClassFixture<PostgresDatabaseFixture>
     public async Task TestClaimUnqualSize(uint prodSize, uint consSize)
     {
         // Arrange
-        var endpoint = await _dbFixture.CreateReceiveEndpoint(_fixture.Create<string>());
+        var endpoint = await _dbFixture.CreateWalletEndpoint(_fixture.Create<string>());
 
         var prodCert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _registryName, Server.Models.GranularCertificateType.Production);
         var prodSecret = new SecretCommitmentInfo(prodSize);

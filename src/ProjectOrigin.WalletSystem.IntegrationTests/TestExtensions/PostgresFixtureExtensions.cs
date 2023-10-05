@@ -39,7 +39,7 @@ public static class PostgresFixtureExtensions
         }
     }
 
-    public static async Task<WalletEndpoint> CreateReceiveEndpoint(this PostgresDatabaseFixture _dbFixture, Wallet wallet)
+    public static async Task<WalletEndpoint> CreateWalletEndpoint(this PostgresDatabaseFixture _dbFixture, Wallet wallet)
     {
         using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
         {
@@ -48,10 +48,10 @@ public static class PostgresFixtureExtensions
         }
     }
 
-    public static async Task<WalletEndpoint> CreateReceiveEndpoint(this PostgresDatabaseFixture _dbFixture, string owner)
+    public static async Task<WalletEndpoint> CreateWalletEndpoint(this PostgresDatabaseFixture _dbFixture, string owner)
     {
         var wallet = await CreateWallet(_dbFixture, owner);
-        return await CreateReceiveEndpoint(_dbFixture, wallet);
+        return await CreateWalletEndpoint(_dbFixture, wallet);
     }
 
     public static async Task<int> GetNextNumberForId(this PostgresDatabaseFixture _dbFixture, Guid id)
@@ -64,12 +64,12 @@ public static class PostgresFixtureExtensions
         }
     }
 
-    public static async Task<DepositEndpoint> GetWalletRemainderEndpoint(this PostgresDatabaseFixture _dbFixture, Guid walletId)
+    public static async Task<WalletEndpoint> GetWalletRemainderEndpoint(this PostgresDatabaseFixture _dbFixture, Guid walletId)
     {
         using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
         {
             var walletRepository = new WalletRepository(connection);
-            return await walletRepository.GetWalletRemainderDepositEndpoint(walletId);
+            return await walletRepository.GetWalletRemainderEndpoint(walletId);
         }
     }
 

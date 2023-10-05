@@ -43,7 +43,7 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
             var certId = Guid.NewGuid();
             var owner = "John";
             var registryName = new Fixture().Create<string>();
-            var endpoint = await _dbFixture.CreateReceiveEndpoint(owner);
+            var endpoint = await _dbFixture.CreateWalletEndpoint(owner);
             var client = new ReceiveSliceService.ReceiveSliceServiceClient(_grpcFixture.Channel);
             var request = new ReceiveRequest()
             {

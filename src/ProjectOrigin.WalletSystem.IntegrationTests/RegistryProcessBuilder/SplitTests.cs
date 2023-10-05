@@ -41,7 +41,7 @@ public class SplitTests : IClassFixture<PostgresDatabaseFixture>
     public async Task TestSplitMethod()
     {
         // Arrange
-        var endpoint = await _dbFixture.CreateReceiveEndpoint(_fixture.Create<string>());
+        var endpoint = await _dbFixture.CreateWalletEndpoint(_fixture.Create<string>());
 
         var cert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _registryName, Server.Models.GranularCertificateType.Production);
         var secret = new SecretCommitmentInfo(150);
@@ -89,7 +89,7 @@ public class SplitTests : IClassFixture<PostgresDatabaseFixture>
     public async Task TestSplitMethodWithQuantityEqualToSliceQuantity(uint sliceSize, int splitQuanity)
     {
         // Arrange
-        var endpoint = await _dbFixture.CreateReceiveEndpoint(_fixture.Create<string>());
+        var endpoint = await _dbFixture.CreateWalletEndpoint(_fixture.Create<string>());
 
         var cert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _registryName, Server.Models.GranularCertificateType.Production);
         var secret = new SecretCommitmentInfo(sliceSize);
