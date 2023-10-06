@@ -50,7 +50,7 @@ public class CertificateRepository : ICertificateRepository
         foreach (var atr in certificate.Attributes)
         {
             await _connection.ExecuteAsync(
-                @"INSERT INTO attributes(id, key_atr, value_atr, certificate_id, registry_name)
+                @"INSERT INTO attributes(id, attribute_key, attribute_value, certificate_id, registry_name)
                   VALUES (@id, @key, @value, @certificateId, @registryName)",
                 new
                 {
@@ -67,7 +67,7 @@ public class CertificateRepository : ICertificateRepository
     {
         var certsDictionary = new Dictionary<Guid, Certificate>();
         await _connection.QueryAsync<Certificate?, CertificateAttribute, Certificate?>(
-            @"SELECT c.*, a.Id AS attribute_id, a.key_atr AS key, a.value_atr as value
+            @"SELECT c.*, a.Id AS attribute_id, a.attribute_key AS key, a.attribute_value as value
               FROM certificates c
               LEFT JOIN Attributes a
                 ON c.id = a.certificate_id
@@ -103,7 +103,7 @@ public class CertificateRepository : ICertificateRepository
         var certsDictionary = new Dictionary<Guid, CertificateViewModel>();
 
         await _connection.QueryAsync<CertificateViewModel, SliceViewModel, CertificateAttribute, CertificateViewModel>(
-            @"SELECT c.*, s.Id AS slice_id, s.quantity, a.Id AS attribute_id, a.key_atr AS key, a.value_atr as value
+            @"SELECT c.*, s.Id AS slice_id, s.quantity, a.Id AS attribute_id, a.attribute_key AS key, a.attribute_value as value
               FROM Wallets w
               INNER JOIN wallet_endpoints re
                 ON w.id = re.wallet_id
@@ -372,7 +372,7 @@ public class CertificateRepository : ICertificateRepository
                 AND wallet_cons.owner = @owner
         );
         SELECT * FROM claims_work_table;
-        SELECT attributes.registry_name, attributes.certificate_id, attributes.key_atr AS key, attributes.value_atr AS value
+        SELECT attributes.registry_name, attributes.certificate_id, attributes.attribute_key AS key, attributes.attribute_value AS value
         FROM attributes
         WHERE (registry_name, certificate_id) IN (SELECT ConsumptionRegistryName, ConsumptionCertificateId FROM claims_work_table)
             OR (registry_name, certificate_id) IN (SELECT ProductionRegistryName, ProductionCertificateId FROM claims_work_table);

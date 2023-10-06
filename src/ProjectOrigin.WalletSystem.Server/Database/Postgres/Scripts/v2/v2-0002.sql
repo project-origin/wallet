@@ -28,7 +28,7 @@ BEGIN
     END IF;
 
     IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'old_attributes') THEN
-        INSERT INTO attributes (id, key_atr, value_atr, certificate_id, registry_name)
+        INSERT INTO attributes (id, attribute_key, attribute_value, certificate_id, registry_name)
         SELECT old.Id, old.KeyAtr, old.ValueAtr, old.CertificateId, old_registries.Name
         FROM old_attributes AS old
         INNER JOIN old_registries ON old.RegistryId = old_registries.id;

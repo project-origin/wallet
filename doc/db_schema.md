@@ -51,8 +51,8 @@ erDiagram
         uuid id PK "Unique id of an attribute"
         uuid certificate_id FK "Unique id of a certificate"
         text registry_name FK "string name of the registry"
-        text key_atr "The name of the attribute"
-        text value_atr "The value of the attribute"
+        text attribute_key "The name of the attribute"
+        text attribute_value "The value of the attribute"
     }
 
     external_endpoints {

@@ -47,11 +47,11 @@ CREATE TABLE certificates (
 
 CREATE TABLE attributes (
     id uuid NOT NULL PRIMARY KEY,
-    key_atr VARCHAR(256) NOT NULL,
-    value_atr VARCHAR(512) NOT NULL,
+    attribute_key VARCHAR(256) NOT NULL,
+    attribute_value VARCHAR(512) NOT NULL,
     certificate_id uuid NOT NULL,
     registry_name VARCHAR(64) NOT NULL,
-    UNIQUE (certificate_id, registry_name, key_atr),
+    UNIQUE (certificate_id, registry_name, attribute_key),
     FOREIGN KEY (certificate_id, registry_name)
         REFERENCES certificates (Id, registry_name) MATCH SIMPLE
         ON UPDATE NO ACTION
