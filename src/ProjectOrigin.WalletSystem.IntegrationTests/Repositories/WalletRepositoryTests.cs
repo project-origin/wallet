@@ -71,7 +71,7 @@ public class WalletRepositoryTests : AbstractRepositoryTests
     [InlineData(0, 1)]
     [InlineData(1, 2)]
     [InlineData(3, 4)]
-    public async Task Query_CreateWalletEndpoint_GetNextWalletPosition_Valid(int sections, int next)
+    public async Task Query_CreateWalletEndpoint_GetNextWalletPosition_Valid(int endpoints, int next)
     {
         // Arrange
         var subject = Guid.NewGuid().ToString();
@@ -86,7 +86,7 @@ public class WalletRepositoryTests : AbstractRepositoryTests
         var repository = new WalletRepository(connection);
         await repository.Create(wallet);
 
-        for (int position = 1; position <= sections; position++)
+        for (int position = 1; position <= endpoints; position++)
         {
             await repository.CreateWalletEndpoint(wallet.Id);
         }
