@@ -13,8 +13,8 @@ An owner will be able to have multiple wallets, and authorize other users to acc
 
 ## Wallet Endpoint
 
-A wallet endpoint are utilized within the system to enable secure asset transfers and ownership management.
-Each wallet endpoint is uniquely identified by a endpointId and is associated with a specific wallet through a foreign key reference (WalletId) and a WalletPosition.
+Wallet endpoints are utilized within the system to enable secure asset transfers and ownership management.
+Each wallet endpoint is uniquely identified by an endpointId and is associated with a specific wallet through a foreign key reference (WalletId) and a WalletPosition.
 
 ### Purpose of Wallet Endpoints
 

@@ -60,7 +60,7 @@ public class ReceiverDepositEndpointTests : WalletSystemTestsBase, IClassFixture
 
         using (var connection = _dbFixture.GetConnectionFactory().CreateConnection())
         {
-            var foundDepositEndpoint = connection.QuerySingle<ExternalEndpoint>("SELECT * FROM external_endpoints WHERE Owner = @subject", new { subject });
+            var foundEndpoint = connection.QuerySingle<ExternalEndpoint>("SELECT * FROM external_endpoints WHERE Owner = @subject", new { subject });
 
             request.WalletDepositEndpoint.PublicKey.Should().Equal(foundDepositEndpoint.PublicKey.Export().ToArray());
             request.WalletDepositEndpoint.Endpoint.Should().Be(foundDepositEndpoint.Endpoint);
@@ -95,7 +95,7 @@ public class ReceiverDepositEndpointTests : WalletSystemTestsBase, IClassFixture
 
         using (var connection = _dbFixture.GetConnectionFactory().CreateConnection())
         {
-            var foundDepositEndpoints = connection.Query<ExternalEndpoint>("SELECT * FROM external_endpoints Where reference_text = @reference", new { reference });
+            var foundEndpoints = connection.Query<ExternalEndpoint>("SELECT * FROM external_endpoints Where reference_text = @reference", new { reference });
             foundDepositEndpoints.Should().HaveCount(2);
         }
     }
@@ -121,7 +121,7 @@ public class ReceiverDepositEndpointTests : WalletSystemTestsBase, IClassFixture
 
         using (var connection = _dbFixture.GetConnectionFactory().CreateConnection())
         {
-            var foundDepositEndpoints = connection.Query<ExternalEndpoint>("SELECT * FROM external_endpoints");
+            var foundEndpoints = connection.Query<ExternalEndpoint>("SELECT * FROM external_endpoints");
 
             foundDepositEndpoints.Should().HaveCount(1);
         }
