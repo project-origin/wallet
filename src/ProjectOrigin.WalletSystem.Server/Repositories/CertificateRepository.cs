@@ -20,7 +20,7 @@ public class CertificateRepository : ICertificateRepository
     {
         await _connection.ExecuteAsync(
             @"INSERT INTO wallet_slices(id, certificate_id, registry_name, wallet_endpoint_id, wallet_endpoint_position, state, quantity, random_r)
-              VALUES (@id, @certificateId, @registryName, @walletEndpointId, @walletEndpointPosition, @slice, @quantity, @randomR)",
+              VALUES (@id, @certificateId, @registryName, @walletEndpointId, @walletEndpointPosition, @state, @quantity, @randomR)",
             newSlice);
     }
 
@@ -28,7 +28,7 @@ public class CertificateRepository : ICertificateRepository
     {
         await _connection.ExecuteAsync(
             @"INSERT INTO transferred_slices(id, certificate_id, registry_name, external_endpoint_id, external_endpoint_position, state, quantity, random_r)
-              VALUES (@id, @certificateId, @registryName, @externalEndpointId, @externalEndpointPosition, @slice, @quantity, @randomR)",
+              VALUES (@id, @certificateId, @registryName, @externalEndpointId, @externalEndpointPosition, @state, @quantity, @randomR)",
             newSlice);
     }
 
