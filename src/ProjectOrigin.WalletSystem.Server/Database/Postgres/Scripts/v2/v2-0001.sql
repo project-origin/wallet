@@ -65,7 +65,7 @@ CREATE TABLE transferred_slices (
     registry_name VARCHAR(64) NOT NULL,
     external_endpoint_id uuid NOT NULL,
     external_endpoint_position integer NOT NULL,
-    slice_state integer NOT NULL,
+    state integer NOT NULL,
     quantity bigint NOT NULL,
     random_r bytea NOT NULL,
     FOREIGN KEY (external_endpoint_id)
@@ -86,7 +86,7 @@ CREATE TABLE wallet_slices (
     registry_name VARCHAR(64) NOT NULL,
     wallet_endpoint_id uuid NOT NULL,
     wallet_endpoint_position integer NOT NULL,
-    slice_state integer NOT NULL,
+    state integer NOT NULL,
     quantity bigint NOT NULL,
     random_r bytea NOT NULL,
     FOREIGN KEY (wallet_endpoint_id)

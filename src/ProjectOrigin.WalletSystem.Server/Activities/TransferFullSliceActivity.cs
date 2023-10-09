@@ -57,7 +57,7 @@ public class TransferFullSliceActivity : IExecuteActivity<TransferFullSliceArgum
                 CertificateId = sourceSlice.CertificateId,
                 Quantity = sourceSlice.Quantity,
                 RandomR = sourceSlice.RandomR,
-                SliceState = TransferredSliceState.Registering
+                State = TransferredSliceState.Registering
             };
             await _unitOfWork.CertificateRepository.InsertTransferredSlice(transferredSlice);
 
@@ -83,7 +83,7 @@ public class TransferFullSliceActivity : IExecuteActivity<TransferFullSliceArgum
         }
     }
 
-    private ExecutionResult AddTransferRequiredActivities(ExecuteContext context, ExternalEndpoint externalEndpoint, BaseSlice transferredSlice, Transaction transaction, Dictionary<Guid, WalletSliceState> states)
+    private ExecutionResult AddTransferRequiredActivities(ExecuteContext context, ExternalEndpoint externalEndpoint, AbstractSlice transferredSlice, Transaction transaction, Dictionary<Guid, WalletSliceState> states)
     {
         return context.ReviseItinerary(builder =>
         {

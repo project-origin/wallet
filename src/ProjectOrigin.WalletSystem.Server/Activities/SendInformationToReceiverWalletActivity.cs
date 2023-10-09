@@ -103,7 +103,7 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
             CertificateId = newSlice.CertificateId,
             Quantity = newSlice.Quantity,
             RandomR = newSlice.RandomR,
-            SliceState = WalletSliceState.Available
+            State = WalletSliceState.Available
         };
         await _unitOfWork.CertificateRepository.InsertWalletSlice(slice);
         await _unitOfWork.CertificateRepository.SetTransferredSliceState(newSlice.Id, TransferredSliceState.Transferred);

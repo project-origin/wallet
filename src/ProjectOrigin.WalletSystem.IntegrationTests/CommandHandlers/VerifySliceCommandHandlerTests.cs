@@ -128,7 +128,7 @@ public class VerifySliceCommandHandlerTests : IAsyncLifetime
         await _certificateRepository.Received(1).InsertWalletSlice(Arg.Is<WalletSlice>(x => x.CertificateId == certId
                                                                                 && x.Quantity == commitment.Message
                                                                                 && x.RandomR.SequenceEqual(blindingValueArray)
-                                                                                && x.SliceState == WalletSliceState.Available));
+                                                                                && x.State == WalletSliceState.Available));
     }
 
     [Fact]

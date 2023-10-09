@@ -45,7 +45,7 @@ public partial class RegistryProcessBuilder
             WalletEndpointPosition = await _unitOfWork.WalletRepository.GetNextNumberForId(remainderEndpoint.Id),
             Quantity = newSecretCommitmentInfo.Message,
             RandomR = newSecretCommitmentInfo.BlindingValue.ToArray(),
-            SliceState = WalletSliceState.Registering
+            State = WalletSliceState.Registering
         };
 
         await _unitOfWork.CertificateRepository.InsertWalletSlice(newSlice);

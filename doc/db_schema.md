@@ -41,7 +41,7 @@ erDiagram
         text registry_name FK "string name of the registry"
         uuid wallet_endpoint_id FK "The wallet endpoint that owns the slice"
         int wallet_endpoint_position "The position of the slice in the wallet endpoint"
-        int slice_state "Holds the state of the slice"
+        int state "Holds the state of the slice"
         bigint quantity "The quantity of watt-hours on the slice"
         bytea random_r "The random R is the blinding factor for the commitment"
     }
@@ -71,7 +71,7 @@ erDiagram
         text registry_name FK "string name of the registry"
         uuid external_endpoint_id FK "The external endpoint that the slice is transferred to"
         int external_endpoint_position "The position of the slice in the external endpoint"
-        int slice_state "Holds the state of the slice"
+        int state "Holds the state of the transferred slice"
         bigint quantity "The quantity of watt-hours on the slice"
         bytea random_r "The random R is the blinding factor for the commitment"
     }

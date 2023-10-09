@@ -116,7 +116,7 @@ public static class PostgresFixtureExtensions
                 CertificateId = certificate.Id,
                 Quantity = secretCommitmentInfo.Message,
                 RandomR = secretCommitmentInfo.BlindingValue.ToArray(),
-                SliceState = WalletSliceState.Available
+                State = WalletSliceState.Available
             };
 
             await certificateRepository.InsertWalletSlice(slice);
@@ -156,7 +156,7 @@ public static class PostgresFixtureExtensions
             CertificateId = certificate.Id,
             Quantity = commitment.Message,
             RandomR = commitment.BlindingValue.ToArray(),
-            SliceState = WalletSliceState.Available
+            State = WalletSliceState.Available
         };
 
         await certificateRepository.InsertWalletSlice(receivedSlice);

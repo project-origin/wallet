@@ -2,7 +2,7 @@ using System;
 
 namespace ProjectOrigin.WalletSystem.Server.Models;
 
-public abstract record BaseSlice
+public abstract record AbstractSlice
 {
     public required Guid Id { get; init; }
     public required string RegistryName { get; init; }

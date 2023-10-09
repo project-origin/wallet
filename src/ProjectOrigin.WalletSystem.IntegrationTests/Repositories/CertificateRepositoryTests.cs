@@ -85,7 +85,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
             CertificateId = certificate.Id,
             Quantity = _fixture.Create<int>(),
             RandomR = _fixture.Create<byte[]>(),
-            SliceState = WalletSliceState.Available
+            State = WalletSliceState.Available
         };
 
         // Act
@@ -122,7 +122,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
             CertificateId = certificate1.Id,
             Quantity = _fixture.Create<int>(),
             RandomR = _fixture.Create<byte[]>(),
-            SliceState = WalletSliceState.Available
+            State = WalletSliceState.Available
         };
         var slice2 = new WalletSlice
         {
@@ -133,7 +133,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
             CertificateId = certificate1.Id,
             Quantity = _fixture.Create<int>(),
             RandomR = _fixture.Create<byte[]>(),
-            SliceState = WalletSliceState.Available
+            State = WalletSliceState.Available
         };
         //Certficiate2
         var slice3 = new WalletSlice
@@ -145,7 +145,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
             CertificateId = certificate2.Id,
             Quantity = _fixture.Create<int>(),
             RandomR = _fixture.Create<byte[]>(),
-            SliceState = WalletSliceState.Available
+            State = WalletSliceState.Available
         };
 
         var sliceWithDifferentOwner = new WalletSlice
@@ -157,7 +157,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
             CertificateId = certificate3.Id,
             Quantity = _fixture.Create<int>(),
             RandomR = _fixture.Create<byte[]>(),
-            SliceState = WalletSliceState.Available
+            State = WalletSliceState.Available
         };
 
         await _repository.InsertWalletSlice(slice1);
@@ -197,7 +197,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
             CertificateId = certificate.Id,
             Quantity = _fixture.Create<int>(),
             RandomR = _fixture.Create<byte[]>(),
-            SliceState = WalletSliceState.Available
+            State = WalletSliceState.Available
         };
 
         // Act
@@ -227,7 +227,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
             CertificateId = certificate.Id,
             Quantity = _fixture.Create<int>(),
             RandomR = _fixture.Create<byte[]>(),
-            SliceState = WalletSliceState.Available
+            State = WalletSliceState.Available
         };
 
         await _repository.InsertWalletSlice(slice);
@@ -255,7 +255,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
             CertificateId = certificate.Id,
             Quantity = _fixture.Create<int>(),
             RandomR = _fixture.Create<byte[]>(),
-            SliceState = WalletSliceState.Sliced
+            State = WalletSliceState.Sliced
         };
         var slice2 = new WalletSlice
         {
@@ -266,7 +266,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
             CertificateId = certificate.Id,
             Quantity = _fixture.Create<int>(),
             RandomR = _fixture.Create<byte[]>(),
-            SliceState = WalletSliceState.Slicing
+            State = WalletSliceState.Slicing
         };
 
         await _repository.InsertWalletSlice(slice1);
@@ -294,7 +294,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
             CertificateId = certificate.Id,
             Quantity = _fixture.Create<int>(),
             RandomR = _fixture.Create<byte[]>(),
-            SliceState = WalletSliceState.Available
+            State = WalletSliceState.Available
         };
 
         await _repository.InsertWalletSlice(slice);
@@ -303,7 +303,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
 
         var sliceDb = await _repository.GetWalletSlice(slice.Id);
 
-        sliceDb.SliceState.Should().Be(WalletSliceState.Slicing);
+        sliceDb.State.Should().Be(WalletSliceState.Slicing);
     }
 
     [Fact]
@@ -324,7 +324,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
             CertificateId = certificate.Id,
             Quantity = 150,
             RandomR = _fixture.Create<byte[]>(),
-            SliceState = WalletSliceState.Available
+            State = WalletSliceState.Available
         };
         await _repository.InsertWalletSlice(slice);
 
@@ -368,7 +368,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
             CertificateId = certificate.Id,
             Quantity = 150,
             RandomR = _fixture.Create<byte[]>(),
-            SliceState = WalletSliceState.Available
+            State = WalletSliceState.Available
         };
         await _repository.InsertWalletSlice(slice);
 
@@ -397,7 +397,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
             CertificateId = certificate.Id,
             Quantity = 150,
             RandomR = _fixture.Create<byte[]>(),
-            SliceState = WalletSliceState.Available
+            State = WalletSliceState.Available
         };
         await _repository.InsertWalletSlice(slice);
         await _repository.InsertWalletSlice(slice with
@@ -405,7 +405,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
             Id = Guid.NewGuid(),
             WalletEndpointPosition = 2,
             Quantity = 75,
-            SliceState = WalletSliceState.Registering,
+            State = WalletSliceState.Registering,
         });
 
         // Act
@@ -433,7 +433,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
             CertificateId = certificate.Id,
             Quantity = 150,
             RandomR = _fixture.Create<byte[]>(),
-            SliceState = WalletSliceState.Available
+            State = WalletSliceState.Available
         };
         await _repository.InsertWalletSlice(slice);
         var claim = new Claim
@@ -565,7 +565,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
                 CertificateId = conCert.Id,
                 Quantity = 150 + 100 * (i % 5),
                 RandomR = _fixture.Create<byte[]>(),
-                SliceState = WalletSliceState.Claimed
+                State = WalletSliceState.Claimed
             };
             await _repository.InsertWalletSlice(conSlice);
 
@@ -579,7 +579,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
                 CertificateId = prodCert.Id,
                 Quantity = 150 + 100 * (i % 5),
                 RandomR = _fixture.Create<byte[]>(),
-                SliceState = WalletSliceState.Claimed
+                State = WalletSliceState.Claimed
             };
             await _repository.InsertWalletSlice(prodSlice);
 

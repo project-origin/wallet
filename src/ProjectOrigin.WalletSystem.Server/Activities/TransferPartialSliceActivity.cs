@@ -64,7 +64,7 @@ public class TransferPartialSliceActivity : IExecuteActivity<TransferPartialSlic
                 CertificateId = sourceSlice.CertificateId,
                 Quantity = receiverCommitment.Message,
                 RandomR = receiverCommitment.BlindingValue.ToArray(),
-                SliceState = TransferredSliceState.Registering
+                State = TransferredSliceState.Registering
             };
             await _unitOfWork.CertificateRepository.InsertTransferredSlice(transferredSlice);
 
@@ -81,7 +81,7 @@ public class TransferPartialSliceActivity : IExecuteActivity<TransferPartialSlic
                 CertificateId = sourceSlice.CertificateId,
                 Quantity = remainderCommitment.Message,
                 RandomR = remainderCommitment.BlindingValue.ToArray(),
-                SliceState = WalletSliceState.Registering
+                State = WalletSliceState.Registering
             };
             await _unitOfWork.CertificateRepository.InsertWalletSlice(remainderSlice);
 
@@ -106,7 +106,7 @@ public class TransferPartialSliceActivity : IExecuteActivity<TransferPartialSlic
         }
     }
 
-    private ExecutionResult AddTransferRequiredActivities(ExecuteContext context, ExternalEndpoint externalEndpoint, BaseSlice transferredSlice, Transaction transaction, Dictionary<Guid, WalletSliceState> states)
+    private ExecutionResult AddTransferRequiredActivities(ExecuteContext context, ExternalEndpoint externalEndpoint, AbstractSlice transferredSlice, Transaction transaction, Dictionary<Guid, WalletSliceState> states)
     {
         return context.ReviseItinerary(builder =>
         {

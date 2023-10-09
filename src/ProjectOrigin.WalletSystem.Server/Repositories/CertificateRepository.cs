@@ -19,7 +19,7 @@ public class CertificateRepository : ICertificateRepository
     public async Task InsertWalletSlice(WalletSlice newSlice)
     {
         await _connection.ExecuteAsync(
-            @"INSERT INTO wallet_slices(id, certificate_id, registry_name, wallet_endpoint_id, wallet_endpoint_position, slice_state, quantity, random_r)
+            @"INSERT INTO wallet_slices(id, certificate_id, registry_name, wallet_endpoint_id, wallet_endpoint_position, state, quantity, random_r)
               VALUES (@id, @certificateId, @registryName, @walletEndpointId, @walletEndpointPosition, @sliceState, @quantity, @randomR)",
             newSlice);
     }
@@ -27,7 +27,7 @@ public class CertificateRepository : ICertificateRepository
     public async Task InsertTransferredSlice(TransferredSlice newSlice)
     {
         await _connection.ExecuteAsync(
-            @"INSERT INTO transferred_slices(id, certificate_id, registry_name, external_endpoint_id, external_endpoint_position, slice_state, quantity, random_r)
+            @"INSERT INTO transferred_slices(id, certificate_id, registry_name, external_endpoint_id, external_endpoint_position, state, quantity, random_r)
               VALUES (@id, @certificateId, @registryName, @externalEndpointId, @externalEndpointPosition, @sliceState, @quantity, @randomR)",
             newSlice);
     }
@@ -115,7 +115,7 @@ public class CertificateRepository : ICertificateRepository
                 ON c.id = a.certificate_id
                 AND c.registry_name = a.registry_name
               WHERE w.owner = @owner
-                AND s.slice_state = @sliceState",
+                AND s.state = @state",
             (cert, slice, atr) =>
             {
                 if (!certsDictionary.TryGetValue(cert.Id, out var certificate))
@@ -135,7 +135,7 @@ public class CertificateRepository : ICertificateRepository
             param: new
             {
                 owner,
-                sliceState = (int)WalletSliceState.Available
+                state = (int)WalletSliceState.Available
             });
 
         return certsDictionary.Values;
@@ -155,13 +155,13 @@ public class CertificateRepository : ICertificateRepository
               WHERE s.registry_name = @registryName
                 AND s.certificate_id = @certificateId
                 AND w.owner = @owner
-                AND s.slice_state = @sliceState",
+                AND s.state = @state",
             new
             {
                 registryName,
                 certificateId,
                 owner,
-                sliceState = (int)WalletSliceState.Available
+                state = (int)WalletSliceState.Available
             });
     }
 
@@ -179,7 +179,7 @@ public class CertificateRepository : ICertificateRepository
               WHERE s.registry_name = @registryName
                 AND s.certificate_id = @certificateId
                 AND w.owner = @owner
-                AND (s.slice_state = @availableState OR s.slice_state = @registeringState)",
+                AND (s.state = @availableState OR s.state = @registeringState)",
             new
             {
                 registryName,
@@ -218,7 +218,7 @@ public class CertificateRepository : ICertificateRepository
     {
         var rowsChanged = await _connection.ExecuteAsync(
             @"UPDATE wallet_slices
-              SET slice_state = @state
+              SET state = @state
               WHERE id = @sliceId",
             new
             {
@@ -234,7 +234,7 @@ public class CertificateRepository : ICertificateRepository
     {
         var rowsChanged = await _connection.ExecuteAsync(
             @"UPDATE transferred_slices
-              SET slice_state = @state
+              SET state = @state
               WHERE id = @sliceId",
             new
             {

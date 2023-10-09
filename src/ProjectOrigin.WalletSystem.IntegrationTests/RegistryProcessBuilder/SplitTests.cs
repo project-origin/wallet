@@ -78,9 +78,9 @@ public class SplitTests : IClassFixture<PostgresDatabaseFixture>
 
         slip.Itinerary.Count.Should().Be(3);
 
-        (await _unitOfWork.CertificateRepository.GetWalletSlice(sourceSlice.Id)).SliceState.Should().Be(WalletSliceState.Slicing);
-        (await _unitOfWork.CertificateRepository.GetWalletSlice(newSlice1.Id)).SliceState.Should().Be(WalletSliceState.Registering);
-        (await _unitOfWork.CertificateRepository.GetWalletSlice(newSlice2.Id)).SliceState.Should().Be(WalletSliceState.Registering);
+        (await _unitOfWork.CertificateRepository.GetWalletSlice(sourceSlice.Id)).State.Should().Be(WalletSliceState.Slicing);
+        (await _unitOfWork.CertificateRepository.GetWalletSlice(newSlice1.Id)).State.Should().Be(WalletSliceState.Registering);
+        (await _unitOfWork.CertificateRepository.GetWalletSlice(newSlice2.Id)).State.Should().Be(WalletSliceState.Registering);
     }
 
     [Theory]

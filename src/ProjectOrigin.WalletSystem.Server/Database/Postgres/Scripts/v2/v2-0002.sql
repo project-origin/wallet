@@ -35,7 +35,7 @@ BEGIN
     END IF;
 
     IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'old_slices') THEN
-        INSERT INTO wallet_slices (id, wallet_endpoint_id, wallet_endpoint_position, slice_state, registry_name, certificate_id, quantity, random_r)
+        INSERT INTO wallet_slices (id, wallet_endpoint_id, wallet_endpoint_position, state, registry_name, certificate_id, quantity, random_r)
         SELECT old.Id, old.DepositEndpointId, old.DepositEndpointPosition, old.SliceState, old_registries.Name, old.CertificateId, old.Quantity, old.RandomR
         FROM old_slices AS old
         INNER JOIN old_registries ON old.RegistryId = old_registries.id
@@ -43,7 +43,7 @@ BEGIN
         WHERE
             old_deposit_endpoints.WalletId IS NOT NULL;
 
-        INSERT INTO transferred_slices (id, external_endpoint_id, external_endpoint_position, slice_state, registry_name, certificate_id, quantity, random_r)
+        INSERT INTO transferred_slices (id, external_endpoint_id, external_endpoint_position, state, registry_name, certificate_id, quantity, random_r)
         SELECT old.Id, old.DepositEndpointId, old.DepositEndpointPosition, old.SliceState, old_registries.Name, old.CertificateId, old.Quantity, old.RandomR
         FROM old_slices AS old
         INNER JOIN old_registries ON old.RegistryId = old_registries.id

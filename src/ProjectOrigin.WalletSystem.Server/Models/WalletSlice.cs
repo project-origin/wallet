@@ -2,11 +2,11 @@ using System;
 
 namespace ProjectOrigin.WalletSystem.Server.Models;
 
-public record WalletSlice : BaseSlice
+public record WalletSlice : AbstractSlice
 {
     public required Guid WalletEndpointId { get; init; }
     public required int WalletEndpointPosition { get; init; }
-    public required WalletSliceState SliceState { get; init; }
+    public required WalletSliceState State { get; init; }
 }
 
 public enum WalletSliceState

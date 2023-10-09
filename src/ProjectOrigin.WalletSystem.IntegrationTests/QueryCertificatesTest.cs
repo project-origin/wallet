@@ -127,7 +127,7 @@ public class QueryCertificatesTest : WalletSystemTestsBase, IClassFixture<InMemo
                 CertificateId = certificate1.Id,
                 Quantity = quantity1,
                 RandomR = _fixture.Create<byte[]>(),
-                SliceState = WalletSliceState.Available
+                State = WalletSliceState.Available
             };
             var slice2 = new WalletSlice
             {
@@ -138,7 +138,7 @@ public class QueryCertificatesTest : WalletSystemTestsBase, IClassFixture<InMemo
                 CertificateId = certificate1.Id,
                 Quantity = quantity2,
                 RandomR = _fixture.Create<byte[]>(),
-                SliceState = WalletSliceState.Available
+                State = WalletSliceState.Available
             };
             var slice3 = new WalletSlice
             {
@@ -149,7 +149,7 @@ public class QueryCertificatesTest : WalletSystemTestsBase, IClassFixture<InMemo
                 CertificateId = certificate2.Id,
                 Quantity = quantity3,
                 RandomR = _fixture.Create<byte[]>(),
-                SliceState = WalletSliceState.Available
+                State = WalletSliceState.Available
             };
             var notOwnedSlice = new WalletSlice
             {
@@ -160,7 +160,7 @@ public class QueryCertificatesTest : WalletSystemTestsBase, IClassFixture<InMemo
                 CertificateId = notOwnedCertificate.Id,
                 Quantity = _fixture.Create<long>(),
                 RandomR = _fixture.Create<byte[]>(),
-                SliceState = WalletSliceState.Available
+                State = WalletSliceState.Available
             };
             await certificateRepository.InsertWalletSlice(slice1);
             await certificateRepository.InsertWalletSlice(slice2);
@@ -250,7 +250,7 @@ public class QueryCertificatesTest : WalletSystemTestsBase, IClassFixture<InMemo
                 CertificateId = certId,
                 Quantity = 42,
                 RandomR = _fixture.Create<byte[]>(),
-                SliceState = WalletSliceState.Available
+                State = WalletSliceState.Available
             };
             var certificateRepository = new CertificateRepository(connection);
             await certificateRepository.InsertWalletSlice(slice1);

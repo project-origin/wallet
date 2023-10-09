@@ -101,7 +101,7 @@ public class VerifySliceCommandHandler : IConsumer<VerifySliceCommand>
             CertificateId = receivedSlice.CertificateId,
             Quantity = receivedSlice.Quantity,
             RandomR = receivedSlice.RandomR,
-            SliceState = WalletSliceState.Available
+            State = WalletSliceState.Available
         };
 
         var certificate = await _unitOfWork.CertificateRepository.GetCertificate(slice.RegistryName, slice.CertificateId);
