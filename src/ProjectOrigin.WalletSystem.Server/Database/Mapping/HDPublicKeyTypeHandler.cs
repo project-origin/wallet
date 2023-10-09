@@ -18,8 +18,8 @@ public class HDPublicKeyTypeHandler : SqlMapper.TypeHandler<IHDPublicKey>
         return _algorithm.ImportHDPublicKey(value as byte[]);
     }
 
-    public override void SetValue(IDbDataParameter parameter, IHDPublicKey value)
+    public override void SetValue(IDbDataParameter parameter, IHDPublicKey? value)
     {
-        parameter.Value = value.Export().ToArray();
+        parameter.Value = value?.Export().ToArray();
     }
 }

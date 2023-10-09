@@ -16,8 +16,6 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests;
 
 public class ReceiverDepositEndpointTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
 {
-    private Fixture _fixture;
-
     public ReceiverDepositEndpointTests(
         GrpcTestFixture<Startup> grpcFixture,
         PostgresDatabaseFixture dbFixture,
@@ -30,7 +28,6 @@ public class ReceiverDepositEndpointTests : WalletSystemTestsBase, IClassFixture
               outputHelper,
               null)
     {
-        _fixture = new Fixture();
     }
 
     [Fact]
