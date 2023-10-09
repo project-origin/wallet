@@ -36,7 +36,7 @@ public class ReceiveTest : AbstractFlowTests
         var endpoint = await client.CreateWalletDepositEndpointAsync(new V1.CreateWalletDepositEndpointRequest(), header);
 
         var prodCertId = await IssueCertificateToEndpoint(
-            endpoint,
+            endpoint.WalletDepositEndpoint,
             Electricity.V1.GranularCertificateType.Production,
             new SecretCommitmentInfo(250),
             position++,
@@ -46,7 +46,7 @@ public class ReceiveTest : AbstractFlowTests
             });
 
         var conCertId = await IssueCertificateToEndpoint(
-            endpoint,
+            endpoint.WalletDepositEndpoint,
             Electricity.V1.GranularCertificateType.Consumption,
             new SecretCommitmentInfo(150),
             position++);

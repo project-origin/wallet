@@ -131,9 +131,9 @@ public class ClaimCertificatesCommandHandlerTests
         await _processBuilder.Received(1).SplitSlice(Arg.Is(consSlices[0]), Arg.Is(125L));
         await _processBuilder.Received(1).Claim(Arg.Is(prodSlices[0]), Arg.Is(c1));
         _processBuilder.Received(1).Build();
-        _processBuilder.Received(1).SetSliceStates(Arg.Is<Dictionary<Guid, SliceState>>(x => x.SequenceEqual(new Dictionary<Guid, SliceState>
+        _processBuilder.Received(1).SetWalletSliceStates(Arg.Is<Dictionary<Guid, WalletSliceState>>(x => x.SequenceEqual(new Dictionary<Guid, WalletSliceState>
         {
-            { c2.Id, SliceState.Available }
+            { c2.Id, WalletSliceState.Available }
         })));
         _processBuilder.ReceivedCalls().Count().Should().Be(4);
     }
@@ -158,9 +158,9 @@ public class ClaimCertificatesCommandHandlerTests
         await _processBuilder.Received(1).Claim(Arg.Is(prodSlices[1]), Arg.Is(c4));
         await _processBuilder.Received(1).Claim(Arg.Is(prodSlices[2]), Arg.Is(c5));
         _processBuilder.Received(1).Build();
-        _processBuilder.Received(1).SetSliceStates(Arg.Is<Dictionary<Guid, SliceState>>(x => x.SequenceEqual(new Dictionary<Guid, SliceState>
+        _processBuilder.Received(1).SetWalletSliceStates(Arg.Is<Dictionary<Guid, WalletSliceState>>(x => x.SequenceEqual(new Dictionary<Guid, WalletSliceState>
         {
-            { cRemainder.Id, SliceState.Available }
+            { cRemainder.Id, WalletSliceState.Available }
         })));
 
         _processBuilder.ReceivedCalls().Count().Should().Be(8);
@@ -186,9 +186,9 @@ public class ClaimCertificatesCommandHandlerTests
         await _processBuilder.Received(1).Claim(Arg.Is(p3), Arg.Is(consSlices[1]));
         await _processBuilder.Received(1).Claim(Arg.Is(p5), Arg.Is(consSlices[2]));
         _processBuilder.Received(1).Build();
-        _processBuilder.Received(1).SetSliceStates(Arg.Is<Dictionary<Guid, SliceState>>(x => x.SequenceEqual(new Dictionary<Guid, SliceState>
+        _processBuilder.Received(1).SetWalletSliceStates(Arg.Is<Dictionary<Guid, WalletSliceState>>(x => x.SequenceEqual(new Dictionary<Guid, WalletSliceState>
         {
-            { p6.Id, SliceState.Available }
+            { p6.Id, WalletSliceState.Available }
         })));
 
         _processBuilder.ReceivedCalls().Count().Should().Be(8);
@@ -201,7 +201,7 @@ public class ClaimCertificatesCommandHandlerTests
     /// <param name="consumptionQuantities">The list of sizes of the reserved consumption slices returned from the repository</param>
     /// <param name="productionQuantities">The list of sizes of the reserved production slices returned from the repository</param>
     /// <returns>Two lists of slices</returns>
-    private (IList<Slice> consumptionSlices, IList<Slice> productionSlices) SetupBase(uint quantity, uint[] consumptionQuantities, uint[] productionQuantities)
+    private (IList<WalletSlice> consumptionSlices, IList<WalletSlice> productionSlices) SetupBase(uint quantity, uint[] consumptionQuantities, uint[] productionQuantities)
     {
         var command = new ClaimCertificateCommand
         {
@@ -215,17 +215,17 @@ public class ClaimCertificatesCommandHandlerTests
         };
         _context.Message.Returns(command);
 
-        List<Slice> conSlices = SetupReserveQuantity(command.ConsumptionRegistry, command.ConsumptionCertificateId, consumptionQuantities);
-        List<Slice> prodSlices = SetupReserveQuantity(command.ProductionRegistry, command.ProductionCertificateId, productionQuantities);
+        List<WalletSlice> conSlices = SetupReserveQuantity(command.ConsumptionRegistry, command.ConsumptionCertificateId, consumptionQuantities);
+        List<WalletSlice> prodSlices = SetupReserveQuantity(command.ProductionRegistry, command.ProductionCertificateId, productionQuantities);
 
         return (conSlices.ToList(), prodSlices.ToList());
     }
 
-    private List<Slice> SetupReserveQuantity(string registry, Guid certId, uint[] consumptionQuantities)
+    private List<WalletSlice> SetupReserveQuantity(string registry, Guid certId, uint[] consumptionQuantities)
     {
-        var conSlices = consumptionQuantities.Select(q => _fixture.Create<Slice>() with
+        var conSlices = consumptionQuantities.Select(q => _fixture.Create<WalletSlice>() with
         {
-            Registry = registry,
+            RegistryName = registry,
             CertificateId = certId,
             Quantity = q,
         }).ToList();
@@ -239,7 +239,7 @@ public class ClaimCertificatesCommandHandlerTests
         return conSlices;
     }
 
-    private (Slice, Slice) SetupSplit(Slice slice, long quantity)
+    private (WalletSlice, WalletSlice) SetupSplit(WalletSlice slice, long quantity)
     {
         var s1 = slice with
         {

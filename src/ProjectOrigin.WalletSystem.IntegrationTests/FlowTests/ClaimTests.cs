@@ -37,8 +37,8 @@ public class ClaimTests : AbstractFlowTests
         var (owner, header) = GenerateUserHeader();
         var endpoint = await client.CreateWalletDepositEndpointAsync(new V1.CreateWalletDepositEndpointRequest(), header);
 
-        var productionId = await IssueCertificateToEndpoint(endpoint, Electricity.V1.GranularCertificateType.Production, new SecretCommitmentInfo(200), position++);
-        var consumptionId = await IssueCertificateToEndpoint(endpoint, Electricity.V1.GranularCertificateType.Consumption, new SecretCommitmentInfo(300), position++);
+        var productionId = await IssueCertificateToEndpoint(endpoint.WalletDepositEndpoint, Electricity.V1.GranularCertificateType.Production, new SecretCommitmentInfo(200), position++);
+        var consumptionId = await IssueCertificateToEndpoint(endpoint.WalletDepositEndpoint, Electricity.V1.GranularCertificateType.Consumption, new SecretCommitmentInfo(300), position++);
 
         await Timeout(async () =>
         {

@@ -16,18 +16,17 @@ namespace ProjectOrigin.WalletSystem.Server;
 
 public partial class RegistryProcessBuilder
 {
-    public async Task<(Slice, Slice)> SplitSlice(Slice source, long quantity)
+    public async Task<(WalletSlice, WalletSlice)> SplitSlice(WalletSlice source, long quantity)
     {
         if (source.Quantity <= quantity)
             throw new InvalidOperationException("Cannot split slice with quantity less than or equal to the requested quantity");
 
-        var sliceDepositEndpoint = await _unitOfWork.WalletRepository.GetDepositEndpoint(source.DepositEndpointId);
-        var remainderEndpoint = await _unitOfWork.WalletRepository.GetWalletRemainderDepositEndpoint(sliceDepositEndpoint.WalletId ??
-            throw new InvalidOperationException("Deposit endpoint must have a wallet id"));
+        var sliceEndpoint = await _unitOfWork.WalletRepository.GetWalletEndpoint(source.WalletEndpointId);
+        var remainderEndpoint = await _unitOfWork.WalletRepository.GetWalletRemainderEndpoint(sliceEndpoint.WalletId);
 
-        Slice claimSlice = await CreateAndInsertSlice(source, remainderEndpoint, (uint)quantity);
-        Slice remainderSlice = await CreateAndInsertSlice(source, remainderEndpoint, (uint)(source.Quantity - quantity));
-        await _unitOfWork.CertificateRepository.SetSliceState(source.Id, SliceState.Slicing);
+        WalletSlice claimSlice = await CreateAndInsertSlice(source, remainderEndpoint, (uint)quantity);
+        WalletSlice remainderSlice = await CreateAndInsertSlice(source, remainderEndpoint, (uint)(source.Quantity - quantity));
+        await _unitOfWork.CertificateRepository.SetWalletSliceState(source.Id, WalletSliceState.Slicing);
 
         var privateKey = await _unitOfWork.WalletRepository.GetPrivateKeyForSlice(source.Id);
 
@@ -36,29 +35,29 @@ public partial class RegistryProcessBuilder
         return (claimSlice, remainderSlice);
     }
 
-    private async Task<Slice> CreateAndInsertSlice(Slice source, DepositEndpoint remainderEndpoint, uint quantity)
+    private async Task<WalletSlice> CreateAndInsertSlice(WalletSlice source, WalletEndpoint remainderEndpoint, uint quantity)
     {
         var newSecretCommitmentInfo = new SecretCommitmentInfo(quantity);
         var newSlice = source with
         {
             Id = Guid.NewGuid(),
-            DepositEndpointId = remainderEndpoint.Id,
-            DepositEndpointPosition = await _unitOfWork.WalletRepository.GetNextNumberForId(remainderEndpoint.Id),
+            WalletEndpointId = remainderEndpoint.Id,
+            WalletEndpointPosition = await _unitOfWork.WalletRepository.GetNextNumberForId(remainderEndpoint.Id),
             Quantity = newSecretCommitmentInfo.Message,
             RandomR = newSecretCommitmentInfo.BlindingValue.ToArray(),
-            SliceState = SliceState.Registering
+            State = WalletSliceState.Registering
         };
 
-        await _unitOfWork.CertificateRepository.InsertSlice(newSlice);
+        await _unitOfWork.CertificateRepository.InsertWalletSlice(newSlice);
         return newSlice;
     }
 
-    private void BuildSliceRoutingSlip(DepositEndpoint remainderEndpoint, Slice sourceSlice, IHDPrivateKey privateKey, params Slice[] newSlices)
+    private void BuildSliceRoutingSlip(WalletEndpoint remainderEndpoint, WalletSlice sourceSlice, IHDPrivateKey privateKey, params WalletSlice[] newSlices)
     {
         var mappedSlices = newSlices.Select(s =>
         {
             var commitmentInfo = new SecretCommitmentInfo((uint)s.Quantity, s.RandomR);
-            var publicKey = remainderEndpoint.PublicKey.Derive(s.DepositEndpointPosition).GetPublicKey();
+            var publicKey = remainderEndpoint.PublicKey.Derive(s.WalletEndpointPosition).GetPublicKey();
             return new NewSlice(commitmentInfo, publicKey);
         }).ToArray();
 
@@ -69,15 +68,15 @@ public partial class RegistryProcessBuilder
         AddActivity<UpdateSliceStateActivity, UpdateSliceStateArguments>(new UpdateSliceStateArguments
         {
             SliceStates = newSlices
-                .Select(s => KeyValuePair.Create(s.Id, SliceState.Reserved))
-                .Append(KeyValuePair.Create(sourceSlice.Id, SliceState.Sliced))
+                .Select(s => KeyValuePair.Create(s.Id, WalletSliceState.Reserved))
+                .Append(KeyValuePair.Create(sourceSlice.Id, WalletSliceState.Sliced))
                 .ToDictionary(x => x.Key, x => x.Value)
         });
     }
 
     private sealed record NewSlice(SecretCommitmentInfo ci, IPublicKey Key);
 
-    private static SlicedEvent CreateSliceEvent(Slice sourceSlice, params NewSlice[] newSlices)
+    private static SlicedEvent CreateSliceEvent(WalletSlice sourceSlice, params NewSlice[] newSlices)
     {
         if (newSlices.Sum(s => s.ci.Message) != sourceSlice.Quantity)
             throw new InvalidOperationException("Sum of new slices must be equal to the source slice quantity");

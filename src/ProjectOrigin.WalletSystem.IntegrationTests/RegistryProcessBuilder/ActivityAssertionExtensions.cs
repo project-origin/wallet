@@ -21,10 +21,10 @@ public static class ActivityAssertionExtensions
         return a.Content.Span.SequenceEqual(b.Commitment.C);
     }
 
-    public static void ShouldSetStates(this Activity activity, Dictionary<Guid, SliceState> states)
+    public static void ShouldSetStates(this Activity activity, Dictionary<Guid, WalletSliceState> states)
     {
         activity.Name.Should().Be(nameof(UpdateSliceStateActivity));
-        var statesArg = activity.Arguments["sliceStates"].Should().BeAssignableTo<IDictionary<Guid, SliceState>>().Which;
+        var statesArg = activity.Arguments["sliceStates"].Should().BeAssignableTo<IDictionary<Guid, WalletSliceState>>().Which;
         statesArg.Should().BeEquivalentTo(states);
     }
 

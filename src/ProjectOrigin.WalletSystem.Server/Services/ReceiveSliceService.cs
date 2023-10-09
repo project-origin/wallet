@@ -27,16 +27,16 @@ public class ReceiveSliceService : V1.ReceiveSliceService.ReceiveSliceServiceBas
     public override async Task<ReceiveResponse> ReceiveSlice(ReceiveRequest request, ServerCallContext context)
     {
         var publicKey = _hdAlgorithm.ImportHDPublicKey(request.WalletDepositEndpointPublicKey.Span);
-        var depositEndpoint = await _unitOfWork.WalletRepository.GetDepositEndpointFromPublicKey(publicKey);
+        var endpoint = await _unitOfWork.WalletRepository.GetWalletEndpoint(publicKey);
 
-        if (depositEndpoint == null)
+        if (endpoint == null)
             throw new RpcException(new Status(StatusCode.InvalidArgument, "DepositEndpoint not found for public key."));
 
         var newSliceCommand = new VerifySliceCommand
         {
             Id = Guid.NewGuid(),
-            DepositEndpointId = depositEndpoint.Id,
-            DepositEndpointPosition = (int)request.WalletDepositEndpointPosition,
+            WalletEndpointId = endpoint.Id,
+            WalletEndpointPosition = (int)request.WalletDepositEndpointPosition,
             Registry = request.CertificateId.Registry,
             CertificateId = Guid.Parse(request.CertificateId.StreamId.Value),
             Quantity = request.Quantity,

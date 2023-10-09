@@ -23,17 +23,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Database\Scripts\202309151300-create-claims-tables.sql" />
-    <EmbeddedResource Include="Database\Scripts\202308280900-migrate-number-increment.sql" />
-    <EmbeddedResource Include="Database\Scripts\202308041301-number-increment.sql" />
-    <EmbeddedResource Include="Database\Scripts\202308021200-add-slice-state.sql" />
-    <EmbeddedResource Include="Database\Scripts\202308010911-publickey-constraint.sql" />
-    <EmbeddedResource Include="Database\Scripts\202307131007-alter-wallet-section.sql" />
-    <EmbeddedResource Include="Database\Scripts\202305101334-create-wallet-tables.sql" />
-    <EmbeddedResource Include="Database\Scripts\202306151348-create-attributes-table.sql" />
-    <EmbeddedResource Include="Database\Scripts\202305151549-receive-slice-tables.sql" />
+    <EmbeddedResource Include="Database\Postgres\Scripts\**\*.sql" />
   </ItemGroup>
-
 
   <Target Name="Updating grpc references" BeforeTargets="PreBuildEvent">
     <Exec Command="dotnet dotnet-grpc refresh -p $(ProjectDir)" />
@@ -41,13 +32,13 @@
 
   <ItemGroup>
     <Protobuf Include="../Protos/common.proto" Link="Protos\common.proto">
-      <SourceUrl>https://raw.githubusercontent.com/project-origin/registry/v0.2.0/src/Protos/common.proto</SourceUrl>
+      <SourceUrl>https://raw.githubusercontent.com/project-origin/registry/v0.2.2/src/Protos/common.proto</SourceUrl>
     </Protobuf>
     <Protobuf Include="../Protos/registry.proto" Link="Protos\registry.proto">
-      <SourceUrl>https://raw.githubusercontent.com/project-origin/registry/v0.2.0/src/Protos/registry.proto</SourceUrl>
+      <SourceUrl>https://raw.githubusercontent.com/project-origin/registry/v0.2.2/src/Protos/registry.proto</SourceUrl>
     </Protobuf>
     <Protobuf Include="../Protos/electricity.proto" Link="Protos\electricity.proto">
-      <SourceUrl>https://raw.githubusercontent.com/project-origin/registry/v0.2.0/src/Protos/electricity.proto</SourceUrl>
+      <SourceUrl>https://raw.githubusercontent.com/project-origin/registry/v0.2.2/src/Protos/electricity.proto</SourceUrl>
     </Protobuf>
     <Protobuf Include="../Protos/wallet.proto" GrpcServices="Both" />
   </ItemGroup>

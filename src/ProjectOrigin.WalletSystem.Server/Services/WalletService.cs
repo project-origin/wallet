@@ -21,14 +21,14 @@ namespace ProjectOrigin.WalletSystem.Server.Services;
 [Authorize]
 public class WalletService : V1.WalletService.WalletServiceBase
 {
-    private readonly string _endpointAddress;
+    private readonly string _walletSystemAddress;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IHDAlgorithm _hdAlgorithm;
     private readonly IBus _bus;
 
     public WalletService(IUnitOfWork unitOfWork, IHDAlgorithm hdAlgorithm, IOptions<ServiceOptions> options, IBus bus)
     {
-        _endpointAddress = options.Value.EndpointAddress;
+        _walletSystemAddress = options.Value.EndpointAddress;
         _unitOfWork = unitOfWork;
         _hdAlgorithm = hdAlgorithm;
         _bus = bus;
@@ -38,7 +38,7 @@ public class WalletService : V1.WalletService.WalletServiceBase
     {
         var subject = context.GetSubject();
 
-        var wallet = await _unitOfWork.WalletRepository.GetWalletByOwner(subject);
+        var wallet = await _unitOfWork.WalletRepository.GetWallet(subject);
 
         if (wallet is null)
         {
@@ -53,7 +53,7 @@ public class WalletService : V1.WalletService.WalletServiceBase
             await _unitOfWork.WalletRepository.Create(wallet);
         }
 
-        var depositEndpoint = await _unitOfWork.WalletRepository.CreateDepositEndpoint(wallet.Id, string.Empty);
+        var endpoint = await _unitOfWork.WalletRepository.CreateWalletEndpoint(wallet.Id);
         _unitOfWork.Commit();
 
         return new V1.CreateWalletDepositEndpointResponse
@@ -61,8 +61,8 @@ public class WalletService : V1.WalletService.WalletServiceBase
             WalletDepositEndpoint = new V1.WalletDepositEndpoint()
             {
                 Version = 1,
-                Endpoint = _endpointAddress,
-                PublicKey = ByteString.CopyFrom(depositEndpoint.PublicKey.Export())
+                Endpoint = _walletSystemAddress,
+                PublicKey = ByteString.CopyFrom(endpoint.PublicKey.Export())
             }
         };
     }
@@ -87,16 +87,17 @@ public class WalletService : V1.WalletService.WalletServiceBase
         var subject = context.GetSubject();
         var ownerPublicKey = new Secp256k1Algorithm().ImportHDPublicKey(request.WalletDepositEndpoint.PublicKey.Span);
 
-
-        var foundDepositEndpoint = await _unitOfWork.WalletRepository.GetDepositEndpointFromPublicKey(ownerPublicKey);
-
-        if (foundDepositEndpoint is not null
-            && foundDepositEndpoint.Owner == subject)
+        var foundEndpoint = await _unitOfWork.WalletRepository.GetWalletEndpoint(ownerPublicKey);
+        if (foundEndpoint is not null)
         {
-            throw new RpcException(new Status(StatusCode.InvalidArgument, "Cannot create receiver deposit endpoint to self."));
+            var wallet = await _unitOfWork.WalletRepository.GetWallet(foundEndpoint.WalletId);
+            if (wallet.Owner == subject)
+            {
+                throw new RpcException(new Status(StatusCode.InvalidArgument, "Cannot create receiver deposit endpoint to self."));
+            }
         }
 
-        var receiverDepositEndpoint = await _unitOfWork.WalletRepository.CreateReceiverDepositEndpoint(subject, ownerPublicKey, request.Reference, request.WalletDepositEndpoint.Endpoint);
+        var receiverDepositEndpoint = await _unitOfWork.WalletRepository.CreateExternalEndpoint(subject, ownerPublicKey, request.Reference, request.WalletDepositEndpoint.Endpoint);
         _unitOfWork.Commit();
 
         return new V1.CreateReceiverDepositEndpointResponse

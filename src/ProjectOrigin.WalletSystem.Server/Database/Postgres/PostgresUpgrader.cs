@@ -59,6 +59,7 @@ public class PostgresUpgrader : IRepositoryUpgrader
     {
         return DeployChanges.To
                     .PostgresqlDatabase(connectionString)
+                    .WithTransaction()
                     .WithScriptsEmbeddedInAssembly(typeof(PostgresUpgrader).Assembly)
                     .LogTo(new LoggerWrapper(_logger))
                     .WithExecutionTimeout(_timeout)

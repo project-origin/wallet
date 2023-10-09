@@ -45,11 +45,11 @@ public class TransferCertificateTests : WalletSystemTestsBase, IClassFixture<Reg
 
         var (sender, senderHeader) = GenerateUserHeader();
         var commitment = new SecretCommitmentInfo(issuedAmount);
-        var senderDepositEndpoint = await _dbFixture.CreateWalletDepositEndpoint(sender);
+        var senderEndpoint = await _dbFixture.CreateWalletEndpoint(sender);
         var position = 1;
-        var issuedEvent = await _registryFixture.IssueCertificate(Electricity.V1.GranularCertificateType.Production, commitment, senderDepositEndpoint.PublicKey.Derive(position).GetPublicKey());
+        var issuedEvent = await _registryFixture.IssueCertificate(Electricity.V1.GranularCertificateType.Production, commitment, senderEndpoint.PublicKey.Derive(position).GetPublicKey());
         var certId = Guid.Parse(issuedEvent.CertificateId.StreamId.Value);
-        await _dbFixture.InsertSlice(senderDepositEndpoint, position, issuedEvent, commitment);
+        await _dbFixture.InsertSlice(senderEndpoint, position, issuedEvent, commitment);
 
         var (recipient, recipientHeader) = GenerateUserHeader();
         var createEndpointResponse = await client.CreateWalletDepositEndpointAsync(new CreateWalletDepositEndpointRequest(), recipientHeader);
@@ -68,7 +68,7 @@ public class TransferCertificateTests : WalletSystemTestsBase, IClassFixture<Reg
         await client.TransferCertificateAsync(request, senderHeader);
 
         //Assert
-        await WaitForCertCount(certId, 4);
+        await WaitForCertCount(certId, 3);
     }
 
     [Fact]
@@ -79,21 +79,19 @@ public class TransferCertificateTests : WalletSystemTestsBase, IClassFixture<Reg
 
         // Create sender wallet
         var (sender, senderHeader) = GenerateUserHeader();
-        var depositEndpoint = await _dbFixture.CreateWalletDepositEndpoint(sender);
-        var depositPosition = await _dbFixture.GetNextNumberForId(depositEndpoint.Id);
+        var endpoint = await _dbFixture.CreateWalletEndpoint(sender);
+        var position = await _dbFixture.GetNextNumberForId(endpoint.Id);
 
         // Create remainder endpoint and increment position to force test to fail if positions are calculated incorrectly
-        var remainderEndpoint = await _dbFixture.GetWalletRemainderEndpoint(depositEndpoint.WalletId!.Value);
+        var remainderEndpoint = await _dbFixture.GetWalletRemainderEndpoint(endpoint.WalletId);
         await _dbFixture.GetNextNumberForId(remainderEndpoint.Id);
         await _dbFixture.GetNextNumberForId(remainderEndpoint.Id);
 
         // Issue certificate to sender
         var issuedAmount = 500u;
         var commitment = new SecretCommitmentInfo(issuedAmount);
-
-        var issuedEvent = await _registryFixture.IssueCertificate(Electricity.V1.GranularCertificateType.Production, commitment, depositEndpoint.PublicKey.Derive(depositPosition).GetPublicKey());
-        await _dbFixture.InsertSlice(depositEndpoint, depositPosition, issuedEvent, commitment);
-
+        var issuedEvent = await _registryFixture.IssueCertificate(Electricity.V1.GranularCertificateType.Production, commitment, endpoint.PublicKey.Derive(position).GetPublicKey());
+        await _dbFixture.InsertSlice(endpoint, position, issuedEvent, commitment);
         var certId = Guid.Parse(issuedEvent.CertificateId.StreamId.Value);
 
         // Create intermidiate wallet
@@ -113,7 +111,7 @@ public class TransferCertificateTests : WalletSystemTestsBase, IClassFixture<Reg
         }, senderHeader);
 
         //Assert
-        await WaitForCertCount(certId, 4);
+        await WaitForCertCount(certId, 3);
 
         await client.TransferCertificateAsync(new TransferRequest()
         {
@@ -123,7 +121,7 @@ public class TransferCertificateTests : WalletSystemTestsBase, IClassFixture<Reg
         }, senderHeader);
 
         //Assert
-        await WaitForCertCount(certId, 7);
+        await WaitForCertCount(certId, 5);
 
         // Create recipient wallet
         var (recipient, recipientHeader) = GenerateUserHeader();
@@ -134,15 +132,14 @@ public class TransferCertificateTests : WalletSystemTestsBase, IClassFixture<Reg
         }, intermidiateHeader);
 
         //Act
-        var request = new TransferRequest()
+        await client.TransferCertificateAsync(new TransferRequest()
         {
             CertificateId = issuedEvent.CertificateId,
             Quantity = 200u, // transfer more than a single slice but less that both slices
-            ReceiverId = senderItermidiateCER.ReceiverId
-        };
-        await client.TransferCertificateAsync(request, intermidiateHeader);
+            ReceiverId = intermidiateRecipientCER.ReceiverId
+        }, intermidiateHeader);
 
-        await WaitForCertCount(certId, 12);
+        await WaitForCertCount(certId, 8);
     }
 
     [Fact(Skip = "Not implemented")]
@@ -160,7 +157,7 @@ public class TransferCertificateTests : WalletSystemTestsBase, IClassFixture<Reg
         while (DateTime.UtcNow - startedAt < TimeSpan.FromMinutes(1))
         {
             // Verify slice created in database
-            var slices = await connection.QueryAsync<Slice>("SELECT s.*, r.Name as Registry  FROM Slices s INNER JOIN Registries r on s.RegistryId = r.Id WHERE CertificateId = @certificateId", new { certificateId = certId });
+            var slices = await connection.QueryAsync<WalletSlice>("SELECT * FROM wallet_slices s WHERE certificate_id = @certificateId", new { certificateId = certId });
             slicesFound = slices.Count();
             if (slicesFound >= number)
                 break;

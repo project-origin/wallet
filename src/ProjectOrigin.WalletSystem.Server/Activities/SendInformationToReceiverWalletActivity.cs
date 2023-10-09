@@ -14,7 +14,7 @@ namespace ProjectOrigin.WalletSystem.Server.Activities;
 
 public record SendInformationToReceiverWalletArgument
 {
-    public required Guid ReceiverDepositEndpointId { get; init; }
+    public required Guid ExternalEndpointId { get; init; }
     public required Guid SliceId { get; init; }
 }
 
@@ -33,43 +33,45 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
 
     public async Task<ExecutionResult> Execute(ExecuteContext<SendInformationToReceiverWalletArgument> context)
     {
-        _logger.LogTrace("RoutingSlip {TrackingNumber} - Executing {ActivityName}", context.TrackingNumber, context.ActivityName);
+        _logger.LogDebug("RoutingSlip {TrackingNumber} - Executing {ActivityName}", context.TrackingNumber, context.ActivityName);
 
-        var newSlice = await _unitOfWork.CertificateRepository.GetSlice(context.Arguments.SliceId);
-        var receiverDepositEndpoint = await _unitOfWork.WalletRepository.GetDepositEndpoint(context.Arguments.ReceiverDepositEndpointId);
+        var newSlice = await _unitOfWork.CertificateRepository.GetTransferredSlice(context.Arguments.SliceId);
+        var externalEndpoint = await _unitOfWork.WalletRepository.GetExternalEndpoint(context.Arguments.ExternalEndpointId);
 
-        if (_walletSystemOptions.Value.EndpointAddress == receiverDepositEndpoint.Endpoint)
+        if (_walletSystemOptions.Value.EndpointAddress == externalEndpoint.Endpoint)
         {
-            return await InsertIntoLocalWallet(context, newSlice, receiverDepositEndpoint);
+            return await InsertIntoLocalWallet(context, newSlice, externalEndpoint);
         }
         else
         {
-            return await SendOverGrpcToExternalWallet(context, newSlice, receiverDepositEndpoint);
+            return await SendOverGrpcToExternalWallet(context, newSlice, externalEndpoint);
         }
     }
 
-    private async Task<ExecutionResult> SendOverGrpcToExternalWallet(ExecuteContext<SendInformationToReceiverWalletArgument> context, Slice newSlice, DepositEndpoint receiverDepositEndpoint)
+    private async Task<ExecutionResult> SendOverGrpcToExternalWallet(ExecuteContext<SendInformationToReceiverWalletArgument> context, TransferredSlice newSlice, ExternalEndpoint externalEndpoint)
     {
         try
         {
-            _logger.LogTrace("Preparing to send information to receiver");
+            _logger.LogDebug("Preparing to send information to receiver");
 
             var request = new V1.ReceiveRequest
             {
-                WalletDepositEndpointPublicKey = ByteString.CopyFrom(receiverDepositEndpoint.PublicKey.Export()),
-                WalletDepositEndpointPosition = (uint)newSlice.DepositEndpointPosition,
+                WalletDepositEndpointPublicKey = ByteString.CopyFrom(externalEndpoint.PublicKey.Export()),
+                WalletDepositEndpointPosition = (uint)newSlice.ExternalEndpointPosition,
                 CertificateId = newSlice.GetFederatedStreamId(),
                 Quantity = (uint)newSlice.Quantity,
                 RandomR = ByteString.CopyFrom(newSlice.RandomR)
             };
 
-            using var channel = GrpcChannel.ForAddress(receiverDepositEndpoint.Endpoint);
+            using var channel = GrpcChannel.ForAddress(externalEndpoint.Endpoint);
             var client = new V1.ReceiveSliceService.ReceiveSliceServiceClient(channel);
 
-            _logger.LogTrace("Sending information to receiver");
+            _logger.LogDebug("Sending information to receiver");
             await client.ReceiveSliceAsync(request);
+            await _unitOfWork.CertificateRepository.SetTransferredSliceState(newSlice.Id, TransferredSliceState.Transferred);
 
-            _logger.LogTrace("Information Sent to receiver");
+
+            _logger.LogDebug("Information Sent to receiver");
 
             return context.Completed();
         }
@@ -80,34 +82,34 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
         }
     }
 
-    private async Task<ExecutionResult> InsertIntoLocalWallet(ExecuteContext<SendInformationToReceiverWalletArgument> context, Slice newSlice, DepositEndpoint receiverDepositEndpoint)
+    private async Task<ExecutionResult> InsertIntoLocalWallet(ExecuteContext<SendInformationToReceiverWalletArgument> context, TransferredSlice newSlice, ExternalEndpoint externalEndpoint)
     {
-        _logger.LogTrace("Receiver is local.");
+        _logger.LogDebug("Receiver is local.");
 
-        var receiverEndpoint = await _unitOfWork.WalletRepository.GetDepositEndpointFromPublicKey(receiverDepositEndpoint.PublicKey);
+        var walletEndpoint = await _unitOfWork.WalletRepository.GetWalletEndpoint(externalEndpoint.PublicKey);
 
-        if (receiverEndpoint is null)
+        if (walletEndpoint is null)
         {
-            _logger.LogError("Local receiver wallet could not be found for reciever wallet {ReceiverWalletId}", receiverDepositEndpoint.Id);
-            return context.Faulted(new Exception($"Local receiver wallet could not be found for reciever wallet {receiverDepositEndpoint.Id}"));
+            _logger.LogError("Local receiver wallet could not be found for reciever wallet {ReceiverWalletId}", externalEndpoint.Id);
+            return context.Faulted(new Exception($"Local receiver wallet could not be found for reciever wallet {externalEndpoint.Id}"));
         }
 
-        var slice = new Slice
+        var slice = new WalletSlice
         {
             Id = Guid.NewGuid(),
-            DepositEndpointId = receiverEndpoint.Id,
-            DepositEndpointPosition = newSlice.DepositEndpointPosition,
-            Registry = newSlice.Registry,
+            WalletEndpointId = walletEndpoint.Id,
+            WalletEndpointPosition = newSlice.ExternalEndpointPosition,
+            RegistryName = newSlice.RegistryName,
             CertificateId = newSlice.CertificateId,
             Quantity = newSlice.Quantity,
             RandomR = newSlice.RandomR,
-            SliceState = SliceState.Available
+            State = WalletSliceState.Available
         };
-
-        await _unitOfWork.CertificateRepository.InsertSlice(slice);
+        await _unitOfWork.CertificateRepository.InsertWalletSlice(slice);
+        await _unitOfWork.CertificateRepository.SetTransferredSliceState(newSlice.Id, TransferredSliceState.Transferred);
         _unitOfWork.Commit();
 
-        _logger.LogTrace("Slice inserted locally into receiver wallet.");
+        _logger.LogDebug("Slice inserted locally into receiver wallet.");
 
         return context.Completed();
     }

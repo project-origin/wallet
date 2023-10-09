@@ -26,13 +26,13 @@ public abstract class AbstractFlowTests : WalletSystemTestsBase, IClassFixture<R
     }
 
     protected async Task<Common.V1.FederatedStreamId> IssueCertificateToEndpoint(
-        V1.CreateWalletDepositEndpointResponse endpoint,
+        V1.WalletDepositEndpoint endpoint,
         Electricity.V1.GranularCertificateType type,
         SecretCommitmentInfo issuedCommitment,
         int position,
         Dictionary<string, string>? att = null)
     {
-        var publicKey = Algorithms.Secp256k1.ImportHDPublicKey(endpoint.WalletDepositEndpoint.PublicKey.Span);
+        var publicKey = Algorithms.Secp256k1.ImportHDPublicKey(endpoint.PublicKey.Span);
 
         var issuedEvent = await _registryFixture.IssueCertificate(
             type,
@@ -43,7 +43,7 @@ public abstract class AbstractFlowTests : WalletSystemTestsBase, IClassFixture<R
         var receiveClient = new V1.ReceiveSliceService.ReceiveSliceServiceClient(_grpcFixture.Channel);
         await receiveClient.ReceiveSliceAsync(new V1.ReceiveRequest()
         {
-            WalletDepositEndpointPublicKey = endpoint.WalletDepositEndpoint.PublicKey,
+            WalletDepositEndpointPublicKey = endpoint.PublicKey,
             WalletDepositEndpointPosition = (uint)position,
             CertificateId = issuedEvent.CertificateId,
             Quantity = issuedCommitment.Message,

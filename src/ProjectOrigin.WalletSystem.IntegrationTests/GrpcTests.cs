@@ -1,9 +1,8 @@
-using Dapper;
 using FluentAssertions;
 using Grpc.Core;
 using ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures;
 using ProjectOrigin.WalletSystem.Server;
-using ProjectOrigin.WalletSystem.Server.Models;
+using ProjectOrigin.WalletSystem.Server.Repositories;
 using ProjectOrigin.WalletSystem.V1;
 using System;
 using System.Threading.Tasks;
@@ -29,7 +28,7 @@ public class GrpcTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
     }
 
     [Fact]
-    public async Task can_create_deposit_endpoint_when_authenticated()
+    public async Task can_create_external_endpoint_when_authenticated()
     {
         // Arrange
         var subject = Guid.NewGuid().ToString();
@@ -41,23 +40,27 @@ public class GrpcTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
         var request = new CreateWalletDepositEndpointRequest();
 
         // Act
-        var depositEndpoint = await client.CreateWalletDepositEndpointAsync(request, headers);
+        var externalEndpoint = await client.CreateWalletDepositEndpointAsync(request, headers);
 
         // Assert
-        depositEndpoint.Should().NotBeNull();
-        depositEndpoint.WalletDepositEndpoint.Version.Should().Be(1);
-        depositEndpoint.WalletDepositEndpoint.Endpoint.Should().Be(endpoint);
-        depositEndpoint.WalletDepositEndpoint.PublicKey.Should().NotBeNullOrEmpty();
+        externalEndpoint.Should().NotBeNull();
+        externalEndpoint.WalletDepositEndpoint.Version.Should().Be(1);
+        externalEndpoint.WalletDepositEndpoint.Endpoint.Should().Be(endpoint);
+        externalEndpoint.WalletDepositEndpoint.PublicKey.Should().NotBeNullOrEmpty();
+
 
         using (var connection = _dbFixture.GetConnectionFactory().CreateConnection())
         {
-            var foundDepositEndpoint = connection.QuerySingle<DepositEndpoint>("SELECT * FROM DepositEndpoints");
+            var walletRepository = new WalletRepository(connection);
 
-            depositEndpoint.WalletDepositEndpoint.PublicKey.Should().Equal(foundDepositEndpoint.PublicKey.Export().ToArray());
+            var publicKey = Algorithm.ImportHDPublicKey(externalEndpoint.WalletDepositEndpoint.PublicKey.Span);
+            var endpoint = await walletRepository.GetWalletEndpoint(publicKey);
 
-            var foundWallet = connection.QuerySingle<Wallet>("SELECT * FROM Wallets where owner = @owner", new { owner = subject });
-            // Wallet should be implicitly created
-            foundWallet.Should().NotBeNull();
+            endpoint.Should().NotBeNull();
+
+            var wallet = await walletRepository.GetWallet(endpoint!.WalletId);
+            wallet.Should().NotBeNull();
+            wallet.Owner.Should().Be(subject);
         }
     }
 

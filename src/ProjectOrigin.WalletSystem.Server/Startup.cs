@@ -19,7 +19,6 @@ using System;
 using ProjectOrigin.WalletSystem.Server.Activities.Exceptions;
 using ProjectOrigin.WalletSystem.Server.Extensions;
 using ProjectOrigin.WalletSystem.Server.Database.Postgres;
-using ProjectOrigin.WalletSystem.Server.BackgroundJobs;
 
 namespace ProjectOrigin.WalletSystem.Server;
 
@@ -103,8 +102,6 @@ public class Startup
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddSingleton<IDbConnectionFactory, PostgresConnectionFactory>();
         services.AddSingleton<IHDAlgorithm, Secp256k1Algorithm>();
-
-        services.AddHostedService<VerifySlicesWorker>();
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

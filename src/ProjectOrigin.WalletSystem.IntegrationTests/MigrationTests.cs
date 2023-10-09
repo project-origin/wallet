@@ -31,33 +31,10 @@ public class MigrationTest : IClassFixture<PostgresDatabaseFixture>
 
         // Act
         await connection.ExecuteAsync(
-            "INSERT INTO Wallets(Id, Owner, PrivateKey) VALUES (@Id, @Owner, @PrivateKey)",
+            "INSERT INTO wallets(id, owner, private_key) VALUES (@Id, @Owner, @PrivateKey)",
             wallet);
 
-        var count = await connection.ExecuteScalarAsync("SELECT count(*) FROM Wallets");
-
-        // Assert
-        count.Should().Be(1);
-    }
-
-    [Fact]
-    public async Task can_insert_registries_and_query_after_migration()
-    {
-        // Arrange
-        var registry = new
-        {
-            Id = Guid.NewGuid(),
-            Name = "RegistryA"
-        };
-
-        using var connection = _dbFixture.GetConnectionFactory().CreateConnection();
-
-        // Act
-        await connection.ExecuteAsync(
-            "INSERT INTO Registries(Id, Name) VALUES (@Id, @Name)",
-            registry);
-
-        var count = await connection.ExecuteScalarAsync("SELECT count(*) FROM Registries");
+        var count = await connection.ExecuteScalarAsync("SELECT count(*) FROM wallets");
 
         // Assert
         count.Should().Be(1);

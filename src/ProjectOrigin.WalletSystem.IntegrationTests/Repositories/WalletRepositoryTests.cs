@@ -39,7 +39,7 @@ public class WalletRepositoryTests : AbstractRepositoryTests
         await repository.Create(wallet);
 
         // Assert
-        var walletDb = await repository.GetWalletByOwner(subject);
+        var walletDb = await repository.GetWallet(subject);
         walletDb.Should().BeEquivalentTo(wallet);
     }
 
@@ -60,7 +60,7 @@ public class WalletRepositoryTests : AbstractRepositoryTests
         await repository.Create(wallet);
 
         // Act
-        var walletResponse = await repository.GetWalletByOwner(subject);
+        var walletResponse = await repository.GetWallet(subject);
 
         // Assert
         walletResponse.Should().NotBeNull();
@@ -71,7 +71,7 @@ public class WalletRepositoryTests : AbstractRepositoryTests
     [InlineData(0, 1)]
     [InlineData(1, 2)]
     [InlineData(3, 4)]
-    public async Task Query_CreateDepositEndpoint_GetNextWalletPosition_Valid(int sections, int next)
+    public async Task Query_CreateWalletEndpoint_GetNextWalletPosition_Valid(int endpoints, int next)
     {
         // Arrange
         var subject = Guid.NewGuid().ToString();
@@ -86,9 +86,9 @@ public class WalletRepositoryTests : AbstractRepositoryTests
         var repository = new WalletRepository(connection);
         await repository.Create(wallet);
 
-        for (int position = 1; position <= sections; position++)
+        for (int position = 1; position <= endpoints; position++)
         {
-            await repository.CreateDepositEndpoint(wallet.Id, string.Empty);
+            await repository.CreateWalletEndpoint(wallet.Id);
         }
 
         // Act
@@ -99,51 +99,49 @@ public class WalletRepositoryTests : AbstractRepositoryTests
     }
 
     [Fact]
-    public async Task GetWalletDepositEndpointFromPublicKey_Success()
+    public async Task GetWalletEndpointFromPublicKey_Success()
     {
         // Arrange
         var subject = _fixture.Create<string>();
         var wallet = await CreateWallet(subject);
-        var depositEndpoint1 = await CreateDepositEndpoint(wallet);
-        var depositEndpoint2 = await CreateDepositEndpoint(wallet);
-        var depositEndpoint3 = await CreateDepositEndpoint(wallet);
+        var endpoint1 = await CreateWalletEndpoint(wallet);
+        var endpoint2 = await CreateWalletEndpoint(wallet);
+        var endpoint3 = await CreateWalletEndpoint(wallet);
 
         // Act
         var publicKey = wallet.PrivateKey.Derive(2).Neuter();
-        var depositEndpoint = await _repository.GetDepositEndpointFromPublicKey(publicKey);
+        var endpoint = await _repository.GetWalletEndpoint(publicKey);
 
         // Assert
-        depositEndpoint.Should().NotBeNull();
-        depositEndpoint!.Id.Should().Be(depositEndpoint2.Id);
+        endpoint.Should().NotBeNull();
+        endpoint!.Id.Should().Be(endpoint2.Id);
     }
 
     [Fact]
-    public async Task GetWalletDepositEndpointFromPublicKey_ReturnNull()
+    public async Task GetWalletEndpointFromPublicKey_ReturnNull()
     {
         // Arrange
         var publicKey = _algorithm.GenerateNewPrivateKey().Derive(1).Neuter();
 
         // Act
-        var depositEndpoint = await _repository.GetDepositEndpointFromPublicKey(publicKey);
+        var endpoint = await _repository.GetWalletEndpoint(publicKey);
 
         // Assert
-        depositEndpoint.Should().BeNull();
+        endpoint.Should().BeNull();
     }
 
     [Fact]
-    public async Task GetReceiverDepositEndpoint()
+    public async Task GetExternalEndpoint()
     {
         // Arrange
         var subject = _fixture.Create<string>();
-        var depositEndpoint = await CreateReceiverDepositEndpoint(subject, _fixture.Create<string>(), _fixture.Create<string>());
+        var endpoint = await CreateExternalEndpoint(subject, _fixture.Create<string>(), _fixture.Create<string>());
 
         // Act
-        var deDb = await _repository.GetDepositEndpoint(depositEndpoint.Id);
+        var deDb = await _repository.GetExternalEndpoint(endpoint.Id);
 
         // Assert
         deDb.Should().NotBeNull();
-        deDb.WalletPosition.Should().BeNull();
-        deDb.WalletId.Should().BeNull();
     }
 
     [Fact]

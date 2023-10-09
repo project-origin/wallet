@@ -41,12 +41,12 @@ public class SplitTests : IClassFixture<PostgresDatabaseFixture>
     public async Task TestSplitMethod()
     {
         // Arrange
-        var depositEndpoint = await _dbFixture.CreateWalletDepositEndpoint(_fixture.Create<string>());
+        var endpoint = await _dbFixture.CreateWalletEndpoint(_fixture.Create<string>());
 
         var cert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _registryName, Server.Models.GranularCertificateType.Production);
         var secret = new SecretCommitmentInfo(150);
-        var sourceSlice = await _dbFixture.CreateSlice(depositEndpoint, cert, secret);
-        var publicKey = depositEndpoint.PublicKey.Derive(sourceSlice.DepositEndpointPosition).GetPublicKey();
+        var sourceSlice = await _dbFixture.CreateSlice(endpoint, cert, secret);
+        var publicKey = endpoint.PublicKey.Derive(sourceSlice.WalletEndpointPosition).GetPublicKey();
 
         // Act
         var (newSlice1, newSlice2) = await _processBuilder.SplitSlice(sourceSlice, 100);
@@ -71,16 +71,16 @@ public class SplitTests : IClassFixture<PostgresDatabaseFixture>
         slip.Itinerary[1].ShouldWaitFor(transaction);
 
         slip.Itinerary[2].ShouldSetStates(new(){
-            { newSlice1.Id, SliceState.Reserved },
-            { newSlice2.Id, SliceState.Reserved },
-            { sourceSlice.Id, SliceState.Sliced }
+            { newSlice1.Id, WalletSliceState.Reserved },
+            { newSlice2.Id, WalletSliceState.Reserved },
+            { sourceSlice.Id, WalletSliceState.Sliced }
         });
 
         slip.Itinerary.Count.Should().Be(3);
 
-        (await _unitOfWork.CertificateRepository.GetSlice(sourceSlice.Id)).SliceState.Should().Be(SliceState.Slicing);
-        (await _unitOfWork.CertificateRepository.GetSlice(newSlice1.Id)).SliceState.Should().Be(SliceState.Registering);
-        (await _unitOfWork.CertificateRepository.GetSlice(newSlice2.Id)).SliceState.Should().Be(SliceState.Registering);
+        (await _unitOfWork.CertificateRepository.GetWalletSlice(sourceSlice.Id)).State.Should().Be(WalletSliceState.Slicing);
+        (await _unitOfWork.CertificateRepository.GetWalletSlice(newSlice1.Id)).State.Should().Be(WalletSliceState.Registering);
+        (await _unitOfWork.CertificateRepository.GetWalletSlice(newSlice2.Id)).State.Should().Be(WalletSliceState.Registering);
     }
 
     [Theory]
@@ -89,11 +89,11 @@ public class SplitTests : IClassFixture<PostgresDatabaseFixture>
     public async Task TestSplitMethodWithQuantityEqualToSliceQuantity(uint sliceSize, int splitQuanity)
     {
         // Arrange
-        var depositEndpoint = await _dbFixture.CreateWalletDepositEndpoint(_fixture.Create<string>());
+        var endpoint = await _dbFixture.CreateWalletEndpoint(_fixture.Create<string>());
 
         var cert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _registryName, Server.Models.GranularCertificateType.Production);
         var secret = new SecretCommitmentInfo(sliceSize);
-        var slice = await _dbFixture.CreateSlice(depositEndpoint, cert, secret);
+        var slice = await _dbFixture.CreateSlice(endpoint, cert, secret);
 
         // Act
         Func<Task> act = async () => await _processBuilder.SplitSlice(slice, splitQuanity);

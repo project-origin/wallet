@@ -17,8 +17,8 @@ namespace ProjectOrigin.WalletSystem.Server.CommandHandlers;
 public record VerifySliceCommand
 {
     public required Guid Id { get; init; }
-    public required Guid DepositEndpointId { get; init; }
-    public required int DepositEndpointPosition { get; init; }
+    public required Guid WalletEndpointId { get; init; }
+    public required int WalletEndpointPosition { get; init; }
     public required string Registry { get; init; }
     public required Guid CertificateId { get; init; }
     public required long Quantity { get; init; }
@@ -60,8 +60,8 @@ public class VerifySliceCommandHandler : IConsumer<VerifySliceCommand>
                     return;
                 }
 
-                var depositEndpoint = await _unitOfWork.WalletRepository.GetDepositEndpoint(receivedSlice.DepositEndpointId);
-                var positionPublicKey = depositEndpoint.PublicKey.Derive(receivedSlice.DepositEndpointPosition).GetPublicKey();
+                var endpoint = await _unitOfWork.WalletRepository.GetWalletEndpoint(receivedSlice.WalletEndpointId);
+                var positionPublicKey = endpoint.PublicKey.Derive(receivedSlice.WalletEndpointPosition).GetPublicKey();
                 if (!foundSlice.Owner.ImportKey().Equals(positionPublicKey))
                 {
                     _logger.LogWarning("Not correct publicKey on {certificateId}", receivedSlice.CertificateId);
@@ -92,19 +92,19 @@ public class VerifySliceCommandHandler : IConsumer<VerifySliceCommand>
 
     private async Task InsertIntoWallet(VerifySliceCommand receivedSlice, GranularCertificate certificateProjection)
     {
-        var slice = new Slice
+        var slice = new WalletSlice
         {
             Id = Guid.NewGuid(),
-            DepositEndpointId = receivedSlice.DepositEndpointId,
-            DepositEndpointPosition = receivedSlice.DepositEndpointPosition,
-            Registry = receivedSlice.Registry,
+            WalletEndpointId = receivedSlice.WalletEndpointId,
+            WalletEndpointPosition = receivedSlice.WalletEndpointPosition,
+            RegistryName = receivedSlice.Registry,
             CertificateId = receivedSlice.CertificateId,
             Quantity = receivedSlice.Quantity,
             RandomR = receivedSlice.RandomR,
-            SliceState = SliceState.Available
+            State = WalletSliceState.Available
         };
 
-        var certificate = await _unitOfWork.CertificateRepository.GetCertificate(slice.Registry, slice.CertificateId);
+        var certificate = await _unitOfWork.CertificateRepository.GetCertificate(slice.RegistryName, slice.CertificateId);
         if (certificate == null)
         {
             var attributes = certificateProjection.Attributes
@@ -118,7 +118,7 @@ public class VerifySliceCommandHandler : IConsumer<VerifySliceCommand>
             certificate = new Certificate
             {
                 Id = slice.CertificateId,
-                Registry = receivedSlice.Registry,
+                RegistryName = receivedSlice.Registry,
                 StartDate = certificateProjection.Period.Start.ToDateTimeOffset(),
                 EndDate = certificateProjection.Period.End.ToDateTimeOffset(),
                 GridArea = certificateProjection.GridArea,
@@ -128,10 +128,10 @@ public class VerifySliceCommandHandler : IConsumer<VerifySliceCommand>
             await _unitOfWork.CertificateRepository.InsertCertificate(certificate);
         }
 
-        await _unitOfWork.CertificateRepository.InsertSlice(slice);
+        await _unitOfWork.CertificateRepository.InsertWalletSlice(slice);
 
         _unitOfWork.Commit();
 
-        _logger.LogTrace("Slice on certificate ”{certificateId}” inserted into wallet.", slice.CertificateId);
+        _logger.LogDebug("Slice on certificate ”{certificateId}” inserted into wallet.", slice.CertificateId);
     }
 }
