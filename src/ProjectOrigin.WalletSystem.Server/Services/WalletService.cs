@@ -87,10 +87,10 @@ public class WalletService : V1.WalletService.WalletServiceBase
         var subject = context.GetSubject();
         var ownerPublicKey = new Secp256k1Algorithm().ImportHDPublicKey(request.WalletDepositEndpoint.PublicKey.Span);
 
-        var foundDepositEndpoint = await _unitOfWork.WalletRepository.GetWalletEndpoint(ownerPublicKey);
-        if (foundDepositEndpoint is not null)
+        var foundEndpoint = await _unitOfWork.WalletRepository.GetWalletEndpoint(ownerPublicKey);
+        if (foundEndpoint is not null)
         {
-            var wallet = await _unitOfWork.WalletRepository.GetWallet(foundDepositEndpoint.WalletId);
+            var wallet = await _unitOfWork.WalletRepository.GetWallet(foundEndpoint.WalletId);
             if (wallet.Owner == subject)
             {
                 throw new RpcException(new Status(StatusCode.InvalidArgument, "Cannot create receiver deposit endpoint to self."));
