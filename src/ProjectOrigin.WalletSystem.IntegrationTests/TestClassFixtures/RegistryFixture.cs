@@ -19,8 +19,8 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures;
 
 public class RegistryFixture : IAsyncLifetime
 {
-    private const string RegistryImage = "ghcr.io/project-origin/registry-server:0.2.2";
-    private const string ElectricityVerifierImage = "ghcr.io/project-origin/electricity-server:0.2.2";
+    private const string RegistryImage = "ghcr.io/project-origin/registry-server:0.3.0";
+    private const string ElectricityVerifierImage = "ghcr.io/project-origin/electricity-server:0.3.0";
     private const int GrpcPort = 80;
     private const string Area = "Narnia";
     private const string RegistryName = "TestRegistry";
@@ -49,6 +49,7 @@ public class RegistryFixture : IAsyncLifetime
                 .WithNetwork(_network)
                 .WithNetworkAliases(VerifierAlias)
                 .WithPortBinding(GrpcPort, true)
+                .WithCommand("--serve")
                 .WithEnvironment($"Issuers__{IssuerArea}", Convert.ToBase64String(Encoding.UTF8.GetBytes(IssuerKey.PublicKey.ExportPkixText())))
                 .WithEnvironment($"Registries__{RegistryName}__Address", $"http://{RegistryAlias}:{GrpcPort}")
                 .WithWaitStrategy(
@@ -62,6 +63,7 @@ public class RegistryFixture : IAsyncLifetime
                     .WithNetwork(_network)
                     .WithNetworkAliases(RegistryAlias)
                     .WithPortBinding(GrpcPort, true)
+                    .WithCommand("--migrate", "--serve")
                     .WithEnvironment($"RegistryName", RegistryName)
                     .WithEnvironment($"BlockFinalizer__Interval", "00:00:05")
                     .WithEnvironment($"Verifiers__project_origin.electricity.v1", $"http://{VerifierAlias}:{GrpcPort}")
@@ -98,7 +100,11 @@ public class RegistryFixture : IAsyncLifetime
         await _network.DisposeAsync().ConfigureAwait(false);
     }
 
-    public async Task<Electricity.V1.IssuedEvent> IssueCertificate(Electricity.V1.GranularCertificateType type, SecretCommitmentInfo commitment, IPublicKey ownerKey, Dictionary<string, string>? attributes = null)
+    public async Task<Electricity.V1.IssuedEvent> IssueCertificate(
+        Electricity.V1.GranularCertificateType type,
+        SecretCommitmentInfo commitment,
+        IPublicKey ownerKey,
+        List<(string Key, string Value, byte[]? Salt)>? attributes = null)
     {
         var id = new Common.V1.FederatedStreamId
         {
@@ -129,7 +135,17 @@ public class RegistryFixture : IAsyncLifetime
         };
 
         if (attributes != null)
-            issuedEvent.Attributes.Add(attributes.Select(att => new Electricity.V1.Attribute { Key = att.Key, Value = att.Value }));
+            issuedEvent.Attributes.Add(attributes.Select(attribute =>
+            {
+                if (attribute.Salt is null)
+                    return new Electricity.V1.Attribute { Key = attribute.Key, Value = attribute.Value, Type = Electricity.V1.AttributeType.Cleartext };
+                else
+                {
+                    var str = attribute.Key + attribute.Value + id.StreamId.Value.ToString() + Convert.ToHexString(attribute.Salt);
+                    var hashedValue = Convert.ToBase64String(SHA256.HashData(Encoding.UTF8.GetBytes(str)));
+                    return new Electricity.V1.Attribute { Key = attribute.Key, Value = hashedValue, Type = Electricity.V1.AttributeType.Hashed };
+                }
+            }));
 
         var channel = GrpcChannel.ForAddress(RegistryUrl);
         var client = new Registry.V1.RegistryService.RegistryServiceClient(channel);

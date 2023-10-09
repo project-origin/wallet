@@ -8,6 +8,7 @@ using ProjectOrigin.HierarchicalDeterministicKeys;
 using Google.Protobuf;
 using Xunit;
 using System;
+using System.Linq;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests;
 
@@ -30,7 +31,7 @@ public abstract class AbstractFlowTests : WalletSystemTestsBase, IClassFixture<R
         Electricity.V1.GranularCertificateType type,
         SecretCommitmentInfo issuedCommitment,
         int position,
-        Dictionary<string, string>? att = null)
+        List<(string Key, string Value, byte[]? Salt)>? attributes = null)
     {
         var publicKey = Algorithms.Secp256k1.ImportHDPublicKey(endpoint.PublicKey.Span);
 
@@ -38,17 +39,28 @@ public abstract class AbstractFlowTests : WalletSystemTestsBase, IClassFixture<R
             type,
             issuedCommitment,
             publicKey.Derive(position).GetPublicKey(),
-            att);
+            attributes);
 
         var receiveClient = new V1.ReceiveSliceService.ReceiveSliceServiceClient(_grpcFixture.Channel);
-        await receiveClient.ReceiveSliceAsync(new V1.ReceiveRequest()
+
+        var request = new V1.ReceiveRequest()
         {
             WalletDepositEndpointPublicKey = endpoint.PublicKey,
             WalletDepositEndpointPosition = (uint)position,
             CertificateId = issuedEvent.CertificateId,
             Quantity = issuedCommitment.Message,
             RandomR = ByteString.CopyFrom(issuedCommitment.BlindingValue),
-        });
+        };
+
+        if (attributes is not null)
+            request.HashedAttributes.Add(attributes.Where(attribute => attribute.Salt is not null).Select(attribute => new V1.ReceiveRequest.Types.HashedAttribute
+            {
+                Key = attribute.Key,
+                Value = attribute.Value,
+                Salt = ByteString.CopyFrom(attribute.Salt)
+            }));
+
+        await receiveClient.ReceiveSliceAsync(request);
         return issuedEvent.CertificateId;
     }
 

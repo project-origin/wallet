@@ -50,13 +50,14 @@ public class CertificateRepository : ICertificateRepository
         foreach (var atr in certificate.Attributes)
         {
             await _connection.ExecuteAsync(
-                @"INSERT INTO attributes(id, attribute_key, attribute_value, certificate_id, registry_name)
-                  VALUES (@id, @key, @value, @certificateId, @registryName)",
+                @"INSERT INTO attributes(id, attribute_key, attribute_value, attribute_type, certificate_id, registry_name)
+                  VALUES (@id, @key, @value, @type, @certificateId, @registryName)",
                 new
                 {
                     id = Guid.NewGuid(),
                     atr.Key,
                     atr.Value,
+                    atr.Type,
                     certificateId = certificate.Id,
                     certificate.RegistryName
                 });
@@ -67,7 +68,7 @@ public class CertificateRepository : ICertificateRepository
     {
         var certsDictionary = new Dictionary<Guid, Certificate>();
         await _connection.QueryAsync<Certificate?, CertificateAttribute, Certificate?>(
-            @"SELECT c.*, a.Id AS attribute_id, a.attribute_key AS key, a.attribute_value as value
+            @"SELECT c.*, a.attribute_key as key, a.attribute_value as value, a.attribute_type as type
               FROM certificates c
               LEFT JOIN Attributes a
                 ON c.id = a.certificate_id
@@ -88,7 +89,7 @@ public class CertificateRepository : ICertificateRepository
 
                 return certificate;
             },
-            splitOn: "attribute_id",
+            splitOn: "key",
             param: new
             {
                 certificateId,
@@ -103,7 +104,7 @@ public class CertificateRepository : ICertificateRepository
         var certsDictionary = new Dictionary<Guid, CertificateViewModel>();
 
         await _connection.QueryAsync<CertificateViewModel, SliceViewModel, CertificateAttribute, CertificateViewModel>(
-            @"SELECT c.*, s.Id AS slice_id, s.quantity, a.Id AS attribute_id, a.attribute_key AS key, a.attribute_value as value
+            @"SELECT c.*, s.Id AS slice_id, s.quantity, a.attribute_key as key, a.attribute_value as value, a.attribute_type as type
               FROM Wallets w
               INNER JOIN wallet_endpoints re
                 ON w.id = re.wallet_id
@@ -111,11 +112,12 @@ public class CertificateRepository : ICertificateRepository
                 ON re.Id = s.wallet_endpoint_id
               INNER JOIN certificates c
                 ON s.certificate_id = c.id
-              LEFT JOIN attributes a
+              LEFT JOIN attributes_view a
                 ON c.id = a.certificate_id
                 AND c.registry_name = a.registry_name
+                AND (a.wallet_id = w.id OR a.wallet_id IS NULL)
               WHERE w.owner = @owner
-                AND s.state = @state",
+                AND s.state = @sliceState",
             (cert, slice, atr) =>
             {
                 if (!certsDictionary.TryGetValue(cert.Id, out var certificate))
@@ -131,11 +133,11 @@ public class CertificateRepository : ICertificateRepository
 
                 return certificate;
             },
-            splitOn: "slice_id, attribute_id",
+            splitOn: "slice_id, key",
             param: new
             {
                 owner,
-                state = (int)WalletSliceState.Available
+                sliceState = (int)WalletSliceState.Available
             });
 
         return certsDictionary.Values;
@@ -331,6 +333,7 @@ public class CertificateRepository : ICertificateRepository
             SELECT
                 claims.Id,
                 slice_cons.quantity AS Quantity,
+                wallet_cons.id as WalletId,
 
                 slice_prod.registry_name AS ProductionRegistryName,
                 slice_prod.certificate_id AS ProductionCertificateId,
@@ -372,11 +375,14 @@ public class CertificateRepository : ICertificateRepository
                 AND wallet_cons.owner = @owner
         );
         SELECT * FROM claims_work_table;
-        SELECT attributes.registry_name, attributes.certificate_id, attributes.attribute_key AS key, attributes.attribute_value AS value
-        FROM attributes
-        WHERE (registry_name, certificate_id) IN (SELECT ConsumptionRegistryName, ConsumptionCertificateId FROM claims_work_table)
-            OR (registry_name, certificate_id) IN (SELECT ProductionRegistryName, ProductionCertificateId FROM claims_work_table);
+        SELECT attributes.registry_name, attributes.certificate_id, attributes.attribute_key as key, attributes.attribute_value as value, attributes.attribute_type as type
+        FROM attributes_view attributes
+        WHERE ((registry_name, certificate_id) IN (SELECT ConsumptionRegistryName, ConsumptionCertificateId FROM claims_work_table) AND wallet_id IS NULL)
+            OR ((registry_name, certificate_id) IN (SELECT ProductionRegistryName, ProductionCertificateId FROM claims_work_table) AND wallet_id IS NULL)
+            OR (registry_name, certificate_id, wallet_id) IN (SELECT ConsumptionRegistryName, ConsumptionCertificateId, WalletId FROM claims_work_table)
+            OR (registry_name, certificate_id, wallet_id) IN (SELECT ProductionRegistryName, ProductionCertificateId, WalletId FROM claims_work_table);
         ";
+
         using (var gridReader = await _connection.QueryMultipleAsync(sql, new
         {
             owner,
@@ -401,6 +407,23 @@ public class CertificateRepository : ICertificateRepository
 
             return claims;
         }
+    }
+
+    public async Task InsertWalletAttribute(WalletAttribute walletAttribute)
+    {
+        await _connection.ExecuteAsync(
+               @"INSERT INTO wallet_attributes(id, wallet_id, certificate_id, registry_name, attribute_key, attribute_value, salt)
+                  VALUES (@id, @walletId, @certificateId, @registryName, @attributeKey, @attributeValue, @salt)",
+               new
+               {
+                   id = Guid.NewGuid(),
+                   walletAttribute.WalletId,
+                   walletAttribute.CertificateId,
+                   walletAttribute.RegistryName,
+                   attributeKey = walletAttribute.Key,
+                   attributeValue = walletAttribute.Value,
+                   walletAttribute.Salt
+               });
     }
 
     private sealed record ExtendedAttribute : CertificateAttribute

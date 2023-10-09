@@ -11,6 +11,7 @@ using ProjectOrigin.WalletSystem.Server.Extensions;
 using Xunit;
 using ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures;
 using ProjectOrigin.WalletSystem.Server.Activities.Exceptions;
+using System.Text;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests.Repositories;
 
@@ -30,9 +31,9 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         var registry = _fixture.Create<string>();
         var attributes = new List<CertificateAttribute>
         {
-            new(){ Key="AssetId", Value="571234567890123456"},
-            new(){ Key="TechCode", Value="T070000"},
-            new(){ Key="FuelCode", Value="F00000000"},
+            new(){ Key="AssetId", Value="571234567890123456", Type=CertificateAttributeType.ClearText},
+            new(){ Key="TechCode", Value="T070000", Type=CertificateAttributeType.ClearText},
+            new(){ Key="FuelCode", Value="F00000000", Type=CertificateAttributeType.ClearText},
         };
         var certificate = new Certificate
         {
@@ -170,6 +171,72 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         certificates.Should().HaveCount(2).And.Satisfy(
             c => c.Id == certificate1.Id && c.Slices.Sum(x => x.Quantity) == slice1.Quantity + slice2.Quantity,
             c => c.Id == certificate2.Id && c.Slices.Sum(x => x.Quantity) == slice3.Quantity
+        );
+    }
+
+    [Fact]
+    public async Task GetAllOwnedCertificates_WalletAttributes()
+    {
+        // Arrange
+        var endpointPosition = 1;
+        var registry = _fixture.Create<string>();
+        var owner = _fixture.Create<string>();
+        var wallet = await CreateWallet(owner);
+        var endpoint = await CreateWalletEndpoint(wallet);
+
+        var certificateId = Guid.NewGuid();
+        WalletAttribute walletAttribute = new WalletAttribute
+        {
+            Key = "AssetId",
+            Value = "571234567890123456",
+            CertificateId = certificateId,
+            RegistryName = registry,
+            WalletId = wallet.Id,
+            Salt = Encoding.UTF8.GetBytes(Guid.NewGuid().ToString())
+        };
+
+        var attributes = new List<CertificateAttribute>
+        {
+            new(){ Key="AssetId", Value=walletAttribute.GetHashedValue(), Type=CertificateAttributeType.Hashed},
+            new(){ Key="TechCode", Value="T070000", Type=CertificateAttributeType.ClearText},
+            new(){ Key="FuelCode", Value="F00000000", Type=CertificateAttributeType.ClearText},
+        };
+        var certificate = new Certificate
+        {
+            Id = certificateId,
+            RegistryName = registry,
+            StartDate = DateTimeOffset.Now.ToUtcTime(),
+            EndDate = DateTimeOffset.Now.AddDays(1).ToUtcTime(),
+            GridArea = "DK1",
+            CertificateType = GranularCertificateType.Production,
+            Attributes = attributes
+        };
+
+        var slice = new WalletSlice
+        {
+            Id = Guid.NewGuid(),
+            WalletEndpointId = endpoint.Id,
+            WalletEndpointPosition = endpointPosition,
+            RegistryName = registry,
+            CertificateId = certificate.Id,
+            Quantity = _fixture.Create<int>(),
+            RandomR = _fixture.Create<byte[]>(),
+            State = WalletSliceState.Available
+        };
+
+        await _repository.InsertCertificate(certificate);
+        await _repository.InsertWalletAttribute(walletAttribute);
+        await _repository.InsertWalletSlice(slice);
+
+        // Act
+        var certificates = await _repository.GetAllOwnedCertificates(owner);
+
+        // Assert
+        certificates.Should().HaveCount(1).And.Satisfy(
+            c => c.Id == certificate.Id
+                 && c.Slices.Sum(x => x.Quantity) == slice.Quantity
+                 && c.Attributes.Count == 3
+                 && c.Attributes.Any(x => x.Key == walletAttribute.Key && x.Value == walletAttribute.Value)
         );
     }
 

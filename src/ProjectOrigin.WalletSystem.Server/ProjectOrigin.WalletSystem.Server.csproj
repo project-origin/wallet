@@ -32,13 +32,13 @@
 
   <ItemGroup>
     <Protobuf Include="../Protos/common.proto" Link="Protos\common.proto">
-      <SourceUrl>https://raw.githubusercontent.com/project-origin/registry/v0.2.2/src/Protos/common.proto</SourceUrl>
+      <SourceUrl>https://raw.githubusercontent.com/project-origin/registry/v0.3.0/src/Protos/common.proto</SourceUrl>
     </Protobuf>
     <Protobuf Include="../Protos/registry.proto" Link="Protos\registry.proto">
-      <SourceUrl>https://raw.githubusercontent.com/project-origin/registry/v0.2.2/src/Protos/registry.proto</SourceUrl>
+      <SourceUrl>https://raw.githubusercontent.com/project-origin/registry/v0.3.0/src/Protos/registry.proto</SourceUrl>
     </Protobuf>
     <Protobuf Include="../Protos/electricity.proto" Link="Protos\electricity.proto">
-      <SourceUrl>https://raw.githubusercontent.com/project-origin/registry/v0.2.2/src/Protos/electricity.proto</SourceUrl>
+      <SourceUrl>https://raw.githubusercontent.com/project-origin/registry/v0.3.0/src/Protos/electricity.proto</SourceUrl>
     </Protobuf>
     <Protobuf Include="../Protos/wallet.proto" GrpcServices="Both" />
   </ItemGroup>

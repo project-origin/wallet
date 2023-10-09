@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
@@ -23,6 +24,7 @@ public record VerifySliceCommand
     public required Guid CertificateId { get; init; }
     public required long Quantity { get; init; }
     public required byte[] RandomR { get; init; }
+    public List<WalletAttribute> HashedAttributes { get; init; } = new();
 }
 
 public class VerifySliceCommandHandler : IConsumer<VerifySliceCommand>
@@ -111,7 +113,8 @@ public class VerifySliceCommandHandler : IConsumer<VerifySliceCommand>
                 .Select(attribute => new CertificateAttribute
                 {
                     Key = attribute.Key,
-                    Value = attribute.Value
+                    Value = attribute.Value,
+                    Type = (CertificateAttributeType)attribute.Type,
                 })
                 .ToList();
 
@@ -126,6 +129,13 @@ public class VerifySliceCommandHandler : IConsumer<VerifySliceCommand>
                 Attributes = attributes
             };
             await _unitOfWork.CertificateRepository.InsertCertificate(certificate);
+        }
+
+        foreach (var hashedAttribute in receivedSlice.HashedAttributes)
+        {
+            if (certificateProjection.Attributes.Any(att => att.Key == hashedAttribute.Key
+                && att.Value == hashedAttribute.GetHashedValue()))
+                await _unitOfWork.CertificateRepository.InsertWalletAttribute(hashedAttribute);
         }
 
         await _unitOfWork.CertificateRepository.InsertWalletSlice(slice);
