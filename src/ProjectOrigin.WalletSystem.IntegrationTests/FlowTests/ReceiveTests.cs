@@ -9,9 +9,9 @@ using System;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests.FlowTests;
 
-public class ReceiveTest : AbstractFlowTests
+public class ReceiveTests : AbstractFlowTests
 {
-    public ReceiveTest(
+    public ReceiveTests(
             GrpcTestFixture<Startup> grpcFixture,
             PostgresDatabaseFixture dbFixture,
             InMemoryFixture inMemoryFixture,
@@ -87,7 +87,7 @@ public class ReceiveTest : AbstractFlowTests
             new(){
                 ("TechCode", "T010101", null),
                 ("FuelCode", "F010101", null),
-                ("AssertId", "1264541", new byte[] { 0x01, 0x02, 0x03, 0x04 }),
+                ("AssetId", "1264541", new byte[] { 0x01, 0x02, 0x03, 0x04 }),
             });
 
         var certificates = await Timeout(async () =>
@@ -103,6 +103,6 @@ public class ReceiveTest : AbstractFlowTests
         gc.Attributes.Should().HaveCount(3)
             .And.Contain(x => x.Key == "TechCode" && x.Value == "T010101")
             .And.Contain(x => x.Key == "FuelCode" && x.Value == "F010101")
-            .And.Contain(x => x.Key == "AssertId" && x.Value == "1264541");
+            .And.Contain(x => x.Key == "AssetId" && x.Value == "1264541");
     }
 }

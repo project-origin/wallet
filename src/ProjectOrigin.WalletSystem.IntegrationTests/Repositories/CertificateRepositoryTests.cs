@@ -613,6 +613,52 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         claims.Sum(x => x.Quantity).Should().Be(1750L);
     }
 
+    [Fact]
+    public async Task InsertAndGetWalletAttributes()
+    {
+        // Arrange
+        var registry = _fixture.Create<string>();
+        var owner = _fixture.Create<string>();
+        var wallet = await CreateWallet(owner);
+
+        var certificateId = Guid.NewGuid();
+        WalletAttribute walletAttribute = new WalletAttribute
+        {
+            Key = "AssetId",
+            Value = "571234567890123456",
+            CertificateId = certificateId,
+            RegistryName = registry,
+            WalletId = wallet.Id,
+            Salt = Encoding.UTF8.GetBytes(Guid.NewGuid().ToString())
+        };
+
+        var attributes = new List<CertificateAttribute>
+        {
+            new(){ Key=walletAttribute.Key, Value=walletAttribute.GetHashedValue(), Type=CertificateAttributeType.Hashed},
+            new(){ Key="TechCode", Value="T070000", Type=CertificateAttributeType.ClearText},
+            new(){ Key="FuelCode", Value="F00000000", Type=CertificateAttributeType.ClearText},
+        };
+        var certificate = new Certificate
+        {
+            Id = certificateId,
+            RegistryName = registry,
+            StartDate = DateTimeOffset.Now.ToUtcTime(),
+            EndDate = DateTimeOffset.Now.AddDays(1).ToUtcTime(),
+            GridArea = "DK1",
+            CertificateType = GranularCertificateType.Production,
+            Attributes = attributes
+        };
+        await _repository.InsertCertificate(certificate);
+
+        // Act
+        await _repository.InsertWalletAttribute(walletAttribute);
+        var walletAttributeFromRepo = await _repository.GetWalletAttribute(wallet.Id, certificate.Id, certificate.RegistryName, "AssetId");
+
+        // Assert
+        walletAttributeFromRepo.Should().NotBeNull();
+        walletAttributeFromRepo.Value.Should().Be(walletAttribute.Value);
+    }
+
     private async Task CreateClaimsAndCerts(string owner, int numberOfClaims, DateTimeOffset startDate)
     {
         var registry = _fixture.Create<string>();

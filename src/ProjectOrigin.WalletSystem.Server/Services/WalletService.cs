@@ -118,7 +118,8 @@ public class WalletService : V1.WalletService.WalletServiceBase
             Registry = request.CertificateId.Registry,
             CertificateId = new Guid(request.CertificateId.StreamId.Value),
             Quantity = request.Quantity,
-            Receiver = new Guid(request.ReceiverId.Value)
+            Receiver = new Guid(request.ReceiverId.Value),
+            HashedAttributes = request.HashedAttributes.ToArray(),
         };
 
         _bus.Publish(command);

@@ -1,13 +1,17 @@
 ```mermaid
 erDiagram
+    %% The order of relations is important, it controls how the visual representation is rendered
 
-    claims }o--|| wallet_slices : "consists of"
-    claims {
-        uuid id PK "Unique id of a claim"
-        uuid production_slice_id FK "Unique id of a production slice"
-        uuid consumption_slice_id FK "Unique id of a consumption slice"
-        integer state "The state of the claim"
-    }
+    external_endpoints ||--o{ transferred_slices : contains
+    certficates ||--o{ transferred_slices : has
+    certficates ||--o{ attributes : has
+    certficates ||--o{ wallet_slices : has
+    attributes ||--o{ wallet_attributes : "refers to"
+    wallets ||--o{ wallet_attributes : contains
+    wallets ||--o{ wallet_endpoints : contains
+    wallet_endpoints ||--o{ wallet_slices : contains
+    claims  |o--|| wallet_slices  : "consists of"
+
 
     wallets {
         uuid id PK "Unique id of a wallet"
@@ -15,7 +19,6 @@ erDiagram
         bytea private_key "The private key of the owner/wallet"
     }
 
-    wallets ||--o{ wallet_endpoints : contains
     wallet_endpoints {
         uuid id PK "Unique id of a wallet endpoint"
         uuid wallet_id FK "The wallet that owns the wallet endpoint"
@@ -33,8 +36,6 @@ erDiagram
         int certificate_type "Enum type of the certificate (production | consumption)"
     }
 
-    certficates ||--o{ wallet_slices : has
-    wallet_endpoints ||--o{ wallet_slices : contains
     wallet_slices {
         uuid id PK "Unique id of a slice"
         uuid certificate_id FK "Unique id of a certificate"
@@ -46,7 +47,6 @@ erDiagram
         bytea random_r "The random R is the blinding factor for the commitment"
     }
 
-    certficates ||--o{ attributes : has
     attributes {
         uuid id PK "Unique id of an attribute"
         uuid certificate_id FK "Unique id of a certificate"
@@ -63,8 +63,6 @@ erDiagram
         text endpoint "The URL of where the wallet system of external endpoint is placed"
     }
 
-    certficates ||--o{ transferred_slices : has
-    external_endpoints ||--o{ transferred_slices : contains
     transferred_slices {
         uuid id PK "Unique id of a slice"
         uuid certificate_id FK "Unique id of a certificate"
@@ -75,4 +73,22 @@ erDiagram
         bigint quantity "The quantity of watt-hours on the slice"
         bytea random_r "The random R is the blinding factor for the commitment"
     }
+
+    wallet_attributes {
+        uuid id PK "Unique id of a wallet_attribute"
+        uuid wallet_id FK "Identifies the wallet that owns the wallet_attribute"
+        uuid certificate_id FK "Identifies the certificate that the attribute refers to"
+        VARCHAR(64) registry_name FK "Identifies the registry that the attribute refers to"
+        VARCHAR(256) attribute_key FK "Identifies the attribute"
+        VARCHAR(512) attribute_value "The value of the attribute"
+        bytea salt "The salt used to hash the attribute_value"
+    }
+
+    claims {
+        uuid id PK "Unique id of a claim"
+        uuid production_slice_id FK "Unique id of a production slice"
+        uuid consumption_slice_id FK "Unique id of a consumption slice"
+        integer state "The state of the claim"
+    }
+
 ```

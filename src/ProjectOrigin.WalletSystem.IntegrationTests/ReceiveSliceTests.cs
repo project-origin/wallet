@@ -59,7 +59,7 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
             };
             request.HashedAttributes.Add(new ReceiveRequest.Types.HashedAttribute()
             {
-                Key = "AssertId",
+                Key = "AssetId",
                 Value = "1234",
                 Salt = ByteString.CopyFrom(new byte[] { 0x05, 0x06, 0x07, 0x08 }),
             });
@@ -82,7 +82,7 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
             command.Quantity.Should().Be(240);
             command.RandomR.Should().BeEquivalentTo(new byte[] { 0x01, 0x02, 0x03, 0x04 });
             command.HashedAttributes.Should().HaveCount(1);
-            command.HashedAttributes.First().Key.Should().Be("AssertId");
+            command.HashedAttributes.First().Key.Should().Be("AssetId");
             command.HashedAttributes.First().Value.Should().Be("1234");
             command.HashedAttributes.First().Salt.Should().BeEquivalentTo(new byte[] { 0x05, 0x06, 0x07, 0x08 });
         }

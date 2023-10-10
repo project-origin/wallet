@@ -2,7 +2,6 @@ using ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures;
 using ProjectOrigin.WalletSystem.Server;
 using System;
 using System.Threading.Tasks;
-using ProjectOrigin.WalletSystem.V1;
 using Xunit;
 using Npgsql;
 using Dapper;
@@ -15,11 +14,11 @@ using ProjectOrigin.WalletSystem.IntegrationTests.TestExtensions;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests;
 
-public class TransferCertificateTests : WalletSystemTestsBase, IClassFixture<RegistryFixture>, IClassFixture<InMemoryFixture>
+public class TransferTests : AbstractFlowTests
 {
     private readonly RegistryFixture _registryFixture;
 
-    public TransferCertificateTests(
+    public TransferTests(
             GrpcTestFixture<Startup> grpcFixture,
             PostgresDatabaseFixture dbFixture,
             InMemoryFixture inMemoryFixture,
@@ -39,7 +38,7 @@ public class TransferCertificateTests : WalletSystemTestsBase, IClassFixture<Reg
     public async Task Transfer_SingleSlice_LocalWallet()
     {
         //Arrange
-        var client = new WalletService.WalletServiceClient(_grpcFixture.Channel);
+        var client = new V1.WalletService.WalletServiceClient(_grpcFixture.Channel);
         var issuedAmount = 250u;
         var transferredAmount = 150u;
 
@@ -52,14 +51,14 @@ public class TransferCertificateTests : WalletSystemTestsBase, IClassFixture<Reg
         await _dbFixture.InsertSlice(senderEndpoint, position, issuedEvent, commitment);
 
         var (recipient, recipientHeader) = GenerateUserHeader();
-        var createEndpointResponse = await client.CreateWalletDepositEndpointAsync(new CreateWalletDepositEndpointRequest(), recipientHeader);
-        var receiverEndpointResponse = await client.CreateReceiverDepositEndpointAsync(new CreateReceiverDepositEndpointRequest
+        var createEndpointResponse = await client.CreateWalletDepositEndpointAsync(new V1.CreateWalletDepositEndpointRequest(), recipientHeader);
+        var receiverEndpointResponse = await client.CreateReceiverDepositEndpointAsync(new V1.CreateReceiverDepositEndpointRequest
         {
             WalletDepositEndpoint = createEndpointResponse.WalletDepositEndpoint
         }, senderHeader);
 
         //Act
-        var request = new TransferRequest()
+        var request = new V1.TransferRequest()
         {
             CertificateId = issuedEvent.CertificateId,
             Quantity = transferredAmount,
@@ -75,7 +74,7 @@ public class TransferCertificateTests : WalletSystemTestsBase, IClassFixture<Reg
     public async Task Transfer_MultipleSlice_LocalWallet()
     {
         //Arrange
-        var client = new WalletService.WalletServiceClient(_grpcFixture.Channel);
+        var client = new V1.WalletService.WalletServiceClient(_grpcFixture.Channel);
 
         // Create sender wallet
         var (sender, senderHeader) = GenerateUserHeader();
@@ -96,14 +95,14 @@ public class TransferCertificateTests : WalletSystemTestsBase, IClassFixture<Reg
 
         // Create intermidiate wallet
         var (intermidiate, intermidiateHeader) = GenerateUserHeader();
-        var intermidiateCER = await client.CreateWalletDepositEndpointAsync(new CreateWalletDepositEndpointRequest(), intermidiateHeader);
-        var senderItermidiateCER = await client.CreateReceiverDepositEndpointAsync(new CreateReceiverDepositEndpointRequest
+        var intermidiateCER = await client.CreateWalletDepositEndpointAsync(new V1.CreateWalletDepositEndpointRequest(), intermidiateHeader);
+        var senderItermidiateCER = await client.CreateReceiverDepositEndpointAsync(new V1.CreateReceiverDepositEndpointRequest
         {
             WalletDepositEndpoint = intermidiateCER.WalletDepositEndpoint
         }, senderHeader);
 
         // Transfer 2 slices to intermidiate wallet
-        await client.TransferCertificateAsync(new TransferRequest()
+        await client.TransferCertificateAsync(new V1.TransferRequest()
         {
             CertificateId = issuedEvent.CertificateId,
             Quantity = 150u,
@@ -113,7 +112,7 @@ public class TransferCertificateTests : WalletSystemTestsBase, IClassFixture<Reg
         //Assert
         await WaitForCertCount(certId, 3);
 
-        await client.TransferCertificateAsync(new TransferRequest()
+        await client.TransferCertificateAsync(new V1.TransferRequest()
         {
             CertificateId = issuedEvent.CertificateId,
             Quantity = 100u,
@@ -125,14 +124,14 @@ public class TransferCertificateTests : WalletSystemTestsBase, IClassFixture<Reg
 
         // Create recipient wallet
         var (recipient, recipientHeader) = GenerateUserHeader();
-        var recipientCER = await client.CreateWalletDepositEndpointAsync(new CreateWalletDepositEndpointRequest(), recipientHeader);
-        var intermidiateRecipientCER = await client.CreateReceiverDepositEndpointAsync(new CreateReceiverDepositEndpointRequest
+        var recipientCER = await client.CreateWalletDepositEndpointAsync(new V1.CreateWalletDepositEndpointRequest(), recipientHeader);
+        var intermidiateRecipientCER = await client.CreateReceiverDepositEndpointAsync(new V1.CreateReceiverDepositEndpointRequest
         {
             WalletDepositEndpoint = recipientCER.WalletDepositEndpoint
         }, intermidiateHeader);
 
         //Act
-        await client.TransferCertificateAsync(new TransferRequest()
+        await client.TransferCertificateAsync(new V1.TransferRequest()
         {
             CertificateId = issuedEvent.CertificateId,
             Quantity = 200u, // transfer more than a single slice but less that both slices
@@ -164,5 +163,64 @@ public class TransferCertificateTests : WalletSystemTestsBase, IClassFixture<Reg
             await Task.Delay(1000);
         }
         slicesFound.Should().Be(number, "correct number of slices should be found");
+    }
+
+    [Theory]
+    [InlineData(250, 150)] // transfer part of slice
+    [InlineData(250, 250)] // transfer whole slice
+    public async Task Transfer_WithHashedAttributes(uint issuedAmount, uint transferredAmount)
+    {
+        //Arrange
+        var client = new V1.WalletService.WalletServiceClient(_grpcFixture.Channel);
+        var position = 1;
+
+        var (sender, senderHeader) = GenerateUserHeader();
+        var endpoint = await client.CreateWalletDepositEndpointAsync(new V1.CreateWalletDepositEndpointRequest(), senderHeader);
+
+        var certificateId = await IssueCertificateToEndpoint(
+            endpoint.WalletDepositEndpoint,
+            Electricity.V1.GranularCertificateType.Production,
+            new SecretCommitmentInfo(issuedAmount),
+            position++,
+            new(){
+                ("TechCode", "T010101", null),
+                ("FuelCode", "F010101", null),
+                ("AssetId", "1264541", new byte[] { 0x01, 0x02, 0x03, 0x04 }),
+            });
+
+        await Timeout(async () =>
+        {
+            var result = await client.QueryGranularCertificatesAsync(new V1.QueryRequest(), senderHeader);
+            result.GranularCertificates.Should().HaveCount(1);
+            return result.GranularCertificates;
+        }, TimeSpan.FromMinutes(1));
+
+        var (recipient, recipientHeader) = GenerateUserHeader();
+        var createEndpointResponse = await client.CreateWalletDepositEndpointAsync(new V1.CreateWalletDepositEndpointRequest(), recipientHeader);
+        var receiverEndpointResponse = await client.CreateReceiverDepositEndpointAsync(new V1.CreateReceiverDepositEndpointRequest
+        {
+            WalletDepositEndpoint = createEndpointResponse.WalletDepositEndpoint
+        }, senderHeader);
+
+        //Act
+        var request = new V1.TransferRequest()
+        {
+            CertificateId = certificateId,
+            Quantity = transferredAmount,
+            ReceiverId = receiverEndpointResponse.ReceiverId,
+            HashedAttributes = { "AssetId" }
+        };
+        await client.TransferCertificateAsync(request, senderHeader);
+
+        //Assert
+        var recipientCertificate = await Timeout(async () =>
+        {
+            var result = await client.QueryGranularCertificatesAsync(new V1.QueryRequest(), recipientHeader);
+            result.GranularCertificates.Should().HaveCount(1);
+            return result.GranularCertificates.Single();
+        }, TimeSpan.FromMinutes(1));
+
+        recipientCertificate.Attributes.Should().HaveCount(3);
+        recipientCertificate.Attributes.Should().Contain(x => x.Key == "AssetId" && x.Value == "1264541");
     }
 }

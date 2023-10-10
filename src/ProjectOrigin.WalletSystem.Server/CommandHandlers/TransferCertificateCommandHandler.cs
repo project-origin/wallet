@@ -17,6 +17,7 @@ public record TransferCertificateCommand
     public required Guid CertificateId { get; init; }
     public required uint Quantity { get; init; }
     public required Guid Receiver { get; init; }
+    public required string[] HashedAttributes { get; init; }
 }
 
 public class TransferCertificateCommandHandler : IConsumer<TransferCertificateCommand>
@@ -60,7 +61,8 @@ public class TransferCertificateCommandHandler : IConsumer<TransferCertificateCo
                         new()
                         {
                             SourceSliceId = slice.Id,
-                            ExternalEndpointId = receiverEndpoint.Id
+                            ExternalEndpointId = receiverEndpoint.Id,
+                            HashedAttributes = msg.HashedAttributes,
                         });
                     remainderToTransfer -= (uint)slice.Quantity;
                 }
@@ -71,7 +73,8 @@ public class TransferCertificateCommandHandler : IConsumer<TransferCertificateCo
                         {
                             SourceSliceId = slice.Id,
                             ExternalEndpointId = receiverEndpoint.Id,
-                            Quantity = remainderToTransfer
+                            Quantity = remainderToTransfer,
+                            HashedAttributes = msg.HashedAttributes,
                         });
                 }
 

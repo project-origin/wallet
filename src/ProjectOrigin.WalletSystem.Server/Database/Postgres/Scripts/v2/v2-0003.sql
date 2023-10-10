@@ -16,6 +16,11 @@ CREATE TABLE wallet_attributes (
         REFERENCES wallets (id) MATCH SIMPLE
         ON UPDATE NO ACTION
         ON DELETE NO ACTION
+        NOT VALID,
+    FOREIGN KEY (certificate_id, registry_name, attribute_key)
+        REFERENCES attributes (certificate_id, registry_name, attribute_key) MATCH SIMPLE
+        ON UPDATE NO ACTION
+        ON DELETE NO ACTION
         NOT VALID
 );
 
