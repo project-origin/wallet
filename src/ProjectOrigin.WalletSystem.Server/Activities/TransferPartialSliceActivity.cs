@@ -88,9 +88,8 @@ public class TransferPartialSliceActivity : IExecuteActivity<TransferPartialSlic
 
             var slicedEvent = CreateSliceEvent(sourceSlice, new NewSlice(receiverCommitment, receiverPublicKey), new NewSlice(remainderCommitment, remainderPublicKey));
             var sourceSlicePrivateKey = await _unitOfWork.WalletRepository.GetPrivateKeyForSlice(sourceSlice.Id);
-            Transaction transaction = sourceSlicePrivateKey.SignRegistryTransaction(slicedEvent.CertificateId, slicedEvent);
-
-            var walletAttributes = await Task.WhenAll(context.Arguments.HashedAttributes.Select(key => _unitOfWork.CertificateRepository.GetWalletAttribute(sourceEndpoint.WalletId, sourceSlice.CertificateId, sourceSlice.RegistryName, key)));
+            var transaction = sourceSlicePrivateKey.SignRegistryTransaction(slicedEvent.CertificateId, slicedEvent);
+            var walletAttributes = await GetWalletAttributees(sourceEndpoint.WalletId, sourceSlice.CertificateId, sourceSlice.RegistryName, context.Arguments.HashedAttributes);
 
             _unitOfWork.Commit();
 
@@ -183,5 +182,11 @@ public class TransferPartialSliceActivity : IExecuteActivity<TransferPartialSlic
         }
 
         return slicedEvent;
+    }
+
+    private async Task<WalletAttribute[]> GetWalletAttributees(Guid walletId, Guid certificateId, string registryName, IEnumerable<string> hashedAttributeKeys)
+    {
+        var result = await Task.WhenAll(hashedAttributeKeys.Select(key => _unitOfWork.CertificateRepository.GetWalletAttribute(walletId, certificateId, registryName, key)));
+        return result.NotNull().ToArray();
     }
 }

@@ -426,9 +426,9 @@ public class CertificateRepository : ICertificateRepository
                });
     }
 
-    public Task<WalletAttribute> GetWalletAttribute(Guid walletId, Guid certificateId, string registryName, string key)
+    public Task<WalletAttribute?> GetWalletAttribute(Guid walletId, Guid certificateId, string registryName, string key)
     {
-        return _connection.QuerySingleAsync<WalletAttribute>(
+        return _connection.QuerySingleOrDefaultAsync<WalletAttribute>(
             @"SELECT wallet_id, certificate_id, registry_name, attribute_key as key, attribute_value as value, salt
               FROM wallet_attributes
               WHERE wallet_id = @walletId

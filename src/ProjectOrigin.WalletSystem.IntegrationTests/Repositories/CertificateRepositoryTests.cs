@@ -654,7 +654,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
 
         // Assert
         walletAttributeFromRepo.Should().NotBeNull();
-        walletAttributeFromRepo.Value.Should().Be(walletAttribute.Value);
+        walletAttributeFromRepo!.Value.Should().Be(walletAttribute.Value);
     }
 
     private async Task CreateClaimsAndCerts(string owner, int numberOfClaims, DateTimeOffset startDate)

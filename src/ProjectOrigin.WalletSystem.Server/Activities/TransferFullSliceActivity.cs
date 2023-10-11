@@ -69,8 +69,7 @@ public class TransferFullSliceActivity : IExecuteActivity<TransferFullSliceArgum
 
             var sourceSlicePrivateKey = await _unitOfWork.WalletRepository.GetPrivateKeyForSlice(sourceSlice.Id);
             var transaction = sourceSlicePrivateKey.SignRegistryTransaction(transferredEvent.CertificateId, transferredEvent);
-
-            var walletAttributes = await Task.WhenAll(context.Arguments.HashedAttributes.Select(key => _unitOfWork.CertificateRepository.GetWalletAttribute(sourceEndpoint.WalletId, sourceSlice.CertificateId, sourceSlice.RegistryName, key)));
+            var walletAttributes = await GetWalletAttributees(sourceEndpoint.WalletId, sourceSlice.CertificateId, sourceSlice.RegistryName, context.Arguments.HashedAttributes);
 
             _unitOfWork.Commit();
 
@@ -138,5 +137,11 @@ public class TransferFullSliceActivity : IExecuteActivity<TransferFullSliceArgum
             SourceSliceHash = ByteString.CopyFrom(SHA256.HashData(sliceCommitment.Commitment.C))
         };
         return transferredEvent;
+    }
+
+    private async Task<WalletAttribute[]> GetWalletAttributees(Guid walletId, Guid certificateId, string registryName, IEnumerable<string> hashedAttributeKeys)
+    {
+        var result = await Task.WhenAll(hashedAttributeKeys.Select(key => _unitOfWork.CertificateRepository.GetWalletAttribute(walletId, certificateId, registryName, key)));
+        return result.NotNull().ToArray();
     }
 }
