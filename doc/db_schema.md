@@ -1,6 +1,5 @@
 ```mermaid
 erDiagram
-
     %% The order of relations is important, it controls how the visual representation is rendered
 
     external_endpoints ||--o{ transferred_slices : contains
