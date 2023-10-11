@@ -409,7 +409,7 @@ public class CertificateRepository : ICertificateRepository
         }
     }
 
-    public async Task InsertWalletAttribute(WalletAttribute walletAttribute)
+    public async Task InsertWalletAttribute(Guid walletId, WalletAttribute walletAttribute)
     {
         await _connection.ExecuteAsync(
                @"INSERT INTO wallet_attributes(id, wallet_id, certificate_id, registry_name, attribute_key, attribute_value, salt)
@@ -417,7 +417,7 @@ public class CertificateRepository : ICertificateRepository
                new
                {
                    id = Guid.NewGuid(),
-                   walletAttribute.WalletId,
+                   walletId,
                    walletAttribute.CertificateId,
                    walletAttribute.RegistryName,
                    attributeKey = walletAttribute.Key,

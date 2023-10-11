@@ -18,6 +18,7 @@ namespace ProjectOrigin.WalletSystem.Server.CommandHandlers;
 public record VerifySliceCommand
 {
     public required Guid Id { get; init; }
+    public required Guid WalletId { get; init; }
     public required Guid WalletEndpointId { get; init; }
     public required int WalletEndpointPosition { get; init; }
     public required string Registry { get; init; }
@@ -135,7 +136,7 @@ public class VerifySliceCommandHandler : IConsumer<VerifySliceCommand>
         {
             if (certificateProjection.Attributes.Any(att => att.Key == hashedAttribute.Key
                 && att.Value == hashedAttribute.GetHashedValue()))
-                await _unitOfWork.CertificateRepository.InsertWalletAttribute(hashedAttribute);
+                await _unitOfWork.CertificateRepository.InsertWalletAttribute(receivedSlice.WalletId, hashedAttribute);
         }
 
         await _unitOfWork.CertificateRepository.InsertWalletSlice(slice);

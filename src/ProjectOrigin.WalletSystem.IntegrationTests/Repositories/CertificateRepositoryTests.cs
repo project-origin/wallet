@@ -191,7 +191,6 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
             Value = "571234567890123456",
             CertificateId = certificateId,
             RegistryName = registry,
-            WalletId = wallet.Id,
             Salt = Encoding.UTF8.GetBytes(Guid.NewGuid().ToString())
         };
 
@@ -225,7 +224,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         };
 
         await _repository.InsertCertificate(certificate);
-        await _repository.InsertWalletAttribute(walletAttribute);
+        await _repository.InsertWalletAttribute(wallet.Id, walletAttribute);
         await _repository.InsertWalletSlice(slice);
 
         // Act
@@ -628,7 +627,6 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
             Value = "571234567890123456",
             CertificateId = certificateId,
             RegistryName = registry,
-            WalletId = wallet.Id,
             Salt = Encoding.UTF8.GetBytes(Guid.NewGuid().ToString())
         };
 
@@ -651,7 +649,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         await _repository.InsertCertificate(certificate);
 
         // Act
-        await _repository.InsertWalletAttribute(walletAttribute);
+        await _repository.InsertWalletAttribute(wallet.Id, walletAttribute);
         var walletAttributeFromRepo = await _repository.GetWalletAttribute(wallet.Id, certificate.Id, certificate.RegistryName, "AssetId");
 
         // Assert

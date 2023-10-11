@@ -137,7 +137,7 @@ public class TransferPartialSliceActivity : IExecuteActivity<TransferPartialSlic
                 {
                     ExternalEndpointId = externalEndpoint.Id,
                     SliceId = transferredSlice.Id,
-                    HashedAttributes = walletAttributes,
+                    WalletAttributes = walletAttributes,
                 });
 
             builder.AddActivitiesFromSourceItinerary();

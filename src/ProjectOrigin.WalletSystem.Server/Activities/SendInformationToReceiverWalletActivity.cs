@@ -17,7 +17,7 @@ public record SendInformationToReceiverWalletArgument
 {
     public required Guid ExternalEndpointId { get; init; }
     public required Guid SliceId { get; init; }
-    public required WalletAttribute[] HashedAttributes { get; init; }
+    public required WalletAttribute[] WalletAttributes { get; init; }
 }
 
 public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInformationToReceiverWalletArgument>
@@ -64,7 +64,7 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
                 Quantity = (uint)newSlice.Quantity,
                 RandomR = ByteString.CopyFrom(newSlice.RandomR),
                 HashedAttributes = {
-                    context.Arguments.HashedAttributes.Select(ha =>
+                    context.Arguments.WalletAttributes.Select(ha =>
                         new V1.ReceiveRequest.Types.HashedAttribute
                         {
                             Key = ha.Key,
@@ -118,17 +118,9 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
         };
         await _unitOfWork.CertificateRepository.InsertWalletSlice(slice);
         await _unitOfWork.CertificateRepository.SetTransferredSliceState(newSlice.Id, TransferredSliceState.Transferred);
-        foreach (var ha in context.Arguments.HashedAttributes)
+        foreach (var walletAttribute in context.Arguments.WalletAttributes)
         {
-            await _unitOfWork.CertificateRepository.InsertWalletAttribute(new WalletAttribute()
-            {
-                WalletId = walletEndpoint.WalletId,
-                RegistryName = slice.RegistryName,
-                CertificateId = slice.CertificateId,
-                Key = ha.Key,
-                Value = ha.Value,
-                Salt = ha.Salt,
-            });
+            await _unitOfWork.CertificateRepository.InsertWalletAttribute(walletEndpoint.WalletId, walletAttribute);
         }
 
         _unitOfWork.Commit();

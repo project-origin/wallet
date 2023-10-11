@@ -105,6 +105,7 @@ public class VerifySliceCommandHandlerTests : IAsyncLifetime
         var command = new VerifySliceCommand
         {
             Id = Guid.NewGuid(),
+            WalletId = endpoint.WalletId,
             WalletEndpointId = endpoint.Id,
             WalletEndpointPosition = endpointPosition,
             Registry = RegistryName,
@@ -159,6 +160,7 @@ public class VerifySliceCommandHandlerTests : IAsyncLifetime
         var command = new VerifySliceCommand
         {
             Id = Guid.NewGuid(),
+            WalletId = endpoint.WalletId,
             WalletEndpointId = endpoint.Id,
             WalletEndpointPosition = endpointPosition,
             Registry = RegistryName,
@@ -211,6 +213,7 @@ public class VerifySliceCommandHandlerTests : IAsyncLifetime
         var command = new VerifySliceCommand
         {
             Id = Guid.NewGuid(),
+            WalletId = endpoint.WalletId,
             WalletEndpointId = endpoint.Id,
             WalletEndpointPosition = endpointPosition,
             Registry = RegistryName,
@@ -264,6 +267,7 @@ public class VerifySliceCommandHandlerTests : IAsyncLifetime
         var command = new VerifySliceCommand
         {
             Id = Guid.NewGuid(),
+            WalletId = endpoint.WalletId,
             WalletEndpointId = endpoint.Id,
             WalletEndpointPosition = endpointPosition,
             Registry = RegistryName,
@@ -319,6 +323,7 @@ public class VerifySliceCommandHandlerTests : IAsyncLifetime
         var command = new VerifySliceCommand
         {
             Id = Guid.NewGuid(),
+            WalletId = endpoint.WalletId,
             WalletEndpointId = endpoint.Id,
             WalletEndpointPosition = endpointPosition,
             Registry = RegistryName,
@@ -372,6 +377,7 @@ public class VerifySliceCommandHandlerTests : IAsyncLifetime
         var command = new VerifySliceCommand
         {
             Id = Guid.NewGuid(),
+            WalletId = endpoint.WalletId,
             WalletEndpointId = endpoint.Id,
             WalletEndpointPosition = endpointPosition + 1, // <-- Wrong position thereby key
             Registry = RegistryName,

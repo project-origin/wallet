@@ -116,7 +116,7 @@ public class TransferFullSliceActivity : IExecuteActivity<TransferFullSliceArgum
                 {
                     ExternalEndpointId = externalEndpoint.Id,
                     SliceId = transferredSlice.Id,
-                    HashedAttributes = walletAttributes,
+                    WalletAttributes = walletAttributes,
                 });
 
             builder.AddActivitiesFromSourceItinerary();

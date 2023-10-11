@@ -6,7 +6,6 @@ namespace ProjectOrigin.WalletSystem.Server.Models;
 
 public record WalletAttribute
 {
-    public required Guid WalletId { get; init; }
     public required Guid CertificateId { get; init; }
     public required string RegistryName { get; init; }
     public required string Key { get; init; }

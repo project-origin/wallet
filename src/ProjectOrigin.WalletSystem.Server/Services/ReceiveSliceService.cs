@@ -37,6 +37,7 @@ public class ReceiveSliceService : V1.ReceiveSliceService.ReceiveSliceServiceBas
         var newSliceCommand = new VerifySliceCommand
         {
             Id = Guid.NewGuid(),
+            WalletId = endpoint.WalletId,
             WalletEndpointId = endpoint.Id,
             WalletEndpointPosition = (int)request.WalletDepositEndpointPosition,
             Registry = request.CertificateId.Registry,
@@ -45,7 +46,6 @@ public class ReceiveSliceService : V1.ReceiveSliceService.ReceiveSliceServiceBas
             RandomR = request.RandomR.ToByteArray(),
             HashedAttributes = request.HashedAttributes.Select(x => new WalletAttribute
             {
-                WalletId = endpoint.WalletId,
                 CertificateId = Guid.Parse(request.CertificateId.StreamId.Value),
                 RegistryName = request.CertificateId.Registry,
                 Key = x.Key,
