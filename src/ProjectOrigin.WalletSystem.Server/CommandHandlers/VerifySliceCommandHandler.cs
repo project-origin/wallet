@@ -134,8 +134,7 @@ public class VerifySliceCommandHandler : IConsumer<VerifySliceCommand>
 
         foreach (var hashedAttribute in receivedSlice.HashedAttributes)
         {
-            if (registryCertificateProjection.Attributes.Any(att => att.Key == hashedAttribute.Key
-                && att.Value == hashedAttribute.GetHashedValue()))
+            if (registryCertificateProjection.HasHashedAttribute(hashedAttribute.Key, hashedAttribute.GetHashedValue()))
             {
                 await _unitOfWork.CertificateRepository.InsertWalletAttribute(receivedSlice.WalletId, hashedAttribute);
             }
