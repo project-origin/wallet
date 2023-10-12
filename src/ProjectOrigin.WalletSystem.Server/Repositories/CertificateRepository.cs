@@ -434,7 +434,7 @@ public class CertificateRepository : ICertificateRepository
               WHERE wallet_id = @walletId
                 AND certificate_id = @certificateId
                 AND registry_name = @registryName
-                AND attribute_key IN @keys",
+                AND attribute_key = ANY(@keys)",
             new
             {
                 walletId,
