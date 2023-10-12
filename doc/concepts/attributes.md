@@ -19,8 +19,7 @@ The hash are calculated as follows: `sha256(key|value|certificateId|salt)`
 
 ### Sending hashed attributes
 
-To send a certificate with hashed attributes,
-the keys of the attributes simple needs to be added to the `hashed_attributes` array in the TransferRequest.
+To send a certificate with hashed attributes, the keys of the attributes must be added to the `hashed_attributes` array in the TransferRequest.
 
 ### Receiving hashed attributes
 
