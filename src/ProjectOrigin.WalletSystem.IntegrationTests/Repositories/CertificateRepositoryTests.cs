@@ -12,7 +12,6 @@ using Xunit;
 using ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures;
 using ProjectOrigin.WalletSystem.Server.Activities.Exceptions;
 using System.Text;
-using NSubstitute;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests.Repositories;
 
