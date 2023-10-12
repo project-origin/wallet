@@ -12,6 +12,7 @@ using Xunit;
 using ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures;
 using ProjectOrigin.WalletSystem.Server.Activities.Exceptions;
 using System.Text;
+using NSubstitute;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests.Repositories;
 
@@ -185,7 +186,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         var endpoint = await CreateWalletEndpoint(wallet);
 
         var certificateId = Guid.NewGuid();
-        WalletAttribute walletAttribute = new WalletAttribute
+        WalletAttribute assetIdWalletAttribute = new WalletAttribute
         {
             Key = "AssetId",
             Value = "571234567890123456",
@@ -196,7 +197,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
 
         var attributes = new List<CertificateAttribute>
         {
-            new(){ Key="AssetId", Value=walletAttribute.GetHashedValue(), Type=CertificateAttributeType.Hashed},
+            new(){ Key="AssetId", Value=assetIdWalletAttribute.GetHashedValue(), Type=CertificateAttributeType.Hashed},
             new(){ Key="TechCode", Value="T070000", Type=CertificateAttributeType.ClearText},
             new(){ Key="FuelCode", Value="F00000000", Type=CertificateAttributeType.ClearText},
         };
@@ -224,7 +225,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         };
 
         await _repository.InsertCertificate(certificate);
-        await _repository.InsertWalletAttribute(wallet.Id, walletAttribute);
+        await _repository.InsertWalletAttribute(wallet.Id, assetIdWalletAttribute);
         await _repository.InsertWalletSlice(slice);
 
         // Act
@@ -235,7 +236,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
             c => c.Id == certificate.Id
                  && c.Slices.Sum(x => x.Quantity) == slice.Quantity
                  && c.Attributes.Count == 3
-                 && c.Attributes.Any(x => x.Key == walletAttribute.Key && x.Value == walletAttribute.Value)
+                 && c.Attributes.SingleOrDefault(x => x.Key == assetIdWalletAttribute.Key && x.Value == assetIdWalletAttribute.Value) != null
         );
     }
 
@@ -621,7 +622,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         var wallet = await CreateWallet(owner);
 
         var certificateId = Guid.NewGuid();
-        WalletAttribute walletAttribute = new WalletAttribute
+        WalletAttribute assetIdWalletAttribute = new WalletAttribute
         {
             Key = "AssetId",
             Value = "571234567890123456",
@@ -632,7 +633,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
 
         var attributes = new List<CertificateAttribute>
         {
-            new(){ Key=walletAttribute.Key, Value=walletAttribute.GetHashedValue(), Type=CertificateAttributeType.Hashed},
+            new(){ Key=assetIdWalletAttribute.Key, Value=assetIdWalletAttribute.GetHashedValue(), Type=CertificateAttributeType.Hashed},
             new(){ Key="TechCode", Value="T070000", Type=CertificateAttributeType.ClearText},
             new(){ Key="FuelCode", Value="F00000000", Type=CertificateAttributeType.ClearText},
         };
@@ -649,12 +650,12 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         await _repository.InsertCertificate(certificate);
 
         // Act
-        await _repository.InsertWalletAttribute(wallet.Id, walletAttribute);
-        var walletAttributeFromRepo = await _repository.GetWalletAttribute(wallet.Id, certificate.Id, certificate.RegistryName, "AssetId");
+        await _repository.InsertWalletAttribute(wallet.Id, assetIdWalletAttribute);
+        var walletAttributeFromRepo = await _repository.TryGetWalletAttributes(wallet.Id, certificate.Id, certificate.RegistryName, new string[] { assetIdWalletAttribute.Key });
 
         // Assert
-        walletAttributeFromRepo.Should().NotBeNull();
-        walletAttributeFromRepo!.Value.Should().Be(walletAttribute.Value);
+        var foundAttribute = walletAttributeFromRepo.Should().ContainSingle().Which;
+        foundAttribute.Value.Should().Be(assetIdWalletAttribute.Value);
     }
 
     private async Task CreateClaimsAndCerts(string owner, int numberOfClaims, DateTimeOffset startDate)

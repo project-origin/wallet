@@ -69,7 +69,7 @@ public class TransferFullSliceActivity : IExecuteActivity<TransferFullSliceArgum
 
             var sourceSlicePrivateKey = await _unitOfWork.WalletRepository.GetPrivateKeyForSlice(sourceSlice.Id);
             var transaction = sourceSlicePrivateKey.SignRegistryTransaction(transferredEvent.CertificateId, transferredEvent);
-            var walletAttributes = await GetWalletAttributees(sourceEndpoint.WalletId, sourceSlice.CertificateId, sourceSlice.RegistryName, context.Arguments.HashedAttributes);
+            var walletAttributes = await _unitOfWork.CertificateRepository.TryGetWalletAttributes(sourceEndpoint.WalletId, sourceSlice.CertificateId, sourceSlice.RegistryName, context.Arguments.HashedAttributes);
 
             _unitOfWork.Commit();
 
@@ -87,7 +87,7 @@ public class TransferFullSliceActivity : IExecuteActivity<TransferFullSliceArgum
         }
     }
 
-    private ExecutionResult AddTransferRequiredActivities(ExecuteContext context, ExternalEndpoint externalEndpoint, AbstractSlice transferredSlice, Transaction transaction, Dictionary<Guid, WalletSliceState> states, WalletAttribute[] walletAttributes)
+    private ExecutionResult AddTransferRequiredActivities(ExecuteContext context, ExternalEndpoint externalEndpoint, AbstractSlice transferredSlice, Transaction transaction, Dictionary<Guid, WalletSliceState> states, IEnumerable<WalletAttribute> walletAttributes)
     {
         return context.ReviseItinerary(builder =>
         {
@@ -115,7 +115,7 @@ public class TransferFullSliceActivity : IExecuteActivity<TransferFullSliceArgum
                 {
                     ExternalEndpointId = externalEndpoint.Id,
                     SliceId = transferredSlice.Id,
-                    WalletAttributes = walletAttributes,
+                    WalletAttributes = walletAttributes.ToArray(),
                 });
 
             builder.AddActivitiesFromSourceItinerary();
@@ -137,11 +137,5 @@ public class TransferFullSliceActivity : IExecuteActivity<TransferFullSliceArgum
             SourceSliceHash = ByteString.CopyFrom(SHA256.HashData(sliceCommitment.Commitment.C))
         };
         return transferredEvent;
-    }
-
-    private async Task<WalletAttribute[]> GetWalletAttributees(Guid walletId, Guid certificateId, string registryName, IEnumerable<string> hashedAttributeKeys)
-    {
-        var result = await Task.WhenAll(hashedAttributeKeys.Select(key => _unitOfWork.CertificateRepository.GetWalletAttribute(walletId, certificateId, registryName, key)));
-        return result.NotNull().ToArray();
     }
 }

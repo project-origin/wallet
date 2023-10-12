@@ -426,22 +426,22 @@ public class CertificateRepository : ICertificateRepository
                });
     }
 
-    public Task<WalletAttribute?> GetWalletAttribute(Guid walletId, Guid certificateId, string registryName, string key)
+    public async Task<IEnumerable<WalletAttribute>> TryGetWalletAttributes(Guid walletId, Guid certificateId, string registryName, IEnumerable<string> keys)
     {
-        return _connection.QuerySingleOrDefaultAsync<WalletAttribute>(
+        return (await _connection.QueryAsync<WalletAttribute>(
             @"SELECT wallet_id, certificate_id, registry_name, attribute_key as key, attribute_value as value, salt
               FROM wallet_attributes
               WHERE wallet_id = @walletId
                 AND certificate_id = @certificateId
                 AND registry_name = @registryName
-                AND attribute_key = @key",
+                AND attribute_key IN @keys",
             new
             {
                 walletId,
                 certificateId,
                 registryName,
-                key,
-            });
+                keys = keys.ToArray(),
+            })).AsList();
     }
 
     private sealed record ExtendedAttribute : CertificateAttribute

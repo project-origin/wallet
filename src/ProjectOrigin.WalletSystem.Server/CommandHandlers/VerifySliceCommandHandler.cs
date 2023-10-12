@@ -93,7 +93,7 @@ public class VerifySliceCommandHandler : IConsumer<VerifySliceCommand>
         }
     }
 
-    private async Task InsertIntoWallet(VerifySliceCommand receivedSlice, GranularCertificate certificateProjection)
+    private async Task InsertIntoWallet(VerifySliceCommand receivedSlice, GranularCertificate registryCertificateProjection)
     {
         var slice = new WalletSlice
         {
@@ -110,7 +110,7 @@ public class VerifySliceCommandHandler : IConsumer<VerifySliceCommand>
         var certificate = await _unitOfWork.CertificateRepository.GetCertificate(slice.RegistryName, slice.CertificateId);
         if (certificate == null)
         {
-            var attributes = certificateProjection.Attributes
+            var attributes = registryCertificateProjection.Attributes
                 .Select(attribute => new CertificateAttribute
                 {
                     Key = attribute.Key,
@@ -123,10 +123,10 @@ public class VerifySliceCommandHandler : IConsumer<VerifySliceCommand>
             {
                 Id = slice.CertificateId,
                 RegistryName = receivedSlice.Registry,
-                StartDate = certificateProjection.Period.Start.ToDateTimeOffset(),
-                EndDate = certificateProjection.Period.End.ToDateTimeOffset(),
-                GridArea = certificateProjection.GridArea,
-                CertificateType = (GranularCertificateType)certificateProjection.Type,
+                StartDate = registryCertificateProjection.Period.Start.ToDateTimeOffset(),
+                EndDate = registryCertificateProjection.Period.End.ToDateTimeOffset(),
+                GridArea = registryCertificateProjection.GridArea,
+                CertificateType = (GranularCertificateType)registryCertificateProjection.Type,
                 Attributes = attributes
             };
             await _unitOfWork.CertificateRepository.InsertCertificate(certificate);
@@ -134,9 +134,15 @@ public class VerifySliceCommandHandler : IConsumer<VerifySliceCommand>
 
         foreach (var hashedAttribute in receivedSlice.HashedAttributes)
         {
-            if (certificateProjection.Attributes.Any(att => att.Key == hashedAttribute.Key
+            if (registryCertificateProjection.Attributes.Any(att => att.Key == hashedAttribute.Key
                 && att.Value == hashedAttribute.GetHashedValue()))
+            {
                 await _unitOfWork.CertificateRepository.InsertWalletAttribute(receivedSlice.WalletId, hashedAttribute);
+            }
+            else
+            {
+                _logger.LogWarning("Hashed Attribute {attributeKey} not found on certificate {certificateId}", hashedAttribute.Key, receivedSlice.CertificateId);
+            }
         }
 
         await _unitOfWork.CertificateRepository.InsertWalletSlice(slice);

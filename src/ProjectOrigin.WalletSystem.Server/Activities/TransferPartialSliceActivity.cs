@@ -89,7 +89,7 @@ public class TransferPartialSliceActivity : IExecuteActivity<TransferPartialSlic
             var slicedEvent = CreateSliceEvent(sourceSlice, new NewSlice(receiverCommitment, receiverPublicKey), new NewSlice(remainderCommitment, remainderPublicKey));
             var sourceSlicePrivateKey = await _unitOfWork.WalletRepository.GetPrivateKeyForSlice(sourceSlice.Id);
             var transaction = sourceSlicePrivateKey.SignRegistryTransaction(slicedEvent.CertificateId, slicedEvent);
-            var walletAttributes = await GetWalletAttributees(sourceEndpoint.WalletId, sourceSlice.CertificateId, sourceSlice.RegistryName, context.Arguments.HashedAttributes);
+            var walletAttributes = await _unitOfWork.CertificateRepository.TryGetWalletAttributes(sourceEndpoint.WalletId, sourceSlice.CertificateId, sourceSlice.RegistryName, context.Arguments.HashedAttributes);
 
             _unitOfWork.Commit();
 
@@ -108,7 +108,7 @@ public class TransferPartialSliceActivity : IExecuteActivity<TransferPartialSlic
         }
     }
 
-    private ExecutionResult AddTransferRequiredActivities(ExecuteContext context, ExternalEndpoint externalEndpoint, AbstractSlice transferredSlice, Transaction transaction, Dictionary<Guid, WalletSliceState> states, WalletAttribute[] walletAttributes)
+    private ExecutionResult AddTransferRequiredActivities(ExecuteContext context, ExternalEndpoint externalEndpoint, AbstractSlice transferredSlice, Transaction transaction, Dictionary<Guid, WalletSliceState> states, IEnumerable<WalletAttribute> walletAttributes)
     {
         return context.ReviseItinerary(builder =>
         {
@@ -136,7 +136,7 @@ public class TransferPartialSliceActivity : IExecuteActivity<TransferPartialSlic
                 {
                     ExternalEndpointId = externalEndpoint.Id,
                     SliceId = transferredSlice.Id,
-                    WalletAttributes = walletAttributes,
+                    WalletAttributes = walletAttributes.ToArray(),
                 });
 
             builder.AddActivitiesFromSourceItinerary();
@@ -182,11 +182,5 @@ public class TransferPartialSliceActivity : IExecuteActivity<TransferPartialSlic
         }
 
         return slicedEvent;
-    }
-
-    private async Task<WalletAttribute[]> GetWalletAttributees(Guid walletId, Guid certificateId, string registryName, IEnumerable<string> hashedAttributeKeys)
-    {
-        var result = await Task.WhenAll(hashedAttributeKeys.Select(key => _unitOfWork.CertificateRepository.GetWalletAttribute(walletId, certificateId, registryName, key)));
-        return result.NotNull().ToArray();
     }
 }

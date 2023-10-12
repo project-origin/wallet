@@ -97,10 +97,10 @@ public class ReceiveTests : AbstractFlowTests
             return result.GranularCertificates;
         }, TimeSpan.FromMinutes(1));
 
-        var gc = certificates.Should().Contain(x => x.FederatedId.StreamId.Value == certificateId.StreamId.Value).Which;
-        gc.Type.Should().Be(V1.GranularCertificateType.Production);
-        gc.Quantity.Should().Be(250);
-        gc.Attributes.Should().HaveCount(3)
+        var foundCertificate = certificates.Should().Contain(x => x.FederatedId.StreamId.Value == certificateId.StreamId.Value).Which;
+        foundCertificate.Type.Should().Be(V1.GranularCertificateType.Production);
+        foundCertificate.Quantity.Should().Be(250);
+        foundCertificate.Attributes.Should().HaveCount(3)
             .And.Contain(x => x.Key == "TechCode" && x.Value == "T010101")
             .And.Contain(x => x.Key == "FuelCode" && x.Value == "F010101")
             .And.Contain(x => x.Key == "AssetId" && x.Value == "1264541");
