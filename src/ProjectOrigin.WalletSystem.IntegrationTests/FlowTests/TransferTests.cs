@@ -11,7 +11,6 @@ using ProjectOrigin.PedersenCommitment;
 using System.Linq;
 using FluentAssertions;
 using ProjectOrigin.WalletSystem.IntegrationTests.TestExtensions;
-using Org.BouncyCastle.Asn1.X509;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests;
 
