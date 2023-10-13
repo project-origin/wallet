@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Dapper" Version="2.1.4" />
+    <PackageReference Include="Dapper" Version="2.1.11" />
     <PackageReference Include="dbup-postgresql" Version="5.0.8" />
     <PackageReference Include="Grpc.AspNetCore" Version="2.57.0" />
     <PackageReference Include="MassTransit" Version="8.1.1" />
