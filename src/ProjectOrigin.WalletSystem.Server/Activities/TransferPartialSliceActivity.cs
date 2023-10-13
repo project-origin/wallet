@@ -21,6 +21,7 @@ public record TransferPartialSliceArguments
     public required Guid SourceSliceId { get; init; }
     public required Guid ExternalEndpointId { get; init; }
     public required uint Quantity { get; init; }
+    public required string[] HashedAttributes { get; init; }
 }
 
 public class TransferPartialSliceActivity : IExecuteActivity<TransferPartialSliceArguments>
@@ -87,7 +88,8 @@ public class TransferPartialSliceActivity : IExecuteActivity<TransferPartialSlic
 
             var slicedEvent = CreateSliceEvent(sourceSlice, new NewSlice(receiverCommitment, receiverPublicKey), new NewSlice(remainderCommitment, remainderPublicKey));
             var sourceSlicePrivateKey = await _unitOfWork.WalletRepository.GetPrivateKeyForSlice(sourceSlice.Id);
-            Transaction transaction = sourceSlicePrivateKey.SignRegistryTransaction(slicedEvent.CertificateId, slicedEvent);
+            var transaction = sourceSlicePrivateKey.SignRegistryTransaction(slicedEvent.CertificateId, slicedEvent);
+            var walletAttributes = await _unitOfWork.CertificateRepository.GetWalletAttributes(sourceEndpoint.WalletId, sourceSlice.CertificateId, sourceSlice.RegistryName, context.Arguments.HashedAttributes);
 
             _unitOfWork.Commit();
 
@@ -96,7 +98,7 @@ public class TransferPartialSliceActivity : IExecuteActivity<TransferPartialSlic
                 { remainderSlice.Id, WalletSliceState.Available }
             };
 
-            return AddTransferRequiredActivities(context, receiverEndpoints, transferredSlice, transaction, states);
+            return AddTransferRequiredActivities(context, receiverEndpoints, transferredSlice, transaction, states, walletAttributes);
         }
         catch (Exception ex)
         {
@@ -106,7 +108,7 @@ public class TransferPartialSliceActivity : IExecuteActivity<TransferPartialSlic
         }
     }
 
-    private ExecutionResult AddTransferRequiredActivities(ExecuteContext context, ExternalEndpoint externalEndpoint, AbstractSlice transferredSlice, Transaction transaction, Dictionary<Guid, WalletSliceState> states)
+    private ExecutionResult AddTransferRequiredActivities(ExecuteContext context, ExternalEndpoint externalEndpoint, AbstractSlice transferredSlice, Transaction transaction, Dictionary<Guid, WalletSliceState> states, IEnumerable<WalletAttribute> walletAttributes)
     {
         return context.ReviseItinerary(builder =>
         {
@@ -134,6 +136,7 @@ public class TransferPartialSliceActivity : IExecuteActivity<TransferPartialSlic
                 {
                     ExternalEndpointId = externalEndpoint.Id,
                     SliceId = transferredSlice.Id,
+                    WalletAttributes = walletAttributes.ToArray(),
                 });
 
             builder.AddActivitiesFromSourceItinerary();

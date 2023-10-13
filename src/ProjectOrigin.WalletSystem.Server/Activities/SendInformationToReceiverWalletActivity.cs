@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Google.Protobuf;
 using Grpc.Net.Client;
@@ -16,6 +17,7 @@ public record SendInformationToReceiverWalletArgument
 {
     public required Guid ExternalEndpointId { get; init; }
     public required Guid SliceId { get; init; }
+    public required WalletAttribute[] WalletAttributes { get; init; }
 }
 
 public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInformationToReceiverWalletArgument>
@@ -60,7 +62,16 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
                 WalletDepositEndpointPosition = (uint)newSlice.ExternalEndpointPosition,
                 CertificateId = newSlice.GetFederatedStreamId(),
                 Quantity = (uint)newSlice.Quantity,
-                RandomR = ByteString.CopyFrom(newSlice.RandomR)
+                RandomR = ByteString.CopyFrom(newSlice.RandomR),
+                HashedAttributes = {
+                    context.Arguments.WalletAttributes.Select(ha =>
+                        new V1.ReceiveRequest.Types.HashedAttribute
+                        {
+                            Key = ha.Key,
+                            Value = ha.Value,
+                            Salt = ByteString.CopyFrom(ha.Salt),
+                        })
+                }
             };
 
             using var channel = GrpcChannel.ForAddress(externalEndpoint.Endpoint);
@@ -107,6 +118,11 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
         };
         await _unitOfWork.CertificateRepository.InsertWalletSlice(slice);
         await _unitOfWork.CertificateRepository.SetTransferredSliceState(newSlice.Id, TransferredSliceState.Transferred);
+        foreach (var walletAttribute in context.Arguments.WalletAttributes)
+        {
+            await _unitOfWork.CertificateRepository.InsertWalletAttribute(walletEndpoint.WalletId, walletAttribute);
+        }
+
         _unitOfWork.Commit();
 
         _logger.LogDebug("Slice inserted locally into receiver wallet.");

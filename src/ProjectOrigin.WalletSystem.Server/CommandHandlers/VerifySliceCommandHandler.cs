@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
@@ -17,12 +18,14 @@ namespace ProjectOrigin.WalletSystem.Server.CommandHandlers;
 public record VerifySliceCommand
 {
     public required Guid Id { get; init; }
+    public required Guid WalletId { get; init; }
     public required Guid WalletEndpointId { get; init; }
     public required int WalletEndpointPosition { get; init; }
     public required string Registry { get; init; }
     public required Guid CertificateId { get; init; }
     public required long Quantity { get; init; }
     public required byte[] RandomR { get; init; }
+    public List<WalletAttribute> HashedAttributes { get; init; } = new();
 }
 
 public class VerifySliceCommandHandler : IConsumer<VerifySliceCommand>
@@ -90,7 +93,7 @@ public class VerifySliceCommandHandler : IConsumer<VerifySliceCommand>
         }
     }
 
-    private async Task InsertIntoWallet(VerifySliceCommand receivedSlice, GranularCertificate certificateProjection)
+    private async Task InsertIntoWallet(VerifySliceCommand receivedSlice, GranularCertificate registryCertificateProjection)
     {
         var slice = new WalletSlice
         {
@@ -107,11 +110,12 @@ public class VerifySliceCommandHandler : IConsumer<VerifySliceCommand>
         var certificate = await _unitOfWork.CertificateRepository.GetCertificate(slice.RegistryName, slice.CertificateId);
         if (certificate == null)
         {
-            var attributes = certificateProjection.Attributes
+            var attributes = registryCertificateProjection.Attributes
                 .Select(attribute => new CertificateAttribute
                 {
                     Key = attribute.Key,
-                    Value = attribute.Value
+                    Value = attribute.Value,
+                    Type = (CertificateAttributeType)attribute.Type,
                 })
                 .ToList();
 
@@ -119,13 +123,25 @@ public class VerifySliceCommandHandler : IConsumer<VerifySliceCommand>
             {
                 Id = slice.CertificateId,
                 RegistryName = receivedSlice.Registry,
-                StartDate = certificateProjection.Period.Start.ToDateTimeOffset(),
-                EndDate = certificateProjection.Period.End.ToDateTimeOffset(),
-                GridArea = certificateProjection.GridArea,
-                CertificateType = (GranularCertificateType)certificateProjection.Type,
+                StartDate = registryCertificateProjection.Period.Start.ToDateTimeOffset(),
+                EndDate = registryCertificateProjection.Period.End.ToDateTimeOffset(),
+                GridArea = registryCertificateProjection.GridArea,
+                CertificateType = (GranularCertificateType)registryCertificateProjection.Type,
                 Attributes = attributes
             };
             await _unitOfWork.CertificateRepository.InsertCertificate(certificate);
+        }
+
+        foreach (var hashedAttribute in receivedSlice.HashedAttributes)
+        {
+            if (registryCertificateProjection.HasHashedAttribute(hashedAttribute.Key, hashedAttribute.GetHashedValue()))
+            {
+                await _unitOfWork.CertificateRepository.InsertWalletAttribute(receivedSlice.WalletId, hashedAttribute);
+            }
+            else
+            {
+                _logger.LogWarning("Hashed Attribute {attributeKey} not found on certificate {certificateId}", hashedAttribute.Key, receivedSlice.CertificateId);
+            }
         }
 
         await _unitOfWork.CertificateRepository.InsertWalletSlice(slice);

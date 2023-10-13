@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Google.Protobuf;
@@ -18,6 +19,7 @@ public record TransferFullSliceArguments
 {
     public required Guid SourceSliceId { get; init; }
     public required Guid ExternalEndpointId { get; init; }
+    public required string[] HashedAttributes { get; init; }
 }
 
 public class TransferFullSliceActivity : IExecuteActivity<TransferFullSliceArguments>
@@ -43,6 +45,7 @@ public class TransferFullSliceActivity : IExecuteActivity<TransferFullSliceArgum
         try
         {
             var sourceSlice = await _unitOfWork.CertificateRepository.GetWalletSlice(context.Arguments.SourceSliceId);
+            var sourceEndpoint = await _unitOfWork.WalletRepository.GetWalletEndpoint(sourceSlice.WalletEndpointId);
             var externalEndpoint = await _unitOfWork.WalletRepository.GetExternalEndpoint(context.Arguments.ExternalEndpointId);
 
             var nextReceiverPosition = await _unitOfWork.WalletRepository.GetNextNumberForId(externalEndpoint.Id);
@@ -66,6 +69,7 @@ public class TransferFullSliceActivity : IExecuteActivity<TransferFullSliceArgum
 
             var sourceSlicePrivateKey = await _unitOfWork.WalletRepository.GetPrivateKeyForSlice(sourceSlice.Id);
             var transaction = sourceSlicePrivateKey.SignRegistryTransaction(transferredEvent.CertificateId, transferredEvent);
+            var walletAttributes = await _unitOfWork.CertificateRepository.GetWalletAttributes(sourceEndpoint.WalletId, sourceSlice.CertificateId, sourceSlice.RegistryName, context.Arguments.HashedAttributes);
 
             _unitOfWork.Commit();
 
@@ -73,7 +77,7 @@ public class TransferFullSliceActivity : IExecuteActivity<TransferFullSliceArgum
                 { sourceSlice.Id, WalletSliceState.Sliced }
             };
 
-            return AddTransferRequiredActivities(context, externalEndpoint, transferredSlice, transaction, states);
+            return AddTransferRequiredActivities(context, externalEndpoint, transferredSlice, transaction, states, walletAttributes);
         }
         catch (Exception ex)
         {
@@ -83,7 +87,7 @@ public class TransferFullSliceActivity : IExecuteActivity<TransferFullSliceArgum
         }
     }
 
-    private ExecutionResult AddTransferRequiredActivities(ExecuteContext context, ExternalEndpoint externalEndpoint, AbstractSlice transferredSlice, Transaction transaction, Dictionary<Guid, WalletSliceState> states)
+    private ExecutionResult AddTransferRequiredActivities(ExecuteContext context, ExternalEndpoint externalEndpoint, AbstractSlice transferredSlice, Transaction transaction, Dictionary<Guid, WalletSliceState> states, IEnumerable<WalletAttribute> walletAttributes)
     {
         return context.ReviseItinerary(builder =>
         {
@@ -111,6 +115,7 @@ public class TransferFullSliceActivity : IExecuteActivity<TransferFullSliceArgum
                 {
                     ExternalEndpointId = externalEndpoint.Id,
                     SliceId = transferredSlice.Id,
+                    WalletAttributes = walletAttributes.ToArray(),
                 });
 
             builder.AddActivitiesFromSourceItinerary();

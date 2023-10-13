@@ -80,9 +80,8 @@ public static class PostgresFixtureExtensions
             var certificateRepository = new CertificateRepository(connection);
             var attributes = new List<CertificateAttribute>
             {
-                new () {Key="AssetId", Value= "571234567890123456"},
-                new () {Key="TechCode", Value= "T070000"},
-                new () {Key="FuelCode", Value= "F00000000"}
+                new () {Key="TechCode", Value= "T070000", Type=CertificateAttributeType.ClearText},
+                new () {Key="FuelCode", Value= "F00000000", Type=CertificateAttributeType.ClearText}
             };
 
             var cert = new Certificate

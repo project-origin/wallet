@@ -22,8 +22,6 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests;
 
 public class QueryCertificatesTest : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
 {
-    private Fixture _fixture;
-
     public QueryCertificatesTest(
         GrpcTestFixture<Startup> grpcFixture,
         PostgresDatabaseFixture dbFixture,
@@ -36,8 +34,6 @@ public class QueryCertificatesTest : WalletSystemTestsBase, IClassFixture<InMemo
               outputHelper,
               null)
     {
-        _fixture = new Fixture();
-
         SqlMapper.AddTypeHandler<IHDPrivateKey>(new HDPrivateKeyTypeHandler(Algorithm));
         SqlMapper.AddTypeHandler<IHDPublicKey>(new HDPublicKeyTypeHandler(Algorithm));
     }
@@ -79,9 +75,8 @@ public class QueryCertificatesTest : WalletSystemTestsBase, IClassFixture<InMemo
 
             var attributes = new List<CertificateAttribute>
                 {
-                    new(){ Key="AssetId", Value="571234567890123456"},
-                    new(){ Key="TechCode", Value="T070000"},
-                    new(){ Key="FuelCode", Value="F00000000"},
+                    new(){ Key="TechCode", Value="T070000", Type=CertificateAttributeType.ClearText},
+                    new(){ Key="FuelCode", Value="F00000000", Type=CertificateAttributeType.ClearText},
                 };
 
             var certificate1 = new Certificate
@@ -180,7 +175,8 @@ public class QueryCertificatesTest : WalletSystemTestsBase, IClassFixture<InMemo
 
         //Assert
         result.GranularCertificates.Should().HaveCount(2);
-        result.GranularCertificates.Should().Contain(x => x.Quantity == quantity1 + quantity2);
+        result.GranularCertificates.Should().Contain(x => x.Quantity == quantity1 + quantity2)
+            .And.Contain(x => x.Attributes.Count == 2);
         result.GranularCertificates.Should().Contain(x => x.Quantity == quantity3);
     }
 

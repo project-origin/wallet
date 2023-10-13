@@ -25,4 +25,7 @@ public interface ICertificateRepository
     Task SetClaimState(Guid claimId, ClaimState state);
     Task<Claim> GetClaim(Guid claimId);
     Task<IEnumerable<ClaimViewModel>> GetClaims(string owner, ClaimFilter claimFilter);
+
+    Task InsertWalletAttribute(Guid walletId, WalletAttribute walletAttribute);
+    Task<IEnumerable<WalletAttribute>> GetWalletAttributes(Guid walletId, Guid certificateId, string registryName, IEnumerable<string> keys);
 }

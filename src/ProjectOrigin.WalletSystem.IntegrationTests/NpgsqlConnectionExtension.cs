@@ -17,7 +17,7 @@ public static class NpgsqlConnectionExtension
 
         do
         {
-            T entity = await connection.QueryFirstOrDefaultAsync<T>(sql, param);
+            T? entity = await connection.QueryFirstOrDefaultAsync<T>(sql, param);
             if (entity != null)
                 return entity;
 
