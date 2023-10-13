@@ -26,7 +26,7 @@ jobs:
           distribution: "microsoft"
           java-version: "17"
 
-      - name: Setup .NET Core SDK 7
+      - name: Setup .NET Core SDK from global.json
         uses: actions/setup-dotnet@v3
 
       - name: Restore
