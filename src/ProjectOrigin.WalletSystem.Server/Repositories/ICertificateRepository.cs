@@ -27,5 +27,5 @@ public interface ICertificateRepository
     Task<IEnumerable<ClaimViewModel>> GetClaims(string owner, ClaimFilter claimFilter);
 
     Task InsertWalletAttribute(Guid walletId, WalletAttribute walletAttribute);
-    Task<IEnumerable<WalletAttribute>> TryGetWalletAttributes(Guid walletId, Guid certificateId, string registryName, IEnumerable<string> keys);
+    Task<IEnumerable<WalletAttribute>> GetWalletAttributes(Guid walletId, Guid certificateId, string registryName, IEnumerable<string> keys);
 }

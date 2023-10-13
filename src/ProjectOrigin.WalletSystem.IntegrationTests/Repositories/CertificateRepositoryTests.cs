@@ -650,7 +650,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
 
         // Act
         await _repository.InsertWalletAttribute(wallet.Id, assetIdWalletAttribute);
-        var walletAttributeFromRepo = await _repository.TryGetWalletAttributes(wallet.Id, certificate.Id, certificate.RegistryName, new string[] { assetIdWalletAttribute.Key });
+        var walletAttributeFromRepo = await _repository.GetWalletAttributes(wallet.Id, certificate.Id, certificate.RegistryName, new string[] { assetIdWalletAttribute.Key });
 
         // Assert
         var foundAttribute = walletAttributeFromRepo.Should().ContainSingle().Which;

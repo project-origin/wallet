@@ -426,7 +426,7 @@ public class CertificateRepository : ICertificateRepository
                });
     }
 
-    public async Task<IEnumerable<WalletAttribute>> TryGetWalletAttributes(Guid walletId, Guid certificateId, string registryName, IEnumerable<string> keys)
+    public async Task<IEnumerable<WalletAttribute>> GetWalletAttributes(Guid walletId, Guid certificateId, string registryName, IEnumerable<string> keys)
     {
         return (await _connection.QueryAsync<WalletAttribute>(
             @"SELECT wallet_id, certificate_id, registry_name, attribute_key as key, attribute_value as value, salt
