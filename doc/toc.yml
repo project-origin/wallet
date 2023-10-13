@@ -1,0 +1,44 @@
+- name: Overview
+  href: index.md
+- name: Concepts
+  items:
+
+
+- name: API
+  items:
+  - name: Overview
+    href: api/index.md
+  - name: Issue
+    href: api/issue.md
+  - name: Query
+    href: api/query.md
+  - name: Receive
+    href: api/receive_slice.md
+  - name: transfer
+    href: api/transfer.md
+  - name: Create endpoint
+    href: api/create-receiver-deposit-endpoint.md
+
+- name: Architecture
+  items:
+    - name: Introduction
+      href: concepts/wallet.md
+    - name: attributes
+      href: concepts/attributes.md
+    - name: DB Schema
+      href: db_schema.md
+    - name: Architectural decision records
+      href: adr/readme.md
+      items:
+        - name: 1 Programming language
+          href: adr/0001-Programming-language.md
+        - name: 2 Dapper
+          href: adr/0002-Dapper.md
+        - name: 3 gGpc
+          href: adr/0003-gGpc.md
+        - name: 4 CQRS
+          href: adr/0004-CQRS.md
+        - name: 5 Structured logging
+          href: adr/0005-Structured-logging.md
+        - name: 6 open telemetry
+          href: adr/0006-open-telemetry.md
