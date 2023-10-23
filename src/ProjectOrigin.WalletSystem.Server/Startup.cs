@@ -16,8 +16,6 @@ using ProjectOrigin.HierarchicalDeterministicKeys.Implementations;
 using ProjectOrigin.WalletSystem.Server.CommandHandlers;
 using ProjectOrigin.WalletSystem.Server.Activities;
 using System;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
 using ProjectOrigin.WalletSystem.Server.Activities.Exceptions;
 using ProjectOrigin.WalletSystem.Server.Extensions;
 using ProjectOrigin.WalletSystem.Server.Database.Postgres;
@@ -124,17 +122,5 @@ public class Startup
         });
 
         app.ConfigureSqlMappers();
-    }
-}
-
-[Authorize]
-[ApiController]
-public class WalletController : ControllerBase
-{
-    [HttpGet]
-    [Route("api/certificates")]
-    public ActionResult GetCertificates()
-    {
-        return NotFound();
     }
 }
