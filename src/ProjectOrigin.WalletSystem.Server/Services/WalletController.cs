@@ -13,6 +13,7 @@ public class WalletController : ControllerBase
 {
     [HttpGet]
     [Route("api/certificates")]
+    [Produces("application/json")]
     public async Task<ActionResult<ResultModel<ApiGranularCertificate>>> GetCertificates([FromServices] IUnitOfWork unitOfWork)
     {
         var subject = User.GetSubject();

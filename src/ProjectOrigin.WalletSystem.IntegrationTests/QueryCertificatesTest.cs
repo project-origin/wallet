@@ -337,6 +337,16 @@ public class QueryCertificatesTest : WalletSystemTestsBase, IClassFixture<InMemo
     }
 
     [Fact]
+    public async void Swagger()
+    {
+        var httpClient = _grpcFixture.CreateHttpClient();
+        var swaggerResponse = await httpClient.GetAsync("swagger/v1/swagger.json");
+        swaggerResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        var readAsStringAsync = await swaggerResponse.Content.ReadAsStringAsync();
+        readAsStringAsync.Should().Be("foo");
+    }
+
+    [Fact]
     public async void QueryGranularCertificates_WhenNoCertificatesInWallet_ExpectZeroCertificates()
     {
         var owner = _fixture.Create<string>();
