@@ -16,6 +16,8 @@ using ProjectOrigin.HierarchicalDeterministicKeys.Implementations;
 using ProjectOrigin.WalletSystem.Server.CommandHandlers;
 using ProjectOrigin.WalletSystem.Server.Activities;
 using System;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using ProjectOrigin.WalletSystem.Server.Activities.Exceptions;
 using ProjectOrigin.WalletSystem.Server.Extensions;
 using ProjectOrigin.WalletSystem.Server.Database.Postgres;
@@ -34,6 +36,8 @@ public class Startup
     public void ConfigureServices(IServiceCollection services)
     {
         services.AddGrpc();
+
+        services.AddControllers();
 
         services.AddTransient<IStreamProjector<GranularCertificate>, GranularCertificateProjector>();
         services.AddTransient<IRegistryProcessBuilderFactory, RegistryProcessBuilderFactory>();
@@ -116,9 +120,21 @@ public class Startup
             endpoints.MapGrpcService<WalletService>();
             endpoints.MapGrpcService<ReceiveSliceService>();
             endpoints.MapGet("/", () => "Communication with gRPC endpoints must be made through a gRPC client. To learn how to create a client, visit: https://go.microsoft.com/fwlink/?linkid=2086909");
+            endpoints.MapControllers();
         });
 
         app.ConfigureSqlMappers();
     }
 }
 
+[Authorize]
+[ApiController]
+public class WalletController : ControllerBase
+{
+    [HttpGet]
+    [Route("api/certificates")]
+    public ActionResult GetCertificates()
+    {
+        return NotFound();
+    }
+}
