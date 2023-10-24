@@ -102,11 +102,10 @@
       },
       "GranularCertificateType": {
         "enum": [
-          1,
-          2
+          "consumption",
+          "production"
         ],
-        "type": "integer",
-        "format": "int32"
+        "type": "string"
       }
     }
   }

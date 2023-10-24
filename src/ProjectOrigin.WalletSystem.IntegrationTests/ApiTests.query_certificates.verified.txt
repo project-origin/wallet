@@ -9,7 +9,7 @@
       start: 1672574400,
       end: 1672578000,
       gridArea: DK1,
-      certificateType: 2,
+      certificateType: production,
       attributes: {
         assetId: null,
         techCode: T070000,
@@ -25,7 +25,7 @@
       start: 1672578000,
       end: 1672581600,
       gridArea: DK1,
-      certificateType: 2,
+      certificateType: production,
       attributes: {
         assetId: null,
         techCode: T070000,

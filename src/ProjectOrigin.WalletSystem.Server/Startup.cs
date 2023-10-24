@@ -16,6 +16,8 @@ using ProjectOrigin.HierarchicalDeterministicKeys.Implementations;
 using ProjectOrigin.WalletSystem.Server.CommandHandlers;
 using ProjectOrigin.WalletSystem.Server.Activities;
 using System;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using ProjectOrigin.WalletSystem.Server.Activities.Exceptions;
 using ProjectOrigin.WalletSystem.Server.Extensions;
 using ProjectOrigin.WalletSystem.Server.Database.Postgres;
@@ -35,7 +37,11 @@ public class Startup
     {
         services.AddGrpc();
 
-        services.AddControllers();
+        services.AddControllers()
+            .AddJsonOptions(o =>
+            {
+                o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
+            });
 
         services.AddSwaggerGen(o => o.SupportNonNullableReferenceTypes());
 
