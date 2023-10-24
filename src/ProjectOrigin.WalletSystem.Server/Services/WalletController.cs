@@ -26,7 +26,7 @@ public class WalletController : ControllerBase
             {
                 FederatedStreamId = new ApiFederatedStreamId
                 {
-                    Registry = c.Registry,
+                    Registry = c.RegistryName,
                     StreamId = c.Id
                 },
                 Quantity = (uint)c.Slices.Sum(x => x.Quantity),

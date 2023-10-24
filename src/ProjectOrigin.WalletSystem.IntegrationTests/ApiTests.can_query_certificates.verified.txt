@@ -2,8 +2,8 @@
   result: [
     {
       federatedStreamId: {
-        registry: ,
-        streamId: Guid_1
+        registry: Guid_1,
+        streamId: Guid_2
       },
       quantity: 85,
       start: 1672574400,
@@ -18,8 +18,8 @@
     },
     {
       federatedStreamId: {
-        registry: ,
-        streamId: Guid_2
+        registry: Guid_1,
+        streamId: Guid_3
       },
       quantity: 44,
       start: 1672578000,

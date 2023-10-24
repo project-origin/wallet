@@ -9,7 +9,7 @@ namespace ProjectOrigin.WalletSystem.Server.Models;
 public record CertificateViewModel
 {
     public required Guid Id { get; init; }
-    public required string Registry { get; init; } = string.Empty;
+    public required string RegistryName { get; init; } = string.Empty;
     public required GranularCertificateType CertificateType { get; init; }
     public required string GridArea { get; init; } = string.Empty;
     public required DateTimeOffset StartDate { get; init; }
@@ -21,7 +21,7 @@ public record CertificateViewModel
     {
         var fedId = new FederatedStreamId
         {
-            Registry = Registry,
+            Registry = RegistryName,
             StreamId = new Common.V1.Uuid
             {
                 Value = Id.ToString()
