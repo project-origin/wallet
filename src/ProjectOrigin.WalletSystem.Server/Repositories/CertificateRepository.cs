@@ -337,14 +337,14 @@ public class CertificateRepository : ICertificateRepository
 
                 slice_prod.registry_name AS ProductionRegistryName,
                 slice_prod.certificate_id AS ProductionCertificateId,
-                cert_prod.start_date AS ProductionStartDate,
-                cert_prod.end_date AS ProductionEndDate,
+                cert_prod.start_date AS ProductionStart,
+                cert_prod.end_date AS ProductionEnd,
                 cert_prod.grid_area AS ProductionGridArea,
 
                 slice_cons.registry_name AS ConsumptionRegistryName,
                 slice_cons.certificate_id AS ConsumptionCertificateId,
-                cert_cons.start_date AS ConsumptionStartDate,
-                cert_cons.end_date AS ConsumptionEndDate,
+                cert_cons.start_date AS ConsumptionStart,
+                cert_cons.end_date AS ConsumptionEnd,
                 cert_cons.grid_area AS ConsumptionGridArea
 
             FROM claims

@@ -10,6 +10,7 @@ using ProjectOrigin.WalletSystem.Server.Repositories;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using FluentAssertions;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
@@ -137,9 +138,112 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
         }
 
         //Act
-        var res = await httpClient.GetAsync("api/certificates");
+        var res = await httpClient.GetStringAsync("api/certificates");
 
         //Assert
-        await Verifier.VerifyJson(res.Content.ReadAsStringAsync());
+        await Verifier.VerifyJson(res);
+    }
+
+    [Fact]
+    public async Task can_query_claims()
+    {
+        //Arrange
+        var owner = _fixture.Create<string>();
+        var someOwnerName = _fixture.Create<string>();
+        var httpClient = CreateAuthenticatedHttpClient(owner, someOwnerName);
+
+        using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
+        {
+            var walletRepository = new WalletRepository(connection);
+            var wallet = new Wallet
+            {
+                Id = Guid.NewGuid(),
+                Owner = owner,
+                PrivateKey = Algorithm.GenerateNewPrivateKey()
+            };
+            await walletRepository.Create(wallet);
+
+            var walletEndpoint = await walletRepository.CreateWalletEndpoint(wallet.Id);
+
+            var regName = _fixture.Create<string>();
+            var certificateRepository = new CertificateRepository(connection);
+
+            var productionCertificate = new Certificate
+            {
+                Id = Guid.NewGuid(),
+                RegistryName = regName,
+                StartDate = DateTimeOffset.Parse("2023-01-01T12:00Z"),
+                EndDate = DateTimeOffset.Parse("2023-01-01T13:00Z"),
+                GridArea = "DK1",
+                CertificateType = GranularCertificateType.Production,
+                Attributes = new List<CertificateAttribute>
+                {
+                    new(){ Key="TechCode", Value="T070000", Type=CertificateAttributeType.ClearText},
+                    new(){ Key="FuelCode", Value="F00000000", Type=CertificateAttributeType.ClearText},
+                }
+            };
+            var consumptionCertificate = new Certificate
+            {
+                Id = Guid.NewGuid(),
+                RegistryName = regName,
+                StartDate = DateTimeOffset.Parse("2023-01-01T12:00Z"),
+                EndDate = DateTimeOffset.Parse("2023-01-01T13:00Z"),
+                GridArea = "DK1",
+                CertificateType = GranularCertificateType.Consumption,
+                Attributes = new List<CertificateAttribute>()
+            };
+            await certificateRepository.InsertCertificate(productionCertificate);
+            await certificateRepository.InsertCertificate(consumptionCertificate);
+
+            var productionSlice = new WalletSlice
+            {
+                Id = Guid.NewGuid(),
+                WalletEndpointId = walletEndpoint.Id,
+                WalletEndpointPosition = 1,
+                RegistryName = regName,
+                CertificateId = productionCertificate.Id,
+                Quantity = 42,
+                RandomR = _fixture.Create<byte[]>(),
+                State = WalletSliceState.Available
+            };
+            var consumptionSlice = new WalletSlice
+            {
+                Id = Guid.NewGuid(),
+                WalletEndpointId = walletEndpoint.Id,
+                WalletEndpointPosition = 1,
+                RegistryName = regName,
+                CertificateId = consumptionCertificate.Id,
+                Quantity = 42,
+                RandomR = _fixture.Create<byte[]>(),
+                State = WalletSliceState.Available
+            };
+            await certificateRepository.InsertWalletSlice(productionSlice);
+            await certificateRepository.InsertWalletSlice(consumptionSlice);
+
+            var claim = new Claim
+            {
+                Id = Guid.NewGuid(),
+                ProductionSliceId = productionSlice.Id,
+                ConsumptionSliceId = consumptionSlice.Id,
+                State = ClaimState.Claimed
+            };
+
+            await certificateRepository.InsertClaim(claim);
+        }
+
+        var filterStart = DateTimeOffset.Parse("2023-01-01T12:00Z").ToUnixTimeSeconds();
+        var filterEnd = DateTimeOffset.Parse("2023-01-01T14:00Z").ToUnixTimeSeconds();
+
+        //Act
+        var resultWithoutFilters = await httpClient.GetStringAsync("api/claims");
+        var resultWithFilterStart = await httpClient.GetStringAsync($"api/claims?start={filterStart}");
+        var resultWithFilterEnd = await httpClient.GetStringAsync($"api/claims?end={filterEnd}");
+        var resultWithFilterStartAndEnd = await httpClient.GetStringAsync($"api/claims?start={filterStart}&end={filterEnd}");
+
+        //Assert
+        await Verifier.VerifyJson(resultWithoutFilters);
+        resultWithoutFilters.Should().Be(resultWithFilterStart);
+        resultWithoutFilters.Should().Be(resultWithFilterEnd);
+        resultWithoutFilters.Should().Be(resultWithFilterStartAndEnd);
     }
 }

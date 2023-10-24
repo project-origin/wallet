@@ -1,0 +1,28 @@
+﻿[
+  {
+    id: Guid_1,
+    quantity: 42,
+    productionRegistryName: Guid_2,
+    productionCertificateId: Guid_3,
+    productionStart: DateTimeOffset_1,
+    productionEnd: DateTimeOffset_2,
+    productionGridArea: DK1,
+    productionAttributes: [
+      {
+        key: TechCode,
+        value: T070000,
+        type: clearText
+      },
+      {
+        key: FuelCode,
+        value: F00000000,
+        type: clearText
+      }
+    ],
+    consumptionRegistryName: Guid_2,
+    consumptionCertificateId: Guid_4,
+    consumptionStart: DateTimeOffset_1,
+    consumptionEnd: DateTimeOffset_2,
+    consumptionGridArea: DK1
+  }
+]

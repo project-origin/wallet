@@ -45,6 +45,22 @@ public class WalletController : ControllerBase
 
         return new ResultModel<ApiGranularCertificate> { Result = mapped };
     }
+
+    [HttpGet]
+    [Route("api/claims")]
+    [Produces("application/json")]
+    public async Task<ActionResult> GetClaims([FromServices] IUnitOfWork unitOfWork, [FromQuery] long? start, [FromQuery] long? end)
+    {
+        var owner = User.GetSubject();
+
+        var claims = await unitOfWork.CertificateRepository.GetClaims(owner, new ClaimFilter
+        {
+            Start = start != null ? DateTimeOffset.FromUnixTimeSeconds(start.Value) : null ,
+            End = end != null ? DateTimeOffset.FromUnixTimeSeconds(end.Value) : null,
+        });
+
+        return Ok(claims);
+    }
 }
 
 public record ResultModel<T>
