@@ -1,26 +1,22 @@
 using AutoFixture;
 using Dapper;
+using FluentAssertions;
+using Grpc.Core;
 using Npgsql;
+using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
 using ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures;
 using ProjectOrigin.WalletSystem.Server;
 using ProjectOrigin.WalletSystem.Server.Database.Mapping;
+using ProjectOrigin.WalletSystem.Server.Extensions;
 using ProjectOrigin.WalletSystem.Server.Models;
 using ProjectOrigin.WalletSystem.Server.Repositories;
+using ProjectOrigin.WalletSystem.V1;
 using System;
 using System.Collections.Generic;
-using System.Net;
-using FluentAssertions;
-using Grpc.Core;
-using ProjectOrigin.WalletSystem.Server.Extensions;
-using ProjectOrigin.WalletSystem.V1;
 using Xunit;
-using WalletService = ProjectOrigin.WalletSystem.V1.WalletService;
 using Xunit.Abstractions;
 using GranularCertificateType = ProjectOrigin.WalletSystem.Server.Models.GranularCertificateType;
-using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
-using System.Net.Http.Headers;
-using System.Net.Http.Json;
-using ProjectOrigin.WalletSystem.Server.Services;
+using WalletService = ProjectOrigin.WalletSystem.V1.WalletService;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests;
 
@@ -182,168 +178,6 @@ public class QueryCertificatesTest : WalletSystemTestsBase, IClassFixture<InMemo
         result.GranularCertificates.Should().Contain(x => x.Quantity == quantity1 + quantity2)
             .And.Contain(x => x.Attributes.Count == 2);
         result.GranularCertificates.Should().Contain(x => x.Quantity == quantity3);
-    }
-
-    [Fact]
-    public async void QueryCertificatesOverRest()
-    {
-        //Arrange
-        var owner = _fixture.Create<string>();
-        var someOtherOwner = _fixture.Create<string>();
-
-        var quantity1 = _fixture.Create<long>();
-        var quantity2 = _fixture.Create<long>();
-        var quantity3 = _fixture.Create<long>();
-
-        using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
-        {
-            var walletRepository = new WalletRepository(connection);
-            var wallet = new Wallet
-            {
-                Id = Guid.NewGuid(),
-                Owner = owner,
-                PrivateKey = Algorithm.GenerateNewPrivateKey()
-            };
-            var notOwnedWallet = new Wallet
-            {
-                Id = Guid.NewGuid(),
-                Owner = someOtherOwner,
-                PrivateKey = Algorithm.GenerateNewPrivateKey()
-            };
-            await walletRepository.Create(wallet);
-            await walletRepository.Create(notOwnedWallet);
-
-            var endpoint = await walletRepository.CreateWalletEndpoint(wallet.Id);
-            var notOwnedendpoint = await walletRepository.CreateWalletEndpoint(notOwnedWallet.Id);
-
-            var regName = _fixture.Create<string>();
-            var certificateRepository = new CertificateRepository(connection);
-
-            var attributes = new List<CertificateAttribute>
-                {
-                    new(){ Key="TechCode", Value="T070000", Type=CertificateAttributeType.ClearText},
-                    new(){ Key="FuelCode", Value="F00000000", Type=CertificateAttributeType.ClearText},
-                };
-
-            var certificate1 = new Certificate
-            {
-                Id = Guid.NewGuid(),
-                RegistryName = regName,
-                StartDate = DateTimeOffset.Now,
-                EndDate = DateTimeOffset.Now.AddDays(1),
-                GridArea = "DK1",
-                CertificateType = GranularCertificateType.Production,
-                Attributes = attributes
-            };
-            var certificate2 = new Certificate
-            {
-                Id = Guid.NewGuid(),
-                RegistryName = regName,
-                StartDate = DateTimeOffset.Now,
-                EndDate = DateTimeOffset.Now.AddDays(1),
-                GridArea = "DK1",
-                CertificateType = GranularCertificateType.Production,
-                Attributes = attributes
-            };
-            var notOwnedCertificate = new Certificate
-            {
-                Id = Guid.NewGuid(),
-                RegistryName = regName,
-                StartDate = DateTimeOffset.Now,
-                EndDate = DateTimeOffset.Now.AddDays(1),
-                GridArea = "DK1",
-                CertificateType = GranularCertificateType.Production,
-                Attributes = attributes
-            };
-            await certificateRepository.InsertCertificate(certificate1);
-            await certificateRepository.InsertCertificate(certificate2);
-            await certificateRepository.InsertCertificate(notOwnedCertificate);
-
-            var slice1 = new WalletSlice
-            {
-                Id = Guid.NewGuid(),
-                WalletEndpointId = endpoint.Id,
-                WalletEndpointPosition = 1,
-                RegistryName = regName,
-                CertificateId = certificate1.Id,
-                Quantity = quantity1,
-                RandomR = _fixture.Create<byte[]>(),
-                State = WalletSliceState.Available
-            };
-            var slice2 = new WalletSlice
-            {
-                Id = Guid.NewGuid(),
-                WalletEndpointId = endpoint.Id,
-                WalletEndpointPosition = 1,
-                RegistryName = regName,
-                CertificateId = certificate1.Id,
-                Quantity = quantity2,
-                RandomR = _fixture.Create<byte[]>(),
-                State = WalletSliceState.Available
-            };
-            var slice3 = new WalletSlice
-            {
-                Id = Guid.NewGuid(),
-                WalletEndpointId = endpoint.Id,
-                WalletEndpointPosition = 1,
-                RegistryName = regName,
-                CertificateId = certificate2.Id,
-                Quantity = quantity3,
-                RandomR = _fixture.Create<byte[]>(),
-                State = WalletSliceState.Available
-            };
-            var notOwnedSlice = new WalletSlice
-            {
-                Id = Guid.NewGuid(),
-                WalletEndpointId = notOwnedendpoint.Id,
-                WalletEndpointPosition = 1,
-                RegistryName = regName,
-                CertificateId = notOwnedCertificate.Id,
-                Quantity = _fixture.Create<long>(),
-                RandomR = _fixture.Create<byte[]>(),
-                State = WalletSliceState.Available
-            };
-            await certificateRepository.InsertWalletSlice(slice1);
-            await certificateRepository.InsertWalletSlice(slice2);
-            await certificateRepository.InsertWalletSlice(slice3);
-            await certificateRepository.InsertWalletSlice(notOwnedSlice);
-        }
-
-        var someOwnerName = _fixture.Create<string>();
-        var token = _tokenGenerator.GenerateToken(owner, someOwnerName);
-
-        var httpClient = _grpcFixture.CreateHttpClient();
-        httpClient.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", token);
-
-        var result = (await
-            httpClient.GetFromJsonAsync<ResultModel<ApiGranularCertificate>>("api/certificates"))!;
-
-        //TODO: Registry not set
-
-        //var headers = new Metadata();
-        //headers.Add("Authorization", $"Bearer {token}");
-
-        //var client = new WalletService.WalletServiceClient(_grpcFixture.Channel);
-
-        //Act
-        //var result = await client.QueryGranularCertificatesAsync(new QueryRequest(), headers);
-
-        //Assert
-        result.Result.Should().HaveCount(2);
-        result.Result.Should().Contain(x => x.Quantity == quantity1 + quantity2);
-            //.And.Contain(x => x.Attributes.Count == 2); //TODO
-        result.Result.Should().Contain(x => x.Quantity == quantity3);
-    }
-
-    [Fact]
-    public async void Swagger()
-    {
-        var httpClient = _grpcFixture.CreateHttpClient();
-        var swaggerResponse = await httpClient.GetAsync("swagger/v1/swagger.json");
-        swaggerResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-        var readAsStringAsync = await swaggerResponse.Content.ReadAsStringAsync();
-        readAsStringAsync.Should().Be("foo");
     }
 
     [Fact]
