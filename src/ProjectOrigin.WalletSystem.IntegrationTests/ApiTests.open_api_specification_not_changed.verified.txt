@@ -1,0 +1,113 @@
+﻿{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "ProjectOrigin.WalletSystem.Server",
+    "version": "1.0"
+  },
+  "paths": {
+    "/api/certificates": {
+      "get": {
+        "tags": [
+          "Wallet"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiGranularCertificateResultModel"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ApiAttributes": {
+        "type": "object",
+        "properties": {
+          "assetId": {
+            "type": "string",
+            "nullable": true
+          },
+          "techCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "fuelCode": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ApiFederatedStreamId": {
+        "type": "object",
+        "properties": {
+          "registry": {
+            "type": "string"
+          },
+          "streamId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ApiGranularCertificate": {
+        "type": "object",
+        "properties": {
+          "federatedStreamId": {
+            "$ref": "#/components/schemas/ApiFederatedStreamId"
+          },
+          "quantity": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "start": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "end": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "gridArea": {
+            "type": "string"
+          },
+          "certificateType": {
+            "$ref": "#/components/schemas/GranularCertificateType"
+          },
+          "attributes": {
+            "$ref": "#/components/schemas/ApiAttributes"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ApiGranularCertificateResultModel": {
+        "type": "object",
+        "properties": {
+          "result": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApiGranularCertificate"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "GranularCertificateType": {
+        "enum": [
+          1,
+          2
+        ],
+        "type": "integer",
+        "format": "int32"
+      }
+    }
+  }
+}

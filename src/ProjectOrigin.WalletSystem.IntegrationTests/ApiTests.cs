@@ -11,14 +11,16 @@ using ProjectOrigin.WalletSystem.Server.Repositories;
 using ProjectOrigin.WalletSystem.Server.Services;
 using System;
 using System.Collections.Generic;
-using System.Net;
 using System.Net.Http.Json;
+using System.Threading.Tasks;
+using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 using GranularCertificateType = ProjectOrigin.WalletSystem.Server.Models.GranularCertificateType;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests;
 
+[UsesVerify]
 public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
 {
     public ApiTests(
@@ -38,14 +40,21 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
     }
 
     [Fact]
-    public async void QueryCertificates()
+    public async Task open_api_specification_not_changed()
+    {
+        var httpClient = _grpcFixture.CreateHttpClient();
+        var specificationResponse = await httpClient.GetAsync("swagger/v1/swagger.json");
+        var specification = await specificationResponse.Content.ReadAsStringAsync();
+        await Verifier.Verify(specification);
+    }
+
+    [Fact]
+    public async Task query_certificates()
     {
         //Arrange
         var owner = _fixture.Create<string>();
-
-        var quantity1 = _fixture.Create<long>();
-        var quantity2 = _fixture.Create<long>();
-        var quantity3 = _fixture.Create<long>();
+        var someOwnerName = _fixture.Create<string>();
+        var httpClient = CreateAuthenticatedHttpClient(owner, someOwnerName);
 
         using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
         {
@@ -58,7 +67,7 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
             };
             await walletRepository.Create(wallet);
 
-            var endpoint = await walletRepository.CreateWalletEndpoint(wallet.Id);
+            var walletEndpoint = await walletRepository.CreateWalletEndpoint(wallet.Id);
 
             var regName = _fixture.Create<string>();
             var certificateRepository = new CertificateRepository(connection);
@@ -73,8 +82,8 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
             {
                 Id = Guid.NewGuid(),
                 RegistryName = regName,
-                StartDate = DateTimeOffset.Now,
-                EndDate = DateTimeOffset.Now.AddDays(1),
+                StartDate = DateTimeOffset.Parse("2023-01-01T12:00Z"),
+                EndDate = DateTimeOffset.Parse("2023-01-01T13:00Z"),
                 GridArea = "DK1",
                 CertificateType = GranularCertificateType.Production,
                 Attributes = attributes
@@ -83,8 +92,8 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
             {
                 Id = Guid.NewGuid(),
                 RegistryName = regName,
-                StartDate = DateTimeOffset.Now,
-                EndDate = DateTimeOffset.Now.AddDays(1),
+                StartDate = DateTimeOffset.Parse("2023-01-01T13:00Z"),
+                EndDate = DateTimeOffset.Parse("2023-01-01T14:00Z"),
                 GridArea = "DK1",
                 CertificateType = GranularCertificateType.Production,
                 Attributes = attributes
@@ -95,33 +104,33 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
             var slice1 = new WalletSlice
             {
                 Id = Guid.NewGuid(),
-                WalletEndpointId = endpoint.Id,
+                WalletEndpointId = walletEndpoint.Id,
                 WalletEndpointPosition = 1,
                 RegistryName = regName,
                 CertificateId = certificate1.Id,
-                Quantity = quantity1,
+                Quantity = 42,
                 RandomR = _fixture.Create<byte[]>(),
                 State = WalletSliceState.Available
             };
             var slice2 = new WalletSlice
             {
                 Id = Guid.NewGuid(),
-                WalletEndpointId = endpoint.Id,
+                WalletEndpointId = walletEndpoint.Id,
                 WalletEndpointPosition = 1,
                 RegistryName = regName,
                 CertificateId = certificate1.Id,
-                Quantity = quantity2,
+                Quantity = 43,
                 RandomR = _fixture.Create<byte[]>(),
                 State = WalletSliceState.Available
             };
             var slice3 = new WalletSlice
             {
                 Id = Guid.NewGuid(),
-                WalletEndpointId = endpoint.Id,
+                WalletEndpointId = walletEndpoint.Id,
                 WalletEndpointPosition = 1,
                 RegistryName = regName,
                 CertificateId = certificate2.Id,
-                Quantity = quantity3,
+                Quantity = 44,
                 RandomR = _fixture.Create<byte[]>(),
                 State = WalletSliceState.Available
             };
@@ -130,29 +139,10 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
             await certificateRepository.InsertWalletSlice(slice3);
         }
 
-        var someOwnerName = _fixture.Create<string>();
-
-        var httpClient = CreateAuthenticatedHttpClient(owner, someOwnerName);
-
-        var result = (await
-            httpClient.GetFromJsonAsync<ResultModel<ApiGranularCertificate>>("api/certificates"))!;
-
-        //TODO: Registry not set
+        //Act
+        var res = await httpClient.GetAsync("api/certificates");
 
         //Assert
-        result.Result.Should().HaveCount(2);
-        result.Result.Should().Contain(x => x.Quantity == quantity1 + quantity2);
-            //.And.Contain(x => x.Attributes.Count == 2); //TODO
-        result.Result.Should().Contain(x => x.Quantity == quantity3);
-    }
-
-    [Fact]
-    public async void Swagger()
-    {
-        var httpClient = _grpcFixture.CreateHttpClient();
-        var swaggerResponse = await httpClient.GetAsync("swagger/v1/swagger.json");
-        swaggerResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-        var readAsStringAsync = await swaggerResponse.Content.ReadAsStringAsync();
-        readAsStringAsync.Should().Be("foo");
+        await Verifier.VerifyJson(res.Content.ReadAsStringAsync()); //TODO: Registry not set
     }
 }
