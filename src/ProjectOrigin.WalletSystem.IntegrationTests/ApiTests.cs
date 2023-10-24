@@ -49,7 +49,7 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
     }
 
     [Fact]
-    public async Task query_certificates()
+    public async Task can_query_certificates()
     {
         //Arrange
         var owner = _fixture.Create<string>();
