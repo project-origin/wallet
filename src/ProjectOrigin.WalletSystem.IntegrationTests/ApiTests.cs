@@ -1,6 +1,5 @@
 using AutoFixture;
 using Dapper;
-using FluentAssertions;
 using Npgsql;
 using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
 using ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures;
@@ -8,10 +7,8 @@ using ProjectOrigin.WalletSystem.Server;
 using ProjectOrigin.WalletSystem.Server.Database.Mapping;
 using ProjectOrigin.WalletSystem.Server.Models;
 using ProjectOrigin.WalletSystem.Server.Repositories;
-using ProjectOrigin.WalletSystem.Server.Services;
 using System;
 using System.Collections.Generic;
-using System.Net.Http.Json;
 using System.Threading.Tasks;
 using VerifyXunit;
 using Xunit;
