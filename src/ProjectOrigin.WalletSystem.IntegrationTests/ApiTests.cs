@@ -11,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using FluentAssertions;
+using VerifyTests;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
@@ -21,6 +22,8 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests;
 [UsesVerify]
 public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
 {
+    private readonly VerifySettings _verifySettings;
+
     public ApiTests(
         GrpcTestFixture<Startup> grpcFixture,
         PostgresDatabaseFixture dbFixture,
@@ -35,6 +38,8 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
     {
         SqlMapper.AddTypeHandler<IHDPrivateKey>(new HDPrivateKeyTypeHandler(Algorithm)); //TODO: This can be deleted and the tests works
         SqlMapper.AddTypeHandler<IHDPublicKey>(new HDPublicKeyTypeHandler(Algorithm));
+        _verifySettings = new VerifySettings();
+        _verifySettings.ScrubEmptyLines();
     }
 
     [Fact]
@@ -43,7 +48,7 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
         var httpClient = _grpcFixture.CreateHttpClient();
         var specificationResponse = await httpClient.GetAsync("swagger/v1/swagger.json");
         var specification = await specificationResponse.Content.ReadAsStringAsync();
-        await Verifier.Verify(specification);
+        await Verifier.Verify(specification, _verifySettings);
     }
 
     [Fact]
@@ -141,7 +146,7 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
         var res = await httpClient.GetStringAsync("api/certificates");
 
         //Assert
-        await Verifier.VerifyJson(res);
+        await Verifier.VerifyJson(res, _verifySettings);
     }
 
     [Fact]
@@ -241,7 +246,7 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
         var resultWithFilterStartAndEnd = await httpClient.GetStringAsync($"api/claims?start={filterStart}&end={filterEnd}");
 
         //Assert
-        await Verifier.VerifyJson(resultWithoutFilters);
+        await Verifier.VerifyJson(resultWithoutFilters, _verifySettings);
         resultWithoutFilters.Should().Be(resultWithFilterStart);
         resultWithoutFilters.Should().Be(resultWithFilterEnd);
         resultWithoutFilters.Should().Be(resultWithFilterStartAndEnd);

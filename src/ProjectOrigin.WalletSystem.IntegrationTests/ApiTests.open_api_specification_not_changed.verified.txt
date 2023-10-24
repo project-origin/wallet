@@ -23,6 +23,43 @@
           }
         }
       }
+    },
+    "/api/claims": {
+      "get": {
+        "tags": [
+          "Wallet"
+        ],
+        "parameters": [
+          {
+            "name": "start",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiClaimResultModel"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -41,6 +78,61 @@
           "fuelCode": {
             "type": "string",
             "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ApiClaim": {
+        "type": "object",
+        "properties": {
+          "claimId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "quantity": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "productionCertificate": {
+            "$ref": "#/components/schemas/ApiClaimCertificateInfo"
+          },
+          "consumptionCertificate": {
+            "$ref": "#/components/schemas/ApiClaimCertificateInfo"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ApiClaimCertificateInfo": {
+        "type": "object",
+        "properties": {
+          "federatedStreamId": {
+            "$ref": "#/components/schemas/ApiFederatedStreamId"
+          },
+          "start": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "end": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "gridArea": {
+            "type": "string"
+          },
+          "attributes": {
+            "$ref": "#/components/schemas/ApiAttributes"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ApiClaimResultModel": {
+        "type": "object",
+        "properties": {
+          "result": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApiClaim"
+            }
           }
         },
         "additionalProperties": false
