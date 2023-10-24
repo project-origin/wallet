@@ -32,7 +32,7 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
               outputHelper,
               null)
     {
-        SqlMapper.AddTypeHandler<IHDPrivateKey>(new HDPrivateKeyTypeHandler(Algorithm));
+        SqlMapper.AddTypeHandler<IHDPrivateKey>(new HDPrivateKeyTypeHandler(Algorithm)); //TODO: This can be deleted and the tests works
         SqlMapper.AddTypeHandler<IHDPublicKey>(new HDPublicKeyTypeHandler(Algorithm));
     }
 
@@ -140,6 +140,6 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
         var res = await httpClient.GetAsync("api/certificates");
 
         //Assert
-        await Verifier.VerifyJson(res.Content.ReadAsStringAsync()); //TODO: Registry not set
+        await Verifier.VerifyJson(res.Content.ReadAsStringAsync());
     }
 }
