@@ -23,24 +23,24 @@ public class WalletController : ControllerBase
         var certificates = await unitOfWork.CertificateRepository.GetAllOwnedCertificates(subject);
 
         var mapped = certificates.Select(c => new ApiGranularCertificate
+        {
+            FederatedStreamId = new ApiFederatedStreamId
             {
-                FederatedStreamId = new ApiFederatedStreamId
-                {
-                    Registry = c.RegistryName,
-                    StreamId = c.Id
-                },
-                Quantity = (uint)c.Slices.Sum(x => x.Quantity),
-                Start = c.StartDate.ToUnixTimeSeconds(),
-                End = c.EndDate.ToUnixTimeSeconds(),
-                GridArea = c.GridArea,
-                CertificateType = c.CertificateType,
-                Attributes = new ApiAttributes
-                {
-                    AssetId = c.Attributes.FirstOrDefault(a => a.Key.Equals("AssetId", StringComparison.InvariantCultureIgnoreCase))?.Value,
-                    FuelCode = c.Attributes.FirstOrDefault(a => a.Key.Equals("FuelCode", StringComparison.InvariantCultureIgnoreCase))?.Value,
-                    TechCode = c.Attributes.FirstOrDefault(a => a.Key.Equals("TechCode", StringComparison.InvariantCultureIgnoreCase))?.Value
-                }
-            })
+                Registry = c.RegistryName,
+                StreamId = c.Id
+            },
+            Quantity = (uint)c.Slices.Sum(x => x.Quantity),
+            Start = c.StartDate.ToUnixTimeSeconds(),
+            End = c.EndDate.ToUnixTimeSeconds(),
+            GridArea = c.GridArea,
+            CertificateType = c.CertificateType,
+            Attributes = new ApiAttributes
+            {
+                AssetId = c.Attributes.FirstOrDefault(a => a.Key.Equals("AssetId", StringComparison.InvariantCultureIgnoreCase))?.Value,
+                FuelCode = c.Attributes.FirstOrDefault(a => a.Key.Equals("FuelCode", StringComparison.InvariantCultureIgnoreCase))?.Value,
+                TechCode = c.Attributes.FirstOrDefault(a => a.Key.Equals("TechCode", StringComparison.InvariantCultureIgnoreCase))?.Value
+            }
+        })
             .ToArray();
 
         return new ResultModel<ApiGranularCertificate> { Result = mapped };
@@ -55,7 +55,7 @@ public class WalletController : ControllerBase
 
         var claims = await unitOfWork.CertificateRepository.GetClaims(owner, new ClaimFilter
         {
-            Start = start != null ? DateTimeOffset.FromUnixTimeSeconds(start.Value) : null ,
+            Start = start != null ? DateTimeOffset.FromUnixTimeSeconds(start.Value) : null,
             End = end != null ? DateTimeOffset.FromUnixTimeSeconds(end.Value) : null,
         });
 
@@ -99,7 +99,7 @@ public class WalletController : ControllerBase
             }
         }).ToArray();
 
-        return new ResultModel<ApiClaim> { Result = mapped};
+        return new ResultModel<ApiClaim> { Result = mapped };
     }
 }
 
