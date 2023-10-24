@@ -37,7 +37,7 @@ public class Startup
 
         services.AddControllers();
 
-        services.AddSwaggerGen();
+        services.AddSwaggerGen(o => o.SupportNonNullableReferenceTypes());
 
         services.AddTransient<IStreamProjector<GranularCertificate>, GranularCertificateProjector>();
         services.AddTransient<IRegistryProcessBuilderFactory, RegistryProcessBuilderFactory>();
