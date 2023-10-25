@@ -172,7 +172,7 @@
             "type": "string"
           },
           "certificateType": {
-            "$ref": "#/components/schemas/GranularCertificateType"
+            "$ref": "#/components/schemas/CertificateType"
           },
           "attributes": {
             "$ref": "#/components/schemas/ApiAttributes"
@@ -192,7 +192,7 @@
         },
         "additionalProperties": false
       },
-      "GranularCertificateType": {
+      "CertificateType": {
         "enum": [
           "consumption",
           "production"

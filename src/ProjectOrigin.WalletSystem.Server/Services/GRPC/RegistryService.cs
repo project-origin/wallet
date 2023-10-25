@@ -6,7 +6,7 @@ using Microsoft.Extensions.Options;
 using ProjectOrigin.WalletSystem.Server.Options;
 using ProjectOrigin.WalletSystem.Server.Projections;
 
-namespace ProjectOrigin.WalletSystem.Server.Services;
+namespace ProjectOrigin.WalletSystem.Server.Services.GRPC;
 
 public class RegistryService : IRegistryService
 {

@@ -21,6 +21,7 @@ using System.Text.Json.Serialization;
 using ProjectOrigin.WalletSystem.Server.Activities.Exceptions;
 using ProjectOrigin.WalletSystem.Server.Extensions;
 using ProjectOrigin.WalletSystem.Server.Database.Postgres;
+using ProjectOrigin.WalletSystem.Server.Services.GRPC;
 
 namespace ProjectOrigin.WalletSystem.Server;
 

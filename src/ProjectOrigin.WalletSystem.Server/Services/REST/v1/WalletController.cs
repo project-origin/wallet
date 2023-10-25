@@ -7,7 +7,18 @@ using ProjectOrigin.WalletSystem.Server.Database;
 using ProjectOrigin.WalletSystem.Server.Extensions;
 using ProjectOrigin.WalletSystem.Server.Models;
 
-namespace ProjectOrigin.WalletSystem.Server.Services;
+namespace ProjectOrigin.WalletSystem.Server.Services.REST.v1;
+
+/*
+ * - add v1 to route
+- attributes to dictionary (gerne med eksempler i open api spec)
+- Læg det i et v1 namepspace og dupliker GranularCertificateType-enum
+- Fjern "Api"-prefix fra components-klasser
+- Under Services hav en "Grpc"-mappe og en "Rest"-mappe
+- Nedarv ApiGranularCertificate hvor child har en quantity property
+
+ *
+ */
 
 [Authorize]
 [ApiController]
@@ -33,7 +44,7 @@ public class WalletController : ControllerBase
             Start = c.StartDate.ToUnixTimeSeconds(),
             End = c.EndDate.ToUnixTimeSeconds(),
             GridArea = c.GridArea,
-            CertificateType = c.CertificateType,
+            CertificateType = c.CertificateType == GranularCertificateType.Consumption ? CertificateType.Consumption : CertificateType.Production, //TODO: Mapper function
             Attributes = new ApiAttributes
             {
                 AssetId = c.Attributes.FirstOrDefault(a => a.Key.Equals("AssetId", StringComparison.InvariantCultureIgnoreCase))?.Value,
@@ -128,16 +139,14 @@ public record ApiGranularCertificate
     public required long Start { get; init; }
     public required long End { get; init; }
     public required string GridArea { get; init; }
-    public required GranularCertificateType CertificateType { get; init; } //TODO: This type or custom?
+    public required CertificateType CertificateType { get; init; }
     public required ApiAttributes Attributes { get; init; }
 }
 
-public record ApiClaim
+public enum CertificateType
 {
-    public required Guid ClaimId { get; init; }
-    public required uint Quantity { get; init; }
-    public required ApiClaimCertificateInfo ProductionCertificate { get; init; }
-    public required ApiClaimCertificateInfo ConsumptionCertificate { get; init; }
+    Consumption = 1,
+    Production = 2
 }
 
 public record ApiClaimCertificateInfo
@@ -147,4 +156,12 @@ public record ApiClaimCertificateInfo
     public required long End { get; init; }
     public required string GridArea { get; init; }
     public required ApiAttributes Attributes { get; init; }
+}
+
+public record ApiClaim
+{
+    public required Guid ClaimId { get; init; }
+    public required uint Quantity { get; init; }
+    public required ApiClaimCertificateInfo ProductionCertificate { get; init; }
+    public required ApiClaimCertificateInfo ConsumptionCertificate { get; init; }
 }
