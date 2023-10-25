@@ -16,8 +16,6 @@ namespace ProjectOrigin.WalletSystem.Server.Services.REST.v1;
 - Læg det i et v1 namepspace og dupliker GranularCertificateType-enum
 - Fjern "Api"-prefix fra components-klasser
 - Under Services hav en "Grpc"-mappe og en "Rest"-mappe
-- Nedarv ApiGranularCertificate hvor child har en quantity property
-
  *
  */
 
@@ -28,15 +26,15 @@ public class WalletController : ControllerBase
     [HttpGet]
     [Route("api/certificates")]
     [Produces("application/json")]
-    public async Task<ActionResult<ResultModel<ApiGranularCertificate>>> GetCertificates([FromServices] IUnitOfWork unitOfWork)
+    public async Task<ActionResult<ResultModel<GranularCertificate>>> GetCertificates([FromServices] IUnitOfWork unitOfWork)
     {
         var subject = User.GetSubject();
 
         var certificates = await unitOfWork.CertificateRepository.GetAllOwnedCertificates(subject);
 
-        var mapped = certificates.Select(c => new ApiGranularCertificate
+        var mapped = certificates.Select(c => new GranularCertificate
         {
-            FederatedStreamId = new ApiFederatedStreamId
+            FederatedStreamId = new FederatedStreamId
             {
                 Registry = c.RegistryName,
                 StreamId = c.Id
@@ -50,13 +48,13 @@ public class WalletController : ControllerBase
         })
             .ToArray();
 
-        return new ResultModel<ApiGranularCertificate> { Result = mapped };
+        return new ResultModel<GranularCertificate> { Result = mapped };
     }
 
     [HttpGet]
     [Route("api/claims")]
     [Produces("application/json")]
-    public async Task<ActionResult<ResultModel<ApiClaim>>> GetClaims([FromServices] IUnitOfWork unitOfWork, [FromQuery] long? start, [FromQuery] long? end)
+    public async Task<ActionResult<ResultModel<Claim>>> GetClaims([FromServices] IUnitOfWork unitOfWork, [FromQuery] long? start, [FromQuery] long? end)
     {
         var owner = User.GetSubject();
 
@@ -66,13 +64,13 @@ public class WalletController : ControllerBase
             End = end != null ? DateTimeOffset.FromUnixTimeSeconds(end.Value) : null,
         });
 
-        var mapped = claims.Select(c => new ApiClaim
+        var mapped = claims.Select(c => new Claim
         {
             ClaimId = c.Id,
             Quantity = c.Quantity,
-            ProductionCertificate = new ApiClaimCertificateInfo
+            ProductionCertificate = new ClaimedCertificate
             {
-                FederatedStreamId = new ApiFederatedStreamId
+                FederatedStreamId = new FederatedStreamId
                 {
                     Registry = c.ProductionRegistryName,
                     StreamId = c.ProductionCertificateId
@@ -80,11 +78,11 @@ public class WalletController : ControllerBase
                 Start = c.ProductionStart.ToUnixTimeSeconds(),
                 End = c.ProductionEnd.ToUnixTimeSeconds(),
                 GridArea = c.ProductionGridArea,
-                Attributes = c.ProductionAttributes.OrderBy(a => a.Key).ToDictionary(a => a.Key, a => a.Value) //TODO: Key to be camelcase???
+                Attributes = c.ProductionAttributes.OrderBy(a => a.Key).ToDictionary(a => a.Key, a => a.Value) //TODO: Key to be camelcase??? 
             },
-            ConsumptionCertificate = new ApiClaimCertificateInfo
+            ConsumptionCertificate = new ClaimedCertificate
             {
-                FederatedStreamId = new ApiFederatedStreamId
+                FederatedStreamId = new FederatedStreamId
                 {
                     Registry = c.ConsumptionRegistryName,
                     StreamId = c.ConsumptionCertificateId
@@ -96,7 +94,7 @@ public class WalletController : ControllerBase
             }
         }).ToArray();
 
-        return new ResultModel<ApiClaim> { Result = mapped };
+        return new ResultModel<Claim> { Result = mapped };
     }
 }
 
@@ -105,22 +103,15 @@ public record ResultModel<T>
     public required T[] Result { get; init; }
 }
 
-public record ApiFederatedStreamId
+public record FederatedStreamId
 {
     public required string Registry { get; init; }
     public required Guid StreamId { get; init; }
 }
 
-public record ApiAttributes
+public record GranularCertificate
 {
-    public required string? AssetId { get; init; }
-    public required string? TechCode { get; init; }
-    public required string? FuelCode { get; init; }
-}
-
-public record ApiGranularCertificate
-{
-    public required ApiFederatedStreamId FederatedStreamId { get; init; }
+    public required FederatedStreamId FederatedStreamId { get; init; }
     public required uint Quantity { get; init; }
     public required long Start { get; init; }
     public required long End { get; init; }
@@ -135,19 +126,19 @@ public enum CertificateType
     Production = 2
 }
 
-public record ApiClaimCertificateInfo
+public record ClaimedCertificate
 {
-    public required ApiFederatedStreamId FederatedStreamId { get; init; }
+    public required FederatedStreamId FederatedStreamId { get; init; }
     public required long Start { get; init; }
     public required long End { get; init; }
     public required string GridArea { get; init; }
     public required Dictionary<string, string> Attributes { get; init; }
 }
 
-public record ApiClaim
+public record Claim
 {
     public required Guid ClaimId { get; init; }
     public required uint Quantity { get; init; }
-    public required ApiClaimCertificateInfo ProductionCertificate { get; init; }
-    public required ApiClaimCertificateInfo ConsumptionCertificate { get; init; }
+    public required ClaimedCertificate ProductionCertificate { get; init; }
+    public required ClaimedCertificate ConsumptionCertificate { get; init; }
 }

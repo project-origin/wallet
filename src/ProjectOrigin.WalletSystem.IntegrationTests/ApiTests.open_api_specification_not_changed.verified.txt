@@ -16,7 +16,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiGranularCertificateResultModel"
+                  "$ref": "#/components/schemas/GranularCertificateResultModel"
                 }
               }
             }
@@ -53,7 +53,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiClaimResultModel"
+                  "$ref": "#/components/schemas/ClaimResultModel"
                 }
               }
             }
@@ -64,7 +64,14 @@
   },
   "components": {
     "schemas": {
-      "ApiClaim": {
+      "CertificateType": {
+        "enum": [
+          "consumption",
+          "production"
+        ],
+        "type": "string"
+      },
+      "Claim": {
         "type": "object",
         "properties": {
           "claimId": {
@@ -76,19 +83,31 @@
             "format": "int32"
           },
           "productionCertificate": {
-            "$ref": "#/components/schemas/ApiClaimCertificateInfo"
+            "$ref": "#/components/schemas/ClaimedCertificate"
           },
           "consumptionCertificate": {
-            "$ref": "#/components/schemas/ApiClaimCertificateInfo"
+            "$ref": "#/components/schemas/ClaimedCertificate"
           }
         },
         "additionalProperties": false
       },
-      "ApiClaimCertificateInfo": {
+      "ClaimResultModel": {
+        "type": "object",
+        "properties": {
+          "result": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Claim"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "ClaimedCertificate": {
         "type": "object",
         "properties": {
           "federatedStreamId": {
-            "$ref": "#/components/schemas/ApiFederatedStreamId"
+            "$ref": "#/components/schemas/FederatedStreamId"
           },
           "start": {
             "type": "integer",
@@ -110,19 +129,7 @@
         },
         "additionalProperties": false
       },
-      "ApiClaimResultModel": {
-        "type": "object",
-        "properties": {
-          "result": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ApiClaim"
-            }
-          }
-        },
-        "additionalProperties": false
-      },
-      "ApiFederatedStreamId": {
+      "FederatedStreamId": {
         "type": "object",
         "properties": {
           "registry": {
@@ -135,11 +142,11 @@
         },
         "additionalProperties": false
       },
-      "ApiGranularCertificate": {
+      "GranularCertificate": {
         "type": "object",
         "properties": {
           "federatedStreamId": {
-            "$ref": "#/components/schemas/ApiFederatedStreamId"
+            "$ref": "#/components/schemas/FederatedStreamId"
           },
           "quantity": {
             "type": "integer",
@@ -168,24 +175,17 @@
         },
         "additionalProperties": false
       },
-      "ApiGranularCertificateResultModel": {
+      "GranularCertificateResultModel": {
         "type": "object",
         "properties": {
           "result": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/ApiGranularCertificate"
+              "$ref": "#/components/schemas/GranularCertificate"
             }
           }
         },
         "additionalProperties": false
-      },
-      "CertificateType": {
-        "enum": [
-          "consumption",
-          "production"
-        ],
-        "type": "string"
       }
     }
   }
