@@ -7,7 +7,6 @@ using Microsoft.AspNetCore.Mvc;
 using ProjectOrigin.WalletSystem.Server.Database;
 using ProjectOrigin.WalletSystem.Server.Extensions;
 using ProjectOrigin.WalletSystem.Server.Models;
-using Swashbuckle.AspNetCore.Annotations;
 
 namespace ProjectOrigin.WalletSystem.Server.Services.REST.v1;
 
