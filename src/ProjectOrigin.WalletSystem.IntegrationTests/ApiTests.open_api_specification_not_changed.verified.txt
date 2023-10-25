@@ -16,7 +16,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GranularCertificateResultModel"
+                  "$ref": "#/components/schemas/GranularCertificateResultList"
                 }
               }
             }
@@ -53,7 +53,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ClaimResultModel"
+                  "$ref": "#/components/schemas/ClaimResultList"
                 }
               }
             }
@@ -91,7 +91,7 @@
         },
         "additionalProperties": false
       },
-      "ClaimResultModel": {
+      "ClaimResultList": {
         "type": "object",
         "properties": {
           "result": {
@@ -175,7 +175,7 @@
         },
         "additionalProperties": false
       },
-      "GranularCertificateResultModel": {
+      "GranularCertificateResultList": {
         "type": "object",
         "properties": {
           "result": {

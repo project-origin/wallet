@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using ProjectOrigin.WalletSystem.Server.Database;
 using ProjectOrigin.WalletSystem.Server.Extensions;
 using ProjectOrigin.WalletSystem.Server.Models;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace ProjectOrigin.WalletSystem.Server.Services.REST.v1;
 
@@ -26,7 +27,7 @@ public class WalletController : ControllerBase
     [HttpGet]
     [Route("api/certificates")]
     [Produces("application/json")]
-    public async Task<ActionResult<ResultModel<GranularCertificate>>> GetCertificates([FromServices] IUnitOfWork unitOfWork)
+    public async Task<ActionResult<ResultList<GranularCertificate>>> GetCertificates([FromServices] IUnitOfWork unitOfWork)
     {
         var subject = User.GetSubject();
 
@@ -48,13 +49,13 @@ public class WalletController : ControllerBase
         })
             .ToArray();
 
-        return new ResultModel<GranularCertificate> { Result = mapped };
+        return new ResultList<GranularCertificate> { Result = mapped };
     }
 
     [HttpGet]
     [Route("api/claims")]
     [Produces("application/json")]
-    public async Task<ActionResult<ResultModel<Claim>>> GetClaims([FromServices] IUnitOfWork unitOfWork, [FromQuery] long? start, [FromQuery] long? end)
+    public async Task<ActionResult<ResultList<Claim>>> GetClaims([FromServices] IUnitOfWork unitOfWork, [FromQuery] long? start, [FromQuery] long? end)
     {
         var owner = User.GetSubject();
 
@@ -94,11 +95,11 @@ public class WalletController : ControllerBase
             }
         }).ToArray();
 
-        return new ResultModel<Claim> { Result = mapped };
+        return new ResultList<Claim> { Result = mapped };
     }
 }
 
-public record ResultModel<T>
+public record ResultList<T>
 {
     public required T[] Result { get; init; }
 }
@@ -117,6 +118,10 @@ public record GranularCertificate
     public required long End { get; init; }
     public required string GridArea { get; init; }
     public required CertificateType CertificateType { get; init; }
+    /// <summary>
+    /// Bla
+    /// </summary>
+    /// <example>foo</example>
     public required Dictionary<string, string> Attributes { get; init; }
 }
 
