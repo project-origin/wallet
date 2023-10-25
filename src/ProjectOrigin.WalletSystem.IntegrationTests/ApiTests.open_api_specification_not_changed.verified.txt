@@ -5,7 +5,7 @@
     "version": "1.0"
   },
   "paths": {
-    "/api/certificates": {
+    "/api/v1/certificates": {
       "get": {
         "tags": [
           "Wallet"
@@ -24,7 +24,7 @@
         }
       }
     },
-    "/api/claims": {
+    "/api/v1/claims": {
       "get": {
         "tags": [
           "Wallet"

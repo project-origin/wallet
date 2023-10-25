@@ -1,5 +1,6 @@
 using AutoFixture;
 using Dapper;
+using FluentAssertions;
 using Npgsql;
 using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
 using ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures;
@@ -10,20 +11,15 @@ using ProjectOrigin.WalletSystem.Server.Repositories;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using FluentAssertions;
-using VerifyTests;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
-using GranularCertificateType = ProjectOrigin.WalletSystem.Server.Models.GranularCertificateType;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests;
 
 [UsesVerify]
 public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
 {
-    private readonly VerifySettings _verifySettings;
-
     public ApiTests(
         GrpcTestFixture<Startup> grpcFixture,
         PostgresDatabaseFixture dbFixture,
@@ -38,17 +34,15 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
     {
         SqlMapper.AddTypeHandler<IHDPrivateKey>(new HDPrivateKeyTypeHandler(Algorithm)); //TODO: This can be deleted and the tests works
         SqlMapper.AddTypeHandler<IHDPublicKey>(new HDPublicKeyTypeHandler(Algorithm));
-        _verifySettings = new VerifySettings();
-        _verifySettings.ScrubEmptyLines();
     }
 
     [Fact]
     public async Task open_api_specification_not_changed()
     {
         var httpClient = _grpcFixture.CreateHttpClient();
-        var specificationResponse = await httpClient.GetAsync("swagger/v1/swagger.json");
+        var specificationResponse = await httpClient.GetAsync("swagger/v1/swagger.json"); //TODO: Is this the path we want?
         var specification = await specificationResponse.Content.ReadAsStringAsync();
-        await Verifier.Verify(specification, _verifySettings);
+        await Verifier.Verify(specification);
     }
 
     [Fact]
@@ -143,10 +137,10 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
         }
 
         //Act
-        var res = await httpClient.GetStringAsync("api/certificates");
+        var res = await httpClient.GetStringAsync("api/v1/certificates");
 
         //Assert
-        await Verifier.VerifyJson(res, _verifySettings);
+        await Verifier.VerifyJson(res);
     }
 
     [Fact]
@@ -240,13 +234,13 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
         var filterEnd = DateTimeOffset.Parse("2023-01-01T14:00Z").ToUnixTimeSeconds();
 
         //Act
-        var resultWithoutFilters = await httpClient.GetStringAsync("api/claims");
-        var resultWithFilterStart = await httpClient.GetStringAsync($"api/claims?start={filterStart}");
-        var resultWithFilterEnd = await httpClient.GetStringAsync($"api/claims?end={filterEnd}");
-        var resultWithFilterStartAndEnd = await httpClient.GetStringAsync($"api/claims?start={filterStart}&end={filterEnd}");
+        var resultWithoutFilters = await httpClient.GetStringAsync("api/v1/claims");
+        var resultWithFilterStart = await httpClient.GetStringAsync($"api/v1/claims?start={filterStart}");
+        var resultWithFilterEnd = await httpClient.GetStringAsync($"api/v1/claims?end={filterEnd}");
+        var resultWithFilterStartAndEnd = await httpClient.GetStringAsync($"api/v1/claims?start={filterStart}&end={filterEnd}");
 
         //Assert
-        await Verifier.VerifyJson(resultWithoutFilters, _verifySettings);
+        await Verifier.VerifyJson(resultWithoutFilters);
         resultWithoutFilters.Should().Be(resultWithFilterStart);
         resultWithoutFilters.Should().Be(resultWithFilterEnd);
         resultWithoutFilters.Should().Be(resultWithFilterStartAndEnd);

@@ -9,21 +9,12 @@ using ProjectOrigin.WalletSystem.Server.Models;
 
 namespace ProjectOrigin.WalletSystem.Server.Services.REST.v1;
 
-/*
- * - add v1 to route
-- attributes to dictionary (gerne med eksempler i open api spec)
-- Læg det i et v1 namepspace og dupliker GranularCertificateType-enum
-- Fjern "Api"-prefix fra components-klasser
-- Under Services hav en "Grpc"-mappe og en "Rest"-mappe
- *
- */
-
 [Authorize]
 [ApiController]
 public class WalletController : ControllerBase
 {
     [HttpGet]
-    [Route("api/certificates")]
+    [Route("api/v1/certificates")]
     [Produces("application/json")]
     public async Task<ActionResult<ResultList<GranularCertificate>>> GetCertificates([FromServices] IUnitOfWork unitOfWork)
     {
@@ -35,7 +26,7 @@ public class WalletController : ControllerBase
     }
 
     [HttpGet]
-    [Route("api/claims")]
+    [Route("api/v1/claims")]
     [Produces("application/json")]
     public async Task<ActionResult<ResultList<Claim>>> GetClaims([FromServices] IUnitOfWork unitOfWork, [FromQuery] long? start, [FromQuery] long? end)
     {
