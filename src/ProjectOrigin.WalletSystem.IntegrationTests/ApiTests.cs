@@ -8,12 +8,15 @@ using ProjectOrigin.WalletSystem.Server;
 using ProjectOrigin.WalletSystem.Server.Database.Mapping;
 using ProjectOrigin.WalletSystem.Server.Models;
 using ProjectOrigin.WalletSystem.Server.Repositories;
+using ProjectOrigin.WalletSystem.Server.Services.REST.v1;
 using System;
 using System.Collections.Generic;
+using System.Net.Http.Json;
 using System.Threading.Tasks;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
+using Claim = ProjectOrigin.WalletSystem.Server.Models.Claim;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests;
 
@@ -238,11 +241,15 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
         var resultWithFilterStart = await httpClient.GetStringAsync($"api/v1/claims?start={filterStart}");
         var resultWithFilterEnd = await httpClient.GetStringAsync($"api/v1/claims?end={filterEnd}");
         var resultWithFilterStartAndEnd = await httpClient.GetStringAsync($"api/v1/claims?start={filterStart}&end={filterEnd}");
+        var resultWithFilterOutsideAnyClaims1 = await httpClient.GetFromJsonAsync<ResultList<Server.Services.REST.v1.Claim>>($"api/v1/claims?start={filterEnd}");
+        var resultWithFilterOutsideAnyClaims2 = await httpClient.GetFromJsonAsync<ResultList<Server.Services.REST.v1.Claim>>($"api/v1/claims?end={filterStart}");
 
         //Assert
         await Verifier.VerifyJson(resultWithoutFilters);
         resultWithoutFilters.Should().Be(resultWithFilterStart);
         resultWithoutFilters.Should().Be(resultWithFilterEnd);
         resultWithoutFilters.Should().Be(resultWithFilterStartAndEnd);
+        resultWithFilterOutsideAnyClaims1!.Result.Should().BeEmpty();
+        resultWithFilterOutsideAnyClaims2!.Result.Should().BeEmpty();
     }
 }
