@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
@@ -45,12 +46,7 @@ public class WalletController : ControllerBase
             End = c.EndDate.ToUnixTimeSeconds(),
             GridArea = c.GridArea,
             CertificateType = c.CertificateType == GranularCertificateType.Consumption ? CertificateType.Consumption : CertificateType.Production, //TODO: Mapper function
-            Attributes = new ApiAttributes
-            {
-                AssetId = c.Attributes.FirstOrDefault(a => a.Key.Equals("AssetId", StringComparison.InvariantCultureIgnoreCase))?.Value,
-                FuelCode = c.Attributes.FirstOrDefault(a => a.Key.Equals("FuelCode", StringComparison.InvariantCultureIgnoreCase))?.Value,
-                TechCode = c.Attributes.FirstOrDefault(a => a.Key.Equals("TechCode", StringComparison.InvariantCultureIgnoreCase))?.Value
-            }
+            Attributes = c.Attributes.OrderBy(a => a.Key).ToDictionary(a => a.Key, a => a.Value) //TODO: Key to be camelcase???
         })
             .ToArray();
 
@@ -84,12 +80,7 @@ public class WalletController : ControllerBase
                 Start = c.ProductionStart.ToUnixTimeSeconds(),
                 End = c.ProductionEnd.ToUnixTimeSeconds(),
                 GridArea = c.ProductionGridArea,
-                Attributes = new ApiAttributes
-                {
-                    AssetId = c.ProductionAttributes.FirstOrDefault(a => a.Key.Equals("AssetId", StringComparison.InvariantCultureIgnoreCase))?.Value,
-                    FuelCode = c.ProductionAttributes.FirstOrDefault(a => a.Key.Equals("FuelCode", StringComparison.InvariantCultureIgnoreCase))?.Value,
-                    TechCode = c.ProductionAttributes.FirstOrDefault(a => a.Key.Equals("TechCode", StringComparison.InvariantCultureIgnoreCase))?.Value
-                }
+                Attributes = c.ProductionAttributes.OrderBy(a => a.Key).ToDictionary(a => a.Key, a => a.Value) //TODO: Key to be camelcase???
             },
             ConsumptionCertificate = new ApiClaimCertificateInfo
             {
@@ -101,12 +92,7 @@ public class WalletController : ControllerBase
                 Start = c.ConsumptionStart.ToUnixTimeSeconds(),
                 End = c.ConsumptionEnd.ToUnixTimeSeconds(),
                 GridArea = c.ConsumptionGridArea,
-                Attributes = new ApiAttributes
-                {
-                    AssetId = c.ConsumptionAttributes.FirstOrDefault(a => a.Key.Equals("AssetId", StringComparison.InvariantCultureIgnoreCase))?.Value,
-                    FuelCode = c.ConsumptionAttributes.FirstOrDefault(a => a.Key.Equals("FuelCode", StringComparison.InvariantCultureIgnoreCase))?.Value,
-                    TechCode = c.ConsumptionAttributes.FirstOrDefault(a => a.Key.Equals("TechCode", StringComparison.InvariantCultureIgnoreCase))?.Value
-                }
+                Attributes = c.ConsumptionAttributes.OrderBy(a => a.Key).ToDictionary(a => a.Key, a => a.Value) //TODO: Key to be camelcase???
             }
         }).ToArray();
 
@@ -140,7 +126,7 @@ public record ApiGranularCertificate
     public required long End { get; init; }
     public required string GridArea { get; init; }
     public required CertificateType CertificateType { get; init; }
-    public required ApiAttributes Attributes { get; init; }
+    public required Dictionary<string, string> Attributes { get; init; }
 }
 
 public enum CertificateType
@@ -155,7 +141,7 @@ public record ApiClaimCertificateInfo
     public required long Start { get; init; }
     public required long End { get; init; }
     public required string GridArea { get; init; }
-    public required ApiAttributes Attributes { get; init; }
+    public required Dictionary<string, string> Attributes { get; init; }
 }
 
 public record ApiClaim

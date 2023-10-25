@@ -11,9 +11,8 @@
       gridArea: DK1,
       certificateType: production,
       attributes: {
-        assetId: null,
-        techCode: T070000,
-        fuelCode: F00000000
+        FuelCode: F00000000,
+        TechCode: T070000
       }
     },
     {
@@ -27,9 +26,8 @@
       gridArea: DK1,
       certificateType: production,
       attributes: {
-        assetId: null,
-        techCode: T070000,
-        fuelCode: F00000000
+        FuelCode: F00000000,
+        TechCode: T070000
       }
     }
   ]

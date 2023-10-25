@@ -64,24 +64,6 @@
   },
   "components": {
     "schemas": {
-      "ApiAttributes": {
-        "type": "object",
-        "properties": {
-          "assetId": {
-            "type": "string",
-            "nullable": true
-          },
-          "techCode": {
-            "type": "string",
-            "nullable": true
-          },
-          "fuelCode": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
       "ApiClaim": {
         "type": "object",
         "properties": {
@@ -120,7 +102,10 @@
             "type": "string"
           },
           "attributes": {
-            "$ref": "#/components/schemas/ApiAttributes"
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
           }
         },
         "additionalProperties": false
@@ -175,7 +160,10 @@
             "$ref": "#/components/schemas/CertificateType"
           },
           "attributes": {
-            "$ref": "#/components/schemas/ApiAttributes"
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
           }
         },
         "additionalProperties": false
