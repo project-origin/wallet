@@ -11,8 +11,8 @@
       gridArea: DK1,
       certificateType: production,
       attributes: {
-        FuelCode: F00000000,
-        TechCode: T070000
+        fuelCode: F00000000,
+        techCode: T070000
       }
     },
     {
@@ -26,8 +26,8 @@
       gridArea: DK1,
       certificateType: production,
       attributes: {
-        FuelCode: F00000000,
-        TechCode: T070000
+        fuelCode: F00000000,
+        techCode: T070000
       }
     }
   ]

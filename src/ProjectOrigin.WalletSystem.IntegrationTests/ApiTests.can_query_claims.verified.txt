@@ -12,8 +12,8 @@
         end: 1672578000,
         gridArea: DK1,
         attributes: {
-          FuelCode: F00000000,
-          TechCode: T070000
+          fuelCode: F00000000,
+          techCode: T070000
         }
       },
       consumptionCertificate: {

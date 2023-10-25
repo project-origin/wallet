@@ -15,9 +15,8 @@ public static class MapperV1
             _ => throw new ArgumentOutOfRangeException(nameof(granularCertificateType), granularCertificateType, null)
         };
 
-    //TODO: Key to be camelcase???
     public static Dictionary<string, string> MapToV1(this List<CertificateAttribute> attributes) =>
         attributes
             .OrderBy(a => a.Key)
-            .ToDictionary(a => a.Key, a => a.Value);
+            .ToDictionary(a => char.ToLower(a.Key[0]) + a.Key.Substring(1), a => a.Value);
 }
