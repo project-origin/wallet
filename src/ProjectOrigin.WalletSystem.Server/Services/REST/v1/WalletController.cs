@@ -22,7 +22,7 @@ public class WalletController : ControllerBase
 
         var certificates = await unitOfWork.CertificateRepository.GetAllOwnedCertificates(subject);
 
-        return new ResultList<GranularCertificate> { Result = certificates.Select(c => c.ToV1()).ToArray() };
+        return new ResultList<GranularCertificate> { Result = certificates.Select(c => c.MapToV1()).ToArray() };
     }
 
     [HttpGet]
@@ -38,6 +38,6 @@ public class WalletController : ControllerBase
             End = end != null ? DateTimeOffset.FromUnixTimeSeconds(end.Value) : null,
         });
 
-        return new ResultList<Claim> { Result = claims.Select(c => c.ToV1()).ToArray() };
+        return new ResultList<Claim> { Result = claims.Select(c => c.MapToV1()).ToArray() };
     }
 }

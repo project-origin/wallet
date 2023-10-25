@@ -1,8 +1,7 @@
+using Google.Protobuf.WellKnownTypes;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Google.Protobuf.WellKnownTypes;
-using ProjectOrigin.WalletSystem.Server.Services.REST.v1;
 
 namespace ProjectOrigin.WalletSystem.Server.Models;
 
@@ -41,20 +40,4 @@ public record CertificateViewModel
 
         return res;
     }
-
-    public GranularCertificate ToV1() =>
-        new()
-        {
-            FederatedStreamId = new()
-            {
-                Registry = RegistryName,
-                StreamId = Id
-            },
-            Quantity = (uint)Slices.Sum(slice => slice.Quantity),
-            Start = StartDate.ToUnixTimeSeconds(),
-            End = EndDate.ToUnixTimeSeconds(),
-            GridArea = GridArea,
-            CertificateType = CertificateType.MapToV1(),
-            Attributes = Attributes.MapToV1()
-        };
 }

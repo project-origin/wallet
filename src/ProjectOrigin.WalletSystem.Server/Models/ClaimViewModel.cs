@@ -1,4 +1,3 @@
-using ProjectOrigin.WalletSystem.Server.Services.REST.v1;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -56,35 +55,4 @@ public record ClaimViewModel
             }
         };
     }
-
-    public Services.REST.v1.Claim ToV1() =>
-        new()
-        {
-            ClaimId = Id,
-            Quantity = Quantity,
-            ProductionCertificate = new ClaimedCertificate
-            {
-                FederatedStreamId = new FederatedStreamId
-                {
-                    Registry = ProductionRegistryName,
-                    StreamId = ProductionCertificateId
-                },
-                Start = ProductionStart.ToUnixTimeSeconds(),
-                End = ProductionEnd.ToUnixTimeSeconds(),
-                GridArea = ProductionGridArea,
-                Attributes = ProductionAttributes.MapToV1()
-            },
-            ConsumptionCertificate = new ClaimedCertificate
-            {
-                FederatedStreamId = new FederatedStreamId
-                {
-                    Registry = ConsumptionRegistryName,
-                    StreamId = ConsumptionCertificateId
-                },
-                Start = ConsumptionStart.ToUnixTimeSeconds(),
-                End = ConsumptionEnd.ToUnixTimeSeconds(),
-                GridArea = ConsumptionGridArea,
-                Attributes = ConsumptionAttributes.MapToV1()
-            }
-        };
 }

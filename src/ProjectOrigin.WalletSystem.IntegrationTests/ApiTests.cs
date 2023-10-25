@@ -35,7 +35,7 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
               outputHelper,
               null)
     {
-        SqlMapper.AddTypeHandler<IHDPrivateKey>(new HDPrivateKeyTypeHandler(Algorithm)); //TODO: This can be deleted and the tests works
+        SqlMapper.AddTypeHandler<IHDPrivateKey>(new HDPrivateKeyTypeHandler(Algorithm));
         SqlMapper.AddTypeHandler<IHDPublicKey>(new HDPublicKeyTypeHandler(Algorithm));
     }
 
@@ -43,7 +43,7 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
     public async Task open_api_specification_not_changed()
     {
         var httpClient = _grpcFixture.CreateHttpClient();
-        var specificationResponse = await httpClient.GetAsync("swagger/v1/swagger.json"); //TODO: Is this the path we want?
+        var specificationResponse = await httpClient.GetAsync("swagger/v1/swagger.json");
         var specification = await specificationResponse.Content.ReadAsStringAsync();
         await Verifier.Verify(specification);
     }
@@ -154,6 +154,9 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
         var someOwnerName = _fixture.Create<string>();
         var httpClient = CreateAuthenticatedHttpClient(owner, someOwnerName);
 
+        var startDate = DateTimeOffset.Parse("2023-01-01T12:00Z");
+        var endDate = DateTimeOffset.Parse("2023-01-01T13:00Z");
+        
         using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
         {
             var walletRepository = new WalletRepository(connection);
@@ -169,13 +172,13 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
 
             var regName = _fixture.Create<string>();
             var certificateRepository = new CertificateRepository(connection);
-
+            
             var productionCertificate = new Certificate
             {
                 Id = Guid.NewGuid(),
                 RegistryName = regName,
-                StartDate = DateTimeOffset.Parse("2023-01-01T12:00Z"),
-                EndDate = DateTimeOffset.Parse("2023-01-01T13:00Z"),
+                StartDate = startDate,
+                EndDate = endDate,
                 GridArea = "DK1",
                 CertificateType = GranularCertificateType.Production,
                 Attributes = new List<CertificateAttribute>
@@ -188,8 +191,8 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
             {
                 Id = Guid.NewGuid(),
                 RegistryName = regName,
-                StartDate = DateTimeOffset.Parse("2023-01-01T12:00Z"),
-                EndDate = DateTimeOffset.Parse("2023-01-01T13:00Z"),
+                StartDate = startDate,
+                EndDate = endDate,
                 GridArea = "DK1",
                 CertificateType = GranularCertificateType.Consumption,
                 Attributes = new List<CertificateAttribute>()
@@ -233,8 +236,8 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
             await certificateRepository.InsertClaim(claim);
         }
 
-        var filterStart = DateTimeOffset.Parse("2023-01-01T12:00Z").ToUnixTimeSeconds();
-        var filterEnd = DateTimeOffset.Parse("2023-01-01T14:00Z").ToUnixTimeSeconds();
+        var filterStart = startDate.ToUnixTimeSeconds();
+        var filterEnd = endDate.ToUnixTimeSeconds();
 
         //Act
         var resultWithoutFilters = await httpClient.GetStringAsync("api/v1/claims");
