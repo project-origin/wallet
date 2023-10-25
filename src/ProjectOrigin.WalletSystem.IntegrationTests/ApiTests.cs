@@ -156,7 +156,7 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
 
         var startDate = DateTimeOffset.Parse("2023-01-01T12:00Z");
         var endDate = DateTimeOffset.Parse("2023-01-01T13:00Z");
-        
+
         using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
         {
             var walletRepository = new WalletRepository(connection);
@@ -172,7 +172,7 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
 
             var regName = _fixture.Create<string>();
             var certificateRepository = new CertificateRepository(connection);
-            
+
             var productionCertificate = new Certificate
             {
                 Id = Guid.NewGuid(),
