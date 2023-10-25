@@ -44,7 +44,10 @@ public class Startup
                 o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
             });
 
-        services.AddSwaggerGen(o => o.SupportNonNullableReferenceTypes());
+        services.AddSwaggerGen(o =>
+        {
+            o.SupportNonNullableReferenceTypes();
+        });
 
         services.AddTransient<IStreamProjector<GranularCertificate>, GranularCertificateProjector>();
         services.AddTransient<IRegistryProcessBuilderFactory, RegistryProcessBuilderFactory>();
