@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
@@ -32,23 +31,7 @@ public class WalletController : ControllerBase
 
         var certificates = await unitOfWork.CertificateRepository.GetAllOwnedCertificates(subject);
 
-        var mapped = certificates.Select(c => new GranularCertificate
-        {
-            FederatedStreamId = new FederatedStreamId
-            {
-                Registry = c.RegistryName,
-                StreamId = c.Id
-            },
-            Quantity = (uint)c.Slices.Sum(x => x.Quantity),
-            Start = c.StartDate.ToUnixTimeSeconds(),
-            End = c.EndDate.ToUnixTimeSeconds(),
-            GridArea = c.GridArea,
-            CertificateType = c.CertificateType == GranularCertificateType.Consumption ? CertificateType.Consumption : CertificateType.Production, //TODO: Mapper function
-            Attributes = c.Attributes.OrderBy(a => a.Key).ToDictionary(a => a.Key, a => a.Value) //TODO: Key to be camelcase???
-        })
-            .ToArray();
-
-        return new ResultList<GranularCertificate> { Result = mapped };
+        return new ResultList<GranularCertificate> { Result = certificates.Select(c => c.ToV1()).ToArray() };
     }
 
     [HttpGet]
@@ -64,85 +47,6 @@ public class WalletController : ControllerBase
             End = end != null ? DateTimeOffset.FromUnixTimeSeconds(end.Value) : null,
         });
 
-        var mapped = claims.Select(c => new Claim
-        {
-            ClaimId = c.Id,
-            Quantity = c.Quantity,
-            ProductionCertificate = new ClaimedCertificate
-            {
-                FederatedStreamId = new FederatedStreamId
-                {
-                    Registry = c.ProductionRegistryName,
-                    StreamId = c.ProductionCertificateId
-                },
-                Start = c.ProductionStart.ToUnixTimeSeconds(),
-                End = c.ProductionEnd.ToUnixTimeSeconds(),
-                GridArea = c.ProductionGridArea,
-                Attributes = c.ProductionAttributes.OrderBy(a => a.Key).ToDictionary(a => a.Key, a => a.Value) //TODO: Key to be camelcase??? 
-            },
-            ConsumptionCertificate = new ClaimedCertificate
-            {
-                FederatedStreamId = new FederatedStreamId
-                {
-                    Registry = c.ConsumptionRegistryName,
-                    StreamId = c.ConsumptionCertificateId
-                },
-                Start = c.ConsumptionStart.ToUnixTimeSeconds(),
-                End = c.ConsumptionEnd.ToUnixTimeSeconds(),
-                GridArea = c.ConsumptionGridArea,
-                Attributes = c.ConsumptionAttributes.OrderBy(a => a.Key).ToDictionary(a => a.Key, a => a.Value) //TODO: Key to be camelcase???
-            }
-        }).ToArray();
-
-        return new ResultList<Claim> { Result = mapped };
+        return new ResultList<Claim> { Result = claims.Select(c => c.ToV1()).ToArray() };
     }
-}
-
-public record ResultList<T>
-{
-    public required T[] Result { get; init; }
-}
-
-public record FederatedStreamId
-{
-    public required string Registry { get; init; }
-    public required Guid StreamId { get; init; }
-}
-
-public record GranularCertificate
-{
-    public required FederatedStreamId FederatedStreamId { get; init; }
-    public required uint Quantity { get; init; }
-    public required long Start { get; init; }
-    public required long End { get; init; }
-    public required string GridArea { get; init; }
-    public required CertificateType CertificateType { get; init; }
-    /// <summary>
-    /// Bla
-    /// </summary>
-    /// <example>foo</example>
-    public required Dictionary<string, string> Attributes { get; init; }
-}
-
-public enum CertificateType
-{
-    Consumption = 1,
-    Production = 2
-}
-
-public record ClaimedCertificate
-{
-    public required FederatedStreamId FederatedStreamId { get; init; }
-    public required long Start { get; init; }
-    public required long End { get; init; }
-    public required string GridArea { get; init; }
-    public required Dictionary<string, string> Attributes { get; init; }
-}
-
-public record Claim
-{
-    public required Guid ClaimId { get; init; }
-    public required uint Quantity { get; init; }
-    public required ClaimedCertificate ProductionCertificate { get; init; }
-    public required ClaimedCertificate ConsumptionCertificate { get; init; }
 }

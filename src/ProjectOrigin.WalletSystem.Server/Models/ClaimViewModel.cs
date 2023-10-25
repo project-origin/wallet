@@ -1,3 +1,4 @@
+using ProjectOrigin.WalletSystem.Server.Services.REST.v1;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -27,26 +28,26 @@ public record ClaimViewModel
     {
         return new V1.Claim
         {
-            ClaimId = new Common.V1.Uuid() { Value = Id.ToString() },
+            ClaimId = new Common.V1.Uuid { Value = Id.ToString() },
             Quantity = Quantity,
-            ProductionCertificate = new V1.Claim.Types.ClaimCertificateInfo()
+            ProductionCertificate = new V1.Claim.Types.ClaimCertificateInfo
             {
-                FederatedId = new Common.V1.FederatedStreamId()
+                FederatedId = new Common.V1.FederatedStreamId
                 {
                     Registry = ProductionRegistryName,
-                    StreamId = new Common.V1.Uuid() { Value = ProductionCertificateId.ToString() }
+                    StreamId = new Common.V1.Uuid { Value = ProductionCertificateId.ToString() }
                 },
                 Start = Google.Protobuf.WellKnownTypes.Timestamp.FromDateTimeOffset(ProductionStart),
                 End = Google.Protobuf.WellKnownTypes.Timestamp.FromDateTimeOffset(ProductionEnd),
                 GridArea = ProductionGridArea,
                 Attributes = { ProductionAttributes.Select(att => att.ToProto()) }
             },
-            ConsumptionCertificate = new V1.Claim.Types.ClaimCertificateInfo()
+            ConsumptionCertificate = new V1.Claim.Types.ClaimCertificateInfo
             {
-                FederatedId = new Common.V1.FederatedStreamId()
+                FederatedId = new Common.V1.FederatedStreamId
                 {
                     Registry = ConsumptionRegistryName,
-                    StreamId = new Common.V1.Uuid() { Value = ConsumptionCertificateId.ToString() }
+                    StreamId = new Common.V1.Uuid { Value = ConsumptionCertificateId.ToString() }
                 },
                 Start = Google.Protobuf.WellKnownTypes.Timestamp.FromDateTimeOffset(ConsumptionStart),
                 End = Google.Protobuf.WellKnownTypes.Timestamp.FromDateTimeOffset(ConsumptionEnd),
@@ -55,4 +56,35 @@ public record ClaimViewModel
             }
         };
     }
+
+    public Services.REST.v1.Claim ToV1() =>
+        new()
+        {
+            ClaimId = Id,
+            Quantity = Quantity,
+            ProductionCertificate = new ClaimedCertificate
+            {
+                FederatedStreamId = new FederatedStreamId
+                {
+                    Registry = ProductionRegistryName,
+                    StreamId = ProductionCertificateId
+                },
+                Start = ProductionStart.ToUnixTimeSeconds(),
+                End = ProductionEnd.ToUnixTimeSeconds(),
+                GridArea = ProductionGridArea,
+                Attributes = ProductionAttributes.MapToV1()
+            },
+            ConsumptionCertificate = new ClaimedCertificate
+            {
+                FederatedStreamId = new FederatedStreamId
+                {
+                    Registry = ConsumptionRegistryName,
+                    StreamId = ConsumptionCertificateId
+                },
+                Start = ConsumptionStart.ToUnixTimeSeconds(),
+                End = ConsumptionEnd.ToUnixTimeSeconds(),
+                GridArea = ConsumptionGridArea,
+                Attributes = ConsumptionAttributes.MapToV1()
+            }
+        };
 }

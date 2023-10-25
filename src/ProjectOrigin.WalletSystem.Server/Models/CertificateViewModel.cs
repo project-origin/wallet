@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Google.Protobuf.WellKnownTypes;
-using ProjectOrigin.Common.V1;
+using ProjectOrigin.WalletSystem.Server.Services.REST.v1;
 
 namespace ProjectOrigin.WalletSystem.Server.Models;
 
@@ -19,7 +19,7 @@ public record CertificateViewModel
 
     public V1.GranularCertificate ToProto()
     {
-        var fedId = new FederatedStreamId
+        var fedId = new Common.V1.FederatedStreamId
         {
             Registry = RegistryName,
             StreamId = new Common.V1.Uuid
@@ -41,4 +41,20 @@ public record CertificateViewModel
 
         return res;
     }
+
+    public GranularCertificate ToV1() =>
+        new()
+        {
+            FederatedStreamId = new()
+            {
+                Registry = RegistryName,
+                StreamId = Id
+            },
+            Quantity = (uint)Slices.Sum(slice => slice.Quantity),
+            Start = StartDate.ToUnixTimeSeconds(),
+            End = EndDate.ToUnixTimeSeconds(),
+            GridArea = GridArea,
+            CertificateType = CertificateType.MapToV1(),
+            Attributes = Attributes.MapToV1()
+        };
 }
