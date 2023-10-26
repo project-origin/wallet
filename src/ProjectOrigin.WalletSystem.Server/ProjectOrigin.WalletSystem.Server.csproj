@@ -24,9 +24,11 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Database\Postgres\Scripts\v1\*.sql">
-      <LogicalName>ProjectOrigin.WalletSystem.Server.Database.Scripts.%(Filename).%(Extension)</LogicalName>
+      <LogicalName>ProjectOrigin.WalletSystem.Server.Database.Scripts.%(Filename)%(Extension)</LogicalName>
     </EmbeddedResource>
-    <EmbeddedResource Include="Database\Postgres\Scripts\v2\*.sql" />
+    <EmbeddedResource Include="Database\Postgres\Scripts\v2\*.sql">
+      <LogicalName>Scripts.V2.%(Filename)%(Extension)</LogicalName>
+    </EmbeddedResource>
   </ItemGroup>
 
   <Target Name="Updating grpc references" BeforeTargets="PreBuildEvent">
