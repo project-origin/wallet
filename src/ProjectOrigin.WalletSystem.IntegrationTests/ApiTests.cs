@@ -183,6 +183,7 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
                 CertificateType = GranularCertificateType.Production,
                 Attributes = new List<CertificateAttribute>
                 {
+                    new() { Key = "AssetId", Value = "571234567890123456", Type = CertificateAttributeType.ClearText },
                     new(){ Key="TechCode", Value="T070000", Type=CertificateAttributeType.ClearText},
                     new(){ Key="FuelCode", Value="F00000000", Type=CertificateAttributeType.ClearText},
                 }
@@ -195,7 +196,10 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
                 EndDate = endDate,
                 GridArea = "DK1",
                 CertificateType = GranularCertificateType.Consumption,
-                Attributes = new List<CertificateAttribute>()
+                Attributes = new List<CertificateAttribute>
+                {
+                    new() { Key = "AssetId", Value = "571234567891234567", Type = CertificateAttributeType.ClearText },
+                }
             };
             await certificateRepository.InsertCertificate(productionCertificate);
             await certificateRepository.InsertCertificate(consumptionCertificate);

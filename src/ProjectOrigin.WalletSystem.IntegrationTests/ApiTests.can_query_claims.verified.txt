@@ -12,6 +12,7 @@
         end: 1672578000,
         gridArea: DK1,
         attributes: {
+          assetId: 571234567890123456,
           fuelCode: F00000000,
           techCode: T070000
         }
@@ -23,7 +24,10 @@
         },
         start: 1672574400,
         end: 1672578000,
-        gridArea: DK1
+        gridArea: DK1,
+        attributes: {
+          assetId: 571234567891234567
+        }
       }
     }
   ]
