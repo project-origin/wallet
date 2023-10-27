@@ -10,7 +10,7 @@ using ProjectOrigin.WalletSystem.Server.Database;
 using ProjectOrigin.WalletSystem.Server.Models;
 using ProjectOrigin.WalletSystem.V1;
 
-namespace ProjectOrigin.WalletSystem.Server.Services;
+namespace ProjectOrigin.WalletSystem.Server.Services.GRPC;
 
 [AllowAnonymous]
 public class ReceiveSliceService : V1.ReceiveSliceService.ReceiveSliceServiceBase
