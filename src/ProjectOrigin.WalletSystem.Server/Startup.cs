@@ -1,27 +1,29 @@
+using MassTransit;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using ProjectOrigin.HierarchicalDeterministicKeys.Implementations;
+using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
+using ProjectOrigin.WalletSystem.Server.Activities;
+using ProjectOrigin.WalletSystem.Server.Activities.Exceptions;
+using ProjectOrigin.WalletSystem.Server.CommandHandlers;
 using ProjectOrigin.WalletSystem.Server.Database;
 using ProjectOrigin.WalletSystem.Server.Database.Mapping;
-using ProjectOrigin.WalletSystem.Server.Services;
-using System.IdentityModel.Tokens.Jwt;
-using MassTransit;
-using ProjectOrigin.WalletSystem.Server.Projections;
+using ProjectOrigin.WalletSystem.Server.Database.Postgres;
+using ProjectOrigin.WalletSystem.Server.Extensions;
 using ProjectOrigin.WalletSystem.Server.Options;
-using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
-using ProjectOrigin.HierarchicalDeterministicKeys.Implementations;
-using ProjectOrigin.WalletSystem.Server.CommandHandlers;
-using ProjectOrigin.WalletSystem.Server.Activities;
+using ProjectOrigin.WalletSystem.Server.Projections;
+using ProjectOrigin.WalletSystem.Server.Services;
+using ProjectOrigin.WalletSystem.Server.Services.GRPC;
 using System;
+using System.IdentityModel.Tokens.Jwt;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using ProjectOrigin.WalletSystem.Server.Activities.Exceptions;
-using ProjectOrigin.WalletSystem.Server.Extensions;
-using ProjectOrigin.WalletSystem.Server.Database.Postgres;
-using ProjectOrigin.WalletSystem.Server.Services.GRPC;
+using ProjectOrigin.WalletSystem.Server.Services.REST;
 
 namespace ProjectOrigin.WalletSystem.Server;
 
@@ -47,6 +49,7 @@ public class Startup
         services.AddSwaggerGen(o =>
         {
             o.SupportNonNullableReferenceTypes();
+            o.DocumentFilter<PathBaseDocumentFilter>();
         });
 
         services.AddTransient<IStreamProjector<GranularCertificate>, GranularCertificateProjector>();
@@ -60,6 +63,11 @@ public class Startup
 
         services.AddOptions<RegistryOptions>()
             .Bind(_configuration)
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        services.AddOptions<RestApiOptions>()
+            .Bind(_configuration.GetSection("RestApiOptions"))
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
@@ -120,6 +128,11 @@ public class Startup
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
     {
+        var basePath =  app.ApplicationServices.GetRequiredService<IOptions<RestApiOptions>>().Value.BasePath;
+        app.UsePathBase(basePath);
+
+        app.UseSwagger();
+
         app.UseRouting();
 
         app.UseAuthentication();
@@ -131,7 +144,6 @@ public class Startup
             endpoints.MapGrpcService<ReceiveSliceService>();
             endpoints.MapGet("/", () => "Communication with gRPC endpoints must be made through a gRPC client. To learn how to create a client, visit: https://go.microsoft.com/fwlink/?linkid=2086909");
             endpoints.MapControllers();
-            endpoints.MapSwagger();
         });
 
         app.ConfigureSqlMappers();
