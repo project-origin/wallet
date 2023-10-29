@@ -19,11 +19,11 @@ using ProjectOrigin.WalletSystem.Server.Options;
 using ProjectOrigin.WalletSystem.Server.Projections;
 using ProjectOrigin.WalletSystem.Server.Services;
 using ProjectOrigin.WalletSystem.Server.Services.GRPC;
+using ProjectOrigin.WalletSystem.Server.Services.REST;
 using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using ProjectOrigin.WalletSystem.Server.Services.REST;
 
 namespace ProjectOrigin.WalletSystem.Server;
 
