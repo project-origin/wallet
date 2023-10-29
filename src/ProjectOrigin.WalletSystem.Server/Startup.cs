@@ -128,8 +128,8 @@ public class Startup
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
     {
-        var basePath = app.ApplicationServices.GetRequiredService<IOptions<RestApiOptions>>().Value.BasePath;
-        app.UsePathBase(basePath);
+        var pathBase = app.ApplicationServices.GetRequiredService<IOptions<RestApiOptions>>().Value.PathBase;
+        app.UsePathBase(pathBase);
 
         app.UseSwagger();
 

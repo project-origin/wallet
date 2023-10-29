@@ -41,8 +41,7 @@ public class ApiBasePathTests : WalletSystemTestsBase, IClassFixture<InMemoryFix
 
     private void SetRestApiOptions(IServiceCollection services) =>
         services.AddSingleton<IOptions<RestApiOptions>>(
-            new OptionsWrapper<RestApiOptions>(new RestApiOptions
-            { BasePath = _basePath }));
+            new OptionsWrapper<RestApiOptions>(new RestApiOptions { PathBase = _basePath }));
 
     public new void Dispose()
     {

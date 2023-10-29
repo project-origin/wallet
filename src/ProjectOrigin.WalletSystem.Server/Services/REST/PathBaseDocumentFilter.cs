@@ -21,7 +21,7 @@ public class PathBaseDocumentFilter : IDocumentFilter
         foreach (var path in paths)
         {
             swaggerDoc.Paths.Remove(path.Key);
-            var keyWithBasePath = $"{_options.Value.BasePath}{path.Key}";
+            var keyWithBasePath = $"{_options.Value.PathBase}{path.Key}";
             swaggerDoc.Paths.Add(keyWithBasePath, path.Value);
         }
     }
