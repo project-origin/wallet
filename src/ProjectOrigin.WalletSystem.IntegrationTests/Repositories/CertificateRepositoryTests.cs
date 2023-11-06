@@ -720,7 +720,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         var position = 1;
         for (int i = 0; i < numberOfClaims; i++)
         {
-            var conCert = await CreateCertificate(registry, GranularCertificateType.Consumption, startDate.AddHours(i), endDate: startDate.AddHours(i +1));
+            var conCert = await CreateCertificate(registry, GranularCertificateType.Consumption, startDate.AddHours(i), endDate: startDate.AddHours(i + 1));
             var conSlice = new WalletSlice
             {
                 Id = Guid.NewGuid(),
