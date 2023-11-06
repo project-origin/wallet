@@ -79,7 +79,7 @@ public abstract class AbstractRepositoryTests : IClassFixture<PostgresDatabaseFi
         return await walletRepository.CreateExternalEndpoint(owner, publicKey, referenceText, endpoint);
     }
 
-    protected async Task<Certificate> CreateCertificate(string registryName, GranularCertificateType type = GranularCertificateType.Production, DateTimeOffset? startDate = null)
+    protected async Task<Certificate> CreateCertificate(string registryName, GranularCertificateType type = GranularCertificateType.Production, DateTimeOffset? startDate = null, DateTimeOffset? endDate = null)
     {
         using var connection = CreateConnection();
         var certificateRepository = new CertificateRepository(connection);
@@ -94,7 +94,7 @@ public abstract class AbstractRepositoryTests : IClassFixture<PostgresDatabaseFi
             Id = Guid.NewGuid(),
             RegistryName = registryName,
             StartDate = startDate?.ToUtcTime() ?? DateTimeOffset.Now.ToUtcTime(),
-            EndDate = startDate?.AddHours(1).ToUtcTime() ?? DateTimeOffset.Now.AddDays(1).ToUtcTime(),
+            EndDate = endDate?.ToUtcTime() ?? DateTimeOffset.Now.AddHours(1).ToUtcTime(),
             GridArea = "DK1",
             CertificateType = type,
             Attributes = attributes

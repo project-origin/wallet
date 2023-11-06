@@ -166,12 +166,66 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         await _repository.InsertWalletSlice(slice3);
         await _repository.InsertWalletSlice(sliceWithDifferentOwner);
 
-        var certificates = await _repository.GetAllOwnedCertificates(owner1);
+        var certificates = await _repository.GetAllOwnedCertificates(owner1, new CertificatesFilter());
 
         certificates.Should().HaveCount(2).And.Satisfy(
             c => c.Id == certificate1.Id && c.Slices.Sum(x => x.Quantity) == slice1.Quantity + slice2.Quantity,
             c => c.Id == certificate2.Id && c.Slices.Sum(x => x.Quantity) == slice3.Quantity
         );
+    }
+
+    [Fact]
+    public async Task GetAllOwnedCertificates_WhenFiltering_Range()
+    {
+        var owner = _fixture.Create<string>();
+        var wallet = await CreateWallet(owner);
+        var startDate = DateTimeOffset.Now.ToUtcTime();
+
+        await CreateCertificatesAndSlices(wallet, 5, startDate);
+
+        var certificates = await _repository.GetAllOwnedCertificates(owner, new CertificatesFilter
+        {
+            Start = startDate,
+            End = startDate.AddHours(4)
+        });
+
+        certificates.Should().HaveCount(4);
+    }
+
+    [Fact]
+    public async Task GetAllOwnedCertificates_WhenFiltering_StartDate()
+    {
+        var owner = _fixture.Create<string>();
+        var wallet = await CreateWallet(owner);
+        var startDate = DateTimeOffset.Now.ToUtcTime();
+        var numberOfCerts = 42;
+
+        await CreateCertificatesAndSlices(wallet, numberOfCerts, startDate);
+
+        var certificates = await _repository.GetAllOwnedCertificates(owner, new CertificatesFilter
+        {
+            Start = startDate.AddHours(numberOfCerts - 4)
+        });
+
+        certificates.Should().HaveCount(4);
+    }
+
+    [Fact]
+    public async Task GetAllOwnedCertificates_WhenFiltering_EndDate()
+    {
+        var owner = _fixture.Create<string>();
+        var wallet = await CreateWallet(owner);
+        var startDate = DateTimeOffset.Now.ToUtcTime();
+        var numberOfCerts = 42;
+
+        await CreateCertificatesAndSlices(wallet, numberOfCerts, startDate);
+
+        var certificates = await _repository.GetAllOwnedCertificates(owner, new CertificatesFilter
+        {
+            End = startDate.AddHours(4)
+        });
+
+        certificates.Should().HaveCount(4);
     }
 
     [Fact]
@@ -228,7 +282,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         await _repository.InsertWalletSlice(slice);
 
         // Act
-        var certificates = await _repository.GetAllOwnedCertificates(owner);
+        var certificates = await _repository.GetAllOwnedCertificates(owner, new CertificatesFilter());
 
         // Assert
         certificates.Should().HaveCount(1).And.Satisfy(
@@ -270,7 +324,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         await _repository.InsertWalletSlice(slice);
         await _repository.SetWalletSliceState(slice.Id, sliceState);
 
-        var certificates = await _repository.GetAllOwnedCertificates(owner);
+        var certificates = await _repository.GetAllOwnedCertificates(owner, new CertificatesFilter());
 
         // Assert
         certificates.Should().HaveCount(expectedCertificateCount);
@@ -666,7 +720,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         var position = 1;
         for (int i = 0; i < numberOfClaims; i++)
         {
-            var conCert = await CreateCertificate(registry, GranularCertificateType.Consumption, startDate.AddHours(i));
+            var conCert = await CreateCertificate(registry, GranularCertificateType.Consumption, startDate.AddHours(i), endDate: startDate.AddHours(i +1));
             var conSlice = new WalletSlice
             {
                 Id = Guid.NewGuid(),
@@ -680,7 +734,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
             };
             await _repository.InsertWalletSlice(conSlice);
 
-            var prodCert = await CreateCertificate(registry, GranularCertificateType.Production, startDate.AddHours(i));
+            var prodCert = await CreateCertificate(registry, GranularCertificateType.Production, startDate.AddHours(i), endDate: startDate.AddHours(i + 1));
             var prodSlice = new WalletSlice
             {
                 Id = Guid.NewGuid(),
@@ -702,6 +756,31 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
                 State = ClaimState.Claimed
             };
             await _repository.InsertClaim(claim);
+        }
+    }
+
+    private async Task CreateCertificatesAndSlices(Wallet wallet, int numberOfCertificates, DateTimeOffset startDate)
+    {
+        var registry = _fixture.Create<string>();
+        var endpoint = await CreateWalletEndpoint(wallet);
+
+        var position = 1;
+        for (int i = 0; i < numberOfCertificates; i++)
+        {
+            var cert = await CreateCertificate(registry, GranularCertificateType.Consumption, startDate.AddHours(i), endDate: startDate.AddHours(i + 1));
+            var slice = new WalletSlice
+            {
+                Id = Guid.NewGuid(),
+                WalletEndpointId = endpoint.Id,
+                WalletEndpointPosition = position++,
+                RegistryName = registry,
+                CertificateId = cert.Id,
+                Quantity = _fixture.Create<int>(),
+                RandomR = _fixture.Create<byte[]>(),
+                State = WalletSliceState.Available
+            };
+
+            await _repository.InsertWalletSlice(slice);
         }
     }
 }
