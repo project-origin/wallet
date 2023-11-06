@@ -16,11 +16,15 @@ public class WalletController : ControllerBase
     [HttpGet]
     [Route("api/v1/certificates")]
     [Produces("application/json")]
-    public async Task<ActionResult<ResultList<GranularCertificate>>> GetCertificates([FromServices] IUnitOfWork unitOfWork)
+    public async Task<ActionResult<ResultList<GranularCertificate>>> GetCertificates([FromServices] IUnitOfWork unitOfWork, [FromQuery] long? start, [FromQuery] long? end)
     {
         var subject = User.GetSubject();
 
-        var certificates = await unitOfWork.CertificateRepository.GetAllOwnedCertificates(subject);
+        var certificates = await unitOfWork.CertificateRepository.GetAllOwnedCertificates(subject, new CertificatesFilter
+        {
+            Start = start != null ? DateTimeOffset.FromUnixTimeSeconds(start.Value) : null,
+            End = end != null ? DateTimeOffset.FromUnixTimeSeconds(end.Value) : null
+        });
 
         return new ResultList<GranularCertificate> { Result = certificates.Select(c => c.MapToV1()).ToArray() };
     }

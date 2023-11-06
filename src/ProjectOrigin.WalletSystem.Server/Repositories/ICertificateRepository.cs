@@ -9,7 +9,7 @@ public interface ICertificateRepository
 {
     Task InsertCertificate(Certificate certificate);
     Task<Certificate?> GetCertificate(string registryName, Guid certificateId);
-    Task<IEnumerable<CertificateViewModel>> GetAllOwnedCertificates(string owner);
+    Task<IEnumerable<CertificateViewModel>> GetAllOwnedCertificates(string owner, CertificatesFilter filter);
 
     Task InsertWalletSlice(WalletSlice newSlice);
     Task<WalletSlice> GetWalletSlice(Guid sliceId);
