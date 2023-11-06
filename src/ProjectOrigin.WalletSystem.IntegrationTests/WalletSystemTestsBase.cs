@@ -1,14 +1,16 @@
+using AutoFixture;
+using Grpc.Core;
+using MassTransit;
+using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
 using ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures;
 using ProjectOrigin.WalletSystem.Server;
+using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using Xunit;
 using Xunit.Abstractions;
-using System;
-using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
-using System.Linq;
-using MassTransit;
-using Grpc.Core;
-using AutoFixture;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests;
 
@@ -57,6 +59,14 @@ public abstract class WalletSystemTestsBase : IClassFixture<GrpcTestFixture<Star
     public void Dispose()
     {
         _logger.Dispose();
+    }
+
+    protected HttpClient CreateAuthenticatedHttpClient(string subject, string name)
+    {
+        var client = _grpcFixture.CreateHttpClient();
+        var token = _tokenGenerator.GenerateToken(subject, name);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return client;
     }
 
     protected (string, Metadata) GenerateUserHeader()

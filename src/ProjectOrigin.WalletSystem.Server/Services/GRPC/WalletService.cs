@@ -16,7 +16,7 @@ using ProjectOrigin.WalletSystem.Server.Models;
 using ProjectOrigin.WalletSystem.Server.Options;
 using ProjectOrigin.WalletSystem.V1;
 
-namespace ProjectOrigin.WalletSystem.Server.Services;
+namespace ProjectOrigin.WalletSystem.Server.Services.GRPC;
 
 [Authorize]
 public class WalletService : V1.WalletService.WalletServiceBase

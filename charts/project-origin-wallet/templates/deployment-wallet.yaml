@@ -12,6 +12,8 @@ spec:
   selector:
     matchLabels:
       app: po-wallet
+  strategy:
+    type: Recreate
   template:
     metadata:
       labels:

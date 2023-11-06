@@ -1,17 +1,16 @@
+using Google.Protobuf.WellKnownTypes;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Google.Protobuf.WellKnownTypes;
-using ProjectOrigin.Common.V1;
 
 namespace ProjectOrigin.WalletSystem.Server.Models;
 
 public record CertificateViewModel
 {
     public required Guid Id { get; init; }
-    public required string Registry { get; init; } = string.Empty;
+    public required string RegistryName { get; init; }
     public required GranularCertificateType CertificateType { get; init; }
-    public required string GridArea { get; init; } = string.Empty;
+    public required string GridArea { get; init; }
     public required DateTimeOffset StartDate { get; init; }
     public required DateTimeOffset EndDate { get; init; }
     public List<CertificateAttribute> Attributes { get; } = new();
@@ -19,9 +18,9 @@ public record CertificateViewModel
 
     public V1.GranularCertificate ToProto()
     {
-        var fedId = new FederatedStreamId
+        var fedId = new Common.V1.FederatedStreamId
         {
-            Registry = Registry,
+            Registry = RegistryName,
             StreamId = new Common.V1.Uuid
             {
                 Value = Id.ToString()

@@ -1,0 +1,34 @@
+﻿{
+  result: [
+    {
+      federatedStreamId: {
+        registry: Guid_1,
+        streamId: Guid_2
+      },
+      quantity: 85,
+      start: 1672574400,
+      end: 1672578000,
+      gridArea: DK1,
+      certificateType: production,
+      attributes: {
+        fuelCode: F00000000,
+        techCode: T070000
+      }
+    },
+    {
+      federatedStreamId: {
+        registry: Guid_1,
+        streamId: Guid_3
+      },
+      quantity: 44,
+      start: 1672578000,
+      end: 1672581600,
+      gridArea: DK1,
+      certificateType: production,
+      attributes: {
+        fuelCode: F00000000,
+        techCode: T070000
+      }
+    }
+  ]
+}

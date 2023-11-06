@@ -1,22 +1,22 @@
 using AutoFixture;
 using Dapper;
+using FluentAssertions;
+using Grpc.Core;
 using Npgsql;
+using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
 using ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures;
 using ProjectOrigin.WalletSystem.Server;
 using ProjectOrigin.WalletSystem.Server.Database.Mapping;
+using ProjectOrigin.WalletSystem.Server.Extensions;
 using ProjectOrigin.WalletSystem.Server.Models;
 using ProjectOrigin.WalletSystem.Server.Repositories;
+using ProjectOrigin.WalletSystem.V1;
 using System;
 using System.Collections.Generic;
-using FluentAssertions;
-using Grpc.Core;
-using ProjectOrigin.WalletSystem.Server.Extensions;
-using ProjectOrigin.WalletSystem.V1;
 using Xunit;
-using WalletService = ProjectOrigin.WalletSystem.V1.WalletService;
 using Xunit.Abstractions;
 using GranularCertificateType = ProjectOrigin.WalletSystem.Server.Models.GranularCertificateType;
-using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
+using WalletService = ProjectOrigin.WalletSystem.V1.WalletService;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests;
 

@@ -119,6 +119,12 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures
             });
         }
 
+        public HttpClient CreateHttpClient()
+        {
+            var client = _server!.CreateClient();
+            return client;
+        }
+
         public void Dispose()
         {
             _channel?.Dispose();

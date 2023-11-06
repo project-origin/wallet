@@ -71,3 +71,6 @@ Temporary Items
 
 # Ignore Visual Studio user-specific files
 *.user
+
+# Ignore Verify.xUnit received files
+*.received.txt

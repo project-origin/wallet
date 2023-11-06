@@ -1,0 +1,34 @@
+﻿{
+  result: [
+    {
+      claimId: Guid_1,
+      quantity: 42,
+      productionCertificate: {
+        federatedStreamId: {
+          registry: Guid_2,
+          streamId: Guid_3
+        },
+        start: 1672574400,
+        end: 1672578000,
+        gridArea: DK1,
+        attributes: {
+          assetId: 571234567890123456,
+          fuelCode: F00000000,
+          techCode: T070000
+        }
+      },
+      consumptionCertificate: {
+        federatedStreamId: {
+          registry: Guid_2,
+          streamId: Guid_4
+        },
+        start: 1672574400,
+        end: 1672578000,
+        gridArea: DK1,
+        attributes: {
+          assetId: 571234567891234567
+        }
+      }
+    }
+  ]
+}
