@@ -13,7 +13,7 @@ namespace ProjectOrigin.WalletSystem.Server;
 
 public partial class RegistryProcessBuilder
 {
-    public async Task Claim(Slice productionSlice, Slice consumptionSlice)
+    public async Task Claim(WalletSlice productionSlice, WalletSlice consumptionSlice)
     {
         if (productionSlice.Quantity != consumptionSlice.Quantity)
             throw new InvalidOperationException("Production and consumption slices must have the same quantity");
@@ -48,8 +48,8 @@ public partial class RegistryProcessBuilder
         AddActivity<UpdateSliceStateActivity, UpdateSliceStateArguments>(new UpdateSliceStateArguments
         {
             SliceStates = new(){
-                {productionSlice.Id, SliceState.Claimed},
-                {consumptionSlice.Id, SliceState.Claimed},
+                {productionSlice.Id, WalletSliceState.Claimed},
+                {consumptionSlice.Id, WalletSliceState.Claimed},
             }
         });
 
@@ -60,7 +60,7 @@ public partial class RegistryProcessBuilder
         });
     }
 
-    private static AllocatedEvent CreateAllocatedEvent(Guid allocationId, Slice consumption, Slice production)
+    private static AllocatedEvent CreateAllocatedEvent(Guid allocationId, WalletSlice consumption, WalletSlice production)
     {
         var cons = new SecretCommitmentInfo((uint)consumption.Quantity, consumption.RandomR);
         var prod = new SecretCommitmentInfo((uint)production.Quantity, production.RandomR);

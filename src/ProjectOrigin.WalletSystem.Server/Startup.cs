@@ -16,10 +16,12 @@ using ProjectOrigin.HierarchicalDeterministicKeys.Implementations;
 using ProjectOrigin.WalletSystem.Server.CommandHandlers;
 using ProjectOrigin.WalletSystem.Server.Activities;
 using System;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using ProjectOrigin.WalletSystem.Server.Activities.Exceptions;
 using ProjectOrigin.WalletSystem.Server.Extensions;
 using ProjectOrigin.WalletSystem.Server.Database.Postgres;
-using ProjectOrigin.WalletSystem.Server.BackgroundJobs;
+using ProjectOrigin.WalletSystem.Server.Services.GRPC;
 
 namespace ProjectOrigin.WalletSystem.Server;
 
@@ -35,6 +37,17 @@ public class Startup
     public void ConfigureServices(IServiceCollection services)
     {
         services.AddGrpc();
+
+        services.AddControllers()
+            .AddJsonOptions(o =>
+            {
+                o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
+            });
+
+        services.AddSwaggerGen(o =>
+        {
+            o.SupportNonNullableReferenceTypes();
+        });
 
         services.AddTransient<IStreamProjector<GranularCertificate>, GranularCertificateProjector>();
         services.AddTransient<IRegistryProcessBuilderFactory, RegistryProcessBuilderFactory>();
@@ -103,8 +116,6 @@ public class Startup
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddSingleton<IDbConnectionFactory, PostgresConnectionFactory>();
         services.AddSingleton<IHDAlgorithm, Secp256k1Algorithm>();
-
-        services.AddHostedService<VerifySlicesWorker>();
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -119,9 +130,10 @@ public class Startup
             endpoints.MapGrpcService<WalletService>();
             endpoints.MapGrpcService<ReceiveSliceService>();
             endpoints.MapGet("/", () => "Communication with gRPC endpoints must be made through a gRPC client. To learn how to create a client, visit: https://go.microsoft.com/fwlink/?linkid=2086909");
+            endpoints.MapControllers();
+            endpoints.MapSwagger();
         });
 
         app.ConfigureSqlMappers();
     }
 }
-

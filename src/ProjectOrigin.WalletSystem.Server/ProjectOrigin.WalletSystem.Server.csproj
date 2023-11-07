@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
   <PropertyGroup>
     <TargetFramework>net7.0</TargetFramework>
     <Nullable>enable</Nullable>
@@ -6,34 +6,31 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Dapper" Version="2.0.151" />
+    <PackageReference Include="Dapper" Version="2.1.11" />
     <PackageReference Include="dbup-postgresql" Version="5.0.8" />
     <PackageReference Include="Grpc.AspNetCore" Version="2.57.0" />
-    <PackageReference Include="MassTransit" Version="8.1.0" />
-    <PackageReference Include="MassTransit.RabbitMQ" Version="8.1.0" />
+    <PackageReference Include="MassTransit" Version="8.1.1" />
+    <PackageReference Include="MassTransit.RabbitMQ" Version="8.1.1" />
     <PackageReference Include="Npgsql" Version="7.0.6" />
     <PackageReference Include="NSec.Cryptography" Version="22.4.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="7.0.11" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="7.0.12" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="7.0.0" />
     <PackageReference Include="ProjectOrigin.PedersenCommitment" Version="1.0.3" />
-    <PackageReference Include="ProjectOrigin.HierarchicalDeterministicKeys" Version="0.2.2" />
+    <PackageReference Include="ProjectOrigin.HierarchicalDeterministicKeys" Version="0.4.0" />
     <PackageReference Include="Serilog.AspNetCore" Version="7.0.0" />
     <PackageReference Include="Serilog.Enrichers.Span" Version="3.1.0" />
     <PackageReference Include="Serilog.Expressions" Version="3.4.1" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Database\Scripts\202309151300-create-claims-tables.sql" />
-    <EmbeddedResource Include="Database\Scripts\202308280900-migrate-number-increment.sql" />
-    <EmbeddedResource Include="Database\Scripts\202308041301-number-increment.sql" />
-    <EmbeddedResource Include="Database\Scripts\202308021200-add-slice-state.sql" />
-    <EmbeddedResource Include="Database\Scripts\202308010911-publickey-constraint.sql" />
-    <EmbeddedResource Include="Database\Scripts\202307131007-alter-wallet-section.sql" />
-    <EmbeddedResource Include="Database\Scripts\202305101334-create-wallet-tables.sql" />
-    <EmbeddedResource Include="Database\Scripts\202306151348-create-attributes-table.sql" />
-    <EmbeddedResource Include="Database\Scripts\202305151549-receive-slice-tables.sql" />
+    <EmbeddedResource Include="Database\Postgres\Scripts\v1\*.sql">
+      <LogicalName>ProjectOrigin.WalletSystem.Server.Database.Scripts.%(Filename)%(Extension)</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Database\Postgres\Scripts\v2\*.sql">
+      <LogicalName>Scripts.V2.%(Filename)%(Extension)</LogicalName>
+    </EmbeddedResource>
   </ItemGroup>
-
 
   <Target Name="Updating grpc references" BeforeTargets="PreBuildEvent">
     <Exec Command="dotnet dotnet-grpc refresh -p $(ProjectDir)" />
@@ -41,13 +38,13 @@
 
   <ItemGroup>
     <Protobuf Include="../Protos/common.proto" Link="Protos\common.proto">
-      <SourceUrl>https://raw.githubusercontent.com/project-origin/registry/v0.2.0/src/Protos/common.proto</SourceUrl>
+      <SourceUrl>https://raw.githubusercontent.com/project-origin/registry/v0.3.0/src/Protos/common.proto</SourceUrl>
     </Protobuf>
     <Protobuf Include="../Protos/registry.proto" Link="Protos\registry.proto">
-      <SourceUrl>https://raw.githubusercontent.com/project-origin/registry/v0.2.0/src/Protos/registry.proto</SourceUrl>
+      <SourceUrl>https://raw.githubusercontent.com/project-origin/registry/v0.3.0/src/Protos/registry.proto</SourceUrl>
     </Protobuf>
     <Protobuf Include="../Protos/electricity.proto" Link="Protos\electricity.proto">
-      <SourceUrl>https://raw.githubusercontent.com/project-origin/registry/v0.2.0/src/Protos/electricity.proto</SourceUrl>
+      <SourceUrl>https://raw.githubusercontent.com/project-origin/registry/v0.3.0/src/Protos/electricity.proto</SourceUrl>
     </Protobuf>
     <Protobuf Include="../Protos/wallet.proto" GrpcServices="Both" />
   </ItemGroup>

@@ -10,7 +10,7 @@ namespace ProjectOrigin.WalletSystem.Server.Activities;
 
 public record UpdateSliceStateArguments()
 {
-    public required Dictionary<Guid, SliceState> SliceStates { get; init; }
+    public required Dictionary<Guid, WalletSliceState> SliceStates { get; init; }
 }
 
 public class UpdateSliceStateActivity : IExecuteActivity<UpdateSliceStateArguments>
@@ -26,14 +26,14 @@ public class UpdateSliceStateActivity : IExecuteActivity<UpdateSliceStateArgumen
 
     public async Task<ExecutionResult> Execute(ExecuteContext<UpdateSliceStateArguments> context)
     {
-        _logger.LogTrace("RoutingSlip {TrackingNumber} - Executing {ActivityName}", context.TrackingNumber, context.ActivityName);
+        _logger.LogDebug("RoutingSlip {TrackingNumber} - Executing {ActivityName}", context.TrackingNumber, context.ActivityName);
 
         try
         {
 
             foreach (var (id, state) in context.Arguments.SliceStates)
             {
-                await _unitOfWork.CertificateRepository.SetSliceState(id, state);
+                await _unitOfWork.CertificateRepository.SetWalletSliceState(id, state);
             }
             _unitOfWork.Commit();
             return context.Completed();

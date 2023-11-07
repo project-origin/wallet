@@ -1,0 +1,192 @@
+﻿{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "ProjectOrigin.WalletSystem.Server",
+    "version": "1.0"
+  },
+  "paths": {
+    "/api/v1/certificates": {
+      "get": {
+        "tags": [
+          "Wallet"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GranularCertificateResultList"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/claims": {
+      "get": {
+        "tags": [
+          "Wallet"
+        ],
+        "parameters": [
+          {
+            "name": "start",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClaimResultList"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CertificateType": {
+        "enum": [
+          "consumption",
+          "production"
+        ],
+        "type": "string"
+      },
+      "Claim": {
+        "type": "object",
+        "properties": {
+          "claimId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "quantity": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "productionCertificate": {
+            "$ref": "#/components/schemas/ClaimedCertificate"
+          },
+          "consumptionCertificate": {
+            "$ref": "#/components/schemas/ClaimedCertificate"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ClaimResultList": {
+        "type": "object",
+        "properties": {
+          "result": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Claim"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "ClaimedCertificate": {
+        "type": "object",
+        "properties": {
+          "federatedStreamId": {
+            "$ref": "#/components/schemas/FederatedStreamId"
+          },
+          "start": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "end": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "gridArea": {
+            "type": "string"
+          },
+          "attributes": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "FederatedStreamId": {
+        "type": "object",
+        "properties": {
+          "registry": {
+            "type": "string"
+          },
+          "streamId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "additionalProperties": false
+      },
+      "GranularCertificate": {
+        "type": "object",
+        "properties": {
+          "federatedStreamId": {
+            "$ref": "#/components/schemas/FederatedStreamId"
+          },
+          "quantity": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "start": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "end": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "gridArea": {
+            "type": "string"
+          },
+          "certificateType": {
+            "$ref": "#/components/schemas/CertificateType"
+          },
+          "attributes": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "GranularCertificateResultList": {
+        "type": "object",
+        "properties": {
+          "result": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GranularCertificate"
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  }
+}

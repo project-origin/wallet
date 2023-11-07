@@ -18,8 +18,8 @@ public class HDPrivateKeyTypeHandler : SqlMapper.TypeHandler<IHDPrivateKey>
         return _algorithm.ImportHDPrivateKey((byte[])value);
     }
 
-    public override void SetValue(IDbDataParameter parameter, IHDPrivateKey value)
+    public override void SetValue(IDbDataParameter parameter, IHDPrivateKey? value)
     {
-        parameter.Value = value.Export().ToArray();
+        parameter.Value = value?.Export().ToArray();
     }
 }

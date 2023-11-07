@@ -43,6 +43,9 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v3
 
+    - name: Setup .NET Core SDK from global.json
+      uses: actions/setup-dotnet@v3
+
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v2

@@ -26,7 +26,7 @@ public class UpdateClaimStateActivity : IExecuteActivity<UpdateClaimStateArgumen
 
     public async Task<ExecutionResult> Execute(ExecuteContext<UpdateClaimStateArguments> context)
     {
-        _logger.LogTrace("RoutingSlip {TrackingNumber} - Executing {ActivityName}", context.TrackingNumber, context.ActivityName);
+        _logger.LogDebug("RoutingSlip {TrackingNumber} - Executing {ActivityName}", context.TrackingNumber, context.ActivityName);
 
         try
         {

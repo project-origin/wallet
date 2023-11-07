@@ -39,19 +39,38 @@ public static class PostgresFixtureExtensions
         }
     }
 
-    public static async Task<DepositEndpoint> CreateDepositEndpoint(this PostgresDatabaseFixture _dbFixture, Wallet wallet)
+    public static async Task<WalletEndpoint> CreateWalletEndpoint(this PostgresDatabaseFixture _dbFixture, Wallet wallet)
     {
         using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
         {
             var walletRepository = new WalletRepository(connection);
-            return await walletRepository.CreateDepositEndpoint(wallet.Id, string.Empty);
+            return await walletRepository.CreateWalletEndpoint(wallet.Id);
         }
     }
 
-    public static async Task<DepositEndpoint> CreateWalletDepositEndpoint(this PostgresDatabaseFixture _dbFixture, string owner)
+    public static async Task<WalletEndpoint> CreateWalletEndpoint(this PostgresDatabaseFixture _dbFixture, string owner)
     {
         var wallet = await CreateWallet(_dbFixture, owner);
-        return await CreateDepositEndpoint(_dbFixture, wallet);
+        return await CreateWalletEndpoint(_dbFixture, wallet);
+    }
+
+    public static async Task<int> GetNextNumberForId(this PostgresDatabaseFixture _dbFixture, Guid id)
+    {
+        using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
+        {
+            var walletRepository = new WalletRepository(connection);
+
+            return await walletRepository.GetNextNumberForId(id);
+        }
+    }
+
+    public static async Task<WalletEndpoint> GetWalletRemainderEndpoint(this PostgresDatabaseFixture _dbFixture, Guid walletId)
+    {
+        using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
+        {
+            var walletRepository = new WalletRepository(connection);
+            return await walletRepository.GetWalletRemainderEndpoint(walletId);
+        }
     }
 
     public static async Task<Certificate> CreateCertificate(this PostgresDatabaseFixture _dbFixture, Guid id, string registryName, GranularCertificateType type)
@@ -61,15 +80,14 @@ public static class PostgresFixtureExtensions
             var certificateRepository = new CertificateRepository(connection);
             var attributes = new List<CertificateAttribute>
             {
-                new () {Key="AssetId", Value= "571234567890123456"},
-                new () {Key="TechCode", Value= "T070000"},
-                new () {Key="FuelCode", Value= "F00000000"}
+                new () {Key="TechCode", Value= "T070000", Type=CertificateAttributeType.ClearText},
+                new () {Key="FuelCode", Value= "F00000000", Type=CertificateAttributeType.ClearText}
             };
 
             var cert = new Certificate
             {
                 Id = id,
-                Registry = registryName,
+                RegistryName = registryName,
                 StartDate = DateTimeOffset.Now,
                 EndDate = DateTimeOffset.Now.AddDays(1),
                 GridArea = "DK1",
@@ -82,31 +100,31 @@ public static class PostgresFixtureExtensions
         }
     }
 
-    public static async Task<Slice> CreateSlice(this PostgresDatabaseFixture _dbFixture, DepositEndpoint depositEndpoint, Certificate certificate, SecretCommitmentInfo secretCommitmentInfo)
+    public static async Task<WalletSlice> CreateSlice(this PostgresDatabaseFixture _dbFixture, WalletEndpoint walletEndpoint, Certificate certificate, SecretCommitmentInfo secretCommitmentInfo)
     {
         using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
         {
             var certificateRepository = new CertificateRepository(connection);
             var walletRepository = new WalletRepository(connection);
-            var slice = new Slice
+            var slice = new WalletSlice
             {
                 Id = Guid.NewGuid(),
-                DepositEndpointId = depositEndpoint.Id,
-                DepositEndpointPosition = await walletRepository.GetNextNumberForId(depositEndpoint.Id),
-                Registry = certificate.Registry,
+                WalletEndpointId = walletEndpoint.Id,
+                WalletEndpointPosition = await walletRepository.GetNextNumberForId(walletEndpoint.Id),
+                RegistryName = certificate.RegistryName,
                 CertificateId = certificate.Id,
                 Quantity = secretCommitmentInfo.Message,
                 RandomR = secretCommitmentInfo.BlindingValue.ToArray(),
-                SliceState = SliceState.Available
+                State = WalletSliceState.Available
             };
 
-            await certificateRepository.InsertSlice(slice);
+            await certificateRepository.InsertWalletSlice(slice);
 
             return slice;
         }
     }
 
-    public static async Task InsertSlice(this PostgresDatabaseFixture _dbFixture, DepositEndpoint depositEndpoint, int position, Electricity.V1.IssuedEvent issuedEvent, SecretCommitmentInfo commitment)
+    public static async Task InsertSlice(this PostgresDatabaseFixture _dbFixture, WalletEndpoint endpoint, int position, Electricity.V1.IssuedEvent issuedEvent, SecretCommitmentInfo commitment)
     {
         using var connection = new NpgsqlConnection(_dbFixture.ConnectionString);
         var certificateRepository = new CertificateRepository(connection);
@@ -118,7 +136,7 @@ public static class PostgresFixtureExtensions
             certificate = new Certificate
             {
                 Id = Guid.Parse(issuedEvent.CertificateId.StreamId.Value),
-                Registry = issuedEvent.CertificateId.Registry,
+                RegistryName = issuedEvent.CertificateId.Registry,
                 StartDate = issuedEvent.Period.Start.ToDateTimeOffset(),
                 EndDate = issuedEvent.Period.End.ToDateTimeOffset(),
                 GridArea = issuedEvent.GridArea,
@@ -128,20 +146,18 @@ public static class PostgresFixtureExtensions
             await certificateRepository.InsertCertificate(certificate);
         }
 
-        var receivedSlice = new Slice
+        var receivedSlice = new WalletSlice
         {
             Id = Guid.NewGuid(),
-            DepositEndpointId = depositEndpoint.Id,
-            DepositEndpointPosition = position,
-            Registry = certificate.Registry,
+            WalletEndpointId = endpoint.Id,
+            WalletEndpointPosition = position,
+            RegistryName = certificate.RegistryName,
             CertificateId = certificate.Id,
             Quantity = commitment.Message,
             RandomR = commitment.BlindingValue.ToArray(),
-            SliceState = SliceState.Available
+            State = WalletSliceState.Available
         };
 
-        await certificateRepository.InsertSlice(receivedSlice);
+        await certificateRepository.InsertWalletSlice(receivedSlice);
     }
-
-
 }

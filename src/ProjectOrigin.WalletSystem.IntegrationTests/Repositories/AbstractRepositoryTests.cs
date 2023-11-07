@@ -62,21 +62,21 @@ public abstract class AbstractRepositoryTests : IClassFixture<PostgresDatabaseFi
         return wallet;
     }
 
-    protected async Task<DepositEndpoint> CreateDepositEndpoint(Wallet wallet)
+    protected async Task<WalletEndpoint> CreateWalletEndpoint(Wallet wallet)
     {
         using var connection = CreateConnection();
         var walletRepository = new WalletRepository(connection);
-        return await walletRepository.CreateDepositEndpoint(wallet.Id, string.Empty);
+        return await walletRepository.CreateWalletEndpoint(wallet.Id);
     }
 
-    protected async Task<DepositEndpoint> CreateReceiverDepositEndpoint(string owner, string referenceText, string endpoint)
+    protected async Task<ExternalEndpoint> CreateExternalEndpoint(string owner, string referenceText, string endpoint)
     {
         using var connection = CreateConnection();
         var walletRepository = new WalletRepository(connection);
 
         var key = _algorithm.GenerateNewPrivateKey();
         var publicKey = key.Derive(_fixture.Create<int>()).Neuter();
-        return await walletRepository.CreateReceiverDepositEndpoint(owner, publicKey, referenceText, endpoint);
+        return await walletRepository.CreateExternalEndpoint(owner, publicKey, referenceText, endpoint);
     }
 
     protected async Task<Certificate> CreateCertificate(string registryName, GranularCertificateType type = GranularCertificateType.Production, DateTimeOffset? startDate = null)
@@ -86,14 +86,13 @@ public abstract class AbstractRepositoryTests : IClassFixture<PostgresDatabaseFi
 
         var attributes = new List<CertificateAttribute>
         {
-            new(){ Key="AssetId", Value="571234567890123456"},
-            new(){ Key="TechCode", Value="T070000"},
-            new(){ Key="FuelCode", Value="F00000000"},
+            new(){ Key="TechCode", Value="T070000", Type=CertificateAttributeType.ClearText},
+            new(){ Key="FuelCode", Value="F00000000", Type=CertificateAttributeType.ClearText},
         };
         var certificate = new Certificate
         {
             Id = Guid.NewGuid(),
-            Registry = registryName,
+            RegistryName = registryName,
             StartDate = startDate?.ToUtcTime() ?? DateTimeOffset.Now.ToUtcTime(),
             EndDate = startDate?.AddHours(1).ToUtcTime() ?? DateTimeOffset.Now.AddDays(1).ToUtcTime(),
             GridArea = "DK1",

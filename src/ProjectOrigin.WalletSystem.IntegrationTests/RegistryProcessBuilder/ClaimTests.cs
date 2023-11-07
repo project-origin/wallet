@@ -42,17 +42,17 @@ public class ClaimTests : IClassFixture<PostgresDatabaseFixture>
     public async Task TestClaimEqualSize()
     {
         // Arrange
-        var depositEndpoint = await _dbFixture.CreateWalletDepositEndpoint(_fixture.Create<string>());
+        var endpoint = await _dbFixture.CreateWalletEndpoint(_fixture.Create<string>());
 
         var prodCert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _registryName, Server.Models.GranularCertificateType.Production);
         var prodSecret = new SecretCommitmentInfo(150);
-        var prodSlice = await _dbFixture.CreateSlice(depositEndpoint, prodCert, prodSecret);
-        var prodPublicKey = depositEndpoint.PublicKey.Derive(prodSlice.DepositEndpointPosition);
+        var prodSlice = await _dbFixture.CreateSlice(endpoint, prodCert, prodSecret);
+        var prodPublicKey = endpoint.PublicKey.Derive(prodSlice.WalletEndpointPosition);
 
         var consCert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _registryName, Server.Models.GranularCertificateType.Consumption);
         var consSecret = new SecretCommitmentInfo(150);
-        var consSlice = await _dbFixture.CreateSlice(depositEndpoint, consCert, consSecret);
-        var consPublicKey = depositEndpoint.PublicKey.Derive(consSlice.DepositEndpointPosition);
+        var consSlice = await _dbFixture.CreateSlice(endpoint, consCert, consSecret);
+        var consPublicKey = endpoint.PublicKey.Derive(consSlice.WalletEndpointPosition);
 
         // Act
         await _processBuilder.Claim(prodSlice, consSlice);
@@ -113,8 +113,8 @@ public class ClaimTests : IClassFixture<PostgresDatabaseFixture>
         slip.Itinerary[7].ShouldWaitFor(t4);
 
         slip.Itinerary[8].ShouldSetStates(new(){
-            { prodSlice.Id, SliceState.Claimed },
-            { consSlice.Id, SliceState.Claimed },
+            { prodSlice.Id, WalletSliceState.Claimed },
+            { consSlice.Id, WalletSliceState.Claimed },
         });
 
         slip.Itinerary[9].ShouldBeActivity<UpdateClaimStateActivity, UpdateClaimStateArguments>()
@@ -136,15 +136,15 @@ public class ClaimTests : IClassFixture<PostgresDatabaseFixture>
     public async Task TestClaimUnqualSize(uint prodSize, uint consSize)
     {
         // Arrange
-        var depositEndpoint = await _dbFixture.CreateWalletDepositEndpoint(_fixture.Create<string>());
+        var endpoint = await _dbFixture.CreateWalletEndpoint(_fixture.Create<string>());
 
         var prodCert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _registryName, Server.Models.GranularCertificateType.Production);
         var prodSecret = new SecretCommitmentInfo(prodSize);
-        var prodSlice = await _dbFixture.CreateSlice(depositEndpoint, prodCert, prodSecret);
+        var prodSlice = await _dbFixture.CreateSlice(endpoint, prodCert, prodSecret);
 
         var consCert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _registryName, Server.Models.GranularCertificateType.Consumption);
         var consSecret = new SecretCommitmentInfo(consSize);
-        var consSlice = await _dbFixture.CreateSlice(depositEndpoint, consCert, consSecret);
+        var consSlice = await _dbFixture.CreateSlice(endpoint, consCert, consSecret);
 
         // Act
         var method = () => _processBuilder.Claim(prodSlice, consSlice);

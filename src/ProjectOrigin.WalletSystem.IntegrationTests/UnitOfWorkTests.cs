@@ -47,7 +47,7 @@ public class UnitOfWorkTests : IClassFixture<PostgresDatabaseFixture>
 
         using (var uof = new UnitOfWork(dbConnectionFactory))
         {
-            var data = await uof.WalletRepository.GetWalletByOwner(owner);
+            var data = await uof.WalletRepository.GetWallet(owner);
             data.Should().NotBeNull();
             data!.Owner.Should().Be(owner);
         }
@@ -68,23 +68,23 @@ public class UnitOfWorkTests : IClassFixture<PostgresDatabaseFixture>
 
         using (var uof = new UnitOfWork(dbConnectionFactory))
         {
-            var wallet = await uof.WalletRepository.GetWalletByOwner(owner);
+            var wallet = await uof.WalletRepository.GetWallet(owner);
             wallet.Should().BeNull();
 
             await uof.WalletRepository.Create(model);
 
-            wallet = await uof.WalletRepository.GetWalletByOwner(owner);
+            wallet = await uof.WalletRepository.GetWallet(owner);
             wallet.Should().NotBeNull();
 
             uof.Rollback();
 
-            wallet = await uof.WalletRepository.GetWalletByOwner(owner);
+            wallet = await uof.WalletRepository.GetWallet(owner);
             wallet.Should().BeNull();
         };
 
         using (var uof = new UnitOfWork(dbConnectionFactory))
         {
-            var data = await uof.WalletRepository.GetWalletByOwner(owner);
+            var data = await uof.WalletRepository.GetWallet(owner);
             data.Should().BeNull();
         }
     }

@@ -16,64 +16,31 @@ public class CertificateRepository : ICertificateRepository
 
     public CertificateRepository(IDbConnection connection) => this._connection = connection;
 
-    public async Task InsertSlice(Slice newSlice)
+    public async Task InsertWalletSlice(WalletSlice newSlice)
     {
-        var registryId = await _connection.QuerySingleAsync<Guid>(
-            @"SELECT Id
-              FROM Registries
-              WHERE Name = @registry",
-            new
-            {
-                newSlice.Registry
-            });
-
         await _connection.ExecuteAsync(
-            @"INSERT INTO Slices(Id, DepositEndpointId, DepositEndpointPosition, RegistryId, CertificateId, Quantity, RandomR, SliceState)
-              VALUES (@id, @depositEndpointId, @depositEndpointPosition, @registryId, @certificateId, @quantity, @randomR, @sliceState)",
-            new
-            {
-                newSlice.Id,
-                newSlice.DepositEndpointId,
-                newSlice.DepositEndpointPosition,
-                registryId,
-                newSlice.CertificateId,
-                newSlice.Quantity,
-                newSlice.RandomR,
-                newSlice.SliceState
-            });
+            @"INSERT INTO wallet_slices(id, certificate_id, registry_name, wallet_endpoint_id, wallet_endpoint_position, state, quantity, random_r)
+              VALUES (@id, @certificateId, @registryName, @walletEndpointId, @walletEndpointPosition, @state, @quantity, @randomR)",
+            newSlice);
+    }
+
+    public async Task InsertTransferredSlice(TransferredSlice newSlice)
+    {
+        await _connection.ExecuteAsync(
+            @"INSERT INTO transferred_slices(id, certificate_id, registry_name, external_endpoint_id, external_endpoint_position, state, quantity, random_r)
+              VALUES (@id, @certificateId, @registryName, @externalEndpointId, @externalEndpointPosition, @state, @quantity, @randomR)",
+            newSlice);
     }
 
     public async Task InsertCertificate(Certificate certificate)
     {
-        var registryId = await _connection.QuerySingleOrDefaultAsync<Guid?>(
-            @"SELECT Id
-              FROM Registries
-              WHERE Name = @registry",
-            new
-            {
-                certificate.Registry
-            });
-
-        if (!registryId.HasValue)
-        {
-            registryId = Guid.NewGuid();
-            await _connection.ExecuteAsync(
-                @"INSERT INTO Registries(Id, Name)
-                  VALUES (@registryId, @registry)",
-                new
-                {
-                    registryId,
-                    certificate.Registry
-                });
-        }
-
         await _connection.ExecuteAsync(
-            @"INSERT INTO Certificates(Id, RegistryId, StartDate, EndDate, GridArea, CertificateType)
-              VALUES (@id, @registryId, @startDate, @endDate, @gridArea, @certificateType)",
+            @"INSERT INTO certificates(id, registry_name, start_date, end_date, grid_area, certificate_type)
+              VALUES (@id, @registryName, @startDate, @endDate, @gridArea, @certificateType)",
             new
             {
                 certificate.Id,
-                registryId,
+                certificate.RegistryName,
                 startDate = certificate.StartDate.ToUtcTime(),
                 endDate = certificate.EndDate.ToUtcTime(),
                 certificate.GridArea,
@@ -82,17 +49,17 @@ public class CertificateRepository : ICertificateRepository
 
         foreach (var atr in certificate.Attributes)
         {
-            var atrId = Guid.NewGuid();
             await _connection.ExecuteAsync(
-                @"INSERT INTO Attributes(Id, KeyAtr, ValueAtr, CertificateId, RegistryId)
-                  VALUES (@atrId, @key, @value, @id, @registryId)",
+                @"INSERT INTO attributes(id, attribute_key, attribute_value, attribute_type, certificate_id, registry_name)
+                  VALUES (@id, @key, @value, @type, @certificateId, @registryName)",
                 new
                 {
-                    atrId,
+                    id = Guid.NewGuid(),
                     atr.Key,
                     atr.Value,
-                    certificate.Id,
-                    registryId
+                    atr.Type,
+                    certificateId = certificate.Id,
+                    certificate.RegistryName
                 });
         }
     }
@@ -101,15 +68,13 @@ public class CertificateRepository : ICertificateRepository
     {
         var certsDictionary = new Dictionary<Guid, Certificate>();
         await _connection.QueryAsync<Certificate?, CertificateAttribute, Certificate?>(
-            @"SELECT c.Id, r.Name as Registry, c.StartDate, c.EndDate, c.GridArea, c.CertificateType, a.Id AS AttributeId, a.KeyAtr AS Key, a.ValueAtr as Value
-              FROM Certificates c
-              INNER JOIN Registries r
-                ON c.RegistryId = r.Id
+            @"SELECT c.*, a.attribute_key as key, a.attribute_value as value, a.attribute_type as type
+              FROM certificates c
               LEFT JOIN Attributes a
-                ON c.Id = a.CertificateId
-                AND c.RegistryId = a.RegistryId
-              WHERE c.Id = @certificateId
-                AND r.Name = @registryName",
+                ON c.id = a.certificate_id
+                AND c.registry_name = a.registry_name
+              WHERE c.id = @certificateId
+                AND c.registry_name = @registryName",
             (cert, atr) =>
             {
                 if (cert == null) return null;
@@ -124,7 +89,7 @@ public class CertificateRepository : ICertificateRepository
 
                 return certificate;
             },
-            splitOn: "AttributeId",
+            splitOn: "key",
             param: new
             {
                 certificateId,
@@ -139,21 +104,20 @@ public class CertificateRepository : ICertificateRepository
         var certsDictionary = new Dictionary<Guid, CertificateViewModel>();
 
         await _connection.QueryAsync<CertificateViewModel, SliceViewModel, CertificateAttribute, CertificateViewModel>(
-            @"SELECT c.Id, r.Name as Registry, c.StartDate, c. EndDate, c.GridArea, c.CertificateType, s.Id AS SliceId, s.Quantity as Quantity, a.Id AS AttributeId, a.KeyAtr AS Key, a.ValueAtr as Value
+            @"SELECT c.*, s.Id AS slice_id, s.quantity, a.attribute_key as key, a.attribute_value as value, a.attribute_type as type
               FROM Wallets w
-              INNER JOIN DepositEndpoints de
-                ON w.Id = de.WalletId
-              INNER JOIN Slices s
-                ON de.Id = s.DepositEndpointId
-              INNER JOIN Certificates c
-                ON s.CertificateId = c.Id
-              INNER JOIN Registries r
-                ON c.RegistryId = r.Id
-              LEFT JOIN Attributes a
-                ON c.Id = a.CertificateId
-                AND c.RegistryId = a.RegistryId
-              WHERE w.Owner = @owner
-                AND s.SliceState = @sliceState",
+              INNER JOIN wallet_endpoints re
+                ON w.id = re.wallet_id
+              INNER JOIN wallet_slices s
+                ON re.Id = s.wallet_endpoint_id
+              INNER JOIN certificates c
+                ON s.certificate_id = c.id
+              LEFT JOIN attributes_view a
+                ON c.id = a.certificate_id
+                AND c.registry_name = a.registry_name
+                AND (a.wallet_id = w.id OR a.wallet_id IS NULL)
+              WHERE w.owner = @owner
+                AND s.state = @sliceState",
             (cert, slice, atr) =>
             {
                 if (!certsDictionary.TryGetValue(cert.Id, out var certificate))
@@ -164,62 +128,42 @@ public class CertificateRepository : ICertificateRepository
                 if (slice != null && !certificate.Slices.Contains(slice))
                     certificate.Slices.Add(slice);
 
-                if (atr != null && !certificate.Attributes.Contains(atr))
+                if (atr != null && atr.Key != null && atr.Value != null && !certificate.Attributes.Contains(atr))
                     certificate.Attributes.Add(atr);
 
                 return certificate;
             },
-            splitOn: "SliceId, AttributeId",
+            splitOn: "slice_id, key",
             param: new
             {
                 owner,
-                sliceState = (int)SliceState.Available
+                sliceState = (int)WalletSliceState.Available
             });
 
         return certsDictionary.Values;
     }
 
-    public Task<ReceivedSlice?> GetTop1ReceivedSlice()
+    public Task<IEnumerable<WalletSlice>> GetOwnersAvailableSlices(string registryName, Guid certificateId, string owner)
     {
-        return _connection.QueryFirstOrDefaultAsync<ReceivedSlice?>(
-            @"SELECT *
-              FROM ReceivedSlices LIMIT 1 FOR UPDATE");
-    }
-
-    public Task RemoveReceivedSlice(ReceivedSlice receivedSlice)
-    {
-        return _connection.ExecuteAsync(
-            @"DELETE FROM ReceivedSlices
-              WHERE Id = @id",
-            new
-            {
-                receivedSlice.Id
-            });
-    }
-
-    public Task<IEnumerable<Slice>> GetOwnersAvailableSlices(string registryName, Guid certificateId, string owner)
-    {
-        return _connection.QueryAsync<Slice>(
-            @"SELECT s.*, r.Name as Registry
-              FROM Certificates c
-              INNER JOIN Slices s
-                ON c.Id = s.CertificateId
-              INNER JOIN Registries r
-                ON s.RegistryId = r.Id
-              INNER JOIN DepositEndpoints de
-                ON s.DepositEndpointId = de.Id
-              INNER JOIN Wallets w
-                ON de.WalletId = w.Id
-              WHERE r.Name = @registryName
-                AND s.CertificateId = @certificateId
+        return _connection.QueryAsync<WalletSlice>(
+            @"SELECT s.*
+              FROM certificates c
+              INNER JOIN wallet_slices s
+                ON c.id = s.certificate_id
+              INNER JOIN wallet_endpoints re
+                ON s.wallet_endpoint_id = re.id
+              INNER JOIN wallets w
+                ON re.wallet_id = w.id
+              WHERE s.registry_name = @registryName
+                AND s.certificate_id = @certificateId
                 AND w.owner = @owner
-                AND s.SliceState = @sliceState",
+                AND s.state = @state",
             new
             {
                 registryName,
                 certificateId,
                 owner,
-                sliceState = (int)SliceState.Available
+                state = (int)WalletSliceState.Available
             });
     }
 
@@ -227,54 +171,81 @@ public class CertificateRepository : ICertificateRepository
     {
         return _connection.QuerySingleAsync<long>(
             @"SELECT SUM(s.quantity)
-              FROM Certificates c
-              INNER JOIN Slices s
-                ON c.Id = s.CertificateId
-              INNER JOIN Registries r
-                ON s.RegistryId = r.Id
-              INNER JOIN DepositEndpoints de
-                ON s.DepositEndpointId = de.Id
-              INNER JOIN Wallets w
-                ON de.WalletId = w.Id
-              WHERE r.Name = @registryName
-                AND s.CertificateId = @certificateId
+              FROM certificates c
+              INNER JOIN wallet_slices s
+                ON c.id = s.certificate_id
+              INNER JOIN wallet_endpoints re
+                ON s.wallet_endpoint_id = re.Id
+              INNER JOIN wallets w
+                ON re.wallet_id = w.id
+              WHERE s.registry_name = @registryName
+                AND s.certificate_id = @certificateId
                 AND w.owner = @owner
-                AND (s.SliceState = @availableState OR s.SliceState = @registeringState)",
+                AND (s.state = @availableState OR s.state = @registeringState)",
             new
             {
                 registryName,
                 certificateId,
                 owner,
-                availableState = (int)SliceState.Available,
-                registeringState = (int)SliceState.Registering
+                availableState = (int)WalletSliceState.Available,
+                registeringState = (int)WalletSliceState.Registering
             });
     }
 
-    public Task<Slice> GetSlice(Guid sliceId)
+    public Task<WalletSlice> GetWalletSlice(Guid sliceId)
     {
-        return _connection.QuerySingleAsync<Slice>(
-            @"SELECT s.*, r.Name as Registry
-              FROM Slices s
-              INNER JOIN Registries r
-                ON s.RegistryId = r.Id
-              WHERE s.Id = @sliceId",
+        return _connection.QuerySingleAsync<WalletSlice>(
+            @"SELECT s.*
+              FROM wallet_slices s
+              WHERE s.id = @sliceId",
             new
             {
                 sliceId
             });
     }
 
-    public Task SetSliceState(Guid sliceId, SliceState state)
+    public Task<TransferredSlice> GetTransferredSlice(Guid sliceId)
     {
-        return _connection.ExecuteAsync(
-            @"UPDATE Slices
-              SET SliceState = @state
-              WHERE Id = @sliceId",
+        return _connection.QuerySingleAsync<TransferredSlice>(
+            @"SELECT s.*
+              FROM transferred_slices s
+              WHERE s.id = @sliceId",
+            new
+            {
+                sliceId
+            });
+    }
+
+    public async Task SetWalletSliceState(Guid sliceId, WalletSliceState state)
+    {
+        var rowsChanged = await _connection.ExecuteAsync(
+            @"UPDATE wallet_slices
+              SET state = @state
+              WHERE id = @sliceId",
             new
             {
                 sliceId,
                 state
             });
+
+        if (rowsChanged != 1)
+            throw new InvalidOperationException($"Slice with id {sliceId} could not be found");
+    }
+
+    public async Task SetTransferredSliceState(Guid sliceId, TransferredSliceState state)
+    {
+        var rowsChanged = await _connection.ExecuteAsync(
+            @"UPDATE transferred_slices
+              SET state = @state
+              WHERE id = @sliceId",
+            new
+            {
+                sliceId,
+                state
+            });
+
+        if (rowsChanged != 1)
+            throw new InvalidOperationException($"Slice with id {sliceId} could not be found");
     }
 
     /// <summary>
@@ -287,7 +258,7 @@ public class CertificateRepository : ICertificateRepository
     /// <returns></returns>
     /// <exception cref="InvalidOperationException">Thrown when the owner does not have enough to reserve the requested amount</exception>
     /// <exception cref="TransientException">Thrown when the owner currently does not have enogth available, but will have later</exception>
-    public async Task<IList<Slice>> ReserveQuantity(string owner, string registryName, Guid certificateId, uint reserveQuantity)
+    public async Task<IList<WalletSlice>> ReserveQuantity(string owner, string registryName, Guid certificateId, uint reserveQuantity)
     {
         var availableSlices = await GetOwnersAvailableSlices(registryName, certificateId, owner);
         if (availableSlices.IsEmpty())
@@ -310,7 +281,7 @@ public class CertificateRepository : ICertificateRepository
 
         foreach (var slice in takenSlices)
         {
-            await SetSliceState(slice.Id, SliceState.Reserved);
+            await SetWalletSliceState(slice.Id, WalletSliceState.Reserved);
         }
 
         return takenSlices;
@@ -318,18 +289,41 @@ public class CertificateRepository : ICertificateRepository
 
     public Task InsertClaim(Claim newClaim)
     {
-        return _connection.ExecuteAsync(@"INSERT INTO claims(id, production_slice_id, consumption_slice_id, state) VALUES (@id, @productionSliceId, @consumptionSliceId, @state)",
-            new { newClaim.Id, newClaim.ProductionSliceId, newClaim.ConsumptionSliceId, newClaim.State });
+        return _connection.ExecuteAsync(
+            @"INSERT INTO claims(id, production_slice_id, consumption_slice_id, state)
+              VALUES (@id, @productionSliceId, @consumptionSliceId, @state)",
+            new
+            {
+                newClaim.Id,
+                newClaim.ProductionSliceId,
+                newClaim.ConsumptionSliceId,
+                newClaim.State
+            });
     }
 
     public Task SetClaimState(Guid claimId, ClaimState state)
     {
-        return _connection.ExecuteAsync("UPDATE claims SET state = @state WHERE id = @claimId", new { claimId, state });
+        return _connection.ExecuteAsync(
+            @"UPDATE claims
+              SET state = @state
+              WHERE id = @claimId",
+            new
+            {
+                claimId,
+                state
+            });
     }
 
     public Task<Claim> GetClaim(Guid claimId)
     {
-        return _connection.QuerySingleAsync<Claim>("SELECT * FROM claims WHERE id = @claimId", new { claimId });
+        return _connection.QuerySingleAsync<Claim>(
+            @"SELECT *
+              FROM claims
+              WHERE id = @claimId",
+            new
+            {
+                claimId
+            });
     }
 
     public async Task<IEnumerable<ClaimViewModel>> GetClaims(string owner, ClaimFilter claimFilter)
@@ -339,58 +333,56 @@ public class CertificateRepository : ICertificateRepository
             SELECT
                 claims.Id,
                 slice_cons.quantity AS Quantity,
+                wallet_cons.id as WalletId,
 
-                registry_prod.name AS ProductionRegistryName,
-                slice_prod.certificateId AS ProductionCertificateId,
-                cert_prod.startDate AS ProductionStartDate,
-                cert_prod.endDate AS ProductionEndDate,
-                cert_prod.gridArea AS ProductionGridArea,
+                slice_prod.registry_name AS ProductionRegistryName,
+                slice_prod.certificate_id AS ProductionCertificateId,
+                cert_prod.start_date AS ProductionStart,
+                cert_prod.end_date AS ProductionEnd,
+                cert_prod.grid_area AS ProductionGridArea,
 
-                registry_cons.name AS ConsumptionRegistryName,
-                slice_cons.certificateId AS ConsumptionCertificateId,
-                cert_cons.startDate AS ConsumptionStartDate,
-                cert_cons.endDate AS ConsumptionEndDate,
-                cert_cons.gridArea AS ConsumptionGridArea
+                slice_cons.registry_name AS ConsumptionRegistryName,
+                slice_cons.certificate_id AS ConsumptionCertificateId,
+                cert_cons.start_date AS ConsumptionStart,
+                cert_cons.end_date AS ConsumptionEnd,
+                cert_cons.grid_area AS ConsumptionGridArea
 
             FROM claims
 
-            INNER JOIN slices slice_prod
-                ON claims.production_slice_id = slice_prod.Id
+            INNER JOIN wallet_slices slice_prod
+                ON claims.production_slice_id = slice_prod.id
             INNER JOIN certificates cert_prod
-                ON slice_prod.certificateId = cert_prod.Id
-                AND slice_prod.registryId = cert_prod.registryId
-            INNER JOIN registries registry_prod
-                ON slice_prod.registryId = registry_prod.Id
+                ON slice_prod.certificate_id = cert_prod.id
+                AND slice_prod.registry_name = cert_prod.registry_name
 
-            INNER JOIN slices slice_cons
-                ON claims.consumption_slice_id = slice_cons.Id
+            INNER JOIN wallet_slices slice_cons
+                ON claims.consumption_slice_id = slice_cons.id
             INNER JOIN certificates cert_cons
-                ON slice_cons.certificateId = cert_cons.Id
-                AND slice_cons.registryId = cert_cons.registryId
-            INNER JOIN registries registry_cons
-                ON slice_cons.registryId = registry_cons.Id
+                ON slice_cons.certificate_id = cert_cons.id
+                AND slice_cons.registry_name = cert_cons.registry_name
 
-            INNER JOIN depositendpoints dep_cons
-                ON slice_cons.depositendpointId = dep_cons.Id
+            INNER JOIN wallet_endpoints dep_cons
+                ON slice_cons.wallet_endpoint_id = dep_cons.id
             INNER JOIN wallets wallet_cons
-                ON dep_cons.walletId = wallet_cons.Id
+                ON dep_cons.wallet_id = wallet_cons.id
 
             WHERE
                 claims.state = @state
-                AND (@start IS NULL OR cert_prod.startDate >= @start)
-                AND (@end IS NULL OR cert_prod.endDate <= @end)
-                AND (@start IS NULL OR cert_cons.startDate >= @start)
-                AND (@end IS NULL OR cert_cons.endDate <= @end)
+                AND (@start IS NULL OR cert_prod.start_date >= @start)
+                AND (@end IS NULL OR cert_prod.end_date <= @end)
+                AND (@start IS NULL OR cert_cons.start_date >= @start)
+                AND (@end IS NULL OR cert_cons.end_date <= @end)
                 AND wallet_cons.owner = @owner
         );
         SELECT * FROM claims_work_table;
-        SELECT registries.name AS RegistryName, attributes.CertificateId, attributes.KeyAtr AS Key, attributes.ValueAtr AS Value
-        FROM attributes
-        INNER JOIN registries
-            ON attributes.registryId = registries.Id
-        WHERE (registries.name, CertificateId) IN (SELECT ConsumptionRegistryName, ConsumptionCertificateId FROM claims_work_table)
-            OR (registries.name, CertificateId) IN (SELECT ProductionRegistryName, ProductionCertificateId FROM claims_work_table);
+        SELECT attributes.registry_name, attributes.certificate_id, attributes.attribute_key as key, attributes.attribute_value as value, attributes.attribute_type as type
+        FROM attributes_view attributes
+        WHERE ((registry_name, certificate_id) IN (SELECT ConsumptionRegistryName, ConsumptionCertificateId FROM claims_work_table) AND wallet_id IS NULL)
+            OR ((registry_name, certificate_id) IN (SELECT ProductionRegistryName, ProductionCertificateId FROM claims_work_table) AND wallet_id IS NULL)
+            OR (registry_name, certificate_id, wallet_id) IN (SELECT ConsumptionRegistryName, ConsumptionCertificateId, WalletId FROM claims_work_table)
+            OR (registry_name, certificate_id, wallet_id) IN (SELECT ProductionRegistryName, ProductionCertificateId, WalletId FROM claims_work_table);
         ";
+
         using (var gridReader = await _connection.QueryMultipleAsync(sql, new
         {
             owner,
@@ -415,6 +407,41 @@ public class CertificateRepository : ICertificateRepository
 
             return claims;
         }
+    }
+
+    public async Task InsertWalletAttribute(Guid walletId, WalletAttribute walletAttribute)
+    {
+        await _connection.ExecuteAsync(
+               @"INSERT INTO wallet_attributes(id, wallet_id, certificate_id, registry_name, attribute_key, attribute_value, salt)
+                  VALUES (@id, @walletId, @certificateId, @registryName, @attributeKey, @attributeValue, @salt)",
+               new
+               {
+                   id = Guid.NewGuid(),
+                   walletId,
+                   walletAttribute.CertificateId,
+                   walletAttribute.RegistryName,
+                   attributeKey = walletAttribute.Key,
+                   attributeValue = walletAttribute.Value,
+                   walletAttribute.Salt
+               });
+    }
+
+    public async Task<IEnumerable<WalletAttribute>> GetWalletAttributes(Guid walletId, Guid certificateId, string registryName, IEnumerable<string> keys)
+    {
+        return (await _connection.QueryAsync<WalletAttribute>(
+            @"SELECT wallet_id, certificate_id, registry_name, attribute_key as key, attribute_value as value, salt
+              FROM wallet_attributes
+              WHERE wallet_id = @walletId
+                AND certificate_id = @certificateId
+                AND registry_name = @registryName
+                AND attribute_key = ANY(@keys)",
+            new
+            {
+                walletId,
+                certificateId,
+                registryName,
+                keys = keys.ToArray(),
+            })).AsList();
     }
 
     private sealed record ExtendedAttribute : CertificateAttribute

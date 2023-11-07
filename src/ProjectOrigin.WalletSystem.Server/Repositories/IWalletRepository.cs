@@ -8,13 +8,17 @@ namespace ProjectOrigin.WalletSystem.Server.Repositories;
 public interface IWalletRepository
 {
     Task<int> Create(Wallet wallet);
-    Task<Wallet?> GetWalletByOwner(string owner);
-    Task<DepositEndpoint> CreateDepositEndpoint(Guid walletId, string referenceText);
-    Task<DepositEndpoint> CreateReceiverDepositEndpoint(string owner, IHDPublicKey ownerPublicKey, string referenceText, string endpoint);
-    Task<DepositEndpoint?> GetDepositEndpointFromPublicKey(IHDPublicKey publicKey);
-    Task<DepositEndpoint> GetDepositEndpoint(Guid depositEndpointId);
     Task<Wallet> GetWallet(Guid walletId);
+    Task<Wallet?> GetWallet(string owner);
+
+    Task<WalletEndpoint> CreateWalletEndpoint(Guid walletId);
+    Task<WalletEndpoint?> GetWalletEndpoint(IHDPublicKey publicKey);
+    Task<WalletEndpoint> GetWalletEndpoint(Guid endpointId);
+    Task<WalletEndpoint> GetWalletRemainderEndpoint(Guid walletId);
+
     Task<int> GetNextNumberForId(Guid id);
-    Task<DepositEndpoint> GetWalletRemainderDepositEndpoint(Guid walletId);
     Task<IHDPrivateKey> GetPrivateKeyForSlice(Guid sliceId);
+
+    Task<ExternalEndpoint> CreateExternalEndpoint(string owner, IHDPublicKey ownerPublicKey, string referenceText, string endpoint);
+    Task<ExternalEndpoint> GetExternalEndpoint(Guid endpointId);
 }
