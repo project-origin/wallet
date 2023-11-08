@@ -5,7 +5,7 @@ on:
     - cron: 0 * * * *
   push:
     branches:
-      - renovate/**
+      - renovate-config/**
 
 jobs:
   renovate:
