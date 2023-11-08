@@ -16,6 +16,11 @@ public record CertificateViewModel
     public List<CertificateAttribute> Attributes { get; } = new();
     public List<SliceViewModel> Slices { get; } = new();
 
+    public DateTimeOffset Date()
+    {
+        return new DateTimeOffset(StartDate.Date);
+    }
+
     public V1.GranularCertificate ToProto()
     {
         var fedId = new Common.V1.FederatedStreamId

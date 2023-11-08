@@ -78,10 +78,142 @@
           }
         }
       }
+    },
+    "/api/v1/aggregate-certificates": {
+      "get": {
+        "tags": [
+          "Wallet"
+        ],
+        "parameters": [
+          {
+            "name": "timeAggregate",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/TimeAggregate"
+            }
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/SliceState"
+            }
+          },
+          {
+            "name": "start",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/CertificateType"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AggregationResultResultList"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/aggregate-claims": {
+      "get": {
+        "tags": [
+          "Wallet"
+        ],
+        "parameters": [
+          {
+            "name": "timeAggregate",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/TimeAggregate"
+            }
+          },
+          {
+            "name": "start",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AggregationResultResultList"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "AggregationResult": {
+        "type": "object",
+        "properties": {
+          "start": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "end": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "quantity": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        "additionalProperties": false
+      },
+      "AggregationResultResultList": {
+        "type": "object",
+        "properties": {
+          "result": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AggregationResult"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
       "CertificateType": {
         "enum": [
           "consumption",
@@ -204,6 +336,24 @@
           }
         },
         "additionalProperties": false
+      },
+      "SliceState": {
+        "enum": [
+          "available",
+          "total"
+        ],
+        "type": "string"
+      },
+      "TimeAggregate": {
+        "enum": [
+          "none",
+          "hour",
+          "day",
+          "week",
+          "month",
+          "year"
+        ],
+        "type": "string"
       }
     }
   }

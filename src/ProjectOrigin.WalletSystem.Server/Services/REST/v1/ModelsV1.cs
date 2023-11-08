@@ -47,3 +47,11 @@ public record Claim
     public required ClaimedCertificate ProductionCertificate { get; init; }
     public required ClaimedCertificate ConsumptionCertificate { get; init; }
 }
+
+public record AggregationResult
+{
+    public required long Start { get; init; }
+    public required long End { get; init; }
+    public required long Quantity { get; init; }
+}
+

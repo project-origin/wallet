@@ -12,6 +12,8 @@ using Xunit;
 using ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures;
 using ProjectOrigin.WalletSystem.Server.Activities.Exceptions;
 using System.Text;
+using ProjectOrigin.WalletSystem.Server.Services.REST.v1;
+using Claim = ProjectOrigin.WalletSystem.Server.Models.Claim;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests.Repositories;
 
@@ -166,7 +168,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         await _repository.InsertWalletSlice(slice3);
         await _repository.InsertWalletSlice(sliceWithDifferentOwner);
 
-        var certificates = await _repository.GetAllOwnedCertificates(owner1, new CertificatesFilter());
+        var certificates = await _repository.GetAllOwnedCertificates(owner1, new CertificatesFilter(SliceState.Available));
 
         certificates.Should().HaveCount(2).And.Satisfy(
             c => c.Id == certificate1.Id && c.Slices.Sum(x => x.Quantity) == slice1.Quantity + slice2.Quantity,
@@ -183,7 +185,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
 
         await CreateCertificatesAndSlices(wallet, 5, startDate);
 
-        var certificates = await _repository.GetAllOwnedCertificates(owner, new CertificatesFilter
+        var certificates = await _repository.GetAllOwnedCertificates(owner, new CertificatesFilter(SliceState.Available)
         {
             Start = startDate,
             End = startDate.AddHours(4)
@@ -202,7 +204,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
 
         await CreateCertificatesAndSlices(wallet, numberOfCerts, startDate);
 
-        var certificates = await _repository.GetAllOwnedCertificates(owner, new CertificatesFilter
+        var certificates = await _repository.GetAllOwnedCertificates(owner, new CertificatesFilter(SliceState.Available)
         {
             Start = startDate.AddHours(numberOfCerts - 4)
         });
@@ -220,7 +222,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
 
         await CreateCertificatesAndSlices(wallet, numberOfCerts, startDate);
 
-        var certificates = await _repository.GetAllOwnedCertificates(owner, new CertificatesFilter
+        var certificates = await _repository.GetAllOwnedCertificates(owner, new CertificatesFilter(SliceState.Available)
         {
             End = startDate.AddHours(4)
         });
@@ -282,7 +284,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         await _repository.InsertWalletSlice(slice);
 
         // Act
-        var certificates = await _repository.GetAllOwnedCertificates(owner, new CertificatesFilter());
+        var certificates = await _repository.GetAllOwnedCertificates(owner, new CertificatesFilter(SliceState.Available));
 
         // Assert
         certificates.Should().HaveCount(1).And.Satisfy(
@@ -324,7 +326,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         await _repository.InsertWalletSlice(slice);
         await _repository.SetWalletSliceState(slice.Id, sliceState);
 
-        var certificates = await _repository.GetAllOwnedCertificates(owner, new CertificatesFilter());
+        var certificates = await _repository.GetAllOwnedCertificates(owner, new CertificatesFilter(SliceState.Available));
 
         // Assert
         certificates.Should().HaveCount(expectedCertificateCount);

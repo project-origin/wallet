@@ -7,6 +7,8 @@ using Dapper;
 using ProjectOrigin.WalletSystem.Server.Activities.Exceptions;
 using ProjectOrigin.WalletSystem.Server.Extensions;
 using ProjectOrigin.WalletSystem.Server.Models;
+using ProjectOrigin.WalletSystem.Server.Services.REST.v1;
+using Claim = ProjectOrigin.WalletSystem.Server.Models.Claim;
 
 namespace ProjectOrigin.WalletSystem.Server.Repositories;
 
@@ -101,9 +103,7 @@ public class CertificateRepository : ICertificateRepository
 
     public async Task<IEnumerable<CertificateViewModel>> GetAllOwnedCertificates(string owner, CertificatesFilter filter)
     {
-        var certsDictionary = new Dictionary<Guid, CertificateViewModel>();
-
-        await _connection.QueryAsync<CertificateViewModel, SliceViewModel, CertificateAttribute, CertificateViewModel>(
+        var baseSql =
             @"SELECT c.*, s.Id AS slice_id, s.quantity, a.attribute_key as key, a.attribute_value as value, a.attribute_type as type
               FROM Wallets w
               INNER JOIN wallet_endpoints re
@@ -117,14 +117,18 @@ public class CertificateRepository : ICertificateRepository
                 AND c.registry_name = a.registry_name
                 AND (a.wallet_id = w.id OR a.wallet_id IS NULL)
               WHERE w.owner = @owner
-                AND s.state = @sliceState
                 AND (@start IS NULL OR c.start_date >= @start)
-                AND (@end IS NULL OR c.end_date <= @end)",
-            (cert, slice, atr) =>
+                AND (@end IS NULL OR c.end_date <= @end)
+                AND (@type IS NULL OR c.certificate_type = @type)
+                ";
+
+        Func<CertificateViewModel, SliceViewModel, CertificateAttribute, CertificateViewModel> Map(Dictionary<Guid, CertificateViewModel> certificateViewModels)
+        {
+            return (cert, slice, atr) =>
             {
-                if (!certsDictionary.TryGetValue(cert.Id, out var certificate))
+                if (!certificateViewModels.TryGetValue(cert.Id, out var certificate))
                 {
-                    certsDictionary.Add(cert.Id, certificate = cert);
+                    certificateViewModels.Add(cert.Id, certificate = cert);
                 }
 
                 if (slice != null && !certificate.Slices.Contains(slice))
@@ -134,15 +138,42 @@ public class CertificateRepository : ICertificateRepository
                     certificate.Attributes.Add(atr);
 
                 return certificate;
-            },
-            splitOn: "slice_id, key",
-            param: new
-            {
-                owner,
-                sliceState = (int)WalletSliceState.Available,
-                start = filter.Start,
-                end = filter.End
-            });
+            };
+        }
+
+        var certsDictionary = new Dictionary<Guid, CertificateViewModel>();
+
+        if (filter.State == SliceState.Total)
+        {
+            await _connection.QueryAsync<CertificateViewModel, SliceViewModel, CertificateAttribute, CertificateViewModel>(
+                baseSql +
+                "AND s.state = 1 OR s.state = 7", //state 1 = Available, state 7 = Claimed
+                Map(certsDictionary),
+                splitOn: "slice_id, key",
+                param: new
+                {
+                    owner,
+                    start = filter.Start,
+                    end = filter.End,
+                    type = filter.Type
+                });
+        }
+        else
+        {
+            await _connection.QueryAsync<CertificateViewModel, SliceViewModel, CertificateAttribute, CertificateViewModel>(
+                baseSql +
+                "AND s.state = @sliceState",
+                Map(certsDictionary),
+                splitOn: "slice_id, key",
+                param: new
+                {
+                    owner,
+                    start = filter.Start,
+                    end = filter.End,
+                    type = filter.Type,
+                    sliceState = (int)WalletSliceState.Available
+                });
+        }
 
         return certsDictionary.Values;
     }
