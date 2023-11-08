@@ -67,3 +67,8 @@ persistance:
 
     # storage defines the storage configuration for the database
     size: 10Gi
+
+# rest defines the configuration of the REST API
+rest:
+  # pathBase defines the base part of all paths in the api
+  pathBase: /api
