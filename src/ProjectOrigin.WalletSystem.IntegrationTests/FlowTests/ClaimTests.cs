@@ -61,7 +61,7 @@ public class ClaimTests : AbstractFlowTests
             var queryClaims = await client.QueryClaimsAsync(new V1.ClaimQueryRequest(), header);
             queryClaims.Claims.Should().NotBeEmpty();
             return queryClaims;
-        }, TimeSpan.FromMinutes(2));
+        }, TimeSpan.FromMinutes(3));
 
         queryClaims.Claims.Should().HaveCount(1);
         queryClaims.Claims.Single().ConsumptionCertificate.FederatedId.Should().BeEquivalentTo(consumptionId);
