@@ -323,7 +323,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         await _repository.InsertWalletSlice(slice3);
         await _repository.InsertWalletSlice(sliceWithDifferentOwner);
 
-        var certificates = await _repository.GetAllOwnedCertificates(owner1, new CertificatesFilter(SliceState.Available) { Type = GranularCertificateType.Consumption});
+        var certificates = await _repository.GetAllOwnedCertificates(owner1, new CertificatesFilter(SliceState.Available) { Type = GranularCertificateType.Consumption });
 
         certificates.Should().HaveCount(1).And.Satisfy(
             c => c.Id == certificate2.Id && c.Slices.Sum(x => x.Quantity) == slice3.Quantity

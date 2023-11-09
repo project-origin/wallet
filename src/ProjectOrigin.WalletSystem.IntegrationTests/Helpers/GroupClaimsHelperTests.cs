@@ -14,7 +14,7 @@ public class GroupClaimsHelperTests
     public void GroupsCorrectly()
     {
         var hoursIn30Days = 24 * 30;
-        var claims = GenerateClaims(hoursIn30Days, new DateTimeOffset(2023, 11, 7, 0, 0,0, TimeSpan.Zero));
+        var claims = GenerateClaims(hoursIn30Days, new DateTimeOffset(2023, 11, 7, 0, 0, 0, TimeSpan.Zero));
 
         var aggregated = GroupClaimsHelper.GroupByDay(claims).ToList();
 
@@ -45,5 +45,5 @@ public class GroupClaimsHelperTests
         }
 
         return claims;
-    } 
+    }
 }

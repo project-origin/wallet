@@ -14,7 +14,7 @@ public class GroupCertificatesHelperTests
     public void GroupsCorrectly()
     {
         var hoursIn30Days = 24 * 30;
-        var certificates = GenerateCertificates(hoursIn30Days, new DateTimeOffset(2023, 11, 7, 0, 0,0, TimeSpan.Zero));
+        var certificates = GenerateCertificates(hoursIn30Days, new DateTimeOffset(2023, 11, 7, 0, 0, 0, TimeSpan.Zero));
 
         var aggregated = GroupCertificatesHelper.GroupByDay(certificates).ToList();
 
@@ -52,5 +52,5 @@ public class GroupCertificatesHelperTests
         }
 
         return certificates;
-    } 
+    }
 }
