@@ -140,7 +140,7 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
         }
 
         //Act
-        var res = await httpClient.GetStringAsync("api/v1/certificates");
+        var res = await httpClient.GetStringAsync("v1/certificates");
 
         //Assert
         await Verifier.VerifyJson(res);
@@ -244,12 +244,12 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
         var filterEnd = endDate.ToUnixTimeSeconds();
 
         //Act
-        var resultWithoutFilters = await httpClient.GetStringAsync("api/v1/claims");
-        var resultWithFilterStart = await httpClient.GetStringAsync($"api/v1/claims?start={filterStart}");
-        var resultWithFilterEnd = await httpClient.GetStringAsync($"api/v1/claims?end={filterEnd}");
-        var resultWithFilterStartAndEnd = await httpClient.GetStringAsync($"api/v1/claims?start={filterStart}&end={filterEnd}");
-        var resultWithFilterOutsideAnyClaims1 = await httpClient.GetFromJsonAsync<ResultList<Server.Services.REST.v1.Claim>>($"api/v1/claims?start={filterEnd}");
-        var resultWithFilterOutsideAnyClaims2 = await httpClient.GetFromJsonAsync<ResultList<Server.Services.REST.v1.Claim>>($"api/v1/claims?end={filterStart}");
+        var resultWithoutFilters = await httpClient.GetStringAsync("v1/claims");
+        var resultWithFilterStart = await httpClient.GetStringAsync($"v1/claims?start={filterStart}");
+        var resultWithFilterEnd = await httpClient.GetStringAsync($"v1/claims?end={filterEnd}");
+        var resultWithFilterStartAndEnd = await httpClient.GetStringAsync($"v1/claims?start={filterStart}&end={filterEnd}");
+        var resultWithFilterOutsideAnyClaims1 = await httpClient.GetFromJsonAsync<ResultList<Server.Services.REST.v1.Claim>>($"v1/claims?start={filterEnd}");
+        var resultWithFilterOutsideAnyClaims2 = await httpClient.GetFromJsonAsync<ResultList<Server.Services.REST.v1.Claim>>($"v1/claims?end={filterStart}");
 
         //Assert
         await Verifier.VerifyJson(resultWithoutFilters);

@@ -15,7 +15,7 @@ namespace ProjectOrigin.WalletSystem.Server.Services.REST.v1;
 public class WalletController : ControllerBase
 {
     [HttpGet]
-    [Route("api/v1/certificates")]
+    [Route("v1/certificates")]
     [Produces("application/json")]
     public async Task<ActionResult<ResultList<GranularCertificate>>> GetCertificates([FromServices] IUnitOfWork unitOfWork, [FromQuery] long? start, [FromQuery] long? end)
     {
@@ -31,7 +31,7 @@ public class WalletController : ControllerBase
     }
 
     [HttpGet]
-    [Route("api/v1/claims")]
+    [Route("v1/claims")]
     [Produces("application/json")]
     public async Task<ActionResult<ResultList<Claim>>> GetClaims([FromServices] IUnitOfWork unitOfWork, [FromQuery] long? start, [FromQuery] long? end)
     {
