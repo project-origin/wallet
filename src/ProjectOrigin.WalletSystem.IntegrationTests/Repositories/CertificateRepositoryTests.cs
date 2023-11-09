@@ -179,6 +179,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
     [Fact]
     public async Task GetAllOwnedCertificates_WhenGettingTotalCertificates()
     {
+        await TruncateCertificateAndRelationsTables();
         // Arrange
         var endpointPosition = 1;
         var registry = _fixture.Create<string>();
