@@ -47,7 +47,7 @@ public class WalletController : ControllerBase
     }
 
     [HttpGet]
-    [Route("api/v1/aggregate-certificates")]
+    [Route("v1/aggregate-certificates")]
     [Produces("application/json")]
     public async Task<ActionResult<ResultList<AggregationResult>>> AggregateCertificates([FromServices] IUnitOfWork unitOfWork, [FromQuery] TimeAggregate timeAggregate, [FromQuery] SliceState state, [FromQuery] long? start, [FromQuery] long? end, [FromQuery] CertificateType? type)
     {
@@ -69,7 +69,7 @@ public class WalletController : ControllerBase
     }
 
     [HttpGet]
-    [Route("api/v1/aggregate-claims")]
+    [Route("v1/aggregate-claims")]
     [Produces("application/json")]
     public async Task<ActionResult<ResultList<AggregationResult>>> AggregateClaims([FromServices] IUnitOfWork unitOfWork, [FromQuery] TimeAggregate timeAggregate, [FromQuery] long? start, [FromQuery] long? end)
     {
