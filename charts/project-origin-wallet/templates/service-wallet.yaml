@@ -9,10 +9,14 @@ spec:
   selector:
     app: po-wallet
   ports:
+    - name: rest
+      protocol: TCP
+      port: 5000
+      targetPort: 5000
     - name: grpc
       protocol: TCP
       port: 80
-      targetPort: 80
+      targetPort: 5001
       {{- if .Values.service.nodePort }}
       nodePort: {{ .Values.service.nodePort }}
       {{- end }}

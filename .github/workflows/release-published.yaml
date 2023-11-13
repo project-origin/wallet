@@ -63,7 +63,7 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          draft: "${{ contains( env.GITHUB_REF, '-rc.') }}"
+          draft: "${{ contains(github.ref, '-rc.') }}"
           generate_release_notes: true
           files: helm-releases/${{ steps.variables.outputs.name }}-${{ needs.define-version.outputs.version }}.tgz
 
