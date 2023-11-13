@@ -99,7 +99,7 @@ public class CertificateRepository : ICertificateRepository
         return certsDictionary.Values.FirstOrDefault();
     }
 
-    public async Task<IEnumerable<CertificateViewModel>> GetAllOwnedCertificates(string owner)
+    public async Task<IEnumerable<CertificateViewModel>> GetAllOwnedCertificates(string owner, CertificatesFilter filter)
     {
         var certsDictionary = new Dictionary<Guid, CertificateViewModel>();
 
@@ -117,7 +117,9 @@ public class CertificateRepository : ICertificateRepository
                 AND c.registry_name = a.registry_name
                 AND (a.wallet_id = w.id OR a.wallet_id IS NULL)
               WHERE w.owner = @owner
-                AND s.state = @sliceState",
+                AND s.state = @sliceState
+                AND (@start IS NULL OR c.start_date >= @start)
+                AND (@end IS NULL OR c.end_date <= @end)",
             (cert, slice, atr) =>
             {
                 if (!certsDictionary.TryGetValue(cert.Id, out var certificate))
@@ -137,7 +139,9 @@ public class CertificateRepository : ICertificateRepository
             param: new
             {
                 owner,
-                sliceState = (int)WalletSliceState.Available
+                sliceState = (int)WalletSliceState.Available,
+                start = filter.Start,
+                end = filter.End
             });
 
         return certsDictionary.Values;

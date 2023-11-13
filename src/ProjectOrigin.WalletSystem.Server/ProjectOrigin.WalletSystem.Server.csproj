@@ -6,20 +6,20 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Dapper" Version="2.1.11" />
-    <PackageReference Include="dbup-postgresql" Version="5.0.8" />
-    <PackageReference Include="Grpc.AspNetCore" Version="2.57.0" />
+    <PackageReference Include="Dapper" Version="2.1.15" />
+    <PackageReference Include="dbup-postgresql" Version="5.0.37" />
+    <PackageReference Include="Grpc.AspNetCore" Version="2.58.0" />
     <PackageReference Include="MassTransit" Version="8.1.1" />
     <PackageReference Include="MassTransit.RabbitMQ" Version="8.1.1" />
     <PackageReference Include="Npgsql" Version="7.0.6" />
     <PackageReference Include="NSec.Cryptography" Version="22.4.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="7.0.12" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="7.0.13" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="7.0.0" />
     <PackageReference Include="ProjectOrigin.PedersenCommitment" Version="1.0.3" />
     <PackageReference Include="ProjectOrigin.HierarchicalDeterministicKeys" Version="0.4.0" />
     <PackageReference Include="Serilog.AspNetCore" Version="7.0.0" />
     <PackageReference Include="Serilog.Enrichers.Span" Version="3.1.0" />
-    <PackageReference Include="Serilog.Expressions" Version="3.4.1" />
+    <PackageReference Include="Serilog.Expressions" Version="4.0.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
   </ItemGroup>
 

@@ -32,13 +32,11 @@ The business requirement of being able to **transfer ownership cross-border** an
 
 There is no centralized identity system between the parties, so no single identity can be used to store ownerships of certificates.
 
-Users should be allowed to be in control of their data, and have the ability to to chose a provider manage to their data.
-
-Actors operating as or on behalf of the state, who issue GCs (e.g. issuing bodies) needs to create or enable services that serve all consumers and producers of energy, not just the digital native.
+Users should be allowed to be in control of their data, and have the ability to chose a provider manage their data.
 
 All parties are underlying EU GDPR and possibly local legislation for privacy issues.
-
-It would not be in the interest of the parties having to create local accounts for owners from another country, when ownership of a GC changes.
+It would not be in the interest of the parties having to create local accounts for owners from another country,
+when ownership of a GC changes.
 Similar banks don't create local accounts when money is transferred to an entity in another country.
 
 ## Solution
@@ -52,7 +50,7 @@ It will give the users access to view and control their assets.
 
 Below is a C4 system diagram of an overview of the system landscape the wallet would be a part of.
 
-![C4 system diagram of the wallet](./doc/wallet-c4-system.drawio.svg)
+![C4 system diagram of the wallet](./wallet-c4-system.drawio.svg)
 
 ## Resulting Context
 
