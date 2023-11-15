@@ -85,7 +85,7 @@ public class WalletController : ControllerBase
     public async Task<ActionResult<ResultList<AggregatedCertificates>>> AggregateCertificates(
         [FromServices] IUnitOfWork unitOfWork,
         [FromQuery] TimeAggregate timeAggregate,
-        [FromQuery] string timeZone, //https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+        [FromQuery] string timeZone,
         [FromQuery] long? start,
         [FromQuery] long? end,
         [FromQuery] CertificateType? type)
@@ -134,7 +134,7 @@ public class WalletController : ControllerBase
     public async Task<ActionResult<ResultList<AggregatedClaims>>> AggregateClaims(
         [FromServices] IUnitOfWork unitOfWork,
         [FromQuery] TimeAggregate timeAggregate,
-        [FromQuery] string timeZone, //https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+        [FromQuery] string timeZone,
         [FromQuery] long? start,
         [FromQuery] long? end)
     {
