@@ -14,7 +14,7 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
     <PackageReference Include="Testcontainers.PostgreSql" Version="3.6.0" />
     <PackageReference Include="Testcontainers.RabbitMq" Version="3.6.0" />
-    <PackageReference Include="Verify.Xunit" Version="22.3.0" />
+    <PackageReference Include="Verify.Xunit" Version="22.4.1" />
     <PackageReference Include="xunit" Version="2.6.1" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.5.3">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -24,7 +24,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="7.0.13" />
+    <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="7.0.14" />
     <PackageReference Include="Grpc.AspNetCore" Version="2.59.0" />
     <PackageReference Include="AutoFixture" Version="4.18.0" />
     <PackageReference Include="NSubstitute" Version="5.1.0" />
