@@ -26,7 +26,7 @@ public class WalletController : ControllerBase
     [Route("v1/certificates")]
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ResultList<GranularCertificate>>> GetCertificates([FromServices] IUnitOfWork unitOfWork, [FromQuery] long? start, [FromQuery] long? end)
     {
         var subject = User.GetSubject();
@@ -52,7 +52,7 @@ public class WalletController : ControllerBase
     [Route("v1/claims")]
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ResultList<Claim>>> GetClaims([FromServices] IUnitOfWork unitOfWork, [FromQuery] long? start, [FromQuery] long? end)
     {
         var owner = User.GetSubject();
@@ -81,7 +81,7 @@ public class WalletController : ControllerBase
     [Route("v1/aggregate-certificates")]
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ResultList<CertificateAggregationResult>>> AggregateCertificates(
         [FromServices] IUnitOfWork unitOfWork,
         [FromQuery] TimeAggregate timeAggregate,
@@ -130,7 +130,7 @@ public class WalletController : ControllerBase
     [Route("v1/aggregate-claims")]
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ResultList<ClaimAggregationResult>>> AggregateClaims(
         [FromServices] IUnitOfWork unitOfWork,
         [FromQuery] TimeAggregate timeAggregate,
