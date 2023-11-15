@@ -103,14 +103,4 @@ public abstract class AbstractRepositoryTests : IClassFixture<PostgresDatabaseFi
 
         return certificate;
     }
-
-    protected async Task TruncateCertificateAndRelationsTables()
-    {
-        using var connection = CreateConnection();
-        await connection.ExecuteAsync("DELETE FROM wallet_attributes");
-        await connection.ExecuteAsync("DELETE FROM attributes");
-        await connection.ExecuteAsync("DELETE FROM claims");
-        await connection.ExecuteAsync("DELETE FROM wallet_slices");
-        await connection.ExecuteAsync("DELETE FROM certificates");
-    }
 }
