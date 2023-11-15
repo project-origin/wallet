@@ -5,7 +5,7 @@ namespace ProjectOrigin.WalletSystem.Server.Services.REST.v1;
 
 public record ResultList<T>
 {
-    public required T[] Result { get; init; }
+    public required IEnumerable<T> Result { get; init; }
 }
 
 public enum CertificateType
@@ -48,10 +48,17 @@ public record Claim
     public required ClaimedCertificate ConsumptionCertificate { get; init; }
 }
 
-public record AggregationResult
+public record CertificateAggregationResult
+{
+    public required long Start { get; init; }
+    public required long End { get; init; }
+    public required long Quantity { get; init; }
+    public required CertificateType Type { get; init; }
+}
+
+public record ClaimAggregationResult
 {
     public required long Start { get; init; }
     public required long End { get; init; }
     public required long Quantity { get; init; }
 }
-

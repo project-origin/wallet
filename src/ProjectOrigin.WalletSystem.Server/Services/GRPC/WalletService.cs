@@ -14,7 +14,6 @@ using ProjectOrigin.WalletSystem.Server.Database;
 using ProjectOrigin.WalletSystem.Server.Extensions;
 using ProjectOrigin.WalletSystem.Server.Models;
 using ProjectOrigin.WalletSystem.Server.Options;
-using ProjectOrigin.WalletSystem.Server.Services.REST.v1;
 using ProjectOrigin.WalletSystem.V1;
 
 namespace ProjectOrigin.WalletSystem.Server.Services.GRPC;
@@ -72,7 +71,7 @@ public class WalletService : V1.WalletService.WalletServiceBase
     {
         var subject = context.GetSubject();
 
-        var certificates = await _unitOfWork.CertificateRepository.GetAllOwnedCertificates(subject, new CertificatesFilter(SliceState.Available)
+        var certificates = await _unitOfWork.CertificateRepository.GetAllOwnedCertificates(subject, new CertificatesFilter
         {
             Start = request.Filter?.Start.ToNullableDateTimeOffset(),
             End = request.Filter?.End.ToNullableDateTimeOffset(),

@@ -168,7 +168,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         await _repository.InsertWalletSlice(slice3);
         await _repository.InsertWalletSlice(sliceWithDifferentOwner);
 
-        var certificates = await _repository.GetAllOwnedCertificates(owner1, new CertificatesFilter(SliceState.Available));
+        var certificates = await _repository.GetAllOwnedCertificates(owner1, new CertificatesFilter());
 
         certificates.Should().HaveCount(2).And.Satisfy(
             c => c.Id == certificate1.Id && c.Slices.Sum(x => x.Quantity) == slice1.Quantity + slice2.Quantity,
@@ -176,83 +176,83 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         );
     }
 
-    [Fact]
-    public async Task GetAllOwnedCertificates_WhenGettingTotalCertificates()
-    {
-        await TruncateCertificateAndRelationsTables();
-        // Arrange
-        var endpointPosition = 1;
-        var registry = _fixture.Create<string>();
-        var certificate1 = await CreateCertificate(registry);
-        var certificate2 = await CreateCertificate(registry, GranularCertificateType.Consumption);
-        var certificate3 = await CreateCertificate(registry);
-        var owner1 = _fixture.Create<string>();
-        var wallet1 = await CreateWallet(owner1);
-        var endpoint1 = await CreateWalletEndpoint(wallet1);
-        var endpoint2 = await CreateWalletEndpoint(wallet1);
-        var owner2 = _fixture.Create<string>();
-        var wallet2 = await CreateWallet(owner2);
-        var endpoint3 = await CreateWalletEndpoint(wallet2);
-        //Wallet1
-        var slice1 = new WalletSlice
-        {
-            Id = Guid.NewGuid(),
-            WalletEndpointId = endpoint1.Id,
-            WalletEndpointPosition = endpointPosition,
-            RegistryName = registry,
-            CertificateId = certificate1.Id,
-            Quantity = _fixture.Create<int>(),
-            RandomR = _fixture.Create<byte[]>(),
-            State = WalletSliceState.Available
-        };
-        var slice2 = new WalletSlice
-        {
-            Id = Guid.NewGuid(),
-            WalletEndpointId = endpoint1.Id,
-            WalletEndpointPosition = endpointPosition + 1,
-            RegistryName = registry,
-            CertificateId = certificate1.Id,
-            Quantity = _fixture.Create<int>(),
-            RandomR = _fixture.Create<byte[]>(),
-            State = WalletSliceState.Claimed
-        };
-        //Certficiate2
-        var slice3 = new WalletSlice
-        {
-            Id = Guid.NewGuid(),
-            WalletEndpointId = endpoint2.Id,
-            WalletEndpointPosition = endpointPosition,
-            RegistryName = registry,
-            CertificateId = certificate2.Id,
-            Quantity = _fixture.Create<int>(),
-            RandomR = _fixture.Create<byte[]>(),
-            State = WalletSliceState.Claimed
-        };
+    // [Fact]
+    // public async Task GetAllOwnedCertificates_WhenGettingTotalCertificates()
+    // {
+    //     await TruncateCertificateAndRelationsTables();
+    //     // Arrange
+    //     var endpointPosition = 1;
+    //     var registry = _fixture.Create<string>();
+    //     var certificate1 = await CreateCertificate(registry);
+    //     var certificate2 = await CreateCertificate(registry, GranularCertificateType.Consumption);
+    //     var certificate3 = await CreateCertificate(registry);
+    //     var owner1 = _fixture.Create<string>();
+    //     var wallet1 = await CreateWallet(owner1);
+    //     var endpoint1 = await CreateWalletEndpoint(wallet1);
+    //     var endpoint2 = await CreateWalletEndpoint(wallet1);
+    //     var owner2 = _fixture.Create<string>();
+    //     var wallet2 = await CreateWallet(owner2);
+    //     var endpoint3 = await CreateWalletEndpoint(wallet2);
+    //     //Wallet1
+    //     var slice1 = new WalletSlice
+    //     {
+    //         Id = Guid.NewGuid(),
+    //         WalletEndpointId = endpoint1.Id,
+    //         WalletEndpointPosition = endpointPosition,
+    //         RegistryName = registry,
+    //         CertificateId = certificate1.Id,
+    //         Quantity = _fixture.Create<int>(),
+    //         RandomR = _fixture.Create<byte[]>(),
+    //         State = WalletSliceState.Available
+    //     };
+    //     var slice2 = new WalletSlice
+    //     {
+    //         Id = Guid.NewGuid(),
+    //         WalletEndpointId = endpoint1.Id,
+    //         WalletEndpointPosition = endpointPosition + 1,
+    //         RegistryName = registry,
+    //         CertificateId = certificate1.Id,
+    //         Quantity = _fixture.Create<int>(),
+    //         RandomR = _fixture.Create<byte[]>(),
+    //         State = WalletSliceState.Claimed
+    //     };
+    //     //Certficiate2
+    //     var slice3 = new WalletSlice
+    //     {
+    //         Id = Guid.NewGuid(),
+    //         WalletEndpointId = endpoint2.Id,
+    //         WalletEndpointPosition = endpointPosition,
+    //         RegistryName = registry,
+    //         CertificateId = certificate2.Id,
+    //         Quantity = _fixture.Create<int>(),
+    //         RandomR = _fixture.Create<byte[]>(),
+    //         State = WalletSliceState.Claimed
+    //     };
 
-        var sliceWithDifferentOwner = new WalletSlice
-        {
-            Id = Guid.NewGuid(),
-            WalletEndpointId = endpoint3.Id,
-            WalletEndpointPosition = endpointPosition,
-            RegistryName = registry,
-            CertificateId = certificate3.Id,
-            Quantity = _fixture.Create<int>(),
-            RandomR = _fixture.Create<byte[]>(),
-            State = WalletSliceState.Available
-        };
+    //     var sliceWithDifferentOwner = new WalletSlice
+    //     {
+    //         Id = Guid.NewGuid(),
+    //         WalletEndpointId = endpoint3.Id,
+    //         WalletEndpointPosition = endpointPosition,
+    //         RegistryName = registry,
+    //         CertificateId = certificate3.Id,
+    //         Quantity = _fixture.Create<int>(),
+    //         RandomR = _fixture.Create<byte[]>(),
+    //         State = WalletSliceState.Available
+    //     };
 
-        await _repository.InsertWalletSlice(slice1);
-        await _repository.InsertWalletSlice(slice2);
-        await _repository.InsertWalletSlice(slice3);
-        await _repository.InsertWalletSlice(sliceWithDifferentOwner);
+    //     await _repository.InsertWalletSlice(slice1);
+    //     await _repository.InsertWalletSlice(slice2);
+    //     await _repository.InsertWalletSlice(slice3);
+    //     await _repository.InsertWalletSlice(sliceWithDifferentOwner);
 
-        var certificates = await _repository.GetAllOwnedCertificates(owner1, new CertificatesFilter(SliceState.Total));
+    //     var certificates = await _repository.GetAllOwnedCertificates(owner1, new CertificatesFilter(SliceState.Total));
 
-        certificates.Should().HaveCount(2).And.Satisfy(
-            c => c.Id == certificate1.Id && c.Slices.Sum(x => x.Quantity) == slice1.Quantity + slice2.Quantity,
-            c => c.Id == certificate2.Id && c.Slices.Sum(x => x.Quantity) == slice3.Quantity
-        );
-    }
+    //     certificates.Should().HaveCount(2).And.Satisfy(
+    //         c => c.Id == certificate1.Id && c.Slices.Sum(x => x.Quantity) == slice1.Quantity + slice2.Quantity,
+    //         c => c.Id == certificate2.Id && c.Slices.Sum(x => x.Quantity) == slice3.Quantity
+    //     );
+    // }
 
     [Fact]
     public async Task GetAllOwnedCertificates_WhenTypeIsConsumption()
@@ -323,7 +323,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         await _repository.InsertWalletSlice(slice3);
         await _repository.InsertWalletSlice(sliceWithDifferentOwner);
 
-        var certificates = await _repository.GetAllOwnedCertificates(owner1, new CertificatesFilter(SliceState.Available) { Type = GranularCertificateType.Consumption });
+        var certificates = await _repository.GetAllOwnedCertificates(owner1, new CertificatesFilter() { Type = GranularCertificateType.Consumption });
 
         certificates.Should().HaveCount(1).And.Satisfy(
             c => c.Id == certificate2.Id && c.Slices.Sum(x => x.Quantity) == slice3.Quantity
@@ -339,7 +339,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
 
         await CreateCertificatesAndSlices(wallet, 5, startDate);
 
-        var certificates = await _repository.GetAllOwnedCertificates(owner, new CertificatesFilter(SliceState.Available)
+        var certificates = await _repository.GetAllOwnedCertificates(owner, new CertificatesFilter()
         {
             Start = startDate,
             End = startDate.AddHours(4)
@@ -358,7 +358,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
 
         await CreateCertificatesAndSlices(wallet, numberOfCerts, startDate);
 
-        var certificates = await _repository.GetAllOwnedCertificates(owner, new CertificatesFilter(SliceState.Available)
+        var certificates = await _repository.GetAllOwnedCertificates(owner, new CertificatesFilter()
         {
             Start = startDate.AddHours(numberOfCerts - 4)
         });
@@ -376,7 +376,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
 
         await CreateCertificatesAndSlices(wallet, numberOfCerts, startDate);
 
-        var certificates = await _repository.GetAllOwnedCertificates(owner, new CertificatesFilter(SliceState.Available)
+        var certificates = await _repository.GetAllOwnedCertificates(owner, new CertificatesFilter()
         {
             End = startDate.AddHours(4)
         });
@@ -438,7 +438,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         await _repository.InsertWalletSlice(slice);
 
         // Act
-        var certificates = await _repository.GetAllOwnedCertificates(owner, new CertificatesFilter(SliceState.Available));
+        var certificates = await _repository.GetAllOwnedCertificates(owner, new CertificatesFilter());
 
         // Assert
         certificates.Should().HaveCount(1).And.Satisfy(
@@ -480,7 +480,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         await _repository.InsertWalletSlice(slice);
         await _repository.SetWalletSliceState(slice.Id, sliceState);
 
-        var certificates = await _repository.GetAllOwnedCertificates(owner, new CertificatesFilter(SliceState.Available));
+        var certificates = await _repository.GetAllOwnedCertificates(owner, new CertificatesFilter());
 
         // Assert
         certificates.Should().HaveCount(expectedCertificateCount);

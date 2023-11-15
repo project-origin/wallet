@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ProjectOrigin.WalletSystem.Server.Database;
 using ProjectOrigin.WalletSystem.Server.Extensions;
-using ProjectOrigin.WalletSystem.Server.Helpers;
 using ProjectOrigin.WalletSystem.Server.Models;
 
 namespace ProjectOrigin.WalletSystem.Server.Services.REST.v1;
@@ -21,13 +20,13 @@ public class WalletController : ControllerBase
     {
         var subject = User.GetSubject();
 
-        var certificates = await unitOfWork.CertificateRepository.GetAllOwnedCertificates(subject, new CertificatesFilter(SliceState.Available)
+        var certificates = await unitOfWork.CertificateRepository.GetAllOwnedCertificates(subject, new CertificatesFilter
         {
             Start = start != null ? DateTimeOffset.FromUnixTimeSeconds(start.Value) : null,
             End = end != null ? DateTimeOffset.FromUnixTimeSeconds(end.Value) : null
         });
 
-        return new ResultList<GranularCertificate> { Result = certificates.Select(c => c.MapToV1()).ToArray() };
+        return new ResultList<GranularCertificate> { Result = certificates.Select(c => c.MapToV1()) };
     }
 
     [HttpGet]
@@ -43,37 +42,58 @@ public class WalletController : ControllerBase
             End = end != null ? DateTimeOffset.FromUnixTimeSeconds(end.Value) : null,
         });
 
-        return new ResultList<Claim> { Result = claims.Select(c => c.MapToV1()).ToArray() };
+        return new ResultList<Claim> { Result = claims.Select(c => c.MapToV1()) };
     }
 
     [HttpGet]
     [Route("v1/aggregate-certificates")]
     [Produces("application/json")]
-    public async Task<ActionResult<ResultList<AggregationResult>>> AggregateCertificates([FromServices] IUnitOfWork unitOfWork, [FromQuery] TimeAggregate timeAggregate, [FromQuery] SliceState state, [FromQuery] long? start, [FromQuery] long? end, [FromQuery] CertificateType? type)
+    public async Task<ActionResult<ResultList<CertificateAggregationResult>>> AggregateCertificates(
+        [FromServices] IUnitOfWork unitOfWork,
+        [FromQuery] TimeAggregate timeAggregate,
+        [FromQuery] string timeZone, //https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+        [FromQuery] long? start,
+        [FromQuery] long? end,
+        [FromQuery] CertificateType? type)
     {
         var owner = User.GetSubject();
+        var timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById(timeZone);
 
-        var certificates = await unitOfWork.CertificateRepository.GetAllOwnedCertificates(owner, new CertificatesFilter(state)
+        var certificates = await unitOfWork.CertificateRepository.GetAllOwnedCertificates(owner, new CertificatesFilter
         {
             Start = start != null ? DateTimeOffset.FromUnixTimeSeconds(start.Value) : null,
             End = end != null ? DateTimeOffset.FromUnixTimeSeconds(end.Value) : null,
-            Type = type != null ? Map(type.Value) : null
+            Type = type != null ? (GranularCertificateType)type.Value : null
         });
 
-        if (timeAggregate == TimeAggregate.Day)
+        return new ResultList<CertificateAggregationResult>
         {
-            return new ResultList<AggregationResult> { Result = GroupCertificatesHelper.GroupByDay(certificates).ToArray() };
-        }
-
-        throw new NotImplementedException($"timeAggregate value {timeAggregate} has not been implemented.");
+            Result = certificates
+                .GroupBy(cert => cert.CertificateType)
+                .SelectMany(typeGroup => typeGroup
+                    .GroupByTime(x => x.StartDate, (Models.TimeAggregate)timeAggregate, timeZoneInfo)
+                    .Select(timeGroup => new CertificateAggregationResult
+                    {
+                        Type = (CertificateType)typeGroup.Key,
+                        Quantity = timeGroup.Sum(certificate => certificate.Slices.Sum(slice => slice.Quantity)),
+                        Start = timeGroup.Min(certificate => certificate.StartDate).ToUnixTimeSeconds(),
+                        End = timeGroup.Max(certificate => certificate.EndDate).ToUnixTimeSeconds(),
+                    }))
+        };
     }
 
     [HttpGet]
     [Route("v1/aggregate-claims")]
     [Produces("application/json")]
-    public async Task<ActionResult<ResultList<AggregationResult>>> AggregateClaims([FromServices] IUnitOfWork unitOfWork, [FromQuery] TimeAggregate timeAggregate, [FromQuery] long? start, [FromQuery] long? end)
+    public async Task<ActionResult<ResultList<ClaimAggregationResult>>> AggregateClaims(
+        [FromServices] IUnitOfWork unitOfWork,
+        [FromQuery] TimeAggregate timeAggregate,
+        [FromQuery] string timeZone, //https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
+        [FromQuery] long? start,
+        [FromQuery] long? end)
     {
         var owner = User.GetSubject();
+        var timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById(timeZone);
 
         var claims = await unitOfWork.CertificateRepository.GetClaims(owner, new ClaimFilter
         {
@@ -81,21 +101,16 @@ public class WalletController : ControllerBase
             End = end != null ? DateTimeOffset.FromUnixTimeSeconds(end.Value) : null,
         });
 
-        if (timeAggregate == TimeAggregate.Day)
+        return new ResultList<ClaimAggregationResult>
         {
-            return new ResultList<AggregationResult> { Result = GroupClaimsHelper.GroupByDay(claims).ToArray() };
-        }
-
-        throw new NotImplementedException($"timeAggregate value {timeAggregate} has not been implemented.");
-    }
-
-    private static GranularCertificateType Map(CertificateType type)
-    {
-        return type switch
-        {
-            CertificateType.Production => GranularCertificateType.Production,
-            CertificateType.Consumption => GranularCertificateType.Consumption,
-            _ => throw new ArgumentException($"Unsupported certificate type {type}")
+            Result = claims
+                .GroupByTime(x => x.ProductionStart, (Models.TimeAggregate)timeAggregate, timeZoneInfo)
+                .Select(group => new ClaimAggregationResult
+                {
+                    Quantity = group.Sum(claim => claim.Quantity),
+                    Start = group.Min(claim => claim.ProductionStart).ToUnixTimeSeconds(),
+                    End = group.Max(claim => claim.ProductionEnd).ToUnixTimeSeconds(),
+                })
         };
     }
 }

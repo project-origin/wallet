@@ -1,8 +1,5 @@
-using System.Text.Json.Serialization;
+namespace ProjectOrigin.WalletSystem.Server.Models;
 
-namespace ProjectOrigin.WalletSystem.Server.Services.REST.v1;
-
-[JsonConverter(typeof(JsonStringEnumConverter))]
 public enum TimeAggregate
 {
     Actual = 0,

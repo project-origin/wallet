@@ -93,10 +93,10 @@
             }
           },
           {
-            "name": "state",
+            "name": "timeZone",
             "in": "query",
             "schema": {
-              "$ref": "#/components/schemas/SliceState"
+              "type": "string"
             }
           },
           {
@@ -129,7 +129,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AggregationResultResultList"
+                  "$ref": "#/components/schemas/CertificateAggregationResultResultList"
                 }
               }
             }
@@ -148,6 +148,13 @@
             "in": "query",
             "schema": {
               "$ref": "#/components/schemas/TimeAggregate"
+            }
+          },
+          {
+            "name": "timeZone",
+            "in": "query",
+            "schema": {
+              "type": "string"
             }
           },
           {
@@ -173,7 +180,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AggregationResultResultList"
+                  "$ref": "#/components/schemas/ClaimAggregationResultResultList"
                 }
               }
             }
@@ -184,7 +191,7 @@
   },
   "components": {
     "schemas": {
-      "AggregationResult": {
+      "CertificateAggregationResult": {
         "type": "object",
         "properties": {
           "start": {
@@ -198,17 +205,20 @@
           "quantity": {
             "type": "integer",
             "format": "int64"
+          },
+          "type": {
+            "$ref": "#/components/schemas/CertificateType"
           }
         },
         "additionalProperties": false
       },
-      "AggregationResultResultList": {
+      "CertificateAggregationResultResultList": {
         "type": "object",
         "properties": {
           "result": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/AggregationResult"
+              "$ref": "#/components/schemas/CertificateAggregationResult"
             }
           }
         },
@@ -237,6 +247,36 @@
           },
           "consumptionCertificate": {
             "$ref": "#/components/schemas/ClaimedCertificate"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ClaimAggregationResult": {
+        "type": "object",
+        "properties": {
+          "start": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "end": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "quantity": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ClaimAggregationResultResultList": {
+        "type": "object",
+        "properties": {
+          "result": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ClaimAggregationResult"
+            }
           }
         },
         "additionalProperties": false
@@ -337,21 +377,16 @@
         },
         "additionalProperties": false
       },
-      "SliceState": {
-        "enum": [
-          "available",
-          "total"
-        ],
-        "type": "string"
-      },
       "TimeAggregate": {
         "enum": [
-          "none",
-          "hour",
-          "day",
-          "week",
+          "actual",
+          "total",
+          "year",
           "month",
-          "year"
+          "week",
+          "day",
+          "hour",
+          "quarterHour"
         ],
         "type": "string"
       }
