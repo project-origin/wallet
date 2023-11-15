@@ -7,7 +7,6 @@ using Dapper;
 using ProjectOrigin.WalletSystem.Server.Activities.Exceptions;
 using ProjectOrigin.WalletSystem.Server.Extensions;
 using ProjectOrigin.WalletSystem.Server.Models;
-using Claim = ProjectOrigin.WalletSystem.Server.Models.Claim;
 
 namespace ProjectOrigin.WalletSystem.Server.Repositories;
 
@@ -106,8 +105,8 @@ public class CertificateRepository : ICertificateRepository
 
         await _connection.QueryAsync<CertificateViewModel, SliceViewModel, CertificateAttribute, CertificateViewModel>(
             @"SELECT c.*, s.Id AS slice_id, s.quantity, a.attribute_key as key, a.attribute_value as value, a.attribute_type as type
-               FROM Wallets w
-               INNER JOIN wallet_endpoints re
+              FROM Wallets w
+              INNER JOIN wallet_endpoints re
                 ON w.id = re.wallet_id
               INNER JOIN wallet_slices s
                 ON re.Id = s.wallet_endpoint_id
@@ -115,13 +114,14 @@ public class CertificateRepository : ICertificateRepository
                 ON s.certificate_id = c.id
               LEFT JOIN attributes_view a
                 ON c.id = a.certificate_id
-                 AND c.registry_name = a.registry_name
-                 AND (a.wallet_id = w.id OR a.wallet_id IS NULL)
-               WHERE w.owner = @owner
-                 AND s.state = @sliceState
-                 AND (@start IS NULL OR c.start_date >= @start)
-                 AND (@end IS NULL OR c.end_date <= @end)
-                 AND (@type IS NULL OR c.certificate_type = @type)",
+                AND c.registry_name = a.registry_name
+                AND (a.wallet_id = w.id OR a.wallet_id IS NULL)
+              WHERE w.owner = @owner
+                AND s.state = @sliceState
+                AND (@start IS NULL OR c.start_date >= @start)
+                AND (@end IS NULL OR c.end_date <= @end)
+                AND (@type IS NULL OR c.certificate_type = @type)
+                ",
             (cert, slice, atr) =>
             {
                 if (!certsDictionary.TryGetValue(cert.Id, out var certificate))
@@ -141,7 +141,7 @@ public class CertificateRepository : ICertificateRepository
                 sliceState = (int)WalletSliceState.Available,
                 start = filter.Start,
                 end = filter.End,
-                type = filter.Type
+                type = filter.Type,
             });
 
         return certsDictionary.Values;
