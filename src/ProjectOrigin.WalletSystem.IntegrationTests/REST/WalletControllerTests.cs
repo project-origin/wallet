@@ -28,11 +28,12 @@ public class WalletControllerTests : IClassFixture<PostgresDatabaseFixture>
     }
 
     [Theory]
-    [InlineData("Europe/Copenhagen", new long[] { 1000, 2400, 1400 })]
-    [InlineData("Europe/London", new long[] { 1100, 2400, 1300 })]
-    [InlineData("America/Toronto", new long[] { 1600, 2400, 800 })]
-    public async Task Test_AggregateCertificates(string timezone, long[] values)
+    [InlineData("Europe/Copenhagen", new long[] { 1000, 2400, 1400 }, CertificateType.Production)]
+    [InlineData("Europe/London", new long[] { 110, 240, 130 }, CertificateType.Consumption)]
+    [InlineData("America/Toronto", new long[] { 1600, 2400, 800 }, CertificateType.Production)]
+    public async Task Test_AggregateCertificates(string timezone, long[] values, CertificateType type)
     {
+        // Arrange
         var issuestartDate = new DateTimeOffset(2020, 6, 1, 12, 0, 0, TimeSpan.Zero);
         var issueEndDate = new DateTimeOffset(2020, 6, 30, 12, 0, 0, TimeSpan.Zero);
         var queryStartDate = new DateTimeOffset(2020, 6, 8, 12, 0, 0, TimeSpan.Zero);
@@ -49,25 +50,33 @@ public class WalletControllerTests : IClassFixture<PostgresDatabaseFixture>
 
         for (DateTimeOffset i = issuestartDate; i < issueEndDate; i = i.AddHours(1))
         {
-            var cert = await _dbFixture.CreateCertificate(
+            var prodCert = await _dbFixture.CreateCertificate(
                 Guid.NewGuid(),
                 _fixture.Create<string>(),
                 Server.Models.GranularCertificateType.Production,
                 start: i,
                 end: i.AddHours(1));
-            var slice = await _dbFixture.CreateSlice(endpoint, cert, new PedersenCommitment.SecretCommitmentInfo(100));
+            var prodSlice = await _dbFixture.CreateSlice(endpoint, prodCert, new PedersenCommitment.SecretCommitmentInfo(100));
+
+            var consCert = await _dbFixture.CreateCertificate(
+                Guid.NewGuid(),
+                _fixture.Create<string>(),
+                Server.Models.GranularCertificateType.Consumption,
+                start: i,
+                end: i.AddHours(1));
+            var consSlice = await _dbFixture.CreateSlice(endpoint, consCert, new PedersenCommitment.SecretCommitmentInfo(10));
         }
 
-        await _dbFixture.CreateCertificate(Guid.NewGuid(), _fixture.Create<string>(), Server.Models.GranularCertificateType.Production);
-
+        // Act
         var result = await controller.AggregateCertificates(
             _unitOfWork,
             TimeAggregate.Day,
             timezone,
             queryStartDate.ToUnixTimeSeconds(),
             queryEndDate.ToUnixTimeSeconds(),
-            null);
+            type);
 
+        // Assert
         result.Value.Should().NotBeNull();
         var resultList = result.Value!.Result;
 
@@ -81,6 +90,7 @@ public class WalletControllerTests : IClassFixture<PostgresDatabaseFixture>
     [InlineData("America/Toronto", new long[] { 1600, 2400, 800 })]
     public async Task Test_AggregateClaims(string timezone, long[] values)
     {
+        // Arrange
         var issuestartDate = new DateTimeOffset(2020, 6, 1, 12, 0, 0, TimeSpan.Zero);
         var issueEndDate = new DateTimeOffset(2020, 6, 30, 12, 0, 0, TimeSpan.Zero);
         var queryStartDate = new DateTimeOffset(2020, 6, 8, 12, 0, 0, TimeSpan.Zero);
@@ -116,8 +126,7 @@ public class WalletControllerTests : IClassFixture<PostgresDatabaseFixture>
             await _dbFixture.CreateClaim(prodSlice, consSlice, Server.Models.ClaimState.Claimed);
         }
 
-        await _dbFixture.CreateCertificate(Guid.NewGuid(), _fixture.Create<string>(), Server.Models.GranularCertificateType.Production);
-
+        // Act
         var result = await controller.AggregateClaims(
             _unitOfWork,
             TimeAggregate.Day,
@@ -125,6 +134,7 @@ public class WalletControllerTests : IClassFixture<PostgresDatabaseFixture>
             queryStartDate.ToUnixTimeSeconds(),
             queryEndDate.ToUnixTimeSeconds());
 
+        // Assert
         result.Value.Should().NotBeNull();
         var resultList = result.Value!.Result;
 
@@ -144,6 +154,5 @@ public class WalletControllerTests : IClassFixture<PostgresDatabaseFixture>
                 })),
             }
         };
-
     }
 }
