@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ProjectOrigin.WalletSystem.Server.Database;
 using ProjectOrigin.WalletSystem.Server.Extensions;
@@ -13,9 +14,19 @@ namespace ProjectOrigin.WalletSystem.Server.Services.REST.v1;
 [ApiController]
 public class WalletController : ControllerBase
 {
+    /// <summary>
+    /// Gets all certificates in the wallet that are available for use.
+    /// </summary>
+    /// <param name="unitOfWork"></param>
+    /// <param name="start">The start of the time range in Unix time.</param>
+    /// <param name="end">The end of the time range in Unix time.</param>
+    /// <response code="200">Returns the aggregated claims.</response>
+    /// <response code="401">If the user is not authenticated.</response>
     [HttpGet]
     [Route("v1/certificates")]
     [Produces("application/json")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ResultList<GranularCertificate>>> GetCertificates([FromServices] IUnitOfWork unitOfWork, [FromQuery] long? start, [FromQuery] long? end)
     {
         var subject = User.GetSubject();
@@ -29,9 +40,19 @@ public class WalletController : ControllerBase
         return new ResultList<GranularCertificate> { Result = certificates.Select(c => c.MapToV1()) };
     }
 
+    /// <summary>
+    /// Gets all claims in the wallet
+    /// </summary>
+    /// <param name="unitOfWork"></param>
+    /// <param name="start">The start of the time range in Unix time.</param>
+    /// <param name="end">The end of the time range in Unix time.</param>
+    /// <response code="200">Returns the aggregated claims.</response>
+    /// <response code="401">If the user is not authenticated.</response>
     [HttpGet]
     [Route("v1/claims")]
     [Produces("application/json")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ResultList<Claim>>> GetClaims([FromServices] IUnitOfWork unitOfWork, [FromQuery] long? start, [FromQuery] long? end)
     {
         var owner = User.GetSubject();
@@ -45,9 +66,22 @@ public class WalletController : ControllerBase
         return new ResultList<Claim> { Result = claims.Select(c => c.MapToV1()) };
     }
 
+    /// <summary>
+    /// Aggregates certificates based on the specified time zone and time range.
+    /// </summary>
+    /// <param name="unitOfWork"></param>
+    /// <param name="timeAggregate">The size of each bucket in the aggregation</param>
+    /// <param name="timeZone">The time zone. See https://en.wikipedia.org/wiki/List_of_tz_database_time_zones for a list of valid time zones.</param>
+    /// <param name="start">The start of the time range in Unix time.</param>
+    /// <param name="end">The end of the time range in Unix time.</param>
+    /// <param name="type">Filter the type of certificates to return.</param>
+    /// <response code="200">Returns the aggregated claims.</response>
+    /// <response code="401">If the user is not authenticated.</response>
     [HttpGet]
     [Route("v1/aggregate-certificates")]
     [Produces("application/json")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ResultList<CertificateAggregationResult>>> AggregateCertificates(
         [FromServices] IUnitOfWork unitOfWork,
         [FromQuery] TimeAggregate timeAggregate,
@@ -82,9 +116,21 @@ public class WalletController : ControllerBase
         };
     }
 
+    /// <summary>
+    /// Aggregates claims based on the specified time zone and time range.
+    /// </summary>
+    /// <param name="unitOfWork"></param>
+    /// <param name="timeAggregate">The size of each bucket in the aggregation</param>
+    /// <param name="timeZone">The time zone. See https://en.wikipedia.org/wiki/List_of_tz_database_time_zones for a list of valid time zones.</param>
+    /// <param name="start">The start of the time range in Unix time.</param>
+    /// <param name="end">The end of the time range in Unix time.</param>
+    /// <response code="200">Returns the aggregated claims.</response>
+    /// <response code="401">If the user is not authenticated.</response>
     [HttpGet]
     [Route("v1/aggregate-claims")]
     [Produces("application/json")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ResultList<ClaimAggregationResult>>> AggregateClaims(
         [FromServices] IUnitOfWork unitOfWork,
         [FromQuery] TimeAggregate timeAggregate,

@@ -22,6 +22,8 @@ using ProjectOrigin.WalletSystem.Server.Services.GRPC;
 using ProjectOrigin.WalletSystem.Server.Services.REST;
 using System;
 using System.IdentityModel.Tokens.Jwt;
+using System.IO;
+using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -124,6 +126,13 @@ public class Startup
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddSingleton<IDbConnectionFactory, PostgresConnectionFactory>();
         services.AddSingleton<IHDAlgorithm, Secp256k1Algorithm>();
+
+        services.AddSwaggerGen(options =>
+        {
+            var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+            var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+            options.IncludeXmlComments(xmlPath);
+        });
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

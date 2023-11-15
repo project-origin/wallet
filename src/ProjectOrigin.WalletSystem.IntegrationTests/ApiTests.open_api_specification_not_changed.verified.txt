@@ -10,10 +10,12 @@
         "tags": [
           "Wallet"
         ],
+        "summary": "Gets all certificates in the wallet that are available for use.",
         "parameters": [
           {
             "name": "start",
             "in": "query",
+            "description": "The start of the time range in Unix time.",
             "schema": {
               "type": "integer",
               "format": "int64"
@@ -22,6 +24,7 @@
           {
             "name": "end",
             "in": "query",
+            "description": "The end of the time range in Unix time.",
             "schema": {
               "type": "integer",
               "format": "int64"
@@ -30,11 +33,21 @@
         ],
         "responses": {
           "200": {
-            "description": "Success",
+            "description": "Returns the aggregated claims.",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/GranularCertificateResultList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "If the user is not authenticated.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -47,10 +60,12 @@
         "tags": [
           "Wallet"
         ],
+        "summary": "Gets all claims in the wallet",
         "parameters": [
           {
             "name": "start",
             "in": "query",
+            "description": "The start of the time range in Unix time.",
             "schema": {
               "type": "integer",
               "format": "int64"
@@ -59,6 +74,7 @@
           {
             "name": "end",
             "in": "query",
+            "description": "The end of the time range in Unix time.",
             "schema": {
               "type": "integer",
               "format": "int64"
@@ -67,11 +83,21 @@
         ],
         "responses": {
           "200": {
-            "description": "Success",
+            "description": "Returns the aggregated claims.",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ClaimResultList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "If the user is not authenticated.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -84,10 +110,12 @@
         "tags": [
           "Wallet"
         ],
+        "summary": "Aggregates certificates based on the specified time zone and time range.",
         "parameters": [
           {
             "name": "timeAggregate",
             "in": "query",
+            "description": "The size of each bucket in the aggregation",
             "schema": {
               "$ref": "#/components/schemas/TimeAggregate"
             }
@@ -95,6 +123,7 @@
           {
             "name": "timeZone",
             "in": "query",
+            "description": "The time zone. See https://en.wikipedia.org/wiki/List_of_tz_database_time_zones for a list of valid time zones.",
             "schema": {
               "type": "string"
             }
@@ -102,6 +131,7 @@
           {
             "name": "start",
             "in": "query",
+            "description": "The start of the time range in Unix time.",
             "schema": {
               "type": "integer",
               "format": "int64"
@@ -110,6 +140,7 @@
           {
             "name": "end",
             "in": "query",
+            "description": "The end of the time range in Unix time.",
             "schema": {
               "type": "integer",
               "format": "int64"
@@ -118,6 +149,7 @@
           {
             "name": "type",
             "in": "query",
+            "description": "Filter the type of certificates to return.",
             "schema": {
               "$ref": "#/components/schemas/CertificateType"
             }
@@ -125,11 +157,21 @@
         ],
         "responses": {
           "200": {
-            "description": "Success",
+            "description": "Returns the aggregated claims.",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CertificateAggregationResultResultList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "If the user is not authenticated.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -142,10 +184,12 @@
         "tags": [
           "Wallet"
         ],
+        "summary": "Aggregates claims based on the specified time zone and time range.",
         "parameters": [
           {
             "name": "timeAggregate",
             "in": "query",
+            "description": "The size of each bucket in the aggregation",
             "schema": {
               "$ref": "#/components/schemas/TimeAggregate"
             }
@@ -153,6 +197,7 @@
           {
             "name": "timeZone",
             "in": "query",
+            "description": "The time zone. See https://en.wikipedia.org/wiki/List_of_tz_database_time_zones for a list of valid time zones.",
             "schema": {
               "type": "string"
             }
@@ -160,6 +205,7 @@
           {
             "name": "start",
             "in": "query",
+            "description": "The start of the time range in Unix time.",
             "schema": {
               "type": "integer",
               "format": "int64"
@@ -168,6 +214,7 @@
           {
             "name": "end",
             "in": "query",
+            "description": "The end of the time range in Unix time.",
             "schema": {
               "type": "integer",
               "format": "int64"
@@ -176,11 +223,21 @@
         ],
         "responses": {
           "200": {
-            "description": "Success",
+            "description": "Returns the aggregated claims.",
             "content": {
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ClaimAggregationResultResultList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "If the user is not authenticated.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -376,6 +433,33 @@
           }
         },
         "additionalProperties": false
+      },
+      "ProblemDetails": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "nullable": true
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "detail": {
+            "type": "string",
+            "nullable": true
+          },
+          "instance": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": { }
       },
       "TimeAggregate": {
         "enum": [
