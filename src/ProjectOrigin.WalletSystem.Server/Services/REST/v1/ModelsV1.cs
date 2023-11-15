@@ -48,7 +48,7 @@ public record Claim
     public required ClaimedCertificate ConsumptionCertificate { get; init; }
 }
 
-public record CertificateAggregationResult
+public record AggregatedCertificates
 {
     public required long Start { get; init; }
     public required long End { get; init; }
@@ -56,7 +56,7 @@ public record CertificateAggregationResult
     public required CertificateType Type { get; init; }
 }
 
-public record ClaimAggregationResult
+public record AggregatedClaims
 {
     public required long Start { get; init; }
     public required long End { get; init; }

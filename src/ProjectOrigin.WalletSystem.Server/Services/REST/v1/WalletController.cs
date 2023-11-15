@@ -18,8 +18,8 @@ public class WalletController : ControllerBase
     /// Gets all certificates in the wallet that are available for use.
     /// </summary>
     /// <param name="unitOfWork"></param>
-    /// <param name="start">The start of the time range in Unix time.</param>
-    /// <param name="end">The end of the time range in Unix time.</param>
+    /// <param name="start">The start of the time range in Unix time in seconds.</param>
+    /// <param name="end">The end of the time range in Unix time in seconds.</param>
     /// <response code="200">Returns the aggregated claims.</response>
     /// <response code="401">If the user is not authenticated.</response>
     [HttpGet]
@@ -44,8 +44,8 @@ public class WalletController : ControllerBase
     /// Gets all claims in the wallet
     /// </summary>
     /// <param name="unitOfWork"></param>
-    /// <param name="start">The start of the time range in Unix time.</param>
-    /// <param name="end">The end of the time range in Unix time.</param>
+    /// <param name="start">The start of the time range in Unix time in seconds.</param>
+    /// <param name="end">The end of the time range in Unix time in seconds.</param>
     /// <response code="200">Returns the aggregated claims.</response>
     /// <response code="401">If the user is not authenticated.</response>
     [HttpGet]
@@ -72,8 +72,8 @@ public class WalletController : ControllerBase
     /// <param name="unitOfWork"></param>
     /// <param name="timeAggregate">The size of each bucket in the aggregation</param>
     /// <param name="timeZone">The time zone. See https://en.wikipedia.org/wiki/List_of_tz_database_time_zones for a list of valid time zones.</param>
-    /// <param name="start">The start of the time range in Unix time.</param>
-    /// <param name="end">The end of the time range in Unix time.</param>
+    /// <param name="start">The start of the time range in Unix time in seconds.</param>
+    /// <param name="end">The end of the time range in Unix time in seconds.</param>
     /// <param name="type">Filter the type of certificates to return.</param>
     /// <response code="200">Returns the aggregated claims.</response>
     /// <response code="401">If the user is not authenticated.</response>
@@ -82,7 +82,7 @@ public class WalletController : ControllerBase
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
-    public async Task<ActionResult<ResultList<CertificateAggregationResult>>> AggregateCertificates(
+    public async Task<ActionResult<ResultList<AggregatedCertificates>>> AggregateCertificates(
         [FromServices] IUnitOfWork unitOfWork,
         [FromQuery] TimeAggregate timeAggregate,
         [FromQuery] string timeZone, //https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
@@ -100,13 +100,13 @@ public class WalletController : ControllerBase
             Type = type != null ? (GranularCertificateType)type.Value : null
         });
 
-        return new ResultList<CertificateAggregationResult>
+        return new ResultList<AggregatedCertificates>
         {
             Result = certificates
                 .GroupBy(cert => cert.CertificateType)
                 .SelectMany(typeGroup => typeGroup
                     .GroupByTime(x => x.StartDate, (Models.TimeAggregate)timeAggregate, timeZoneInfo)
-                    .Select(timeGroup => new CertificateAggregationResult
+                    .Select(timeGroup => new AggregatedCertificates
                     {
                         Type = (CertificateType)typeGroup.Key,
                         Quantity = timeGroup.Sum(certificate => certificate.Slices.Sum(slice => slice.Quantity)),
@@ -122,8 +122,8 @@ public class WalletController : ControllerBase
     /// <param name="unitOfWork"></param>
     /// <param name="timeAggregate">The size of each bucket in the aggregation</param>
     /// <param name="timeZone">The time zone. See https://en.wikipedia.org/wiki/List_of_tz_database_time_zones for a list of valid time zones.</param>
-    /// <param name="start">The start of the time range in Unix time.</param>
-    /// <param name="end">The end of the time range in Unix time.</param>
+    /// <param name="start">The start of the time range in Unix time in seconds.</param>
+    /// <param name="end">The end of the time range in Unix time in seconds.</param>
     /// <response code="200">Returns the aggregated claims.</response>
     /// <response code="401">If the user is not authenticated.</response>
     [HttpGet]
@@ -131,7 +131,7 @@ public class WalletController : ControllerBase
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
-    public async Task<ActionResult<ResultList<ClaimAggregationResult>>> AggregateClaims(
+    public async Task<ActionResult<ResultList<AggregatedClaims>>> AggregateClaims(
         [FromServices] IUnitOfWork unitOfWork,
         [FromQuery] TimeAggregate timeAggregate,
         [FromQuery] string timeZone, //https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
@@ -147,11 +147,11 @@ public class WalletController : ControllerBase
             End = end != null ? DateTimeOffset.FromUnixTimeSeconds(end.Value) : null,
         });
 
-        return new ResultList<ClaimAggregationResult>
+        return new ResultList<AggregatedClaims>
         {
             Result = claims
                 .GroupByTime(x => x.ProductionStart, (Models.TimeAggregate)timeAggregate, timeZoneInfo)
-                .Select(group => new ClaimAggregationResult
+                .Select(group => new AggregatedClaims
                 {
                     Quantity = group.Sum(claim => claim.Quantity),
                     Start = group.Min(claim => claim.ProductionStart).ToUnixTimeSeconds(),
