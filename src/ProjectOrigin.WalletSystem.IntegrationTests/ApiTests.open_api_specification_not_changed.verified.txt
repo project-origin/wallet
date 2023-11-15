@@ -147,10 +147,13 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/CertificateAggregationResultResultList"
+                  "$ref": "#/components/schemas/AggregatedCertificatesResultList"
                 }
               }
             }
+          },
+          "400": {
+            "description": "If the time zone is invalid."
           },
           "401": {
             "description": "If the user is not authenticated."
@@ -193,7 +196,7 @@
           {
             "name": "end",
             "in": "query",
-            "description": "The start of the time range in Unix time in seconds.",
+            "description": "The end of the time range in Unix time in seconds.",
             "schema": {
               "type": "integer",
               "format": "int64"
@@ -206,10 +209,13 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ClaimAggregationResultResultList"
+                  "$ref": "#/components/schemas/AggregatedClaimsResultList"
                 }
               }
             }
+          },
+          "400": {
+            "description": "If the time zone is invalid."
           },
           "401": {
             "description": "If the user is not authenticated."
@@ -220,7 +226,7 @@
   },
   "components": {
     "schemas": {
-      "CertificateAggregationResult": {
+      "AggregatedCertificates": {
         "type": "object",
         "properties": {
           "start": {
@@ -241,13 +247,43 @@
         },
         "additionalProperties": false
       },
-      "CertificateAggregationResultResultList": {
+      "AggregatedCertificatesResultList": {
         "type": "object",
         "properties": {
           "result": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/CertificateAggregationResult"
+              "$ref": "#/components/schemas/AggregatedCertificates"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "AggregatedClaims": {
+        "type": "object",
+        "properties": {
+          "start": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "end": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "quantity": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        "additionalProperties": false
+      },
+      "AggregatedClaimsResultList": {
+        "type": "object",
+        "properties": {
+          "result": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AggregatedClaims"
             }
           }
         },
@@ -276,36 +312,6 @@
           },
           "consumptionCertificate": {
             "$ref": "#/components/schemas/ClaimedCertificate"
-          }
-        },
-        "additionalProperties": false
-      },
-      "ClaimAggregationResult": {
-        "type": "object",
-        "properties": {
-          "start": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "end": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "quantity": {
-            "type": "integer",
-            "format": "int64"
-          }
-        },
-        "additionalProperties": false
-      },
-      "ClaimAggregationResultResultList": {
-        "type": "object",
-        "properties": {
-          "result": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ClaimAggregationResult"
-            }
           }
         },
         "additionalProperties": false

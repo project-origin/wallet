@@ -29,7 +29,7 @@ public class WalletController : ControllerBase
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ResultList<GranularCertificate>>> GetCertificates([FromServices] IUnitOfWork unitOfWork, [FromQuery] long? start, [FromQuery] long? end)
     {
-        var subject = User.GetSubject();
+        if (!User.TryGetSubject(out var subject)) return Unauthorized();
 
         var certificates = await unitOfWork.CertificateRepository.GetAllOwnedCertificates(subject, new CertificatesFilter
         {
@@ -55,9 +55,9 @@ public class WalletController : ControllerBase
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ResultList<Claim>>> GetClaims([FromServices] IUnitOfWork unitOfWork, [FromQuery] long? start, [FromQuery] long? end)
     {
-        var owner = User.GetSubject();
+        if (!User.TryGetSubject(out var subject)) return Unauthorized();
 
-        var claims = await unitOfWork.CertificateRepository.GetClaims(owner, new ClaimFilter
+        var claims = await unitOfWork.CertificateRepository.GetClaims(subject, new ClaimFilter
         {
             Start = start != null ? DateTimeOffset.FromUnixTimeSeconds(start.Value) : null,
             End = end != null ? DateTimeOffset.FromUnixTimeSeconds(end.Value) : null,
@@ -76,11 +76,13 @@ public class WalletController : ControllerBase
     /// <param name="end">The end of the time range in Unix time in seconds.</param>
     /// <param name="type">Filter the type of certificates to return.</param>
     /// <response code="200">Returns the aggregated claims.</response>
+    /// <response code="400">If the time zone is invalid.</response>
     /// <response code="401">If the user is not authenticated.</response>
     [HttpGet]
     [Route("v1/aggregate-certificates")]
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ResultList<AggregatedCertificates>>> AggregateCertificates(
         [FromServices] IUnitOfWork unitOfWork,
@@ -90,10 +92,10 @@ public class WalletController : ControllerBase
         [FromQuery] long? end,
         [FromQuery] CertificateType? type)
     {
-        var owner = User.GetSubject();
-        var timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById(timeZone);
+        if (!User.TryGetSubject(out var subject)) return Unauthorized();
+        if (!timeZone.TryParseTimeZone(out var timeZoneInfo)) return BadRequest("Invalid time zone");
 
-        var certificates = await unitOfWork.CertificateRepository.GetAllOwnedCertificates(owner, new CertificatesFilter
+        var certificates = await unitOfWork.CertificateRepository.GetAllOwnedCertificates(subject, new CertificatesFilter
         {
             Start = start != null ? DateTimeOffset.FromUnixTimeSeconds(start.Value) : null,
             End = end != null ? DateTimeOffset.FromUnixTimeSeconds(end.Value) : null,
@@ -125,11 +127,13 @@ public class WalletController : ControllerBase
     /// <param name="start">The start of the time range in Unix time in seconds.</param>
     /// <param name="end">The end of the time range in Unix time in seconds.</param>
     /// <response code="200">Returns the aggregated claims.</response>
+    /// <response code="400">If the time zone is invalid.</response>
     /// <response code="401">If the user is not authenticated.</response>
     [HttpGet]
     [Route("v1/aggregate-claims")]
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ResultList<AggregatedClaims>>> AggregateClaims(
         [FromServices] IUnitOfWork unitOfWork,
@@ -138,10 +142,10 @@ public class WalletController : ControllerBase
         [FromQuery] long? start,
         [FromQuery] long? end)
     {
-        var owner = User.GetSubject();
-        var timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById(timeZone);
+        if (!User.TryGetSubject(out var subject)) return Unauthorized();
+        if (!timeZone.TryParseTimeZone(out var timeZoneInfo)) return BadRequest("Invalid time zone");
 
-        var claims = await unitOfWork.CertificateRepository.GetClaims(owner, new ClaimFilter
+        var claims = await unitOfWork.CertificateRepository.GetClaims(subject, new ClaimFilter
         {
             Start = start != null ? DateTimeOffset.FromUnixTimeSeconds(start.Value) : null,
             End = end != null ? DateTimeOffset.FromUnixTimeSeconds(end.Value) : null,

@@ -7,11 +7,20 @@ public static class ClaimsPrincipalExtensions
 {
     public static string GetSubject(this ServerCallContext context)
     {
-        return context.GetHttpContext().User.GetSubject();
+        var principal = context.GetHttpContext().User;
+        if (principal.TryGetSubject(out var subject))
+        {
+            return subject;
+        }
+        else
+        {
+            throw new RpcException(new Status(StatusCode.Unauthenticated, "Subject not found on claims principal"));
+        }
     }
 
-    public static string GetSubject(this ClaimsPrincipal principal)
+    public static bool TryGetSubject(this ClaimsPrincipal principal, out string subject)
     {
-        return principal.FindFirstValue(ClaimTypes.NameIdentifier) ?? throw new RpcException(new Status(StatusCode.Unauthenticated, "Subject not found on claims principal"));
+        subject = principal?.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        return subject is not null;
     }
 }

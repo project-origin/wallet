@@ -27,6 +27,22 @@ public class WalletControllerTests : IClassFixture<PostgresDatabaseFixture>
         _unitOfWork = _dbFixture.CreateUnitOfWork();
     }
 
+    [Fact]
+    public async Task Verify_Unauthorized()
+    {
+        // Arrange
+        var controller = new WalletController();
+
+        // Act
+        var result = await controller.GetCertificates(
+            _unitOfWork,
+            null,
+            null);
+
+        // Assert
+        result.Result.Should().BeOfType<UnauthorizedResult>();
+    }
+
     [Theory]
     [InlineData("Europe/Copenhagen", new long[] { 1000, 2400, 1400 }, CertificateType.Production)]
     [InlineData("Europe/London", new long[] { 110, 240, 130 }, CertificateType.Consumption)]
@@ -140,6 +156,51 @@ public class WalletControllerTests : IClassFixture<PostgresDatabaseFixture>
 
         resultList.Should().HaveCount(3);
         resultList.Select(x => x.Quantity).Should().ContainInOrder(values);
+    }
+
+    [Fact]
+    public async Task AggregateCertificates_Invalid_TimeZone()
+    {
+        // Arrange
+        var subject = _fixture.Create<string>();
+        var controller = new WalletController
+        {
+            ControllerContext = CreateContextWithUser(subject)
+        };
+
+        // Act
+        var result = await controller.AggregateCertificates(
+            _unitOfWork,
+            TimeAggregate.Day,
+            "invalid-time-zone",
+            null,
+            null,
+            null);
+
+        // Assert
+        result.Result.Should().BeOfType<BadRequestObjectResult>();
+    }
+
+    [Fact]
+    public async Task AggregateClaims_Invalid_TimeZone()
+    {
+        // Arrange
+        var subject = _fixture.Create<string>();
+        var controller = new WalletController
+        {
+            ControllerContext = CreateContextWithUser(subject)
+        };
+
+        // Act
+        var result = await controller.AggregateClaims(
+            _unitOfWork,
+            TimeAggregate.Day,
+            "invalid-time-zone",
+            null,
+            null);
+
+        // Assert
+        result.Result.Should().BeOfType<BadRequestObjectResult>();
     }
 
     private static ControllerContext CreateContextWithUser(string subject)
