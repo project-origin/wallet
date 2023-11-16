@@ -119,20 +119,19 @@ public class CertificateRepository : ICertificateRepository
               WHERE w.owner = @owner
                 AND s.state = @sliceState
                 AND (@start IS NULL OR c.start_date >= @start)
-                AND (@end IS NULL OR c.end_date <= @end)",
+                AND (@end IS NULL OR c.end_date <= @end)
+                AND (@type IS NULL OR c.certificate_type = @type)
+                ",
             (cert, slice, atr) =>
             {
                 if (!certsDictionary.TryGetValue(cert.Id, out var certificate))
                 {
                     certsDictionary.Add(cert.Id, certificate = cert);
                 }
-
                 if (slice != null && !certificate.Slices.Contains(slice))
                     certificate.Slices.Add(slice);
-
                 if (atr != null && atr.Key != null && atr.Value != null && !certificate.Attributes.Contains(atr))
                     certificate.Attributes.Add(atr);
-
                 return certificate;
             },
             splitOn: "slice_id, key",
@@ -141,7 +140,8 @@ public class CertificateRepository : ICertificateRepository
                 owner,
                 sliceState = (int)WalletSliceState.Available,
                 start = filter.Start,
-                end = filter.End
+                end = filter.End,
+                type = filter.Type,
             });
 
         return certsDictionary.Values;

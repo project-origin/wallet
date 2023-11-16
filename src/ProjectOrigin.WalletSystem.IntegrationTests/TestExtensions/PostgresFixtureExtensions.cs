@@ -73,7 +73,14 @@ public static class PostgresFixtureExtensions
         }
     }
 
-    public static async Task<Certificate> CreateCertificate(this PostgresDatabaseFixture _dbFixture, Guid id, string registryName, GranularCertificateType type)
+    public static async Task<Certificate> CreateCertificate(
+        this PostgresDatabaseFixture _dbFixture,
+        Guid id,
+        string registryName,
+        GranularCertificateType type,
+        DateTimeOffset? start = null,
+        DateTimeOffset? end = null
+        )
     {
         using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
         {
@@ -88,8 +95,8 @@ public static class PostgresFixtureExtensions
             {
                 Id = id,
                 RegistryName = registryName,
-                StartDate = DateTimeOffset.Now,
-                EndDate = DateTimeOffset.Now.AddDays(1),
+                StartDate = start ?? DateTimeOffset.Now,
+                EndDate = end ?? start?.AddDays(1) ?? DateTimeOffset.Now.AddDays(1),
                 GridArea = "DK1",
                 CertificateType = type,
                 Attributes = attributes
@@ -121,6 +128,26 @@ public static class PostgresFixtureExtensions
             await certificateRepository.InsertWalletSlice(slice);
 
             return slice;
+        }
+    }
+
+    public static async Task<Claim> CreateClaim(this PostgresDatabaseFixture _dbFixture, WalletSlice prodSlice, WalletSlice consSlice, ClaimState state)
+    {
+        using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
+        {
+            var certificateRepository = new CertificateRepository(connection);
+            var walletRepository = new WalletRepository(connection);
+            var claim = new Claim
+            {
+                Id = Guid.NewGuid(),
+                ProductionSliceId = prodSlice.Id,
+                ConsumptionSliceId = consSlice.Id,
+                State = state,
+            };
+
+            await certificateRepository.InsertClaim(claim);
+
+            return claim;
         }
     }
 
