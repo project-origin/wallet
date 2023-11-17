@@ -48,6 +48,16 @@ public record Claim
     public required ClaimedCertificate ConsumptionCertificate { get; init; }
 }
 
+public record Transfer
+{
+    public required FederatedStreamId FederatedStreamId { get; init; }
+    public required string ReceiverId { get; init; }
+    public required long Quantity { get; init; }
+    public required long Start { get; init; }
+    public required long End { get; init; }
+    public required string GridArea { get; init; }
+}
+
 public record AggregatedCertificates
 {
     public required long Start { get; init; }
@@ -57,6 +67,13 @@ public record AggregatedCertificates
 }
 
 public record AggregatedClaims
+{
+    public required long Start { get; init; }
+    public required long End { get; init; }
+    public required long Quantity { get; init; }
+}
+
+public record AggregatedTransfers
 {
     public required long Start { get; init; }
     public required long End { get; init; }
