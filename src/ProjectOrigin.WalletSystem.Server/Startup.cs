@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using ProjectOrigin.HierarchicalDeterministicKeys.Implementations;
 using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
@@ -21,7 +22,6 @@ using ProjectOrigin.WalletSystem.Server.Services;
 using ProjectOrigin.WalletSystem.Server.Services.GRPC;
 using ProjectOrigin.WalletSystem.Server.Services.REST;
 using System;
-using System.IdentityModel.Tokens.Jwt;
 using System.IO;
 using System.Reflection;
 using System.Text.Json;
@@ -86,7 +86,7 @@ public class Startup
                     ValidateActor = false,
                     ValidateTokenReplay = false,
                     ValidateLifetime = false,
-                    SignatureValidator = (token, _) => new JwtSecurityToken(token)
+                    SignatureValidator = (token, _) => new JsonWebToken(token)
                 };
             });
         services.AddAuthorization();
