@@ -48,6 +48,18 @@ public static class PostgresFixtureExtensions
         }
     }
 
+    public static async Task<ExternalEndpoint> CreateExternalEndpoint(this PostgresDatabaseFixture _dbFixture, string owner)
+    {
+        var key = new Secp256k1Algorithm().GenerateNewPrivateKey();
+        var publicKey = key.Derive(0).Neuter();
+
+        using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
+        {
+            var walletRepository = new WalletRepository(connection);
+            return await walletRepository.CreateExternalEndpoint(owner, publicKey, "", "");
+        }
+    }
+
     public static async Task<WalletEndpoint> CreateWalletEndpoint(this PostgresDatabaseFixture _dbFixture, string owner)
     {
         var wallet = await CreateWallet(_dbFixture, owner);
@@ -148,6 +160,32 @@ public static class PostgresFixtureExtensions
             await certificateRepository.InsertClaim(claim);
 
             return claim;
+        }
+    }
+
+    public static async Task<TransferredSlice> CreateTransferredSlice(
+        this PostgresDatabaseFixture _dbFixture,
+        ExternalEndpoint externalEndpoint,
+        Certificate certificate,
+        SecretCommitmentInfo secretCommitmentInfo)
+    {
+        using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
+        {
+            var walletRepository = new WalletRepository(connection);
+            var certificateRepository = new CertificateRepository(connection);
+            var transferredSlice = new TransferredSlice()
+            {
+                Id = Guid.NewGuid(),
+                CertificateId = certificate.Id,
+                RegistryName = certificate.RegistryName,
+                ExternalEndpointId = externalEndpoint.Id,
+                ExternalEndpointPosition = await walletRepository.GetNextNumberForId(externalEndpoint.Id),
+                State = TransferredSliceState.Transferred,
+                Quantity = secretCommitmentInfo.Message,
+                RandomR = secretCommitmentInfo.BlindingValue.ToArray()
+            };
+            await certificateRepository.InsertTransferredSlice(transferredSlice);
+            return transferredSlice;
         }
     }
 
