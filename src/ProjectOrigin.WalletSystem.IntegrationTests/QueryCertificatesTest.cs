@@ -26,11 +26,13 @@ public class QueryCertificatesTest : WalletSystemTestsBase, IClassFixture<InMemo
         GrpcTestFixture<Startup> grpcFixture,
         PostgresDatabaseFixture dbFixture,
         InMemoryFixture inMemoryFixture,
+        JwtTokenIssuerFixture jwtTokenIssuerFixture,
         ITestOutputHelper outputHelper)
         : base(
               grpcFixture,
               dbFixture,
               inMemoryFixture,
+              jwtTokenIssuerFixture,
               outputHelper,
               null)
     {
@@ -42,7 +44,7 @@ public class QueryCertificatesTest : WalletSystemTestsBase, IClassFixture<InMemo
     public async void QueryCertificates()
     {
         //Arrange
-        var owner = _fixture.Create<string>();
+        var (owner, header) = GenerateUserHeader();
         var someOtherOwner = _fixture.Create<string>();
 
         var quantity1 = _fixture.Create<long>();
@@ -163,15 +165,10 @@ public class QueryCertificatesTest : WalletSystemTestsBase, IClassFixture<InMemo
             await certificateRepository.InsertWalletSlice(notOwnedSlice);
         }
 
-        var someOwnerName = _fixture.Create<string>();
-        var token = _tokenGenerator.GenerateToken(owner, someOwnerName);
-        var headers = new Metadata();
-        headers.Add("Authorization", $"Bearer {token}");
-
         var client = new WalletService.WalletServiceClient(_grpcFixture.Channel);
 
         //Act
-        var result = await client.QueryGranularCertificatesAsync(new QueryRequest(), headers);
+        var result = await client.QueryGranularCertificatesAsync(new QueryRequest(), header);
 
         //Assert
         result.GranularCertificates.Should().HaveCount(2);
@@ -183,7 +180,7 @@ public class QueryCertificatesTest : WalletSystemTestsBase, IClassFixture<InMemo
     [Fact]
     public async void QueryGranularCertificates_WhenNoCertificatesInWallet_ExpectZeroCertificates()
     {
-        var owner = _fixture.Create<string>();
+        var (owner, header) = GenerateUserHeader();
 
         using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
         {
@@ -199,14 +196,9 @@ public class QueryCertificatesTest : WalletSystemTestsBase, IClassFixture<InMemo
             var endpoint = await walletRepository.CreateWalletEndpoint(wallet.Id);
         }
 
-        var someOwnerName = _fixture.Create<string>();
-        var token = _tokenGenerator.GenerateToken(owner, someOwnerName);
-        var headers = new Metadata();
-        headers.Add("Authorization", $"Bearer {token}");
-
         var client = new WalletService.WalletServiceClient(_grpcFixture.Channel);
 
-        var result = await client.QueryGranularCertificatesAsync(new QueryRequest(), headers);
+        var result = await client.QueryGranularCertificatesAsync(new QueryRequest(), header);
 
         result.GranularCertificates.Should().BeEmpty();
     }
@@ -214,7 +206,7 @@ public class QueryCertificatesTest : WalletSystemTestsBase, IClassFixture<InMemo
     [Fact]
     public async void QueryGranularCertificates_WhenInvalidCertificateTypeInDatabase_ExpectException()
     {
-        var owner = _fixture.Create<string>();
+        var (owner, header) = GenerateUserHeader();
 
         using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
         {
@@ -252,14 +244,9 @@ public class QueryCertificatesTest : WalletSystemTestsBase, IClassFixture<InMemo
             await certificateRepository.InsertWalletSlice(slice1);
         }
 
-        var someOwnerName = _fixture.Create<string>();
-        var token = _tokenGenerator.GenerateToken(owner, someOwnerName);
-        var headers = new Metadata();
-        headers.Add("Authorization", $"Bearer {token}");
-
         var client = new WalletService.WalletServiceClient(_grpcFixture.Channel);
 
-        var act = async () => await client.QueryGranularCertificatesAsync(new QueryRequest(), headers);
+        var act = async () => await client.QueryGranularCertificatesAsync(new QueryRequest(), header);
 
         await act.Should().ThrowAsync<RpcException>();
     }

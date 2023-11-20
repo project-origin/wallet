@@ -1,23 +1,27 @@
 using System;
 using System.IdentityModel.Tokens.Jwt;
+using System.IO;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using Microsoft.IdentityModel.Tokens;
 
-public class JwtGenerator
+namespace ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures;
+
+public class JwtTokenIssuerFixture : IDisposable
 {
+    public string Issuer { get; } = "TestIssuer";
+    public string Audience { get; } = "WalletSystem";
+    public int ExpirationMinutes { get; } = 60;
+    public string PemFilepath { get; }
+
     private readonly ECDsa _ecdsa;
-    private readonly string _issuer;
-    private readonly string _audience;
-    private readonly int _expirationMinutes;
 
-    public JwtGenerator(string issuer = "", string audience = "", int expirationMinutes = 5)
+    public JwtTokenIssuerFixture()
     {
-        _issuer = issuer;
-        _audience = audience;
-        _expirationMinutes = expirationMinutes;
-
         _ecdsa = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+        PemFilepath = Path.GetTempFileName();
+        var pem = _ecdsa.ExportSubjectPublicKeyInfoPem();
+        File.WriteAllText(PemFilepath, pem);
     }
 
     public string GenerateToken(string subject, string name)
@@ -33,13 +37,19 @@ public class JwtGenerator
         var credentials = new SigningCredentials(key, SecurityAlgorithms.EcdsaSha256);
 
         var token = new JwtSecurityToken(
-            issuer: _issuer,
-            audience: _audience,
+            issuer: Issuer,
+            audience: Audience,
             claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(_expirationMinutes),
+            notBefore: DateTime.UtcNow,
+            expires: DateTime.UtcNow.AddMinutes(ExpirationMinutes),
             signingCredentials: credentials
         );
 
         return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+
+    public void Dispose()
+    {
+        File.Delete(PemFilepath);
     }
 }

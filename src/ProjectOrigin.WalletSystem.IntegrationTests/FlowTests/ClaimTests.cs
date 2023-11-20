@@ -16,12 +16,14 @@ public class ClaimTests : AbstractFlowTests
             GrpcTestFixture<Startup> grpcFixture,
             PostgresDatabaseFixture dbFixture,
             InMemoryFixture inMemoryFixture,
+            JwtTokenIssuerFixture jwtTokenIssuerFixture,
             RegistryFixture registryFixture,
             ITestOutputHelper outputHelper)
             : base(
                   grpcFixture,
                   dbFixture,
                   inMemoryFixture,
+                  jwtTokenIssuerFixture,
                   outputHelper,
                   registryFixture)
     {

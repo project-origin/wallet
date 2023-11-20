@@ -11,10 +11,12 @@ public class RabbitMqTests : WalletSystemTestsBase, IClassFixture<RabbitMqFixtur
         GrpcTestFixture<Startup> grpcFixture,
         PostgresDatabaseFixture dbFixture,
         RabbitMqFixture messageBrokerFixture,
+        JwtTokenIssuerFixture jwtTokenIssuerFixture,
         ITestOutputHelper outputHelper) : base(
             grpcFixture,
             dbFixture,
             messageBrokerFixture,
+            jwtTokenIssuerFixture,
             outputHelper,
             null)
     {

@@ -22,11 +22,13 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
             GrpcTestFixture<Startup> grpcFixture,
             PostgresDatabaseFixture dbFixture,
             InMemoryFixture inMemoryFixture,
+        JwtTokenIssuerFixture jwtTokenIssuerFixture,
             ITestOutputHelper outputHelper)
             : base(
                   grpcFixture,
                   dbFixture,
                   inMemoryFixture,
+                  jwtTokenIssuerFixture,
                   outputHelper,
                   null)
         {

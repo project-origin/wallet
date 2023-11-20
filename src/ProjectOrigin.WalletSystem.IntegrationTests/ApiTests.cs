@@ -27,11 +27,13 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
         GrpcTestFixture<Startup> grpcFixture,
         PostgresDatabaseFixture dbFixture,
         InMemoryFixture inMemoryFixture,
+        JwtTokenIssuerFixture jwtTokenIssuerFixture,
         ITestOutputHelper outputHelper)
         : base(
               grpcFixture,
               dbFixture,
               inMemoryFixture,
+              jwtTokenIssuerFixture,
               outputHelper,
               null)
     {

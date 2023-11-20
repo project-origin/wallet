@@ -17,11 +17,13 @@ public class GrpcTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
         GrpcTestFixture<Startup> grpcFixture,
         PostgresDatabaseFixture dbFixture,
         InMemoryFixture memoryFixture,
+        JwtTokenIssuerFixture jwtTokenIssuerFixture,
         ITestOutputHelper outputHelper)
         : base(
             grpcFixture,
             dbFixture,
             memoryFixture,
+            jwtTokenIssuerFixture,
             outputHelper,
             null)
     {
@@ -31,16 +33,12 @@ public class GrpcTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
     public async Task can_create_external_endpoint_when_authenticated()
     {
         // Arrange
-        var subject = Guid.NewGuid().ToString();
-        var token = _tokenGenerator.GenerateToken(subject, "John Doe");
-
-        var headers = new Metadata { { "Authorization", $"Bearer {token}" } };
-
+        var (subject, header) = GenerateUserHeader();
         var client = new WalletService.WalletServiceClient(_grpcFixture.Channel);
         var request = new CreateWalletDepositEndpointRequest();
 
         // Act
-        var externalEndpoint = await client.CreateWalletDepositEndpointAsync(request, headers);
+        var externalEndpoint = await client.CreateWalletDepositEndpointAsync(request, header);
 
         // Assert
         externalEndpoint.Should().NotBeNull();

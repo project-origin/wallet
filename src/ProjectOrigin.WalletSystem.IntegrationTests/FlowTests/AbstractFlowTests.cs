@@ -12,7 +12,7 @@ using System.Linq;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests;
 
-public abstract class AbstractFlowTests : WalletSystemTestsBase, IClassFixture<RegistryFixture>, IClassFixture<InMemoryFixture>
+public abstract class AbstractFlowTests : WalletSystemTestsBase, IClassFixture<RegistryFixture>, IClassFixture<InMemoryFixture>, IClassFixture<JwtTokenIssuerFixture>
 {
     private readonly RegistryFixture _registryFixture;
 
@@ -20,8 +20,9 @@ public abstract class AbstractFlowTests : WalletSystemTestsBase, IClassFixture<R
         GrpcTestFixture<Startup> grpcFixture,
         PostgresDatabaseFixture dbFixture,
         IMessageBrokerFixture messageBrokerFixture,
+        JwtTokenIssuerFixture jwtTokenIssuerFixture,
         ITestOutputHelper outputHelper,
-        RegistryFixture registryFixture) : base(grpcFixture, dbFixture, messageBrokerFixture, outputHelper, registryFixture)
+        RegistryFixture registryFixture) : base(grpcFixture, dbFixture, messageBrokerFixture, jwtTokenIssuerFixture, outputHelper, registryFixture)
     {
         _registryFixture = registryFixture;
     }

@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using ProjectOrigin.HierarchicalDeterministicKeys.Implementations;
 using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
@@ -23,6 +22,7 @@ using ProjectOrigin.WalletSystem.Server.Services.GRPC;
 using ProjectOrigin.WalletSystem.Server.Services.REST;
 using System;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -78,15 +78,20 @@ public class Startup
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(o =>
             {
+                var jwtOptions = _configuration.GetSection("jwt").GetValid<JwtOptions>();
+
                 o.TokenValidationParameters = new TokenValidationParameters
                 {
-                    ValidateIssuer = false,
-                    ValidateIssuerSigningKey = false,
-                    ValidateAudience = false,
-                    ValidateActor = false,
+                    ValidateIssuer = true,
+                    ValidateAudience = !jwtOptions.Audience.IsEmpty(),
+                    TryAllIssuerSigningKeys = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidateLifetime = true,
                     ValidateTokenReplay = false,
-                    ValidateLifetime = false,
-                    SignatureValidator = (token, _) => new JsonWebToken(token)
+                    RequireSignedTokens = true,
+                    ValidAudience = jwtOptions.Audience,
+                    ValidIssuers = jwtOptions.Issuers.Select(x => x.IssuerName).ToList(),
+                    IssuerSigningKeys = jwtOptions.Issuers.Select(x => x.SecurityKey).ToList(),
                 };
             });
         services.AddAuthorization();
