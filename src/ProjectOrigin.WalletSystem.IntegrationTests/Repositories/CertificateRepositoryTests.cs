@@ -12,6 +12,7 @@ using Xunit;
 using ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures;
 using ProjectOrigin.WalletSystem.Server.Activities.Exceptions;
 using System.Text;
+using ProjectOrigin.WalletSystem.IntegrationTests.TestExtensions;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests.Repositories;
 
@@ -778,6 +779,56 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         // Assert
         var foundAttribute = walletAttributeFromRepo.Should().ContainSingle().Which;
         foundAttribute.Value.Should().Be(assetIdWalletAttribute.Value);
+    }
+
+
+    [Fact]
+    public async Task Test_GetTransfers()
+    {
+        // Arrange
+        var issuestartDate = new DateTimeOffset(2020, 6, 1, 12, 0, 0, TimeSpan.Zero);
+        var issueEndDate = new DateTimeOffset(2020, 6, 30, 12, 0, 0, TimeSpan.Zero);
+        var queryStartDate = new DateTimeOffset(2020, 6, 8, 12, 0, 0, TimeSpan.Zero);
+        var queryEndDate = new DateTimeOffset(2020, 6, 10, 12, 0, 0, TimeSpan.Zero);
+
+        string subject = _fixture.Create<string>();
+
+        for (int ownerNumber = 0; ownerNumber < 2; ownerNumber++)
+        {
+            subject = _fixture.Create<string>();
+
+            for (int endpointNumber = 0; endpointNumber < 2; endpointNumber++)
+            {
+                var externalEndpoint = await _dbFixture.CreateExternalEndpoint(subject);
+
+                for (DateTimeOffset i = issuestartDate; i < issueEndDate; i = i.AddHours(1))
+                {
+                    var certificate = await _dbFixture.CreateCertificate(
+                        Guid.NewGuid(),
+                        _fixture.Create<string>(),
+                        GranularCertificateType.Production,
+                        start: i,
+                        end: i.AddHours(1));
+                    await _dbFixture.CreateTransferredSlice(externalEndpoint, certificate, new PedersenCommitment.SecretCommitmentInfo(100));
+                }
+            }
+        }
+
+        // Act
+        var result = await _repository.GetTransfers(subject, new TransferFilter
+        {
+            Start = queryStartDate,
+            End = queryEndDate
+        });
+
+        //assert
+        result.Should().HaveCount(96);
+        result.Select(x => x.ReceiverId).Distinct().Should().HaveCount(2);
+        result.SelectMany(x => x.Attributes).Should().HaveCount(96 * 2);
+        result.Select(x => x.StartDate).Distinct().Should().HaveCount(48);
+        result.Min(x => x.StartDate).Should().Be(queryStartDate);
+        result.Select(x => x.EndDate).Distinct().Should().HaveCount(48);
+        result.Max(x => x.EndDate).Should().Be(queryEndDate);
     }
 
     private async Task CreateClaimsAndCerts(string owner, int numberOfClaims, DateTimeOffset startDate)

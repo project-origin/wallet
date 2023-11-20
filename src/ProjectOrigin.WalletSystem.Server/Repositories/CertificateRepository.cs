@@ -413,6 +413,58 @@ public class CertificateRepository : ICertificateRepository
         }
     }
 
+    public async Task<IEnumerable<TransferViewModel>> GetTransfers(string owner, TransferFilter filter)
+    {
+        var certsDictionary = new Dictionary<Guid, TransferViewModel>();
+
+        await _connection.QueryAsync<TransferViewModel, CertificateAttribute, TransferViewModel>(
+            @"SELECT
+                c.id AS CertificateId,
+                c.registry_name AS RegistryName,
+                ee.id AS ReceiverId,
+                c.grid_area AS GridArea,
+                ts.quantity AS Quantity,
+                c.start_date AS StartDate,
+                c.end_date AS EndDate,
+                a.attribute_key as key,
+                a.attribute_value as value,
+                a.attribute_type as type
+              FROM transferred_slices ts
+              INNER JOIN external_endpoints ee
+                ON ts.external_endpoint_id = ee.id
+              INNER JOIN certificates c
+                ON ts.certificate_id = c.id
+              LEFT JOIN attributes_view a
+                ON c.id = a.certificate_id
+                AND c.registry_name = a.registry_name
+                AND (a.wallet_id IS NULL)
+              WHERE ee.owner = @owner
+                AND (@start IS NULL OR c.start_date >= @start)
+                AND (@end IS NULL OR c.end_date <= @end)
+                ",
+            (cert, atr) =>
+            {
+                if (!certsDictionary.TryGetValue(cert.CertificateId, out var certificate))
+                {
+                    certsDictionary.Add(cert.CertificateId, certificate = cert);
+                }
+
+                if (atr != null && atr.Key != null && atr.Value != null && !certificate.Attributes.Contains(atr))
+                    certificate.Attributes.Add(atr);
+
+                return certificate;
+            },
+            splitOn: "key",
+            param: new
+            {
+                owner,
+                start = filter.Start,
+                end = filter.End,
+            });
+
+        return certsDictionary.Values;
+    }
+
     public async Task InsertWalletAttribute(Guid walletId, WalletAttribute walletAttribute)
     {
         await _connection.ExecuteAsync(

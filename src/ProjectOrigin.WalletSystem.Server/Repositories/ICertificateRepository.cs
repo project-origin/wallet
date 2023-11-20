@@ -17,6 +17,7 @@ public interface ICertificateRepository
     Task<IList<WalletSlice>> ReserveQuantity(string owner, string registryName, Guid certificateId, uint reserveQuantity);
     Task SetWalletSliceState(Guid sliceId, WalletSliceState state);
 
+    Task<IEnumerable<TransferViewModel>> GetTransfers(string owner, TransferFilter filter);
     Task InsertTransferredSlice(TransferredSlice newSlice);
     Task<TransferredSlice> GetTransferredSlice(Guid sliceId);
     Task SetTransferredSliceState(Guid sliceId, TransferredSliceState state);
