@@ -49,7 +49,7 @@ jobs:
       push: false
 
   test-devcontainer:
-    name: Test devcontainer
+    name: Verify devcontainer works
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
