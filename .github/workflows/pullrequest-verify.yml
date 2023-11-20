@@ -47,3 +47,15 @@ jobs:
       context: ./src
       dockerfile: ./src/ProjectOrigin.WalletSystem.Server/Dockerfile
       push: false
+
+  test-devcontainer:
+    name: Test devcontainer
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build and run tests on devcontainer
+        uses: devcontainers/ci@v0.3
+        with:
+          push: never
+          runCmd: make test
