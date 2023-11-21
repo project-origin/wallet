@@ -14,13 +14,13 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests;
 public class GrpcTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
 {
     public GrpcTests(
-        GrpcTestFixture<Startup> grpcFixture,
+        TestServerFixture<Startup> serverFixture,
         PostgresDatabaseFixture dbFixture,
         InMemoryFixture memoryFixture,
         JwtTokenIssuerFixture jwtTokenIssuerFixture,
         ITestOutputHelper outputHelper)
         : base(
-            grpcFixture,
+            serverFixture,
             dbFixture,
             memoryFixture,
             jwtTokenIssuerFixture,
@@ -34,7 +34,7 @@ public class GrpcTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
     {
         // Arrange
         var (subject, header) = GenerateUserHeader();
-        var client = new WalletService.WalletServiceClient(_grpcFixture.Channel);
+        var client = new WalletService.WalletServiceClient(_serverFixture.Channel);
         var request = new CreateWalletDepositEndpointRequest();
 
         // Act
@@ -66,7 +66,7 @@ public class GrpcTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
     public async Task throw_unauthenticated_when_no_jwt()
     {
         // Arrange
-        var client = new WalletService.WalletServiceClient(_grpcFixture.Channel);
+        var client = new WalletService.WalletServiceClient(_serverFixture.Channel);
         var request = new CreateWalletDepositEndpointRequest();
 
         // Act

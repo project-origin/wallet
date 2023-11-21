@@ -14,10 +14,10 @@ using Xunit.Abstractions;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests;
 
-public abstract class WalletSystemTestsBase : IClassFixture<GrpcTestFixture<Startup>>, IClassFixture<PostgresDatabaseFixture>, IClassFixture<JwtTokenIssuerFixture>, IDisposable
+public abstract class WalletSystemTestsBase : IClassFixture<TestServerFixture<Startup>>, IClassFixture<PostgresDatabaseFixture>, IClassFixture<JwtTokenIssuerFixture>, IDisposable
 {
     protected readonly string endpoint = "http://localhost/";
-    protected readonly GrpcTestFixture<Startup> _grpcFixture;
+    protected readonly TestServerFixture<Startup> _serverFixture;
     protected readonly PostgresDatabaseFixture _dbFixture;
     protected readonly Fixture _fixture;
 
@@ -25,10 +25,10 @@ public abstract class WalletSystemTestsBase : IClassFixture<GrpcTestFixture<Star
     private readonly IMessageBrokerFixture _messageBrokerFixture;
     private readonly IDisposable _logger;
 
-    protected IHDAlgorithm Algorithm => _grpcFixture.GetRequiredService<IHDAlgorithm>();
+    protected IHDAlgorithm Algorithm => _serverFixture.GetRequiredService<IHDAlgorithm>();
 
     public WalletSystemTestsBase(
-        GrpcTestFixture<Startup> grpcFixture,
+        TestServerFixture<Startup> serverFixture,
         PostgresDatabaseFixture dbFixture,
         IMessageBrokerFixture messageBrokerFixture,
         JwtTokenIssuerFixture jwtTokenIssuerFixture,
@@ -37,9 +37,9 @@ public abstract class WalletSystemTestsBase : IClassFixture<GrpcTestFixture<Star
     {
         _messageBrokerFixture = messageBrokerFixture;
         _jwtTokenIssuerFixture = jwtTokenIssuerFixture;
-        _grpcFixture = grpcFixture;
+        _serverFixture = serverFixture;
         _dbFixture = dbFixture;
-        _logger = grpcFixture.GetTestLogger(outputHelper);
+        _logger = serverFixture.GetTestLogger(outputHelper);
 
         _fixture = new Fixture();
 
@@ -59,7 +59,7 @@ public abstract class WalletSystemTestsBase : IClassFixture<GrpcTestFixture<Star
         if (registry is not null)
             config.Add($"RegistryUrls:{registry.Name}", registry.RegistryUrl);
 
-        grpcFixture.ConfigureHostConfiguration(config);
+        serverFixture.ConfigureHostConfiguration(config);
     }
 
     public void Dispose()
@@ -69,7 +69,7 @@ public abstract class WalletSystemTestsBase : IClassFixture<GrpcTestFixture<Star
 
     protected HttpClient CreateAuthenticatedHttpClient(string subject, string name)
     {
-        var client = _grpcFixture.CreateHttpClient();
+        var client = _serverFixture.CreateHttpClient();
         var token = _jwtTokenIssuerFixture.GenerateToken(subject, name);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         return client;
@@ -77,16 +77,6 @@ public abstract class WalletSystemTestsBase : IClassFixture<GrpcTestFixture<Star
 
     protected (string, Metadata) GenerateUserHeader()
     {
-        var subject = _fixture.Create<string>();
-        var name = _fixture.Create<string>();
-
-        var token = _jwtTokenIssuerFixture.GenerateToken(subject, name);
-
-        var headers = new Metadata
-        {
-            { "Authorization", $"Bearer {token}" }
-        };
-
-        return (subject, headers);
+        return _jwtTokenIssuerFixture.GenerateUserHeader();
     }
 }

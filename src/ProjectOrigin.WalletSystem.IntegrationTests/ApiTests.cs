@@ -24,13 +24,13 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests;
 public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
 {
     public ApiTests(
-        GrpcTestFixture<Startup> grpcFixture,
+        TestServerFixture<Startup> serverFixture,
         PostgresDatabaseFixture dbFixture,
         InMemoryFixture inMemoryFixture,
         JwtTokenIssuerFixture jwtTokenIssuerFixture,
         ITestOutputHelper outputHelper)
         : base(
-              grpcFixture,
+              serverFixture,
               dbFixture,
               inMemoryFixture,
               jwtTokenIssuerFixture,
@@ -44,7 +44,7 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
     [Fact]
     public async Task open_api_specification_not_changed()
     {
-        var httpClient = _grpcFixture.CreateHttpClient();
+        var httpClient = _serverFixture.CreateHttpClient();
         var specificationResponse = await httpClient.GetAsync("swagger/v1/swagger.json");
         var specification = await specificationResponse.Content.ReadAsStringAsync();
         await Verifier.Verify(specification);

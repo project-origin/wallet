@@ -33,7 +33,7 @@ spec:
             - "--serve"
           env:
             - name: ServiceOptions__EndpointAddress
-              value: {{ required "A valid externalUrl is required!"  .Values.wallet.externalUrl }}
+              value: {{ required "A valid externalUrl is required!"  .Values.config.externalUrl }}
             - name: RestApiOptions__PathBase
               value: {{ .Values.rest.pathBase }}
             {{- if eq .Values.messageBroker.type "inMemory" }}
@@ -102,3 +102,25 @@ spec:
           {{- else }}
             {{- fail "currently only CloudNativePG is supported, and must be enabled." }}
           {{ end }}
+            - name: jwt__audience
+              value: {{ .Values.config.jwt.audience }}
+            - name: jwt__allowAnyJwtToken
+              value: {{ .Values.config.jwt.allowAnyJwtToken }}
+            {{- range  $i, $issuer := .Values.config.jwt.issuers }}
+            - name: jwt__issuers__{{ $i }}__name
+              value: {{ $issuer.name }}
+            - name: jwt__issuers__{{ $i }}__type
+              value: {{ $issuer.type }}
+            - name: jwt__issuers__{{ $i }}__pemFileName
+              value: {{ $issuer.pemFileName }}
+            {{- end }}
+
+          volumeMounts:
+          {{- with .Values.wallet.volumeMounts }}
+            {{- toYaml . | nindent 10 }}
+          {{- end }}
+
+      volumes:
+      {{- with .Values.wallet.volumes }}
+        {{- toYaml . | nindent 6 }}
+      {{- end }}

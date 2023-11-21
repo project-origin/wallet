@@ -23,13 +23,13 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests;
 public class QueryCertificatesTest : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
 {
     public QueryCertificatesTest(
-        GrpcTestFixture<Startup> grpcFixture,
+        TestServerFixture<Startup> serverFixture,
         PostgresDatabaseFixture dbFixture,
         InMemoryFixture inMemoryFixture,
         JwtTokenIssuerFixture jwtTokenIssuerFixture,
         ITestOutputHelper outputHelper)
         : base(
-              grpcFixture,
+              serverFixture,
               dbFixture,
               inMemoryFixture,
               jwtTokenIssuerFixture,
@@ -165,7 +165,7 @@ public class QueryCertificatesTest : WalletSystemTestsBase, IClassFixture<InMemo
             await certificateRepository.InsertWalletSlice(notOwnedSlice);
         }
 
-        var client = new WalletService.WalletServiceClient(_grpcFixture.Channel);
+        var client = new WalletService.WalletServiceClient(_serverFixture.Channel);
 
         //Act
         var result = await client.QueryGranularCertificatesAsync(new QueryRequest(), header);
@@ -196,7 +196,7 @@ public class QueryCertificatesTest : WalletSystemTestsBase, IClassFixture<InMemo
             var endpoint = await walletRepository.CreateWalletEndpoint(wallet.Id);
         }
 
-        var client = new WalletService.WalletServiceClient(_grpcFixture.Channel);
+        var client = new WalletService.WalletServiceClient(_serverFixture.Channel);
 
         var result = await client.QueryGranularCertificatesAsync(new QueryRequest(), header);
 
@@ -244,7 +244,7 @@ public class QueryCertificatesTest : WalletSystemTestsBase, IClassFixture<InMemo
             await certificateRepository.InsertWalletSlice(slice1);
         }
 
-        var client = new WalletService.WalletServiceClient(_grpcFixture.Channel);
+        var client = new WalletService.WalletServiceClient(_serverFixture.Channel);
 
         var act = async () => await client.QueryGranularCertificatesAsync(new QueryRequest(), header);
 

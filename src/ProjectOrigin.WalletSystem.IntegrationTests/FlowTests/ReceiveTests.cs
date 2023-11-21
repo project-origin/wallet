@@ -12,14 +12,14 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests.FlowTests;
 public class ReceiveTests : AbstractFlowTests
 {
     public ReceiveTests(
-            GrpcTestFixture<Startup> grpcFixture,
+            TestServerFixture<Startup> serverFixture,
             PostgresDatabaseFixture dbFixture,
             InMemoryFixture inMemoryFixture,
             JwtTokenIssuerFixture jwtTokenIssuerFixture,
             RegistryFixture registryFixture,
             ITestOutputHelper outputHelper)
             : base(
-                  grpcFixture,
+                  serverFixture,
                   dbFixture,
                   inMemoryFixture,
                   jwtTokenIssuerFixture,
@@ -31,7 +31,7 @@ public class ReceiveTests : AbstractFlowTests
     [Fact]
     public async Task IssueCertWithAndWithoutAttributes_Query_Success()
     {
-        var client = new V1.WalletService.WalletServiceClient(_grpcFixture.Channel);
+        var client = new V1.WalletService.WalletServiceClient(_serverFixture.Channel);
         var position = 1;
 
         var (owner, header) = GenerateUserHeader();
@@ -75,7 +75,7 @@ public class ReceiveTests : AbstractFlowTests
     [Fact]
     public async Task IssueCertWithAttributes_Query_Success()
     {
-        var client = new V1.WalletService.WalletServiceClient(_grpcFixture.Channel);
+        var client = new V1.WalletService.WalletServiceClient(_serverFixture.Channel);
         var position = 1;
 
         var (owner, header) = GenerateUserHeader();

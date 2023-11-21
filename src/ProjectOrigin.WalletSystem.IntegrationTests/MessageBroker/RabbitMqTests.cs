@@ -8,12 +8,12 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests.MessageBroker;
 public class RabbitMqTests : WalletSystemTestsBase, IClassFixture<RabbitMqFixture>
 {
     public RabbitMqTests(
-        GrpcTestFixture<Startup> grpcFixture,
+        TestServerFixture<Startup> serverFixture,
         PostgresDatabaseFixture dbFixture,
         RabbitMqFixture messageBrokerFixture,
         JwtTokenIssuerFixture jwtTokenIssuerFixture,
         ITestOutputHelper outputHelper) : base(
-            grpcFixture,
+            serverFixture,
             dbFixture,
             messageBrokerFixture,
             jwtTokenIssuerFixture,

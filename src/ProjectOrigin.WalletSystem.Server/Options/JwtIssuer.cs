@@ -27,14 +27,12 @@ public record JwtIssuer : IValidatableObject
         {
             case "ecdsa":
                 var pem = File.ReadAllText(PemKeyFile);
-
                 var ecdsa = ECDsa.Create();
                 ecdsa.ImportFromPem(pem);
                 return new ECDsaSecurityKey(ecdsa);
             default:
-                throw new NotImplementedException($"Issuer key type {Type} not implemeted");
+                throw new NotImplementedException($"Issuer key type ”{Type}” not implemeted");
         }
-
     }
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)

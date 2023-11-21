@@ -3,13 +3,15 @@ using System.IdentityModel.Tokens.Jwt;
 using System.IO;
 using System.Security.Claims;
 using System.Security.Cryptography;
+using AutoFixture;
+using Grpc.Core;
 using Microsoft.IdentityModel.Tokens;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures;
 
 public class JwtTokenIssuerFixture : IDisposable
 {
-    public string Issuer { get; } = "TestIssuer";
+    public string Issuer { get; init; } = "TestIssuer";
     public string Audience { get; } = "WalletSystem";
     public int ExpirationMinutes { get; } = 60;
     public string PemFilepath { get; }
@@ -46,6 +48,22 @@ public class JwtTokenIssuerFixture : IDisposable
         );
 
         return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+
+    public (string, Metadata) GenerateUserHeader()
+    {
+        var fixture = new Fixture();
+        var subject = fixture.Create<string>();
+        var name = fixture.Create<string>();
+
+        var token = GenerateToken(subject, name);
+
+        var headers = new Metadata
+        {
+            { "Authorization", $"Bearer {token}" }
+        };
+
+        return (subject, headers);
     }
 
     public void Dispose()
