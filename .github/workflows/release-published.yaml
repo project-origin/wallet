@@ -90,7 +90,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install swaggerhub cli
-        run: npm install -g swaggerhub/cli
+        run: npm i -g swaggerhub-cli
 
       - name: Prepare openapi.json
         run: jq '.info.version = "${{ needs.define-version.outputs.version }}"' src/ProjectOrigin.WalletSystem.IntegrationTests/ApiTests.open_api_specification_not_changed.verified.txt > openapi.json
