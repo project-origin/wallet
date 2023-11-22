@@ -63,7 +63,7 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          draft: "${{ contains(github.ref, '-rc.') }}"
+          draft: ${{ github.event.release.prerelease }}
           generate_release_notes: true
           files: helm-releases/${{ steps.variables.outputs.name }}-${{ needs.define-version.outputs.version }}.tgz
 
@@ -98,7 +98,7 @@ jobs:
         env:
           SWAGGERHUB_API_KEY: ${{ secrets.SWAGGERHUB_API_KEY }}
         run: |
-          if [[ ! ${{ github.ref }} == *-rc.* ]]; then
+          if [[ ${{ !github.event.release.prerelease }} ]]; then
             swaggerhub api:create Project-Origin/WalletSystem/${{ needs.define-version.outputs.version }} --visibility=public --published=publish --setdefault --file openapi.json
           else
             swaggerhub api:create Project-Origin/WalletSystem/${{ needs.define-version.outputs.version }} --visibility=public --file openapi.json
