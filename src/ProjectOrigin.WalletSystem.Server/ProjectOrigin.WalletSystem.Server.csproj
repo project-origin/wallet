@@ -13,7 +13,7 @@
     <PackageReference Include="Grpc.AspNetCore" Version="2.59.0" />
     <PackageReference Include="MassTransit" Version="8.1.2" />
     <PackageReference Include="MassTransit.RabbitMQ" Version="8.1.2" />
-    <PackageReference Include="Npgsql" Version="7.0.6" />
+    <PackageReference Include="Npgsql" Version="8.0.0" />
     <PackageReference Include="NSec.Cryptography" Version="22.4.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="8.0.0" />
