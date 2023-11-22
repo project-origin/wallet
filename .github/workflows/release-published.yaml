@@ -83,7 +83,7 @@ jobs:
   publish-openapi:
     name: Publish openapi to swaggerhub
     runs-on: ubuntu-22.04
-    if: "${{ !contains(github.ref, '-rc.') }}"
+    #if: "${{ !contains(github.ref, '-rc.') }}"
     needs:
       - define-version
     steps:
@@ -100,3 +100,14 @@ jobs:
           SWAGGERHUB_API_KEY: ${{ secrets.SWAGGERHUB_API_KEY }}
         run: |
           swaggerhub api:create Project-Origin/WalletSystem/${{ needs.define-version.outputs.version }} --published=publish --setdefault --file openapi.json
+
+      - name: Append openapi link to release notes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release view ${{ needs.define-version.outputs.version }} --json body  -q .body > body.md
+          cat << EOF >> body.md
+          ## OpenAPI
+          [OpenAPI Specification](https://app.swaggerhub.com/apis/Project-Origin/WalletSystem/${{ needs.define-version.outputs.version }})
+          EOF
+          gh release edit ${{ needs.define-version.outputs.version }} -F body.md
