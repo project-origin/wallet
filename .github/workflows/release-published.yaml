@@ -105,9 +105,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release view ${{ needs.define-version.outputs.version }} --json body  -q .body > body.md
+          gh release view v${{ needs.define-version.outputs.version }} --json body  -q .body > body.md
           cat << EOF >> body.md
           ## OpenAPI
           [OpenAPI Specification](https://app.swaggerhub.com/apis/Project-Origin/WalletSystem/${{ needs.define-version.outputs.version }})
           EOF
-          gh release edit ${{ needs.define-version.outputs.version }} -F body.md
+          gh release edit v${{ needs.define-version.outputs.version }} -F body.md
