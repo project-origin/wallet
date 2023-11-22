@@ -98,7 +98,7 @@ jobs:
         env:
           SWAGGERHUB_API_KEY: ${{ secrets.SWAGGERHUB_API_KEY }}
         run: |
-          if [[ ${{ !github.event.release.prerelease }} ]]; then
+          if ${{ !github.event.release.prerelease }}; then
             swaggerhub api:create Project-Origin/WalletSystem/${{ needs.define-version.outputs.version }} --visibility=public --published=publish --setdefault --file openapi.json
           else
             swaggerhub api:create Project-Origin/WalletSystem/${{ needs.define-version.outputs.version }} --visibility=public --file openapi.json
