@@ -21,6 +21,7 @@ jobs:
     needs:
       - define-version
     uses: project-origin/.github/.github/workflows/reusable-build-push-container-ghcr.yaml@main
+    if: false
     with:
       imagename: ghcr.io/project-origin/wallet-server
       version: ${{ needs.define-version.outputs.version }}
@@ -99,8 +100,11 @@ jobs:
         env:
           SWAGGERHUB_API_KEY: ${{ secrets.SWAGGERHUB_API_KEY }}
         run: |
-          swaggerhub api:create Project-Origin/WalletSystem/${{ needs.define-version.outputs.version }} --visibility=public --published=publish --setdefault --file openapi.json
-
+          if [[ ! ${{ github.ref }} == *-rc.* ]]; then
+            swaggerhub api:create Project-Origin/WalletSystem/${{ needs.define-version.outputs.version }} --visibility=public --published=publish --setdefault --file openapi.json
+          else
+            swaggerhub api:create Project-Origin/WalletSystem/${{ needs.define-version.outputs.version }} --visibility=public --file openapi.json
+          fi
       - name: Append openapi link to release notes
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
