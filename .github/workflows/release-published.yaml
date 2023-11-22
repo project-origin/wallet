@@ -84,7 +84,6 @@ jobs:
   publish-openapi:
     name: Publish openapi to swaggerhub
     runs-on: ubuntu-22.04
-    if: "${{ !contains(github.ref, '-rc.') }}"
     needs:
       - define-version
     steps:
