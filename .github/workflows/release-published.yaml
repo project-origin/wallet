@@ -99,7 +99,7 @@ jobs:
         env:
           SWAGGERHUB_API_KEY: ${{ secrets.SWAGGERHUB_API_KEY }}
         run: |
-          swaggerhub api:create Project-Origin/WalletSystem/${{ needs.define-version.outputs.version }} --published=publish --setdefault --file openapi.json
+          swaggerhub api:create Project-Origin/WalletSystem/${{ needs.define-version.outputs.version }} --visibility=public --published=publish --setdefault --file openapi.json
 
       - name: Append openapi link to release notes
         env:
