@@ -103,6 +103,7 @@ jobs:
           else
             swaggerhub api:create Project-Origin/WalletSystem/${{ needs.define-version.outputs.version }} --visibility=public --file openapi.json
           fi
+
       - name: Append openapi link to release notes
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
