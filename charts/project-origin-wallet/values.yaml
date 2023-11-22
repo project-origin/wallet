@@ -16,6 +16,29 @@ service:
   # nodePort is the port to expose the service on if type is NodePort
   nodePort:
 
+# config holds general configuration for the wallet server
+config:
+  # externalUrl defines the external url to use for the wallet server
+  externalUrl:
+
+  # jwt defines the configuration for the authentication of jwt tokens
+  jwt:
+    # audience defines the audience to use for the jwt tokens, defaults to empty string, which means the audience is not checked
+    audience: ""
+
+    # allowAnyJwtToken determines if any jwt token is allowed, defaults to false, if set to true then any jwt token is allowed, NOT RECOMMENDED FOR PRODUCTION!
+    allowAnyJwtToken: false
+
+    # issuer defines a list of valid issuers for the jwt tokens
+    issuers: []
+      # example
+      # - # name defines the name of the issuer
+      #   name: test
+      #   # type defines the type of the key used, allowed values are (ecdsa)
+      #   type: ecdsa
+      #   # pemFileName defines the name of the file containing the pem encoded key
+      #   pemFileName: /etc/keyfile.pem
+
 messageBroker:
   # type defines the type of message broker to use, allowed values are (inMemory | rabbitmq | rabbitmqOperator)
   type:
@@ -31,12 +54,22 @@ messageBroker:
     # password defines the password to use to connect to the rabbitmq server
     password:
 
-# wallet defines the service configuration for the wallet server
+# wallet defines the deployment configuration for the wallet server
 wallet:
   # replicas defines the number of wallet server instances to run
   replicaCount: 3
-  # externalUrl defines the external url to use for the wallet server
-  externalUrl:
+
+  # -- Additional volume mounts to the wallet-server container
+  volumeMounts: []
+  #  - name: jwt-secret
+  #    mountPath: /etc/keyfile.pem
+  #    subPath: keyfile
+
+  # -- Additional volumes to the wallet-server container
+  volumes: []
+  #  - name: jwt-secret
+  #    secret:
+  #      secretName: my-jwt-secret
 
  # Registries is a list of all the known registries in the network
 registries: []

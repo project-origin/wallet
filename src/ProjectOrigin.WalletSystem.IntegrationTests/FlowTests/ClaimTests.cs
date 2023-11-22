@@ -13,15 +13,17 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests.FlowTests;
 public class ClaimTests : AbstractFlowTests
 {
     public ClaimTests(
-            GrpcTestFixture<Startup> grpcFixture,
+            TestServerFixture<Startup> serverFixture,
             PostgresDatabaseFixture dbFixture,
             InMemoryFixture inMemoryFixture,
+            JwtTokenIssuerFixture jwtTokenIssuerFixture,
             RegistryFixture registryFixture,
             ITestOutputHelper outputHelper)
             : base(
-                  grpcFixture,
+                  serverFixture,
                   dbFixture,
                   inMemoryFixture,
+                  jwtTokenIssuerFixture,
                   outputHelper,
                   registryFixture)
     {
@@ -31,7 +33,7 @@ public class ClaimTests : AbstractFlowTests
     public async Task Claim150_FromTwoLargerSlices_Success()
     {
         //Arrange
-        var client = new V1.WalletService.WalletServiceClient(_grpcFixture.Channel);
+        var client = new V1.WalletService.WalletServiceClient(_serverFixture.Channel);
         var position = 1;
 
         var (owner, header) = GenerateUserHeader();

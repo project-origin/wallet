@@ -37,8 +37,10 @@ cat << EOF > "${values_filename}"
 image:
   tag: test
 
-wallet:
+config:
   externalUrl: http://wallet.example:80
+  jwt:
+    allowAnyJwtToken: truee
 
 messageBroker:
   type: rabbitmqOperator
