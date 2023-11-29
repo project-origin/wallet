@@ -9,7 +9,7 @@ namespace ProjectOrigin.WalletSystem.Server.Options;
 
 public record JwtIssuer : IValidatableObject
 {
-    private Lazy<SecurityKey> securityKey;
+    private readonly Lazy<SecurityKey> securityKey;
 
     public JwtIssuer()
     {
@@ -23,13 +23,17 @@ public record JwtIssuer : IValidatableObject
 
     private SecurityKey ImportKey()
     {
+        var pem = File.ReadAllText(PemKeyFile);
         switch (Type.ToLowerInvariant())
         {
             case "ecdsa":
-                var pem = File.ReadAllText(PemKeyFile);
                 var ecdsa = ECDsa.Create();
                 ecdsa.ImportFromPem(pem);
                 return new ECDsaSecurityKey(ecdsa);
+            case "rsa":
+                var rsa = RSA.Create();
+                rsa.ImportFromPem(pem);
+                return new RsaSecurityKey(rsa);
             default:
                 throw new NotImplementedException($"Issuer key type ”{Type}” not implemeted");
         }
@@ -40,7 +44,7 @@ public record JwtIssuer : IValidatableObject
         ValidationResult result;
         try
         {
-            var key = securityKey.Value;
+            var _ = securityKey.Value;
             result = ValidationResult.Success!;
         }
         catch (Exception ex)
