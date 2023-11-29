@@ -60,13 +60,6 @@ jobs:
           helm repo index helm-releases --merge helm-registry/index.yaml --url https://github.com/${{ github.repository }}/releases/download/v${{ needs.define-version.outputs.version }}/
           cp helm-releases/index.yaml helm-registry/index.yaml
 
-      - name: Create Release
-        uses: softprops/action-gh-release@v1
-        with:
-          draft: "${{ contains(github.ref, '-rc.') }}"
-          generate_release_notes: true
-          files: helm-releases/${{ steps.variables.outputs.name }}-${{ needs.define-version.outputs.version }}.tgz
-
       - uses: actions/upload-artifact@v3
         with:
           path: helm-releases/${{ steps.variables.outputs.name }}-${{ needs.define-version.outputs.version }}.tgz
@@ -79,3 +72,38 @@ jobs:
           git add index.yaml
           git commit -m "Update index.yaml for ${{ steps.variables.outputs.name }}-${{ needs.define-version.outputs.version }}"
           git push
+
+  publish-openapi:
+    name: Publish openapi to swaggerhub
+    runs-on: ubuntu-22.04
+    needs:
+      - define-version
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install swaggerhub cli
+        run: npm i -g swaggerhub-cli
+
+      - name: Prepare openapi.json
+        run: jq '.info.version = "${{ needs.define-version.outputs.version }}"' src/ProjectOrigin.WalletSystem.IntegrationTests/ApiTests.open_api_specification_not_changed.verified.txt > openapi.json
+
+      - name: Publish to swaggerhub
+        env:
+          SWAGGERHUB_API_KEY: ${{ secrets.SWAGGERHUB_API_KEY }}
+        run: |
+          if ${{ !github.event.release.prerelease }}; then
+            swaggerhub api:create Project-Origin/WalletSystem/${{ needs.define-version.outputs.version }} --visibility=public --published=publish --setdefault --file openapi.json
+          else
+            swaggerhub api:create Project-Origin/WalletSystem/${{ needs.define-version.outputs.version }} --visibility=public --file openapi.json
+          fi
+
+      - name: Append openapi link to release notes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release view v${{ needs.define-version.outputs.version }} --json body  -q .body > body.md
+          cat << EOF >> body.md
+          ## OpenAPI
+          [OpenAPI Specification](https://app.swaggerhub.com/apis/Project-Origin/WalletSystem/${{ needs.define-version.outputs.version }})
+          EOF
+          gh release edit v${{ needs.define-version.outputs.version }} -F body.md
