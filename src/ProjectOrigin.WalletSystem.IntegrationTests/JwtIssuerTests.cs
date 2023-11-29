@@ -59,7 +59,7 @@ public class JwtIssuerTests
 
         var results = issuer.Validate(new ValidationContext(issuer));
         results.Should().ContainSingle()
-            .Which.ErrorMessage.Should().Be("Issuer key file ”/hello.pem” not found");
+            .Which.ErrorMessage.Should().Be("Issuer key could not be imported as type ”rsa”, Issuer key file ”/hello.pem” not found");
     }
 
     [Fact]
