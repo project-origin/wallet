@@ -125,12 +125,34 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures
             return client;
         }
 
-        public void Dispose()
+        private bool disposed = false;
+
+        protected virtual void Dispose(bool disposing)
         {
-            _channel?.Dispose();
-            _handler?.Dispose();
-            _host?.Dispose();
-            _server?.Dispose();
+            if (!disposed)
+            {
+                if (disposing)
+                {
+                    _channel?.Dispose();
+                    _handler?.Dispose();
+                    _host?.Dispose();
+                    _server?.Dispose();
+                }
+                // Release unmanaged resources.
+                // Set large fields to null.
+                disposed = true;
+            }
+        }
+
+        public void Dispose() // Implement IDisposable
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        ~TestServerFixture() // the finalizer
+        {
+            Dispose(false);
         }
 
         public IDisposable GetTestLogger(ITestOutputHelper outputHelper)

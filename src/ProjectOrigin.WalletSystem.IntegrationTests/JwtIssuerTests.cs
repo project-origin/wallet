@@ -49,15 +49,17 @@ public class JwtIssuerTests
     [Fact]
     public void FileNotFound()
     {
+        var pemFilepath = Path.GetTempFileName();
+
         var issuer = new JwtIssuer
         {
             Type = "rsa",
-            PemKeyFile = "hello.pem"
+            PemKeyFile = "/hello.pem"
         };
 
         var results = issuer.Validate(new ValidationContext(issuer));
         results.Should().ContainSingle()
-            .Which.ErrorMessage.Should().Be("Issuer key could not be imported as type ”rsa”, Could not find file '/workspaces/wallet/src/ProjectOrigin.WalletSystem.IntegrationTests/bin/Debug/net8.0/hello.pem'.");
+            .Which.ErrorMessage.Should().Be("Issuer key file ”/hello.pem” not found");
     }
 
     [Fact]

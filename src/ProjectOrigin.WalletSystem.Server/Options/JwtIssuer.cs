@@ -23,6 +23,9 @@ public record JwtIssuer : IValidatableObject
 
     private SecurityKey ImportKey()
     {
+        if (!File.Exists(PemKeyFile))
+            throw new FileNotFoundException($"Issuer key file ”{PemKeyFile}” not found");
+
         var pem = File.ReadAllText(PemKeyFile);
         switch (Type.ToLowerInvariant())
         {
