@@ -40,6 +40,7 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures
         private HttpMessageHandler? _handler;
         private GrpcChannel? _channel;
         private Dictionary<string, string?>? _configurationDictionary;
+        private bool _disposed = false;
         public event Action<IServiceCollection>? ConfigureTestServices;
 
         public event LogMessage? LoggedMessage;
@@ -125,11 +126,9 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures
             return client;
         }
 
-        private bool disposed = false;
-
         protected virtual void Dispose(bool disposing)
         {
-            if (!disposed)
+            if (!_disposed)
             {
                 if (disposing)
                 {
@@ -138,19 +137,17 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures
                     _host?.Dispose();
                     _server?.Dispose();
                 }
-                // Release unmanaged resources.
-                // Set large fields to null.
-                disposed = true;
+                _disposed = true;
             }
         }
 
-        public void Dispose() // Implement IDisposable
+        public void Dispose()
         {
             Dispose(true);
             GC.SuppressFinalize(this);
         }
 
-        ~TestServerFixture() // the finalizer
+        ~TestServerFixture()
         {
             Dispose(false);
         }

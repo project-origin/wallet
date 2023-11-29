@@ -17,6 +17,7 @@ public class JwtTokenIssuerFixture : IDisposable
     public string PemFilepath { get; }
 
     private readonly ECDsa _ecdsa;
+    private bool _disposed = false;
 
     public JwtTokenIssuerFixture()
     {
@@ -66,8 +67,27 @@ public class JwtTokenIssuerFixture : IDisposable
         return (subject, headers);
     }
 
+    protected virtual void Dispose(bool disposing)
+    {
+        if (!_disposed)
+        {
+            if (disposing)
+            {
+                File.Delete(PemFilepath);
+            }
+            _disposed = true;
+        }
+    }
+
     public void Dispose()
     {
-        File.Delete(PemFilepath);
+        Dispose(true);
+        GC.SuppressFinalize(this);
     }
+
+    ~JwtTokenIssuerFixture()
+    {
+        Dispose(false);
+    }
+
 }
