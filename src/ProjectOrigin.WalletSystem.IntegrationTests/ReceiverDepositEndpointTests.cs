@@ -17,14 +17,16 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests;
 public class ReceiverDepositEndpointTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
 {
     public ReceiverDepositEndpointTests(
-        GrpcTestFixture<Startup> grpcFixture,
+        TestServerFixture<Startup> serverFixture,
         PostgresDatabaseFixture dbFixture,
         InMemoryFixture inMemoryFixture,
+        JwtTokenIssuerFixture jwtTokenIssuerFixture,
         ITestOutputHelper outputHelper)
         : base(
-              grpcFixture,
+              serverFixture,
               dbFixture,
               inMemoryFixture,
+              jwtTokenIssuerFixture,
               outputHelper,
               null)
     {
@@ -35,7 +37,7 @@ public class ReceiverDepositEndpointTests : WalletSystemTestsBase, IClassFixture
     {
         var (subject, header) = GenerateUserHeader();
 
-        var client = new WalletService.WalletServiceClient(_grpcFixture.Channel);
+        var client = new WalletService.WalletServiceClient(_serverFixture.Channel);
 
         var key = Algorithm.GenerateNewPrivateKey();
         var publicKey = key.Derive(42).Neuter();
@@ -70,7 +72,7 @@ public class ReceiverDepositEndpointTests : WalletSystemTestsBase, IClassFixture
     {
         var reference = _fixture.Create<string>();
 
-        var client = new WalletService.WalletServiceClient(_grpcFixture.Channel);
+        var client = new WalletService.WalletServiceClient(_serverFixture.Channel);
         var (receiverSubject1, receiverHeader1) = GenerateUserHeader();
         var (receiverSubject2, receiverHeader2) = GenerateUserHeader();
 
@@ -100,7 +102,7 @@ public class ReceiverDepositEndpointTests : WalletSystemTestsBase, IClassFixture
     [Fact]
     public async void CreateReceiverDepositEndpointOnSameSystem()
     {
-        var client = new WalletService.WalletServiceClient(_grpcFixture.Channel);
+        var client = new WalletService.WalletServiceClient(_serverFixture.Channel);
         var (senderSubject, senderHeader) = GenerateUserHeader();
         var (receiverSubject, receiverHeader) = GenerateUserHeader();
 
@@ -127,7 +129,7 @@ public class ReceiverDepositEndpointTests : WalletSystemTestsBase, IClassFixture
     [Fact]
     public async void CreateSelfReferenceNotAllowed()
     {
-        var client = new WalletService.WalletServiceClient(_grpcFixture.Channel);
+        var client = new WalletService.WalletServiceClient(_serverFixture.Channel);
         var (subject, header) = GenerateUserHeader();
 
         var createDepositEndpointResponse = await client.CreateWalletDepositEndpointAsync(new CreateWalletDepositEndpointRequest(), header);

@@ -22,18 +22,20 @@ public class ApiBasePathTests : WalletSystemTestsBase, IClassFixture<InMemoryFix
     private readonly PathString _basePath = "/foo-bar-baz";
 
     public ApiBasePathTests(
-        GrpcTestFixture<Startup> grpcFixture,
+        TestServerFixture<Startup> serverFixture,
         PostgresDatabaseFixture dbFixture,
         InMemoryFixture inMemoryFixture,
+        JwtTokenIssuerFixture jwtTokenIssuerFixture,
         ITestOutputHelper outputHelper)
         : base(
-            grpcFixture,
+            serverFixture,
             dbFixture,
             inMemoryFixture,
+            jwtTokenIssuerFixture,
             outputHelper,
             null)
     {
-        grpcFixture.ConfigureTestServices += SetRestApiOptions;
+        serverFixture.ConfigureTestServices += SetRestApiOptions;
 
         SqlMapper.AddTypeHandler<IHDPrivateKey>(new HDPrivateKeyTypeHandler(Algorithm));
         SqlMapper.AddTypeHandler<IHDPublicKey>(new HDPublicKeyTypeHandler(Algorithm));
@@ -46,13 +48,13 @@ public class ApiBasePathTests : WalletSystemTestsBase, IClassFixture<InMemoryFix
     public new void Dispose()
     {
         base.Dispose();
-        _grpcFixture.ConfigureTestServices -= SetRestApiOptions;
+        _serverFixture.ConfigureTestServices -= SetRestApiOptions;
     }
 
     [Fact]
     public async Task open_api_specification_paths_starts_with_base_path()
     {
-        var httpClient = _grpcFixture.CreateHttpClient();
+        var httpClient = _serverFixture.CreateHttpClient();
         var specificationResponse = await httpClient.GetAsync("swagger/v1/swagger.json");
         var specification = await specificationResponse.Content.ReadAsStringAsync();
         specification.Should().Contain($"{_basePath}/v1/certificates");

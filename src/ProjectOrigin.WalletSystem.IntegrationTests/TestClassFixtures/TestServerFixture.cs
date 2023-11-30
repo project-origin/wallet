@@ -33,19 +33,20 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures
 {
     public delegate void LogMessage(LogLevel logLevel, string categoryName, EventId eventId, string message, Exception? exception);
 
-    public class GrpcTestFixture<TStartup> : IDisposable where TStartup : class
+    public class TestServerFixture<TStartup> : IDisposable where TStartup : class
     {
         private TestServer? _server;
         private IHost? _host;
         private HttpMessageHandler? _handler;
         private GrpcChannel? _channel;
         private Dictionary<string, string?>? _configurationDictionary;
+        private bool _disposed = false;
         public event Action<IServiceCollection>? ConfigureTestServices;
 
         public event LogMessage? LoggedMessage;
-        public GrpcChannel Channel => _channel ??= CreateChannel();
+        public GrpcChannel Channel => _channel ??= CreateGrpcChannel();
 
-        public GrpcTestFixture()
+        public TestServerFixture()
         {
             LoggerFactory = new LoggerFactory();
             LoggerFactory.AddProvider(new ForwardingLoggerProvider((logLevel, category, eventId, message, exception) =>
@@ -108,7 +109,7 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures
 
         public LoggerFactory LoggerFactory { get; }
 
-        private GrpcChannel CreateChannel()
+        private GrpcChannel CreateGrpcChannel()
         {
             EnsureServer();
 
@@ -125,17 +126,35 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures
             return client;
         }
 
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!_disposed)
+            {
+                if (disposing)
+                {
+                    _channel?.Dispose();
+                    _handler?.Dispose();
+                    _host?.Dispose();
+                    _server?.Dispose();
+                }
+                _disposed = true;
+            }
+        }
+
         public void Dispose()
         {
-            _channel?.Dispose();
-            _handler?.Dispose();
-            _host?.Dispose();
-            _server?.Dispose();
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        ~TestServerFixture()
+        {
+            Dispose(false);
         }
 
         public IDisposable GetTestLogger(ITestOutputHelper outputHelper)
         {
-            return new GrpcTestContext<TStartup>(this, outputHelper);
+            return new TestServerContext<TStartup>(this, outputHelper);
         }
     }
 }

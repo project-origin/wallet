@@ -19,18 +19,20 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
     public class ReceiveSliceTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
     {
         public ReceiveSliceTests(
-            GrpcTestFixture<Startup> grpcFixture,
+            TestServerFixture<Startup> serverFixture,
             PostgresDatabaseFixture dbFixture,
             InMemoryFixture inMemoryFixture,
+        JwtTokenIssuerFixture jwtTokenIssuerFixture,
             ITestOutputHelper outputHelper)
             : base(
-                  grpcFixture,
+                  serverFixture,
                   dbFixture,
                   inMemoryFixture,
+                  jwtTokenIssuerFixture,
                   outputHelper,
                   null)
         {
-            grpcFixture.ConfigureTestServices += services =>
+            serverFixture.ConfigureTestServices += services =>
             {
                 services.AddMassTransitTestHarness();
             };
@@ -44,7 +46,7 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
             var owner = _fixture.Create<string>();
             var registryName = _fixture.Create<string>();
             var endpoint = await _dbFixture.CreateWalletEndpoint(owner);
-            var client = new ReceiveSliceService.ReceiveSliceServiceClient(_grpcFixture.Channel);
+            var client = new ReceiveSliceService.ReceiveSliceServiceClient(_serverFixture.Channel);
             var request = new ReceiveRequest()
             {
                 CertificateId = new Common.V1.FederatedStreamId()
@@ -64,7 +66,7 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests
                 Salt = ByteString.CopyFrom(new byte[] { 0x05, 0x06, 0x07, 0x08 }),
             });
 
-            var harness = _grpcFixture.GetRequiredService<ITestHarness>();
+            var harness = _serverFixture.GetRequiredService<ITestHarness>();
 
             //Act
             await client.ReceiveSliceAsync(request);

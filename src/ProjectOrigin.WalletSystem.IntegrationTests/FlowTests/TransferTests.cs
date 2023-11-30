@@ -19,15 +19,17 @@ public class TransferTests : AbstractFlowTests
     private readonly RegistryFixture _registryFixture;
 
     public TransferTests(
-            GrpcTestFixture<Startup> grpcFixture,
+            TestServerFixture<Startup> serverFixture,
             PostgresDatabaseFixture dbFixture,
             InMemoryFixture inMemoryFixture,
+            JwtTokenIssuerFixture jwtTokenIssuerFixture,
             RegistryFixture registryFixture,
             ITestOutputHelper outputHelper)
             : base(
-                  grpcFixture,
+                  serverFixture,
                   dbFixture,
                   inMemoryFixture,
+                  jwtTokenIssuerFixture,
                   outputHelper,
                   registryFixture)
     {
@@ -38,7 +40,7 @@ public class TransferTests : AbstractFlowTests
     public async Task Transfer_SingleSlice_LocalWallet()
     {
         //Arrange
-        var client = new V1.WalletService.WalletServiceClient(_grpcFixture.Channel);
+        var client = new V1.WalletService.WalletServiceClient(_serverFixture.Channel);
         var issuedAmount = 250u;
         var transferredAmount = 150u;
 
@@ -74,7 +76,7 @@ public class TransferTests : AbstractFlowTests
     public async Task Transfer_MultipleSlice_LocalWallet()
     {
         //Arrange
-        var client = new V1.WalletService.WalletServiceClient(_grpcFixture.Channel);
+        var client = new V1.WalletService.WalletServiceClient(_serverFixture.Channel);
 
         // Create sender wallet
         var (sender, senderHeader) = GenerateUserHeader();
@@ -171,7 +173,7 @@ public class TransferTests : AbstractFlowTests
     public async Task Transfer_WithHashedAttributes(uint issuedAmount, uint transferredAmount)
     {
         //Arrange
-        var client = new V1.WalletService.WalletServiceClient(_grpcFixture.Channel);
+        var client = new V1.WalletService.WalletServiceClient(_serverFixture.Channel);
         var position = 1;
 
         var (sender, senderHeader) = GenerateUserHeader();

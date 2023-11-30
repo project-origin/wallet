@@ -23,13 +23,13 @@ using Xunit.Abstractions;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures.GrpcHelpers
 {
-    internal class GrpcTestContext<TStartup> : IDisposable where TStartup : class
+    internal class TestServerContext<TStartup> : IDisposable where TStartup : class
     {
         private readonly Stopwatch _stopwatch;
-        private readonly GrpcTestFixture<TStartup> _fixture;
+        private readonly TestServerFixture<TStartup> _fixture;
         private readonly ITestOutputHelper _outputHelper;
 
-        public GrpcTestContext(GrpcTestFixture<TStartup> fixture, ITestOutputHelper outputHelper)
+        public TestServerContext(TestServerFixture<TStartup> fixture, ITestOutputHelper outputHelper)
         {
             _stopwatch = Stopwatch.StartNew();
             _fixture = fixture;

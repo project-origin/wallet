@@ -14,14 +14,16 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests;
 public class GrpcTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
 {
     public GrpcTests(
-        GrpcTestFixture<Startup> grpcFixture,
+        TestServerFixture<Startup> serverFixture,
         PostgresDatabaseFixture dbFixture,
         InMemoryFixture memoryFixture,
+        JwtTokenIssuerFixture jwtTokenIssuerFixture,
         ITestOutputHelper outputHelper)
         : base(
-            grpcFixture,
+            serverFixture,
             dbFixture,
             memoryFixture,
+            jwtTokenIssuerFixture,
             outputHelper,
             null)
     {
@@ -31,16 +33,12 @@ public class GrpcTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
     public async Task can_create_external_endpoint_when_authenticated()
     {
         // Arrange
-        var subject = Guid.NewGuid().ToString();
-        var token = _tokenGenerator.GenerateToken(subject, "John Doe");
-
-        var headers = new Metadata { { "Authorization", $"Bearer {token}" } };
-
-        var client = new WalletService.WalletServiceClient(_grpcFixture.Channel);
+        var (subject, header) = GenerateUserHeader();
+        var client = new WalletService.WalletServiceClient(_serverFixture.Channel);
         var request = new CreateWalletDepositEndpointRequest();
 
         // Act
-        var externalEndpoint = await client.CreateWalletDepositEndpointAsync(request, headers);
+        var externalEndpoint = await client.CreateWalletDepositEndpointAsync(request, header);
 
         // Assert
         externalEndpoint.Should().NotBeNull();
@@ -68,7 +66,7 @@ public class GrpcTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
     public async Task throw_unauthenticated_when_no_jwt()
     {
         // Arrange
-        var client = new WalletService.WalletServiceClient(_grpcFixture.Channel);
+        var client = new WalletService.WalletServiceClient(_serverFixture.Channel);
         var request = new CreateWalletDepositEndpointRequest();
 
         // Act

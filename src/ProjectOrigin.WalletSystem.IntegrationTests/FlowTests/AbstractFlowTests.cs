@@ -12,16 +12,17 @@ using System.Linq;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests;
 
-public abstract class AbstractFlowTests : WalletSystemTestsBase, IClassFixture<RegistryFixture>, IClassFixture<InMemoryFixture>
+public abstract class AbstractFlowTests : WalletSystemTestsBase, IClassFixture<RegistryFixture>, IClassFixture<InMemoryFixture>, IClassFixture<JwtTokenIssuerFixture>
 {
     private readonly RegistryFixture _registryFixture;
 
     public AbstractFlowTests(
-        GrpcTestFixture<Startup> grpcFixture,
+        TestServerFixture<Startup> serverFixture,
         PostgresDatabaseFixture dbFixture,
         IMessageBrokerFixture messageBrokerFixture,
+        JwtTokenIssuerFixture jwtTokenIssuerFixture,
         ITestOutputHelper outputHelper,
-        RegistryFixture registryFixture) : base(grpcFixture, dbFixture, messageBrokerFixture, outputHelper, registryFixture)
+        RegistryFixture registryFixture) : base(serverFixture, dbFixture, messageBrokerFixture, jwtTokenIssuerFixture, outputHelper, registryFixture)
     {
         _registryFixture = registryFixture;
     }
@@ -41,7 +42,7 @@ public abstract class AbstractFlowTests : WalletSystemTestsBase, IClassFixture<R
             publicKey.Derive(position).GetPublicKey(),
             attributes);
 
-        var receiveClient = new V1.ReceiveSliceService.ReceiveSliceServiceClient(_grpcFixture.Channel);
+        var receiveClient = new V1.ReceiveSliceService.ReceiveSliceServiceClient(_serverFixture.Channel);
 
         var request = new V1.ReceiveRequest()
         {

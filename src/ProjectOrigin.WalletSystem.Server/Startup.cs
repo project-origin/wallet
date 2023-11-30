@@ -5,8 +5,6 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.JsonWebTokens;
-using Microsoft.IdentityModel.Tokens;
 using ProjectOrigin.HierarchicalDeterministicKeys.Implementations;
 using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
 using ProjectOrigin.WalletSystem.Server.Activities;
@@ -78,17 +76,10 @@ public class Startup
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(o =>
             {
-                o.TokenValidationParameters = new TokenValidationParameters
-                {
-                    ValidateIssuer = false,
-                    ValidateIssuerSigningKey = false,
-                    ValidateAudience = false,
-                    ValidateActor = false,
-                    ValidateTokenReplay = false,
-                    ValidateLifetime = false,
-                    SignatureValidator = (token, _) => new JsonWebToken(token)
-                };
+                var jwtOptions = _configuration.GetSection("jwt").GetValid<JwtOptions>();
+                o.ConfigureJwtVerification(jwtOptions);
             });
+
         services.AddAuthorization();
 
         services.AddMassTransit(o =>
