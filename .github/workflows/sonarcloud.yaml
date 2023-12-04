@@ -11,11 +11,7 @@ on:
 jobs:
   build:
     name: sonar-analysis
-    runs-on: ubuntu-latest
-    env:
-      ORGANIZATION: "project-origin"
-      SOLUTION_NAME: "project-origin_wallet"
-
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
         with:
@@ -50,7 +46,7 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         shell: bash
         run: |
-          dotnet sonarscanner begin -k:"${{ env.SOLUTION_NAME }}" -o:"${{ env.ORGANIZATION }}" -d:sonar.token="${{ secrets.SONAR_TOKEN }}" -d:sonar.host.url="https://sonarcloud.io" -d:sonar.cs.vscoveragexml.reportsPaths=coverage.xml
+          dotnet sonarscanner begin -k:"${{ vars.SONAR_PROJECTKEY }}" -o:"${{ vars.SONAR_ORGANIZATION }}" -d:sonar.token="${{ secrets.SONAR_TOKEN }}" -d:sonar.host.url="https://sonarcloud.io" -d:sonar.cs.vscoveragexml.reportsPaths=coverage.xml
           dotnet build --no-incremental src
-          dotnet-coverage collect "dotnet test src" -f xml -o "coverage.xml"
+          dotnet-coverage collect 'make test' -f xml -o "coverage.xml"
           dotnet sonarscanner end -d:sonar.token="${{ secrets.SONAR_TOKEN }}"
