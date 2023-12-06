@@ -22,6 +22,7 @@ public abstract class AbstractRepositoryTests : IClassFixture<PostgresDatabaseFi
     protected IHDAlgorithm _algorithm;
     protected IDbConnection _connection;
     protected Fixture _fixture;
+    private bool _disposed = false;
 
     protected AbstractRepositoryTests(PostgresDatabaseFixture dbFixture)
     {
@@ -34,9 +35,27 @@ public abstract class AbstractRepositoryTests : IClassFixture<PostgresDatabaseFi
         SqlMapper.AddTypeHandler(new HDPublicKeyTypeHandler(_algorithm));
     }
 
+    protected virtual void Dispose(bool disposing)
+    {
+        if (!_disposed)
+        {
+            if (disposing)
+            {
+                _connection.Dispose();
+            }
+            _disposed = true;
+        }
+    }
+
     public void Dispose()
     {
-        _connection.Dispose();
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    ~AbstractRepositoryTests()
+    {
+        Dispose(false);
     }
 
     private IDbConnection CreateConnection()

@@ -24,6 +24,7 @@ public abstract class WalletSystemTestsBase : IClassFixture<TestServerFixture<St
     private readonly JwtTokenIssuerFixture _jwtTokenIssuerFixture;
     private readonly IMessageBrokerFixture _messageBrokerFixture;
     private readonly IDisposable _logger;
+    private bool _disposed = false;
 
     protected IHDAlgorithm Algorithm => _serverFixture.GetRequiredService<IHDAlgorithm>();
 
@@ -62,9 +63,27 @@ public abstract class WalletSystemTestsBase : IClassFixture<TestServerFixture<St
         serverFixture.ConfigureHostConfiguration(config);
     }
 
+    protected virtual void Dispose(bool disposing)
+    {
+        if (!_disposed)
+        {
+            if (disposing)
+            {
+                _logger.Dispose();
+            }
+            _disposed = true;
+        }
+    }
+
     public void Dispose()
     {
-        _logger.Dispose();
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    ~WalletSystemTestsBase()
+    {
+        Dispose(false);
     }
 
     protected HttpClient CreateAuthenticatedHttpClient(string subject, string name)

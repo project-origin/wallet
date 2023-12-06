@@ -145,7 +145,7 @@ public class TransferPartialSliceActivity : IExecuteActivity<TransferPartialSlic
 
     private sealed record NewSlice(SecretCommitmentInfo ci, IPublicKey Key);
 
-    private SlicedEvent CreateSliceEvent(WalletSlice sourceSlice, params NewSlice[] newSlices)
+    private static SlicedEvent CreateSliceEvent(WalletSlice sourceSlice, params NewSlice[] newSlices)
     {
         if (newSlices.Sum(s => s.ci.Message) != sourceSlice.Quantity)
             throw new InvalidOperationException();

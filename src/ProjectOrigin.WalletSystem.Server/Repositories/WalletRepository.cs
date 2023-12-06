@@ -186,7 +186,7 @@ public class WalletRepository : IWalletRepository
         return keyInfo.PrivateKey.Derive(keyInfo.WalletPosition).Derive(keyInfo.EndpointPosition);
     }
 
-    private Task CreateReceiveEndpoint(WalletEndpoint endpoint)
+    private Task<int> CreateReceiveEndpoint(WalletEndpoint endpoint)
     {
         return _connection.ExecuteAsync(
             @"INSERT INTO wallet_endpoints(id, wallet_id, wallet_position, public_key, is_remainder_endpoint)

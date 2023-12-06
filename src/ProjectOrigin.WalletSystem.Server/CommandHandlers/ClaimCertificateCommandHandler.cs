@@ -73,8 +73,11 @@ public class ClaimCertificateCommandHandler : IConsumer<ClaimCertificateCommand>
     /// This method builds a routing slip with a greedy algorithm.
     /// It slips slices as required to claim the requested quantity.
     /// </summary>
-    /// <param name="reservedConsumptionSlices"></param>
-    /// <param name="reservedProductionSlices"></param>
+    /// <param name="processBuilder"></param>
+    /// <param name="quantity">The quantity to claim</param>
+    /// <param name="reservedConsumptionSlices">List of slices on consumption certificates</param>
+    /// <param name="reservedProductionSlices">List of slices on production certificates</param>
+    /// <returns></returns>
     private static async Task<RoutingSlip> BuildClaimRoutingSlip(IRegistryProcessBuilder processBuilder, long quantity, IList<WalletSlice> reservedConsumptionSlices, IList<WalletSlice> reservedProductionSlices)
     {
         var remainderToClaim = quantity;

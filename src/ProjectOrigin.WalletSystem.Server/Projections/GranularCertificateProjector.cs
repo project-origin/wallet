@@ -47,7 +47,7 @@ public class GranularCertificateProjector : IStreamProjector<GranularCertificate
         return granularCertificate;
     }
 
-    private IMessage Deserialize(string type, ByteString content)
+    private static IMessage Deserialize(string type, ByteString content)
     {
         var dictionary = _lazyDescriptorDictionary.Value;
         if (dictionary.TryGetValue(type, out var descriptor))

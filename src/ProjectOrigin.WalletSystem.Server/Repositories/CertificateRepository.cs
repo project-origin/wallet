@@ -81,7 +81,8 @@ public class CertificateRepository : ICertificateRepository
 
                 if (!certsDictionary.TryGetValue(cert.Id, out var certificate))
                 {
-                    certsDictionary.Add(cert.Id, certificate = cert);
+                    certificate = cert;
+                    certsDictionary.Add(cert.Id, cert);
                 }
 
                 if (atr != null)
@@ -126,7 +127,8 @@ public class CertificateRepository : ICertificateRepository
             {
                 if (!certsDictionary.TryGetValue(cert.Id, out var certificate))
                 {
-                    certsDictionary.Add(cert.Id, certificate = cert);
+                    certificate = cert;
+                    certsDictionary.Add(cert.Id, cert);
                 }
                 if (slice != null && !certificate.Slices.Contains(slice))
                     certificate.Slices.Add(slice);
@@ -446,7 +448,8 @@ public class CertificateRepository : ICertificateRepository
             {
                 if (!certsDictionary.TryGetValue(cert.CertificateId, out var certificate))
                 {
-                    certsDictionary.Add(cert.CertificateId, certificate = cert);
+                    certificate = cert;
+                    certsDictionary.Add(cert.CertificateId, cert);
                 }
 
                 if (atr != null && atr.Key != null && atr.Value != null && !certificate.Attributes.Contains(atr))

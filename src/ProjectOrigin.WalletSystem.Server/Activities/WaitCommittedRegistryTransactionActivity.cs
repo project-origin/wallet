@@ -51,22 +51,19 @@ public class WaitCommittedRegistryTransactionActivity : IExecuteActivity<WaitCom
             }
             else if (status.Status == TransactionState.Failed)
             {
-                var ex = new InvalidRegistryTransactionException($"Transaction failed on registry. Message: {status.Message}");
-                _logger.LogCritical(ex, null);
-                return context.Faulted(ex);
+                _logger.LogCritical("Transaction failed on registry. Message: {message}", status.Message);
+                return context.Faulted(new InvalidRegistryTransactionException($"Transaction failed on registry. Message: {status.Message}"));
             }
             else
             {
-                var message = "Transaction is still processing on registry.";
-                _logger.LogDebug(message);
-                return context.Faulted(new RegistryTransactionStillProcessingException(message));
+                _logger.LogDebug("Transaction is still processing on registry.");
+                return context.Faulted(new RegistryTransactionStillProcessingException("Transaction is still processing on registry."));
             }
         }
         catch (RpcException ex)
         {
-            var newEx = new TransientException("Failed to communicate with registry.", ex);
-            _logger.LogError(newEx, null);
-            return context.Faulted(newEx);
+            _logger.LogError(ex, "Failed to communicate with registry.");
+            return context.Faulted(new TransientException("Failed to communicate with registry.", ex));
         }
         catch (Exception ex)
         {
