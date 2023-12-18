@@ -163,10 +163,16 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
         // Arrange
         var controller = new TransfersController();
 
+        await using var provider = new ServiceCollection()
+            .AddMassTransitTestHarness(x =>
+            {
+            })
+            .BuildServiceProvider(true);
+
         // Act
         var result = await controller.TransferCertificate(
-            null,
-            null);
+            provider.GetRequiredService<ITestHarness>().Bus,
+            _fixture.Create<TransferRequest>());
 
         // Assert
         result.Result.Should().BeOfType<UnauthorizedResult>();
