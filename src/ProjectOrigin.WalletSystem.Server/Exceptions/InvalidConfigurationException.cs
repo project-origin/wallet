@@ -1,6 +1,6 @@
 using System;
 
-namespace ProjectOrigin.WalletSystem.Server.Activities.Exceptions;
+namespace ProjectOrigin.WalletSystem.Server.Exceptions;
 
 public class InvalidConfigurationException : Exception
 {
