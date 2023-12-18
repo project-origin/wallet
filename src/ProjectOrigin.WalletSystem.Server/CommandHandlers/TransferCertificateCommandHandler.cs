@@ -12,6 +12,7 @@ namespace ProjectOrigin.WalletSystem.Server.CommandHandlers;
 
 public record TransferCertificateCommand
 {
+    public required Guid TransferRequestId { get; init; }
     public required string Owner { get; init; }
     public required string Registry { get; init; }
     public required Guid CertificateId { get; init; }
@@ -53,7 +54,7 @@ public class TransferCertificateCommandHandler : IConsumer<TransferCertificateCo
             List<Task> tasks = new();
             foreach (var slice in reservedSlices)
             {
-                var builder = new RoutingSlipBuilder(NewId.NextGuid());
+                var builder = new RoutingSlipBuilder(msg.TransferRequestId);
 
                 if (slice.Quantity <= remainderToTransfer)
                 {

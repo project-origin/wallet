@@ -1,9 +1,11 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using MassTransit;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using ProjectOrigin.WalletSystem.Server.CommandHandlers;
 using ProjectOrigin.WalletSystem.Server.Database;
 using ProjectOrigin.WalletSystem.Server.Extensions;
 using ProjectOrigin.WalletSystem.Server.Models;
@@ -99,5 +101,43 @@ public class TransfersController : ControllerBase
                     End = group.Max(transfer => transfer.EndDate).ToUnixTimeSeconds(),
                 })
         };
+    }
+
+    /// <summary>
+    /// Queues a request to transfer a certificate to another wallet for the authenticated user.
+    /// </summary>
+    /// <param name="bus"></param>
+    /// <param name="request"></param>
+    /// <response code="202">Transfer request has been queued for processing.</response>
+    /// <response code="401">If the user is not authenticated.</response>
+    [HttpPost]
+    [Route("v1/transfers")]
+    [Produces("application/json")]
+    [ProducesResponseType(typeof(TransferResponse), StatusCodes.Status202Accepted)]
+    [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<TransferResponse>> TransferCertificate(
+        [FromServices] IBus bus,
+        [FromBody] TransferRequest request
+    )
+    {
+        if (!User.TryGetSubject(out var subject)) return Unauthorized();
+
+        var command = new TransferCertificateCommand
+        {
+            TransferRequestId = Guid.NewGuid(),
+            Owner = subject,
+            Registry = request.CertificateId.Registry,
+            CertificateId = request.CertificateId.StreamId,
+            Quantity = request.Quantity,
+            Receiver = request.ReceiverId,
+            HashedAttributes = request.HashedAttributes,
+        };
+
+        await bus.Publish(command);
+
+        return Accepted(new TransferResponse()
+        {
+            TransferRequestId = command.TransferRequestId,
+        });
     }
 }

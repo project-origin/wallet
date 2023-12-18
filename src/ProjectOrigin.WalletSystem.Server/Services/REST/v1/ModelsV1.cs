@@ -48,6 +48,43 @@ public record Claim
     public required ClaimedCertificate ConsumptionCertificate { get; init; }
 }
 
+/// <summary>
+/// A request to transfer a certificate to another wallet.
+/// </summary>
+public record TransferRequest
+{
+    /// <summary>
+    /// The federated stream id of the certificate to transfer.
+    /// </summary>
+    public required FederatedStreamId CertificateId { get; init; }
+
+    /// <summary>
+    /// The id of the wallet to transfer the certificate to.
+    /// </summary>
+    public required Guid ReceiverId { get; init; }
+
+    /// <summary>
+    /// The quantity of the certificate to transfer.
+    /// </summary>
+    public required uint Quantity { get; init; }
+
+    /// <summary>
+    /// List of hashed attributes to transfer with the certificate.
+    /// </summary>
+    public required string[] HashedAttributes { get; init; }
+}
+
+/// <summary>
+/// A response to a transfer request.
+/// </summary>
+public record TransferResponse
+{
+    /// <summary>
+    /// The id of the transfer request.
+    /// </summary>
+    public required Guid TransferRequestId { get; init; }
+}
+
 public record Transfer
 {
     public required FederatedStreamId FederatedStreamId { get; init; }
