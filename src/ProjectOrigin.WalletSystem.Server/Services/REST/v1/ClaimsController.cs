@@ -1,9 +1,11 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using MassTransit;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using ProjectOrigin.WalletSystem.Server.CommandHandlers;
 using ProjectOrigin.WalletSystem.Server.Database;
 using ProjectOrigin.WalletSystem.Server.Extensions;
 using ProjectOrigin.WalletSystem.Server.Models;
@@ -84,5 +86,43 @@ public class ClaimsController : ControllerBase
                     End = group.Max(claim => claim.ProductionEnd).ToUnixTimeSeconds(),
                 })
         };
+    }
+
+    /// <summary>
+    /// Queues a request to claim two certificate for a given quantity.
+    /// </summary>
+    /// <param name="bus">The masstransit bus to queue the request to</param>
+    /// <param name="request">The claim request</param>
+    /// <response code="202">Claim request has been queued for processing.</response>
+    /// <response code="401">If the user is not authenticated.</response>
+    [HttpPost]
+    [Route("v1/claims")]
+    [Produces("application/json")]
+    [ProducesResponseType(typeof(ClaimResponse), StatusCodes.Status202Accepted)]
+    [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<ClaimResponse>> ClaimCertificate(
+        [FromServices] IBus bus,
+        [FromBody] ClaimRequest request
+    )
+    {
+        if (!User.TryGetSubject(out var subject)) return Unauthorized();
+
+        var command = new ClaimCertificateCommand
+        {
+            Owner = subject,
+            ClaimId = Guid.NewGuid(),
+            ConsumptionRegistry = request.ConsumptionCertificateId.Registry,
+            ConsumptionCertificateId = request.ConsumptionCertificateId.StreamId,
+            ProductionRegistry = request.ProductionCertificateId.Registry,
+            ProductionCertificateId = request.ProductionCertificateId.StreamId,
+            Quantity = request.Quantity,
+        };
+
+        await bus.Publish(command);
+
+        return Accepted(new ClaimResponse()
+        {
+            ClaimRequestId = command.ClaimId,
+        });
     }
 }

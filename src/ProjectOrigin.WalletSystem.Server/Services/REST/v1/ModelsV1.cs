@@ -40,12 +40,60 @@ public record ClaimedCertificate
     public required Dictionary<string, string> Attributes { get; init; }
 }
 
+/// <summary>
+/// A claim record representing a claim of a production and consumption certificate.
+/// </summary>
 public record Claim
 {
     public required Guid ClaimId { get; init; }
     public required uint Quantity { get; init; }
     public required ClaimedCertificate ProductionCertificate { get; init; }
     public required ClaimedCertificate ConsumptionCertificate { get; init; }
+}
+
+/// <summary>
+/// A request to claim a production and consumption certificate.
+/// </summary>
+public record ClaimRequest
+{
+    /// <summary>
+    /// The id of the production certificate to claim.
+    /// </summary>
+    public required FederatedStreamId ProductionCertificateId { get; init; }
+
+    /// <summary>
+    /// The id of the consumption certificate to claim.
+    /// </summary>
+    public required FederatedStreamId ConsumptionCertificateId { get; init; }
+
+    /// <summary>
+    /// The quantity of the certificates to claim.
+    /// </summary>
+    public required uint Quantity { get; init; }
+}
+
+/// <summary>
+/// A response to a claim request.
+/// </summary>
+public record ClaimResponse
+{
+    /// <summary>
+    /// The id of the claim request.
+    /// </summary>
+    public required Guid ClaimRequestId { get; init; }
+}
+
+/// <summary>
+/// A transfer record of a transfer of a part of a certificate to another wallet.
+/// </summary>
+public record Transfer
+{
+    public required FederatedStreamId FederatedStreamId { get; init; }
+    public required string ReceiverId { get; init; }
+    public required long Quantity { get; init; }
+    public required long Start { get; init; }
+    public required long End { get; init; }
+    public required string GridArea { get; init; }
 }
 
 /// <summary>
@@ -83,16 +131,6 @@ public record TransferResponse
     /// The id of the transfer request.
     /// </summary>
     public required Guid TransferRequestId { get; init; }
-}
-
-public record Transfer
-{
-    public required FederatedStreamId FederatedStreamId { get; init; }
-    public required string ReceiverId { get; init; }
-    public required long Quantity { get; init; }
-    public required long Start { get; init; }
-    public required long End { get; init; }
-    public required string GridArea { get; init; }
 }
 
 public record AggregatedCertificates
