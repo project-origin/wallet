@@ -70,6 +70,32 @@ public class WalletControllerTests : IClassFixture<PostgresDatabaseFixture>
     }
 
     [Fact]
+    public async Task Verify_ValidWithValidKey()
+    {
+        // Arrange
+        var subject = _fixture.Create<string>();
+        var controller = new WalletController()
+        {
+            ControllerContext = CreateContextWithUser(subject)
+        };
+
+        // Act
+        var result = await controller.CreateWallet(
+            _unitOfWork,
+            _hdAlgorithm,
+               new CreateWalletRequest()
+               {
+                   PrivateKey = _hdAlgorithm.GenerateNewPrivateKey().Export().ToArray()
+               });
+
+        // Assert
+        result
+            .Result.Should().BeOfType<CreatedResult>()
+            .Which.Value.Should().BeOfType<CreateWalletResponse>()
+            .Which.WalletId.Should().NotBeEmpty();
+    }
+
+    [Fact]
     public async Task Verify_Valid()
     {
         // Arrange
