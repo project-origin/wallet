@@ -62,7 +62,7 @@ public class WalletController : ControllerBase
 
             await unitOfWork.WalletRepository.Create(newWallet);
 
-            return Created((string?)null, new CreateWalletResponse
+            return Created((string?)null, new CreateWalletResponse()
             {
                 WalletId = newWallet.Id
             });
@@ -89,7 +89,7 @@ public record CreateWalletRequest
 /// <summary>
 /// Response to create a new wallet.
 /// </summary>
-public record CreateWalletResponse
+public record CreateWalletResponse()
 {
     /// <summary>
     /// The ID of the created wallet.
