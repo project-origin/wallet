@@ -409,6 +409,62 @@
           }
         }
       }
+    },
+    "/v1/wallets": {
+      "post": {
+        "tags": [
+          "Wallet"
+        ],
+        "summary": "Creates a new wallet for the user.\r\nCurrently, only one wallet per user is supported.",
+        "requestBody": {
+          "description": "The private key to import. If not provided, a new private key will be generated.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateWalletRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateWalletRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateWalletRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateWalletResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "If wallet for user already exists.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "If the user is not authenticated."
+          },
+          "200": {
+            "description": "The wallet was created."
+          }
+        }
+      }
     }
   },
   "components": {
@@ -602,6 +658,31 @@
         },
         "additionalProperties": false
       },
+      "CreateWalletRequest": {
+        "type": "object",
+        "properties": {
+          "privateKey": {
+            "type": "string",
+            "description": "The private key to import. If not provided, a private key will be generated.",
+            "format": "byte",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Request to create a new wallet."
+      },
+      "CreateWalletResponse": {
+        "type": "object",
+        "properties": {
+          "walletId": {
+            "type": "string",
+            "description": "The ID of the created wallet.",
+            "format": "uuid"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Response to create a new wallet."
+      },
       "FederatedStreamId": {
         "type": "object",
         "properties": {
@@ -659,6 +740,33 @@
           }
         },
         "additionalProperties": false
+      },
+      "ProblemDetails": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "nullable": true
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "detail": {
+            "type": "string",
+            "nullable": true
+          },
+          "instance": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": { }
       },
       "TimeAggregate": {
         "enum": [
