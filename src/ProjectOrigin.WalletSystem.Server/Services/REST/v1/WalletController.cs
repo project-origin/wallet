@@ -78,7 +78,7 @@ public class WalletController : ControllerBase
 /// <summary>
 /// Request to create a new wallet.
 /// </summary>
-public record CreateWalletRequest
+public record CreateWalletRequest()
 {
     /// <summary>
     /// The private key to import. If not provided, a private key will be generated.
