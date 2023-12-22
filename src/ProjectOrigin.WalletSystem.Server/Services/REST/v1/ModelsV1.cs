@@ -3,7 +3,7 @@ using System;
 
 namespace ProjectOrigin.WalletSystem.Server.Services.REST.v1;
 
-public record ResultList<T>
+public record ResultList<T>()
 {
     public required IEnumerable<T> Result { get; init; }
 }
@@ -14,13 +14,13 @@ public enum CertificateType
     Production = 2
 }
 
-public record FederatedStreamId
+public record FederatedStreamId()
 {
     public required string Registry { get; init; }
     public required Guid StreamId { get; init; }
 }
 
-public record GranularCertificate
+public record GranularCertificate()
 {
     public required FederatedStreamId FederatedStreamId { get; init; }
     public required uint Quantity { get; init; }
@@ -31,7 +31,7 @@ public record GranularCertificate
     public required Dictionary<string, string> Attributes { get; init; }
 }
 
-public record ClaimedCertificate
+public record ClaimedCertificate()
 {
     public required FederatedStreamId FederatedStreamId { get; init; }
     public required long Start { get; init; }
@@ -43,7 +43,7 @@ public record ClaimedCertificate
 /// <summary>
 /// A claim record representing a claim of a production and consumption certificate.
 /// </summary>
-public record Claim
+public record Claim()
 {
     public required Guid ClaimId { get; init; }
     public required uint Quantity { get; init; }
@@ -54,7 +54,7 @@ public record Claim
 /// <summary>
 /// A request to claim a production and consumption certificate.
 /// </summary>
-public record ClaimRequest
+public record ClaimRequest()
 {
     /// <summary>
     /// The id of the production certificate to claim.
@@ -75,7 +75,7 @@ public record ClaimRequest
 /// <summary>
 /// A response to a claim request.
 /// </summary>
-public record ClaimResponse
+public record ClaimResponse()
 {
     /// <summary>
     /// The id of the claim request.
@@ -86,7 +86,7 @@ public record ClaimResponse
 /// <summary>
 /// A transfer record of a transfer of a part of a certificate to another wallet.
 /// </summary>
-public record Transfer
+public record Transfer()
 {
     public required FederatedStreamId FederatedStreamId { get; init; }
     public required string ReceiverId { get; init; }
@@ -99,7 +99,7 @@ public record Transfer
 /// <summary>
 /// A request to transfer a certificate to another wallet.
 /// </summary>
-public record TransferRequest
+public record TransferRequest()
 {
     /// <summary>
     /// The federated stream id of the certificate to transfer.
@@ -125,7 +125,7 @@ public record TransferRequest
 /// <summary>
 /// A response to a transfer request.
 /// </summary>
-public record TransferResponse
+public record TransferResponse()
 {
     /// <summary>
     /// The id of the transfer request.
@@ -133,7 +133,7 @@ public record TransferResponse
     public required Guid TransferRequestId { get; init; }
 }
 
-public record AggregatedCertificates
+public record AggregatedCertificates()
 {
     public required long Start { get; init; }
     public required long End { get; init; }
@@ -141,14 +141,14 @@ public record AggregatedCertificates
     public required CertificateType Type { get; init; }
 }
 
-public record AggregatedClaims
+public record AggregatedClaims()
 {
     public required long Start { get; init; }
     public required long End { get; init; }
     public required long Quantity { get; init; }
 }
 
-public record AggregatedTransfers
+public record AggregatedTransfers()
 {
     public required long Start { get; init; }
     public required long End { get; init; }

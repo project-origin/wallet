@@ -94,7 +94,7 @@ public class WalletService : V1.WalletService.WalletServiceBase
         var foundEndpoint = await _unitOfWork.WalletRepository.GetWalletEndpoint(ownerPublicKey);
         if (foundEndpoint is not null)
         {
-            var wallet = await _unitOfWork.WalletRepository.GetWallet(foundEndpoint.WalletId);
+            var wallet = await _unitOfWork.WalletRepository.GetWallet(foundEndpoint.WalletId) ?? throw new InvalidOperationException("Wallet not found.");
             if (wallet.Owner == subject)
             {
                 throw new RpcException(new Status(StatusCode.InvalidArgument, "Cannot create receiver deposit endpoint to self."));
