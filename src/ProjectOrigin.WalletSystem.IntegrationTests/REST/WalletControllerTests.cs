@@ -9,7 +9,6 @@ using ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures;
 using ProjectOrigin.WalletSystem.IntegrationTests.TestExtensions;
 using ProjectOrigin.WalletSystem.Server.Database;
 using ProjectOrigin.WalletSystem.Server.Services.REST.v1;
-using Renci.SshNet;
 using Xunit;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests;
@@ -93,6 +92,10 @@ public class WalletControllerTests : IClassFixture<PostgresDatabaseFixture>
             .Result.Should().BeOfType<CreatedResult>()
             .Which.Value.Should().BeOfType<CreateWalletResponse>()
             .Which.WalletId.Should().NotBeEmpty();
+
+        var wallet = await _unitOfWork.WalletRepository.GetWallet(subject);
+        wallet.Should().NotBeNull();
+        wallet!.PrivateKey.Should().BeEquivalentTo(_hdAlgorithm.GenerateNewPrivateKey());
     }
 
     [Fact]
@@ -116,6 +119,10 @@ public class WalletControllerTests : IClassFixture<PostgresDatabaseFixture>
             .Result.Should().BeOfType<CreatedResult>()
             .Which.Value.Should().BeOfType<CreateWalletResponse>()
             .Which.WalletId.Should().NotBeEmpty();
+
+        var wallet = await _unitOfWork.WalletRepository.GetWallet(subject);
+        wallet.Should().NotBeNull();
+        wallet!.PrivateKey.Should().NotBeNull();
     }
 
     [Fact]
@@ -128,21 +135,21 @@ public class WalletControllerTests : IClassFixture<PostgresDatabaseFixture>
             ControllerContext = CreateContextWithUser(subject)
         };
 
-        var result1 = await controller.CreateWallet(
+        var firstCreateResult = await controller.CreateWallet(
             _unitOfWork,
             _hdAlgorithm,
             new CreateWalletRequest());
 
-        result1.Result.Should().BeOfType<CreatedResult>();
+        firstCreateResult.Result.Should().BeOfType<CreatedResult>();
 
         // Act
-        var result2 = await controller.CreateWallet(
+        var secondCreateResult = await controller.CreateWallet(
             _unitOfWork,
             _hdAlgorithm,
             new CreateWalletRequest());
 
         // Assert
-        result2.Result.Should().BeOfType<BadRequestObjectResult>()
+        secondCreateResult.Result.Should().BeOfType<BadRequestObjectResult>()
             .Which.Value.Should().Be("Wallet already exists.");
     }
 
