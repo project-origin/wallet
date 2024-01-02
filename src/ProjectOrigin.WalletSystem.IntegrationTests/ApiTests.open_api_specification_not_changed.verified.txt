@@ -264,6 +264,60 @@
         }
       }
     },
+    "/v1/slices": {
+      "post": {
+        "tags": [
+          "Slices"
+        ],
+        "summary": "Receive a certificate-slice from another wallet.",
+        "description": "This request is used to receive a certificate-slice from another wallet, which is then stored in the local wallet.\r\nThe endpoint is verified to exists within the wallet system, otherwise a 404 will be returned.\r\nThe endpoint will return 202 Accepted was initial validation has succeeded.\r\nThe certificate-slice will further verified with data from the registry in a seperate thread.",
+        "requestBody": {
+          "description": "Contains the data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReceiveRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReceiveRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReceiveRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "The slice was accepted."
+          },
+          "400": {
+            "description": "Public key could not be decoded.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Receiver endpoint not found.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/transfers": {
       "get": {
         "tags": [
@@ -915,6 +969,22 @@
         },
         "additionalProperties": false
       },
+      "HashedAttribute": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          },
+          "salt": {
+            "type": "string",
+            "format": "byte"
+          }
+        },
+        "additionalProperties": false
+      },
       "IHDPublicKey": {
         "type": "string",
         "additionalProperties": false
@@ -945,6 +1015,37 @@
           }
         },
         "additionalProperties": { }
+      },
+      "ReceiveRequest": {
+        "type": "object",
+        "properties": {
+          "publicKey": {
+            "type": "string",
+            "format": "byte"
+          },
+          "position": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "certificateId": {
+            "$ref": "#/components/schemas/FederatedStreamId"
+          },
+          "quantity": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "randomR": {
+            "type": "string",
+            "format": "byte"
+          },
+          "hashedAttributes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HashedAttribute"
+            }
+          }
+        },
+        "additionalProperties": false
       },
       "TimeAggregate": {
         "enum": [
