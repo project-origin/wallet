@@ -4,10 +4,12 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
 using ProjectOrigin.WalletSystem.Server.Database;
 using ProjectOrigin.WalletSystem.Server.Extensions;
 using ProjectOrigin.WalletSystem.Server.Models;
+using ProjectOrigin.WalletSystem.Server.Options;
 
 namespace ProjectOrigin.WalletSystem.Server.Services.REST.v1;
 
@@ -15,8 +17,6 @@ namespace ProjectOrigin.WalletSystem.Server.Services.REST.v1;
 [ApiController]
 public class WalletController : ControllerBase
 {
-    const string PathRoot = "https://example.com/api/wallet/v1";
-
     /// <summary>
     /// Creates a new wallet for the user.
     /// </summary>
@@ -27,6 +27,7 @@ public class WalletController : ControllerBase
     /// </remarks>
     /// <param name = "unitOfWork" ></param>
     /// <param name = "hdAlgorithm" ></param>
+    /// <param name = "serviceOptions" ></param>
     /// <param name = "request" > The private key to import. If not provided, a new private key will be generated.</param>
     /// <response code="201">The wallet was created.</response>
     /// <response code="400">If private key is invalid or if wallet for user already exists.</response>
@@ -40,6 +41,7 @@ public class WalletController : ControllerBase
     public async Task<ActionResult<CreateWalletResponse>> CreateWallet(
         [FromServices] IUnitOfWork unitOfWork,
         [FromServices] IHDAlgorithm hdAlgorithm,
+        [FromServices] IOptions<ServiceOptions> serviceOptions,
         [FromBody] CreateWalletRequest request
     )
     {
@@ -66,7 +68,7 @@ public class WalletController : ControllerBase
 
             await unitOfWork.WalletRepository.Create(newWallet);
 
-            return Created(PathRoot + $"/v1/wallets/{newWallet.Id}", new CreateWalletResponse
+            return Created(new Uri(serviceOptions.Value.EndpointAddress, $"/v1/wallets/{newWallet.Id}"), new CreateWalletResponse
             {
                 WalletId = newWallet.Id
             });
@@ -146,6 +148,7 @@ public class WalletController : ControllerBase
     /// Creates a new wallet endpoint on the users wallet, which can be sent to other services to receive certificate-slices.
     /// </summary>
     /// <param name = "unitOfWork" ></param>
+    /// <param name = "serviceOptions" ></param>
     /// <param name = "walletId" > The ID of the wallet to create the endpoint on.</param>
     /// <response code="201">The wallet endpoint was created.</response>
     /// <response code="401">If the user is not authenticated.</response>
@@ -158,6 +161,7 @@ public class WalletController : ControllerBase
     [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<CreateWalletEndpointResponse>> CreateWalletEndpoint(
         [FromServices] IUnitOfWork unitOfWork,
+        [FromServices] IOptions<ServiceOptions> serviceOptions,
         [FromRoute] Guid walletId
     )
     {
@@ -174,10 +178,11 @@ public class WalletController : ControllerBase
             WalletReference = new WalletEndpointReference
             {
                 Version = 1,
-                Endpoint = new Uri(PathRoot + $"/v1/receive-slice"),
+                Endpoint = new Uri(serviceOptions.Value.EndpointAddress, $"/v1/slices"),
                 PublicKey = walletEndpoint.PublicKey
             }
         });
+
     }
 
     /// <summary>
@@ -223,7 +228,6 @@ public record WalletRecord
     public required Guid Id { get; init; }
     public required IHDPublicKey PublicKey { get; init; }
 }
-
 
 /// <summary>
 /// Request to create a new wallet.

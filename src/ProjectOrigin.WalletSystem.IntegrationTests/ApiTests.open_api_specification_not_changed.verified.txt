@@ -666,21 +666,25 @@
         "properties": {
           "start": {
             "type": "integer",
+            "description": "The start of the aggregated period.",
             "format": "int64"
           },
           "end": {
             "type": "integer",
+            "description": "The end of the aggregated period.",
             "format": "int64"
           },
           "quantity": {
             "type": "integer",
+            "description": "The quantity of the aggregated certificates.",
             "format": "int64"
           },
           "type": {
             "$ref": "#/components/schemas/CertificateType"
           }
         },
-        "additionalProperties": false
+        "additionalProperties": false,
+        "description": "A result of aggregated certificates that is available to use in the wallet."
       },
       "AggregatedCertificatesResultList": {
         "type": "object",
@@ -699,18 +703,22 @@
         "properties": {
           "start": {
             "type": "integer",
+            "description": "The start of the aggregated period.",
             "format": "int64"
           },
           "end": {
             "type": "integer",
+            "description": "The end of the aggregated period.",
             "format": "int64"
           },
           "quantity": {
             "type": "integer",
+            "description": "The quantity of the aggregated claims.",
             "format": "int64"
           }
         },
-        "additionalProperties": false
+        "additionalProperties": false,
+        "description": "A result of aggregated claims."
       },
       "AggregatedClaimsResultList": {
         "type": "object",
@@ -729,18 +737,22 @@
         "properties": {
           "start": {
             "type": "integer",
+            "description": "The start of the aggregated period.",
             "format": "int64"
           },
           "end": {
             "type": "integer",
+            "description": "The end of the aggregated period.",
             "format": "int64"
           },
           "quantity": {
             "type": "integer",
+            "description": "The quantity of the aggregated transfers.",
             "format": "int64"
           }
         },
-        "additionalProperties": false
+        "additionalProperties": false,
+        "description": "A result of aggregated transfers."
       },
       "AggregatedTransfersResultList": {
         "type": "object",
@@ -832,23 +844,28 @@
           },
           "start": {
             "type": "integer",
+            "description": "The start period of the claimed certificate.",
             "format": "int64"
           },
           "end": {
             "type": "integer",
+            "description": "The end period the claimed certificate.",
             "format": "int64"
           },
           "gridArea": {
-            "type": "string"
+            "type": "string",
+            "description": "The Grid Area of the claimed certificate."
           },
           "attributes": {
             "type": "object",
             "additionalProperties": {
               "type": "string"
-            }
+            },
+            "description": "The attributes of the claimed certificate."
           }
         },
-        "additionalProperties": false
+        "additionalProperties": false,
+        "description": "Info record of a claimed certificate."
       },
       "CreateExternalEndpointRequest": {
         "type": "object",
@@ -932,18 +949,22 @@
           },
           "quantity": {
             "type": "integer",
+            "description": "The quantity available on the certificate.",
             "format": "int32"
           },
           "start": {
             "type": "integer",
+            "description": "The start of the certificate.",
             "format": "int64"
           },
           "end": {
             "type": "integer",
+            "description": "The end of the certificate.",
             "format": "int64"
           },
           "gridArea": {
-            "type": "string"
+            "type": "string",
+            "description": "The Grid Area of the certificate."
           },
           "certificateType": {
             "$ref": "#/components/schemas/CertificateType"
@@ -952,10 +973,12 @@
             "type": "object",
             "additionalProperties": {
               "type": "string"
-            }
+            },
+            "description": "The attributes of the certificate."
           }
         },
-        "additionalProperties": false
+        "additionalProperties": false,
+        "description": "A certificate that is available to use in the wallet."
       },
       "GranularCertificateResultList": {
         "type": "object",
@@ -973,17 +996,21 @@
         "type": "object",
         "properties": {
           "key": {
-            "type": "string"
+            "type": "string",
+            "description": "The key of the attribute."
           },
           "value": {
-            "type": "string"
+            "type": "string",
+            "description": "The value of the attribute."
           },
           "salt": {
             "type": "string",
+            "description": "The salt used to hash the attribute.",
             "format": "byte"
           }
         },
-        "additionalProperties": false
+        "additionalProperties": false,
+        "description": "Hashed attribute with salt."
       },
       "IHDPublicKey": {
         "type": "string",
@@ -1021,6 +1048,7 @@
         "properties": {
           "publicKey": {
             "type": "string",
+            "description": "The public key of the receiving wallet.",
             "format": "byte"
           },
           "position": {
@@ -1032,20 +1060,24 @@
           },
           "quantity": {
             "type": "integer",
+            "description": "The quantity of the slice.",
             "format": "int32"
           },
           "randomR": {
             "type": "string",
+            "description": "The random R used to generate the pedersen commitment with the quantitiy.",
             "format": "byte"
           },
           "hashedAttributes": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/HashedAttribute"
-            }
+            },
+            "description": "List of hashed attributes, their values and salts so the receiver can access the data."
           }
         },
-        "additionalProperties": false
+        "additionalProperties": false,
+        "description": "Request to receive a certificate-slice from another wallet."
       },
       "TimeAggregate": {
         "enum": [

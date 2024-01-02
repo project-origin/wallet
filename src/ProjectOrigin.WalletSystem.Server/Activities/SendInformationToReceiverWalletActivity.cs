@@ -40,7 +40,7 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
         var newSlice = await _unitOfWork.CertificateRepository.GetTransferredSlice(context.Arguments.SliceId);
         var externalEndpoint = await _unitOfWork.WalletRepository.GetExternalEndpoint(context.Arguments.ExternalEndpointId);
 
-        if (_walletSystemOptions.Value.EndpointAddress == externalEndpoint.Endpoint)
+        if (_walletSystemOptions.Value.EndpointAddress.Equals(externalEndpoint.Endpoint))
         {
             return await InsertIntoLocalWallet(context, newSlice, externalEndpoint);
         }

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using MassTransit;
@@ -126,3 +127,104 @@ public class ClaimsController : ControllerBase
         });
     }
 }
+
+#region Records
+
+/// <summary>
+/// A claim record representing a claim of a production and consumption certificate.
+/// </summary>
+public record Claim()
+{
+    public required Guid ClaimId { get; init; }
+    public required uint Quantity { get; init; }
+    public required ClaimedCertificate ProductionCertificate { get; init; }
+    public required ClaimedCertificate ConsumptionCertificate { get; init; }
+}
+
+
+/// <summary>
+/// Info record of a claimed certificate.
+/// </summary>
+public record ClaimedCertificate()
+{
+    /// <summary>
+    /// The id of the claimed certificate.
+    /// </summary>
+    public required FederatedStreamId FederatedStreamId { get; init; }
+
+    /// <summary>
+    /// The start period of the claimed certificate.
+    /// </summary>
+    public required long Start { get; init; }
+
+    /// <summary>
+    /// The end period the claimed certificate.
+    /// </summary>
+    public required long End { get; init; }
+
+    /// <summary>
+    /// The Grid Area of the claimed certificate.
+    /// </summary>
+    public required string GridArea { get; init; }
+
+    /// <summary>
+    /// The attributes of the claimed certificate.
+    /// </summary>
+    public required Dictionary<string, string> Attributes { get; init; }
+}
+
+/// <summary>
+/// A request to claim a production and consumption certificate.
+/// </summary>
+public record ClaimRequest()
+{
+    /// <summary>
+    /// The id of the production certificate to claim.
+    /// </summary>
+    public required FederatedStreamId ProductionCertificateId { get; init; }
+
+    /// <summary>
+    /// The id of the consumption certificate to claim.
+    /// </summary>
+    public required FederatedStreamId ConsumptionCertificateId { get; init; }
+
+    /// <summary>
+    /// The quantity of the certificates to claim.
+    /// </summary>
+    public required uint Quantity { get; init; }
+}
+
+/// <summary>
+/// A response to a claim request.
+/// </summary>
+public record ClaimResponse()
+{
+    /// <summary>
+    /// The id of the claim request.
+    /// </summary>
+    public required Guid ClaimRequestId { get; init; }
+}
+
+/// <summary>
+/// A result of aggregated claims.
+/// </summary>
+public record AggregatedClaims()
+{
+    /// <summary>
+    /// The start of the aggregated period.
+    /// </summary>
+    public required long Start { get; init; }
+
+    /// <summary>
+    /// The end of the aggregated period.
+    /// </summary>
+    public required long End { get; init; }
+
+    /// <summary>
+    /// The quantity of the aggregated claims.
+    /// </summary>
+    public required long Quantity { get; init; }
+}
+
+
+#endregion

@@ -5,10 +5,12 @@ using AutoFixture;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using ProjectOrigin.HierarchicalDeterministicKeys.Implementations;
 using ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures;
 using ProjectOrigin.WalletSystem.IntegrationTests.TestExtensions;
 using ProjectOrigin.WalletSystem.Server.Database;
+using ProjectOrigin.WalletSystem.Server.Options;
 using ProjectOrigin.WalletSystem.Server.Services.REST.v1;
 using Xunit;
 
@@ -20,6 +22,7 @@ public class WalletControllerTests : IClassFixture<PostgresDatabaseFixture>
     private readonly Secp256k1Algorithm _hdAlgorithm;
     private readonly PostgresDatabaseFixture _dbFixture;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IOptions<ServiceOptions> _options;
 
     public WalletControllerTests(PostgresDatabaseFixture postgresDatabaseFixture)
     {
@@ -27,6 +30,11 @@ public class WalletControllerTests : IClassFixture<PostgresDatabaseFixture>
         _hdAlgorithm = new Secp256k1Algorithm();
         _dbFixture = postgresDatabaseFixture;
         _unitOfWork = _dbFixture.CreateUnitOfWork();
+
+        _options = Options.Create(new ServiceOptions
+        {
+            EndpointAddress = new Uri("https://example.com")
+        });
     }
 
     [Fact]
@@ -39,6 +47,7 @@ public class WalletControllerTests : IClassFixture<PostgresDatabaseFixture>
         var result = await controller.CreateWallet(
             _unitOfWork,
             _hdAlgorithm,
+            _options,
             new CreateWalletRequest());
 
         // Assert
@@ -59,6 +68,7 @@ public class WalletControllerTests : IClassFixture<PostgresDatabaseFixture>
         var result = await controller.CreateWallet(
             _unitOfWork,
             _hdAlgorithm,
+            _options,
             new CreateWalletRequest()
             {
                 PrivateKey = _fixture.Create<byte[]>()
@@ -83,10 +93,11 @@ public class WalletControllerTests : IClassFixture<PostgresDatabaseFixture>
         var result = await controller.CreateWallet(
             _unitOfWork,
             _hdAlgorithm,
-               new CreateWalletRequest()
-               {
-                   PrivateKey = _hdAlgorithm.GenerateNewPrivateKey().Export().ToArray()
-               });
+            _options,
+            new CreateWalletRequest()
+            {
+                PrivateKey = _hdAlgorithm.GenerateNewPrivateKey().Export().ToArray()
+            });
 
         // Assert
         result
@@ -113,6 +124,7 @@ public class WalletControllerTests : IClassFixture<PostgresDatabaseFixture>
         var result = await controller.CreateWallet(
             _unitOfWork,
             _hdAlgorithm,
+            _options,
             new CreateWalletRequest());
 
         // Assert
@@ -139,6 +151,7 @@ public class WalletControllerTests : IClassFixture<PostgresDatabaseFixture>
         var firstCreateResult = await controller.CreateWallet(
             _unitOfWork,
             _hdAlgorithm,
+            _options,
             new CreateWalletRequest());
 
         firstCreateResult.Result.Should().BeOfType<CreatedResult>();
@@ -147,6 +160,7 @@ public class WalletControllerTests : IClassFixture<PostgresDatabaseFixture>
         var secondCreateResult = await controller.CreateWallet(
             _unitOfWork,
             _hdAlgorithm,
+            _options,
             new CreateWalletRequest());
 
         // Assert
@@ -167,6 +181,7 @@ public class WalletControllerTests : IClassFixture<PostgresDatabaseFixture>
         var createResult = await controller.CreateWallet(
             _unitOfWork,
             _hdAlgorithm,
+            _options,
             new CreateWalletRequest());
 
         var response = createResult.Result.Should().BeOfType<CreatedResult>()
@@ -227,6 +242,7 @@ public class WalletControllerTests : IClassFixture<PostgresDatabaseFixture>
         var createResult = await controller.CreateWallet(
             _unitOfWork,
             _hdAlgorithm,
+            _options,
             new CreateWalletRequest());
 
         var createdResponse = createResult.Result.Should().BeOfType<CreatedResult>()
@@ -291,6 +307,7 @@ public class WalletControllerTests : IClassFixture<PostgresDatabaseFixture>
         var createResult = await controller1.CreateWallet(
             _unitOfWork,
             _hdAlgorithm,
+            _options,
             new CreateWalletRequest());
 
         var createdResponse = createResult.Result.Should().BeOfType<CreatedResult>()
@@ -320,6 +337,7 @@ public class WalletControllerTests : IClassFixture<PostgresDatabaseFixture>
         // Act
         var result = await controller.CreateWalletEndpoint(
             _unitOfWork,
+            _options,
             Guid.NewGuid());
 
         // Assert
@@ -339,6 +357,7 @@ public class WalletControllerTests : IClassFixture<PostgresDatabaseFixture>
         // Act
         var result = await controller.CreateWalletEndpoint(
             _unitOfWork,
+            _options,
             Guid.NewGuid());
 
         // Assert
@@ -358,6 +377,7 @@ public class WalletControllerTests : IClassFixture<PostgresDatabaseFixture>
         var createResult = await controller.CreateWallet(
               _unitOfWork,
               _hdAlgorithm,
+            _options,
               new CreateWalletRequest());
 
         var createdResponse = createResult.Result.Should().BeOfType<CreatedResult>()
@@ -366,6 +386,7 @@ public class WalletControllerTests : IClassFixture<PostgresDatabaseFixture>
         // Act
         var result = await controller.CreateWalletEndpoint(
             _unitOfWork,
+            _options,
             createdResponse.WalletId
             );
 
@@ -374,7 +395,7 @@ public class WalletControllerTests : IClassFixture<PostgresDatabaseFixture>
             .Which.Value.Should().BeOfType<CreateWalletEndpointResponse>().Which;
 
         response.WalletReference.Version.Should().Be(1);
-        response.WalletReference.Endpoint.ToString().Should().EndWith("/v1/receive-slice");
+        response.WalletReference.Endpoint.Should().BeEquivalentTo(new Uri(_options.Value.EndpointAddress, "/v1/slices"));
         response.WalletReference.PublicKey.Should().NotBeNull();
 
         var endpointsFound = await _unitOfWork.WalletRepository.GetWalletEndpoint(response.WalletReference.PublicKey);

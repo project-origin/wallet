@@ -18,8 +18,13 @@ service:
 
 # config holds general configuration for the wallet server
 config:
-  # externalUrl defines the external url to use for the wallet server
+  # externalUrl defines the external url to use for the wallet server, this should be the publically accessible and resolvable url of the wallet server.
+  # example: http://wallet.example.com/api or https://example.com/wallet/api
+  # This should include the pathBase
   externalUrl:
+
+  # pathBase defines the base part of all paths in the api of the wallet server, defaults to /api
+  pathBase: /api
 
   # jwt defines the configuration for the authentication of jwt tokens
   jwt:
@@ -100,8 +105,3 @@ persistance:
 
     # storage defines the storage configuration for the database
     size: 10Gi
-
-# rest defines the configuration of the REST API
-rest:
-  # pathBase defines the base part of all paths in the api
-  pathBase: /api
