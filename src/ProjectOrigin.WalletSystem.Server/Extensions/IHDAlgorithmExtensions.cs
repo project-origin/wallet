@@ -18,4 +18,18 @@ public static class IHDAlgorithmExtensions
             return false;
         }
     }
+
+    public static bool TryImportHDPublicKey(this IHDAlgorithm hdAlgorithm, byte[] publicKeyBytes, out IHDPublicKey hdPublicKey)
+    {
+        try
+        {
+            hdPublicKey = hdAlgorithm.ImportHDPublicKey(publicKeyBytes);
+            return true;
+        }
+        catch (Exception)
+        {
+            hdPublicKey = null!;
+            return false;
+        }
+    }
 }
