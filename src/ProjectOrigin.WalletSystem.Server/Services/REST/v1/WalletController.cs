@@ -303,4 +303,5 @@ public record WalletEndpointReference
     /// </summary>
     public required IHDPublicKey PublicKey { get; init; }
 }
+
 #endregion
