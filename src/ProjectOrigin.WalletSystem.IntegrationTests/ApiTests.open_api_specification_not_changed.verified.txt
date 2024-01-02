@@ -600,9 +600,6 @@
           },
           "401": {
             "description": "If the user is not authenticated."
-          },
-          "404": {
-            "description": "Not Found"
           }
         }
       }

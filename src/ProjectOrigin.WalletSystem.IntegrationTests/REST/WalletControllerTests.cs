@@ -390,10 +390,50 @@ public class WalletControllerTests : IClassFixture<PostgresDatabaseFixture>
         // Act
         var result = await controller.CreateExternalEndpoint(
             _unitOfWork,
-            _fixture.Create<CreateExternalEndpointRequest>());
+            new CreateExternalEndpointRequest()
+            {
+                TextReference = _fixture.Create<string>(),
+                WalletReference = new WalletEndpointReference()
+                {
+                    PublicKey = _hdAlgorithm.GenerateNewPrivateKey().Neuter(),
+                    Version = 1,
+                    Endpoint = new Uri("https://example.com")
+                }
+            });
 
         // Assert
         result.Result.Should().BeOfType<UnauthorizedResult>();
+    }
+
+    [Fact]
+    public async Task Verify_CreateExternalEndpoint_Success()
+    {
+        // Arrange
+        var subject = _fixture.Create<string>();
+        var controller = new WalletController()
+        {
+            ControllerContext = CreateContextWithUser(subject)
+        };
+
+        // Act
+        var result = await controller.CreateExternalEndpoint(
+            _unitOfWork,
+            new CreateExternalEndpointRequest()
+            {
+                TextReference = _fixture.Create<string>(),
+                WalletReference = new WalletEndpointReference()
+                {
+                    PublicKey = _hdAlgorithm.GenerateNewPrivateKey().Neuter(),
+                    Version = 1,
+                    Endpoint = new Uri("https://example.com")
+                }
+            });
+
+        // Assert
+        var response = result.Result.Should().BeOfType<CreatedResult>()
+            .Which.Value.Should().BeOfType<CreateExternalEndpointResponse>().Which;
+
+        response.ReceiverId.Should().NotBeEmpty();
     }
 
     private static ControllerContext CreateContextWithUser(string subject)

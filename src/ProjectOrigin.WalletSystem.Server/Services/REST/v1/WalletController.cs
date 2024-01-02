@@ -192,7 +192,6 @@ public class WalletController : ControllerBase
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<CreateExternalEndpointResponse>> CreateExternalEndpoint(
         [FromServices] IUnitOfWork unitOfWork,
         [FromBody] CreateExternalEndpointRequest request
