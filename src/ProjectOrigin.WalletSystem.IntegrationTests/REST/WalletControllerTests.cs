@@ -434,6 +434,9 @@ public class WalletControllerTests : IClassFixture<PostgresDatabaseFixture>
             .Which.Value.Should().BeOfType<CreateExternalEndpointResponse>().Which;
 
         response.ReceiverId.Should().NotBeEmpty();
+
+        var endpointFound = await _unitOfWork.WalletRepository.GetExternalEndpoint(response.ReceiverId);
+        endpointFound.Should().NotBeNull();
     }
 
     private static ControllerContext CreateContextWithUser(string subject)
