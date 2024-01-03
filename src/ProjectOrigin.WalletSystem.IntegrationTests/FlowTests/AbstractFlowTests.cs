@@ -9,6 +9,7 @@ using Google.Protobuf;
 using Xunit;
 using System;
 using System.Linq;
+using Xunit.Sdk;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests;
 
@@ -74,7 +75,7 @@ public abstract class AbstractFlowTests : WalletSystemTestsBase, IClassFixture<R
             {
                 return await func();
             }
-            catch (Exception)
+            catch (XunitException)
             {
                 await Task.Delay(1000);
             }

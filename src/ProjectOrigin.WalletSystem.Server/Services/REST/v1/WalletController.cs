@@ -68,6 +68,8 @@ public class WalletController : ControllerBase
 
             await unitOfWork.WalletRepository.Create(newWallet);
 
+            unitOfWork.Commit();
+
             return Created(new Uri(serviceOptions.Value.EndpointAddress, $"/v1/wallets/{newWallet.Id}"), new CreateWalletResponse
             {
                 WalletId = newWallet.Id
@@ -173,6 +175,8 @@ public class WalletController : ControllerBase
 
         var walletEndpoint = await unitOfWork.WalletRepository.CreateWalletEndpoint(wallet.Id);
 
+        unitOfWork.Commit();
+
         return Created(null as string, new CreateWalletEndpointResponse
         {
             WalletReference = new WalletEndpointReference
@@ -209,6 +213,8 @@ public class WalletController : ControllerBase
             request.WalletReference.PublicKey,
             request.TextReference,
             request.WalletReference.Endpoint.ToString());
+
+        unitOfWork.Commit();
 
         return Created(null as string, new CreateExternalEndpointResponse
         {
