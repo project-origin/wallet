@@ -9,7 +9,7 @@ namespace ProjectOrigin.WalletSystem.Server.Serialization;
 
 public class IHDPublicKeyConverter : JsonConverter<IHDPublicKey>
 {
-    private IHDAlgorithm _algorithm;
+    private readonly IHDAlgorithm _algorithm;
 
     public IHDPublicKeyConverter(IHDAlgorithm algorithm)
     {

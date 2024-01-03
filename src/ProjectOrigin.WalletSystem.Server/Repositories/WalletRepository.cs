@@ -52,7 +52,7 @@ public class WalletRepository : IWalletRepository
     {
         var position = await GetNextNumberForId(walletId);
 
-        var wallet = await GetWallet(walletId);
+        var wallet = await GetWallet(walletId) ?? throw new InvalidOperationException("Wallet not found");
         var key = wallet.PrivateKey.Derive(position).Neuter();
 
         var newEndpoint = new WalletEndpoint
@@ -149,7 +149,7 @@ public class WalletRepository : IWalletRepository
 
         if (endpoint is null)
         {
-            var wallet = await GetWallet(walletId);
+            var wallet = await GetWallet(walletId) ?? throw new InvalidOperationException("Wallet not found");
             var nextWalletPosition = await GetNextNumberForId(walletId);
             var publicKey = wallet.PrivateKey.Derive(nextWalletPosition).Neuter();
 
