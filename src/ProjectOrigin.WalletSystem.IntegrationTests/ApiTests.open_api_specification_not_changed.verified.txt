@@ -8,7 +8,7 @@
     "/v1/certificates": {
       "get": {
         "tags": [
-          "Wallet"
+          "Certificates"
         ],
         "summary": "Gets all certificates in the wallet that are <b>available</b> for use.",
         "parameters": [
@@ -48,96 +48,10 @@
         }
       }
     },
-    "/v1/claims": {
-      "get": {
-        "tags": [
-          "Wallet"
-        ],
-        "summary": "Gets all claims in the wallet",
-        "parameters": [
-          {
-            "name": "start",
-            "in": "query",
-            "description": "The start of the time range in Unix time in seconds.",
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          },
-          {
-            "name": "end",
-            "in": "query",
-            "description": "The end of the time range in Unix time in seconds.",
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Returns all the indiviual claims.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ClaimResultList"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "If the user is not authenticated."
-          }
-        }
-      }
-    },
-    "/v1/transfers": {
-      "get": {
-        "tags": [
-          "Wallet"
-        ],
-        "summary": "Gets detailed list of all of the transfers that have been made to other wallets.",
-        "parameters": [
-          {
-            "name": "start",
-            "in": "query",
-            "description": "The start of the time range in Unix time in seconds.",
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          },
-          {
-            "name": "end",
-            "in": "query",
-            "description": "The end of the time range in Unix time in seconds.",
-            "schema": {
-              "type": "integer",
-              "format": "int64"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Returns the individual transferes within the filter.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TransferResultList"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "If the user is not authenticated."
-          }
-        }
-      }
-    },
     "/v1/aggregate-certificates": {
       "get": {
         "tags": [
-          "Wallet"
+          "Certificates"
         ],
         "summary": "Returns aggregates certificates that are <b>available</b> to use, based on the specified time zone and time range.",
         "parameters": [
@@ -204,10 +118,53 @@
         }
       }
     },
+    "/v1/claims": {
+      "get": {
+        "tags": [
+          "Claims"
+        ],
+        "summary": "Gets all claims in the wallet",
+        "parameters": [
+          {
+            "name": "start",
+            "in": "query",
+            "description": "The start of the time range in Unix time in seconds.",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "description": "The end of the time range in Unix time in seconds.",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns all the indiviual claims.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClaimResultList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "If the user is not authenticated."
+          }
+        }
+      }
+    },
     "/v1/aggregate-claims": {
       "get": {
         "tags": [
-          "Wallet"
+          "Claims"
         ],
         "summary": "Returns a list of aggregates claims for the authenticated user based on the specified time zone and time range.",
         "parameters": [
@@ -266,10 +223,53 @@
         }
       }
     },
+    "/v1/transfers": {
+      "get": {
+        "tags": [
+          "Transfers"
+        ],
+        "summary": "Gets detailed list of all of the transfers that have been made to other wallets.",
+        "parameters": [
+          {
+            "name": "start",
+            "in": "query",
+            "description": "The start of the time range in Unix time in seconds.",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "description": "The end of the time range in Unix time in seconds.",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns the individual transferes within the filter.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransferResultList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "If the user is not authenticated."
+          }
+        }
+      }
+    },
     "/v1/aggregate-transfers": {
       "get": {
         "tags": [
-          "Wallet"
+          "Transfers"
         ],
         "summary": "Returns a list of aggregates transfers, for all certificates transferred to another wallet for the authenticated user based.",
         "parameters": [
