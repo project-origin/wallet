@@ -1,14 +1,17 @@
 using System;
-using System.Buffers;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using AutoFixture;
 using FluentAssertions;
+using MassTransit;
+using MassTransit.Testing;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
 using ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures;
 using ProjectOrigin.WalletSystem.IntegrationTests.TestExtensions;
+using ProjectOrigin.WalletSystem.Server.CommandHandlers;
 using ProjectOrigin.WalletSystem.Server.Database;
 using ProjectOrigin.WalletSystem.Server.Services.REST.v1;
 using Xunit;
@@ -122,6 +125,69 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
 
         // Assert
         result.Result.Should().BeOfType<BadRequestObjectResult>();
+    }
+
+    [Fact]
+    public async Task ClaimCertificate_Unauthorized()
+    {
+        // Arrange
+        var controller = new ClaimsController();
+
+        await using var provider = new ServiceCollection()
+            .AddMassTransitTestHarness(x =>
+            {
+            })
+            .BuildServiceProvider(true);
+
+        // Act
+        var result = await controller.ClaimCertificate(
+            provider.GetRequiredService<ITestHarness>().Bus,
+            _fixture.Create<ClaimRequest>());
+
+        // Assert
+        result.Result.Should().BeOfType<UnauthorizedResult>();
+    }
+
+    [Fact]
+    public async void ClaimCertificate_PublishesCommand()
+    {
+        // Arrange
+        var subject = _fixture.Create<string>();
+        var request = _fixture.Create<ClaimRequest>();
+
+        await using var provider = new ServiceCollection()
+            .AddMassTransitTestHarness(x =>
+            {
+            })
+            .BuildServiceProvider(true);
+
+        var harness = provider.GetRequiredService<ITestHarness>();
+
+        await harness.Start();
+        var controller = new ClaimsController
+        {
+            ControllerContext = CreateContextWithUser(subject)
+        };
+
+        // Act
+        var result = await controller.ClaimCertificate(
+            harness.Bus,
+            request);
+
+        // Assert
+        result.Result.Should().BeOfType<AcceptedResult>();
+        var response = (result.Result as AcceptedResult)?.Value as ClaimResponse;
+        response.Should().NotBeNull();
+        var sentMessage = harness.Published.Select<ClaimCertificateCommand>().Should().ContainSingle();
+        var sentCommand = sentMessage.Which.Context.Message;
+
+        sentCommand.ClaimId.Should().Be(response!.ClaimRequestId);
+        sentCommand.Owner.Should().Be(subject);
+        sentCommand.ConsumptionRegistry.Should().Be(request.ConsumptionCertificateId.Registry);
+        sentCommand.ConsumptionCertificateId.Should().Be(request.ConsumptionCertificateId.StreamId);
+        sentCommand.ProductionRegistry.Should().Be(request.ProductionCertificateId.Registry);
+        sentCommand.ProductionCertificateId.Should().Be(request.ProductionCertificateId.StreamId);
+        sentCommand.Quantity.Should().Be(request.Quantity);
     }
 
     private static ControllerContext CreateContextWithUser(string subject)
