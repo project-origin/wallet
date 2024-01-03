@@ -55,7 +55,40 @@ public class RestFlowTest : AbstractFlowTests
         var walletResponse = await client.PostAsync("v1/wallets", ToJsonContent(new { })).ParseJson<CreateWalletResponse>();
 
         // create wallet endpoint
-        await client.PostAsync($"v1/wallets/{walletResponse.WalletId}/endpoints", ToJsonContent(new { })).ParseJson<CreateWalletEndpointResponse>();
+        var createEndpointResponse = await client.PostAsync($"v1/wallets/{walletResponse.WalletId}/endpoints", ToJsonContent(new { })).ParseJson<CreateWalletEndpointResponse>();
+
+        // issue certificate to registry
+        var position = 1;
+        var issuedCommitment = new PedersenCommitment.SecretCommitmentInfo(150);
+        var issuedEvent = await _registryFixture.IssueCertificate(
+            Electricity.V1.GranularCertificateType.Consumption,
+            issuedCommitment,
+            createEndpointResponse.WalletReference.PublicKey.Derive(position).GetPublicKey(),
+            new List<(string Key, string Value, byte[]? Salt)>());
+
+        // Act
+        // send slice to wallet
+        await client.PostAsync("v1/slices", ToJsonContent(new ReceiveRequest
+        {
+            PublicKey = createEndpointResponse.WalletReference.PublicKey.Export().ToArray(),
+            Position = (uint)position,
+            CertificateId = new FederatedStreamId
+            {
+                Registry = issuedEvent.CertificateId.Registry,
+                StreamId = Guid.Parse(issuedEvent.CertificateId.StreamId.Value),
+            },
+            Quantity = issuedCommitment.Message,
+            RandomR = issuedCommitment.BlindingValue.ToArray(),
+            HashedAttributes = new List<HashedAttribute>()
+        })).ParseJson<ReceiveResponse>();
+
+        // Assert
+        var certificates = await Timeout(async () =>
+        {
+            var response = await client.GetAsync("v1/certificates").ParseJson<ResultList<GranularCertificate>>();
+            response.Result.Should().HaveCount(1);
+            return response.Result;
+        }, TimeSpan.FromMinutes(1));
     }
 
     private static HttpContent ToJsonContent(object obj)
