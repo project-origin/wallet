@@ -24,9 +24,9 @@ public class WalletRepository : IWalletRepository
             wallet);
     }
 
-    public Task<Wallet> GetWallet(Guid walletId)
+    public Task<Wallet?> GetWallet(Guid walletId)
     {
-        return _connection.QuerySingleAsync<Wallet>(
+        return _connection.QuerySingleOrDefaultAsync<Wallet>(
             @"SELECT *
               FROM Wallets
               WHERE Id = @walletId",

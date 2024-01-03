@@ -16,6 +16,7 @@ using ProjectOrigin.WalletSystem.Server.Database.Postgres;
 using ProjectOrigin.WalletSystem.Server.Extensions;
 using ProjectOrigin.WalletSystem.Server.Options;
 using ProjectOrigin.WalletSystem.Server.Projections;
+using ProjectOrigin.WalletSystem.Server.Serialization;
 using ProjectOrigin.WalletSystem.Server.Services;
 using ProjectOrigin.WalletSystem.Server.Services.GRPC;
 using ProjectOrigin.WalletSystem.Server.Services.REST;
@@ -40,10 +41,14 @@ public class Startup
     {
         services.AddGrpc();
 
+        var algorithm = new Secp256k1Algorithm();
+        services.AddSingleton<IHDAlgorithm>(algorithm);
+
         services.AddControllers()
             .AddJsonOptions(o =>
             {
                 o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
+                o.JsonSerializerOptions.Converters.Add(new IHDPublicKeyConverter(algorithm));
             });
 
         services.AddSwaggerGen(o =>
@@ -116,10 +121,10 @@ public class Startup
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddSingleton<IDbConnectionFactory, PostgresConnectionFactory>();
-        services.AddSingleton<IHDAlgorithm, Secp256k1Algorithm>();
 
         services.AddSwaggerGen(options =>
         {
+            options.SchemaFilter<IHDPublicKeySchemaFilter>();
             var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
             var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
             options.IncludeXmlComments(xmlPath);

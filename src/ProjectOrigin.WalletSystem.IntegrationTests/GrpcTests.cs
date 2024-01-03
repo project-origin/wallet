@@ -58,7 +58,7 @@ public class GrpcTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
 
             var wallet = await walletRepository.GetWallet(endpoint!.WalletId);
             wallet.Should().NotBeNull();
-            wallet.Owner.Should().Be(subject);
+            wallet!.Owner.Should().Be(subject);
         }
     }
 

@@ -21,7 +21,7 @@ namespace ProjectOrigin.WalletSystem.Server.Services.GRPC;
 [Authorize]
 public class WalletService : V1.WalletService.WalletServiceBase
 {
-    private readonly string _walletSystemAddress;
+    private readonly Uri _walletSystemAddress;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IHDAlgorithm _hdAlgorithm;
     private readonly IBus _bus;
@@ -61,7 +61,7 @@ public class WalletService : V1.WalletService.WalletServiceBase
             WalletDepositEndpoint = new V1.WalletDepositEndpoint()
             {
                 Version = 1,
-                Endpoint = _walletSystemAddress,
+                Endpoint = _walletSystemAddress.ToString(),
                 PublicKey = ByteString.CopyFrom(endpoint.PublicKey.Export())
             }
         };
@@ -94,7 +94,7 @@ public class WalletService : V1.WalletService.WalletServiceBase
         var foundEndpoint = await _unitOfWork.WalletRepository.GetWalletEndpoint(ownerPublicKey);
         if (foundEndpoint is not null)
         {
-            var wallet = await _unitOfWork.WalletRepository.GetWallet(foundEndpoint.WalletId);
+            var wallet = await _unitOfWork.WalletRepository.GetWallet(foundEndpoint.WalletId) ?? throw new InvalidOperationException("Wallet not found.");
             if (wallet.Owner == subject)
             {
                 throw new RpcException(new Status(StatusCode.InvalidArgument, "Cannot create receiver deposit endpoint to self."));
