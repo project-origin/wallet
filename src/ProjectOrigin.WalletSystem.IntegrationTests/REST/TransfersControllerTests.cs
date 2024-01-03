@@ -4,10 +4,14 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using AutoFixture;
 using FluentAssertions;
+using MassTransit;
+using MassTransit.Testing;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
 using ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures;
 using ProjectOrigin.WalletSystem.IntegrationTests.TestExtensions;
+using ProjectOrigin.WalletSystem.Server.CommandHandlers;
 using ProjectOrigin.WalletSystem.Server.Database;
 using ProjectOrigin.WalletSystem.Server.Services.REST.v1;
 using Xunit;
@@ -153,6 +157,68 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
         result.Result.Should().BeOfType<BadRequestObjectResult>();
     }
 
+    [Fact]
+    public async Task TransferCertificate_Unauthorized()
+    {
+        // Arrange
+        var controller = new TransfersController();
+
+        await using var provider = new ServiceCollection()
+            .AddMassTransitTestHarness(x =>
+            {
+            })
+            .BuildServiceProvider(true);
+
+        // Act
+        var result = await controller.TransferCertificate(
+            provider.GetRequiredService<ITestHarness>().Bus,
+            _fixture.Create<TransferRequest>());
+
+        // Assert
+        result.Result.Should().BeOfType<UnauthorizedResult>();
+    }
+
+    [Fact]
+    public async void TransferCertificate_PublishesCommand()
+    {
+
+        // Arrange
+        var subject = _fixture.Create<string>();
+        var request = _fixture.Create<TransferRequest>();
+
+        await using var provider = new ServiceCollection()
+            .AddMassTransitTestHarness(x =>
+            {
+            })
+            .BuildServiceProvider(true);
+
+        var harness = provider.GetRequiredService<ITestHarness>();
+
+        await harness.Start();
+        var controller = new TransfersController
+        {
+            ControllerContext = CreateContextWithUser(subject)
+        };
+
+        // Act
+        var result = await controller.TransferCertificate(
+            harness.Bus,
+            request);
+
+        // Assert
+        result.Result.Should().BeOfType<AcceptedResult>();
+        var response = (result.Result as AcceptedResult)?.Value as TransferResponse;
+        response.Should().NotBeNull();
+        var sentMessage = harness.Published.Select<TransferCertificateCommand>().Should().ContainSingle();
+        var sentCommand = sentMessage.Which.Context.Message;
+
+        sentCommand.TransferRequestId.Should().Be(response!.TransferRequestId);
+        sentCommand.Owner.Should().Be(subject);
+        sentCommand.Registry.Should().Be(request.CertificateId.Registry);
+        sentCommand.CertificateId.Should().Be(request.CertificateId.StreamId);
+        sentCommand.Quantity.Should().Be(request.Quantity);
+        sentCommand.Receiver.Should().Be(request.ReceiverId);
+    }
 
     private static ControllerContext CreateContextWithUser(string subject)
     {

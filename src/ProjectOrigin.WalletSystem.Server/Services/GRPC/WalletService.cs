@@ -118,6 +118,7 @@ public class WalletService : V1.WalletService.WalletServiceBase
         var owner = context.GetSubject();
         var command = new TransferCertificateCommand
         {
+            TransferRequestId = Guid.NewGuid(),
             Owner = owner,
             Registry = request.CertificateId.Registry,
             CertificateId = new Guid(request.CertificateId.StreamId.Value),
@@ -128,7 +129,13 @@ public class WalletService : V1.WalletService.WalletServiceBase
 
         _bus.Publish(command);
 
-        return Task.FromResult(new TransferResponse());
+        return Task.FromResult(new TransferResponse()
+        {
+            TransferId = new Uuid
+            {
+                Value = command.TransferRequestId.ToString()
+            }
+        });
     }
 
     public override Task<ClaimResponse> ClaimCertificates(ClaimRequest request, ServerCallContext context)
