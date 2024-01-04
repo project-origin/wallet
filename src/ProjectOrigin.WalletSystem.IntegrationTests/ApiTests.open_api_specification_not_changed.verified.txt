@@ -924,67 +924,6 @@
         "additionalProperties": false,
         "description": "Response to create a new wallet."
       },
-      "CreateExternalEndpointRequest": {
-        "type": "object",
-        "properties": {
-          "walletReference": {
-            "$ref": "#/components/schemas/WalletEndpointReference"
-          },
-          "textReference": {
-            "type": "string",
-            "description": "The text reference for the wallet, one wants to create a link to."
-          }
-        },
-        "additionalProperties": false,
-        "description": "Request to create a new external endpoint."
-      },
-      "CreateExternalEndpointResponse": {
-        "type": "object",
-        "properties": {
-          "receiverId": {
-            "type": "string",
-            "description": "The ID of the created external endpoint.",
-            "format": "uuid"
-          }
-        },
-        "additionalProperties": false,
-        "description": "Response to create a new external endpoint."
-      },
-      "CreateWalletEndpointResponse": {
-        "type": "object",
-        "properties": {
-          "walletReference": {
-            "$ref": "#/components/schemas/WalletEndpointReference"
-          }
-        },
-        "additionalProperties": false,
-        "description": "Response to create a new wallet endpoint on the users wallet."
-      },
-      "CreateWalletRequest": {
-        "type": "object",
-        "properties": {
-          "privateKey": {
-            "type": "string",
-            "description": "The private key to import. If not provided, a private key will be generated.",
-            "format": "byte",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false,
-        "description": "Request to create a new wallet."
-      },
-      "CreateWalletResponse": {
-        "type": "object",
-        "properties": {
-          "walletId": {
-            "type": "string",
-            "description": "The ID of the created wallet.",
-            "format": "uuid"
-          }
-        },
-        "additionalProperties": false,
-        "description": "Response to create a new wallet."
-      },
       "FederatedStreamId": {
         "type": "object",
         "properties": {
