@@ -8,7 +8,7 @@ namespace ProjectOrigin.WalletSystem.Server.Repositories;
 public interface IWalletRepository
 {
     Task<int> Create(Wallet wallet);
-    Task<Wallet> GetWallet(Guid walletId);
+    Task<Wallet?> GetWallet(Guid walletId);
     Task<Wallet?> GetWallet(string owner);
 
     Task<WalletEndpoint> CreateWalletEndpoint(Guid walletId);

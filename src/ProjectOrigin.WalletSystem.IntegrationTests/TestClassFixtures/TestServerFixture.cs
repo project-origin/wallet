@@ -122,6 +122,8 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures
 
         public HttpClient CreateHttpClient()
         {
+            EnsureServer();
+
             var client = _server!.CreateClient();
             return client;
         }
