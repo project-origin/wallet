@@ -30,15 +30,6 @@ public record GranularCertificate
     public required CertificateType CertificateType { get; init; }
     public required Dictionary<string, string> Attributes { get; init; }
 }
-public record Transfer
-{
-    public required FederatedStreamId FederatedStreamId { get; init; }
-    public required string ReceiverId { get; init; }
-    public required long Quantity { get; init; }
-    public required long Start { get; init; }
-    public required long End { get; init; }
-    public required string GridArea { get; init; }
-}
 
 public record AggregatedCertificates
 {
@@ -46,10 +37,4 @@ public record AggregatedCertificates
     public required long End { get; init; }
     public required long Quantity { get; init; }
     public required CertificateType Type { get; init; }
-}
-public record AggregatedTransfers
-{
-    public required long Start { get; init; }
-    public required long End { get; init; }
-    public required long Quantity { get; init; }
 }
