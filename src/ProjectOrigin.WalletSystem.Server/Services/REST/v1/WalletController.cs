@@ -229,7 +229,7 @@ public class WalletController : ControllerBase
 /// <summary>
 /// A wallet record
 /// </summary>
-public record WalletRecord
+public record WalletRecord()
 {
     public required Guid Id { get; init; }
     public required IHDPublicKey PublicKey { get; init; }
@@ -260,7 +260,7 @@ public record CreateWalletResponse()
 /// <summary>
 /// Response to create a new wallet endpoint on the users wallet.
 /// </summary>
-public record CreateWalletEndpointResponse
+public record CreateWalletEndpointResponse()
 {
     /// <summary>
     /// Reference object to the wallet endpoint created.
@@ -272,7 +272,7 @@ public record CreateWalletEndpointResponse
 /// <summary>
 /// Request to create a new external endpoint.
 /// </summary>
-public record CreateExternalEndpointRequest
+public record CreateExternalEndpointRequest()
 {
     /// <summary>
     /// The wallet reference to the wallet, one wants to create a link to.
@@ -288,7 +288,7 @@ public record CreateExternalEndpointRequest
 /// <summary>
 /// Response to create a new external endpoint.
 /// </summary>
-public record CreateExternalEndpointResponse
+public record CreateExternalEndpointResponse()
 {
     /// <summary>
     /// The ID of the created external endpoint.
@@ -296,7 +296,7 @@ public record CreateExternalEndpointResponse
     public required Guid ReceiverId { get; init; }
 }
 
-public record WalletEndpointReference
+public record WalletEndpointReference()
 {
     /// <summary>
     /// The version of the ReceiveSlice API.

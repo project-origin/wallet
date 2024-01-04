@@ -91,26 +91,9 @@ public class RestFlowTest : AbstractFlowTests
         }, TimeSpan.FromMinutes(1));
     }
 
-    private static HttpContent ToJsonContent(object obj)
+    private static StringContent ToJsonContent(object obj)
     {
         var json = JsonSerializer.Serialize(obj);
         return new StringContent(json, Encoding.UTF8, "application/json");
-    }
-}
-
-
-public static class HttpTaskExtensions
-{
-    public static async Task<T> ParseJson<T>(this Task<HttpResponseMessage> httpResponse)
-    {
-        var response = await httpResponse;
-        response.IsSuccessStatusCode.Should().BeTrue();
-        var responseString = await response.Content.ReadAsStringAsync();
-
-        var options = new JsonSerializerOptions(JsonSerializerDefaults.Web);
-        options.Converters.Add(new IHDPublicKeyConverter(new Secp256k1Algorithm()));
-        options.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
-
-        return JsonSerializer.Deserialize<T>(responseString, options) ?? throw new Exception("Failed to deserialize");
     }
 }

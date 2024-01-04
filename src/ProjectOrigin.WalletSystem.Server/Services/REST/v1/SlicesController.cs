@@ -85,7 +85,7 @@ public class SlicesController : ControllerBase
 /// <summary>
 /// Request to receive a certificate-slice from another wallet.
 /// </summary>
-public record ReceiveRequest
+public record ReceiveRequest()
 {
     /// <summary>
     /// The public key of the receiving wallet.
@@ -94,6 +94,7 @@ public record ReceiveRequest
 
     /// <summary>
     /// The sub-position of the publicKey used on the slice on the registry.
+    /// </summary>
     public required uint Position { get; init; }
 
     /// <summary>
@@ -120,7 +121,7 @@ public record ReceiveRequest
 /// <summary>
 /// Hashed attribute with salt.
 /// </summary>
-public record HashedAttribute
+public record HashedAttribute()
 {
 
     /// <summary>
@@ -142,6 +143,6 @@ public record HashedAttribute
 /// <summary>
 /// Response to receive a certificate-slice from another wallet.
 /// </summary>
-public record ReceiveResponse { }
+public record ReceiveResponse() { }
 
 #endregion
