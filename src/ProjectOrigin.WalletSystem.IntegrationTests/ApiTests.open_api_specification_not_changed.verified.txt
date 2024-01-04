@@ -917,6 +917,7 @@
           },
           "position": {
             "type": "integer",
+            "description": "The sub-position of the publicKey used on the slice on the registry.",
             "format": "int32"
           },
           "certificateId": {
