@@ -94,6 +94,7 @@ public record ReceiveRequest()
 
     /// <summary>
     /// The sub-position of the publicKey used on the slice on the registry.
+    /// </summary>
     public required uint Position { get; init; }
 
     /// <summary>
