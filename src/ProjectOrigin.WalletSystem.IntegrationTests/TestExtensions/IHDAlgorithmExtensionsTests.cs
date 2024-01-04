@@ -40,7 +40,6 @@ public class IHDAlgorithmExtensionsTests
         hdPrivateKey.Should().BeNull();
     }
 
-
     [Fact]
     public void Valid_PublicKey()
     {

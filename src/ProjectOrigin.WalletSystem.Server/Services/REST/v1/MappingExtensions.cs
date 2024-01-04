@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace ProjectOrigin.WalletSystem.Server.Services.REST.v1;
 
-public static class MapperV1
+public static class MappingExtensions
 {
     public static CertificateType MapToV1(this GranularCertificateType granularCertificateType) =>
         granularCertificateType switch

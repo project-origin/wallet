@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
@@ -92,3 +93,75 @@ public class CertificatesController : ControllerBase
         };
     }
 }
+
+#region Records
+
+/// <summary>
+/// A certificate that is available to use in the wallet.
+/// </summary>
+public record GranularCertificate()
+{
+    /// <summary>
+    /// The id of the certificate.
+    /// </summary>
+    public required FederatedStreamId FederatedStreamId { get; init; }
+
+    /// <summary>
+    /// The quantity available on the certificate.
+    /// </summary>
+    public required uint Quantity { get; init; }
+
+    /// <summary>
+    /// The start of the certificate.
+    /// </summary>
+    public required long Start { get; init; }
+
+    /// <summary>
+    /// The end of the certificate.
+    /// </summary>
+    public required long End { get; init; }
+
+    /// <summary>
+    /// The Grid Area of the certificate.
+    /// </summary>
+    public required string GridArea { get; init; }
+
+    /// <summary>
+    /// The type of certificate (production or consumption).
+    /// </summary>
+    public required CertificateType CertificateType { get; init; }
+
+    /// <summary>
+    /// The attributes of the certificate.
+    /// </summary>
+    public required Dictionary<string, string> Attributes { get; init; }
+}
+
+
+/// <summary>
+/// A result of aggregated certificates that is available to use in the wallet.
+/// </summary>
+public record AggregatedCertificates()
+{
+    /// <summary>
+    /// The start of the aggregated period.
+    /// </summary>
+    public required long Start { get; init; }
+
+    /// <summary>
+    /// The end of the aggregated period.
+    /// </summary>
+    public required long End { get; init; }
+
+    /// <summary>
+    /// The quantity of the aggregated certificates.
+    /// </summary>
+    public required long Quantity { get; init; }
+
+    /// <summary>
+    /// The type of the aggregated certificates.
+    /// </summary>
+    public required CertificateType Type { get; init; }
+}
+
+#endregion
