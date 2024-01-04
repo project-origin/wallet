@@ -159,6 +159,47 @@
             "description": "If the user is not authenticated."
           }
         }
+      },
+      "post": {
+        "tags": [
+          "Claims"
+        ],
+        "summary": "Queues a request to claim two certificate for a given quantity.",
+        "requestBody": {
+          "description": "The claim request",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClaimRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClaimRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClaimRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Claim request has been queued for processing.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClaimResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "If the user is not authenticated."
+          }
+        }
       }
     },
     "/v1/aggregate-claims": {
@@ -410,18 +451,22 @@
         "properties": {
           "start": {
             "type": "integer",
+            "description": "The start of the aggregated period.",
             "format": "int64"
           },
           "end": {
             "type": "integer",
+            "description": "The end of the aggregated period.",
             "format": "int64"
           },
           "quantity": {
             "type": "integer",
+            "description": "The quantity of the aggregated claims.",
             "format": "int64"
           }
         },
-        "additionalProperties": false
+        "additionalProperties": false,
+        "description": "A result of aggregated claims."
       },
       "AggregatedClaimsResultList": {
         "type": "object",
@@ -494,7 +539,38 @@
             "$ref": "#/components/schemas/ClaimedCertificate"
           }
         },
-        "additionalProperties": false
+        "additionalProperties": false,
+        "description": "A claim record representing a claim of a production and consumption certificate."
+      },
+      "ClaimRequest": {
+        "type": "object",
+        "properties": {
+          "productionCertificateId": {
+            "$ref": "#/components/schemas/FederatedStreamId"
+          },
+          "consumptionCertificateId": {
+            "$ref": "#/components/schemas/FederatedStreamId"
+          },
+          "quantity": {
+            "type": "integer",
+            "description": "The quantity of the certificates to claim.",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false,
+        "description": "A request to claim a production and consumption certificate."
+      },
+      "ClaimResponse": {
+        "type": "object",
+        "properties": {
+          "claimRequestId": {
+            "type": "string",
+            "description": "The id of the claim request.",
+            "format": "uuid"
+          }
+        },
+        "additionalProperties": false,
+        "description": "A response to a claim request."
       },
       "ClaimResultList": {
         "type": "object",
@@ -516,23 +592,28 @@
           },
           "start": {
             "type": "integer",
+            "description": "The start period of the claimed certificate.",
             "format": "int64"
           },
           "end": {
             "type": "integer",
+            "description": "The end period the claimed certificate.",
             "format": "int64"
           },
           "gridArea": {
-            "type": "string"
+            "type": "string",
+            "description": "The Grid Area of the claimed certificate."
           },
           "attributes": {
             "type": "object",
             "additionalProperties": {
               "type": "string"
-            }
+            },
+            "description": "The attributes of the claimed certificate."
           }
         },
-        "additionalProperties": false
+        "additionalProperties": false,
+        "description": "Info record of a claimed certificate."
       },
       "FederatedStreamId": {
         "type": "object",
