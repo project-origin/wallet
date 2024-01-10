@@ -7,6 +7,7 @@ using Dapper;
 using ProjectOrigin.WalletSystem.Server.Activities.Exceptions;
 using ProjectOrigin.WalletSystem.Server.Extensions;
 using ProjectOrigin.WalletSystem.Server.Models;
+using ProjectOrigin.WalletSystem.Server.ViewModels;
 
 namespace ProjectOrigin.WalletSystem.Server.Repositories;
 
@@ -100,53 +101,119 @@ public class CertificateRepository : ICertificateRepository
         return certsDictionary.Values.FirstOrDefault();
     }
 
-    public async Task<IEnumerable<CertificateViewModel>> GetAllOwnedCertificates(string owner, CertificatesFilter filter)
+    public async Task<PageResult<CertificateViewModel>> QueryAvailableCertificates(CertificatesFilter filter)
     {
-        var certsDictionary = new Dictionary<Guid, CertificateViewModel>();
+        string sql = @"
+            CREATE TEMPORARY TABLE certificates_work_table ON COMMIT DROP AS (
+                SELECT
+                    certificate_id,
+                    registry_name,
+                    certificate_type,
+                    grid_area,
+                    start_date,
+                    end_date,
+                    quantity,
+                    wallet_id
+                FROM
+                    certificates_query_model
+                WHERE
+                    owner = @owner
+                    AND (@start IS NULL OR start_date >= @start)
+                    AND (@end IS NULL OR end_date <= @end)
+                    AND (@type IS NULL OR certificate_type = @type)
+            );
+            SELECT count(*) FROM certificates_work_table;
+            SELECT * FROM certificates_work_table LIMIT @limit OFFSET @skip;
+            SELECT attributes.registry_name, attributes.certificate_id, attributes.attribute_key as key, attributes.attribute_value as value, attributes.attribute_type as type
+            FROM attributes_view attributes
+            WHERE (wallet_id IS NULL AND (registry_name, certificate_id) IN (SELECT registry_name, certificate_id FROM certificates_work_table))
+                OR (wallet_id, registry_name, certificate_id) IN (SELECT wallet_id, registry_name, certificate_id FROM certificates_work_table)
+            ";
 
-        await _connection.QueryAsync<CertificateViewModel, SliceViewModel, CertificateAttribute, CertificateViewModel>(
-            @"SELECT c.*, s.Id AS slice_id, s.quantity, a.attribute_key as key, a.attribute_value as value, a.attribute_type as type
-              FROM Wallets w
-              INNER JOIN wallet_endpoints re
-                ON w.id = re.wallet_id
-              INNER JOIN wallet_slices s
-                ON re.Id = s.wallet_endpoint_id
-              INNER JOIN certificates c
-                ON s.certificate_id = c.id
-              LEFT JOIN attributes_view a
-                ON c.id = a.certificate_id
-                AND c.registry_name = a.registry_name
-                AND (a.wallet_id = w.id OR a.wallet_id IS NULL)
-              WHERE w.owner = @owner
-                AND s.state = @sliceState
-                AND (@start IS NULL OR c.start_date >= @start)
-                AND (@end IS NULL OR c.end_date <= @end)
-                AND (@type IS NULL OR c.certificate_type = @type)
-                ",
-            (cert, slice, atr) =>
-            {
-                if (!certsDictionary.TryGetValue(cert.Id, out var certificate))
-                {
-                    certificate = cert;
-                    certsDictionary.Add(cert.Id, cert);
-                }
-                if (slice != null && !certificate.Slices.Contains(slice))
-                    certificate.Slices.Add(slice);
-                if (atr != null && atr.Key != null && atr.Value != null && !certificate.Attributes.Contains(atr))
-                    certificate.Attributes.Add(atr);
-                return certificate;
-            },
-            splitOn: "slice_id, key",
-            param: new
-            {
-                owner,
-                sliceState = (int)WalletSliceState.Available,
-                start = filter.Start,
-                end = filter.End,
-                type = filter.Type,
-            });
+        using (var gridReader = await _connection.QueryMultipleAsync(sql, filter))
+        {
+            var totalCouunt = gridReader.ReadSingle<int>();
+            var certificates = gridReader.Read<CertificateViewModel>();
+            var attributes = gridReader.Read<ExtendedAttribute>();
 
-        return certsDictionary.Values;
+            foreach (var certificate in certificates)
+            {
+                certificate.Attributes.AddRange(attributes
+                    .Where(attr => attr.RegistryName == certificate.RegistryName
+                            && attr.CertificateId == certificate.CertificateId));
+            }
+
+            return new PageResult<CertificateViewModel>()
+            {
+                Items = certificates,
+                TotalCount = totalCouunt,
+                Count = certificates.Count(),
+                Offset = filter.Skip,
+                Limit = filter.Limit
+            };
+        }
+    }
+
+    public async Task<PageResult<AggregatedCertificatesViewModel>> QueryAvailableCertificatesAggregated(CertificatesFilter filter, TimeAggregate timeAggregate, string timeZone)
+    {
+        string sql = @"
+            CREATE TEMPORARY TABLE certificates_work_table ON COMMIT DROP AS (
+                SELECT *
+                FROM (
+                    SELECT
+                        certificate_type,
+                        min(start_date) as start_date,
+                        max(end_date) as end_date,
+                        sum(quantity) as quantity
+                    FROM
+                        certificates_query_model
+                    WHERE
+                        owner = @owner
+                        AND (@start IS NULL OR start_date >= @start)
+                        AND (@end IS NULL OR end_date <= @end)
+                        AND (@type IS NULL OR certificate_type = @type)
+                    GROUP BY
+                        CASE
+                            WHEN @timeAggregate = 'total' THEN NULL
+                            WHEN @timeAggregate = 'quarterhour' THEN date_trunc('hour', start_date AT TIME ZONE @timeZone) + INTERVAL '15 min' * ROUND(EXTRACT(MINUTE FROM start_date AT TIME ZONE @timeZone) / 15.0)
+                            WHEN @timeAggregate = 'actual' THEN start_date AT TIME ZONE @timeZone
+                            ELSE date_trunc(@timeAggregate, start_date AT TIME ZONE @timeZone)
+                        END,
+                        certificate_type
+                    ) as aggregates
+                ORDER BY
+                    start_date,
+                    certificate_type
+            );
+            SELECT count(*) FROM certificates_work_table;
+            SELECT * FROM certificates_work_table LIMIT @limit OFFSET @skip;
+            ";
+
+        using (var gridReader = await _connection.QueryMultipleAsync(sql, new
+        {
+            filter.Owner,
+            filter.Start,
+            filter.End,
+            filter.Type,
+            filter.Skip,
+            filter.Limit,
+            timeAggregate = timeAggregate.ToString().ToLower(),
+            timeZone
+
+        }))
+        {
+            var totalCouunt = gridReader.ReadSingle<int>();
+            var certificates = gridReader.Read<AggregatedCertificatesViewModel>();
+
+            return new PageResult<AggregatedCertificatesViewModel>()
+            {
+                Items = certificates,
+                TotalCount = totalCouunt,
+                Count = certificates.Count(),
+                Offset = filter.Skip,
+                Limit = filter.Limit
+            };
+        }
     }
 
     public Task<IEnumerable<WalletSlice>> GetOwnersAvailableSlices(string registryName, Guid certificateId, string owner)

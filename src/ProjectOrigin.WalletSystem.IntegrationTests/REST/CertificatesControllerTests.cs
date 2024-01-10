@@ -37,6 +37,8 @@ public class CertificatesControllerTests : IClassFixture<PostgresDatabaseFixture
         var result = await controller.GetCertificates(
             _unitOfWork,
             null,
+            null,
+            null,
             null);
 
         // Assert
@@ -90,7 +92,8 @@ public class CertificatesControllerTests : IClassFixture<PostgresDatabaseFixture
             timezone,
             queryStartDate.ToUnixTimeSeconds(),
             queryEndDate.ToUnixTimeSeconds(),
-            type);
+            type,
+            null);
 
         // Assert
         result.Value.Should().NotBeNull();
@@ -115,6 +118,7 @@ public class CertificatesControllerTests : IClassFixture<PostgresDatabaseFixture
             _unitOfWork,
             TimeAggregate.Day,
             "invalid-time-zone",
+            null,
             null,
             null,
             null);

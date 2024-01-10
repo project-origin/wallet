@@ -30,5 +30,11 @@
         }
       }
     }
-  ]
+  ],
+  metadata: {
+    count: 1,
+    offset: 0,
+    limit: 2147483647,
+    total: 1
+  }
 }

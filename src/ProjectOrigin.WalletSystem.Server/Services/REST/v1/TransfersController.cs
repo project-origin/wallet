@@ -53,7 +53,14 @@ public class TransfersController : ControllerBase
                 End = t.EndDate.ToUnixTimeSeconds(),
                 Quantity = t.Quantity,
                 GridArea = t.GridArea,
-            })
+            }),
+            Metadata = new PageInfo()
+            {
+                Count = transfers.Count(),
+                Limit = int.MaxValue,
+                Offset = 0,
+                Total = transfers.Count(),
+            }
         };
     }
 
@@ -99,7 +106,14 @@ public class TransfersController : ControllerBase
                     Quantity = group.Sum(transfer => transfer.Quantity),
                     Start = group.Min(transfer => transfer.StartDate).ToUnixTimeSeconds(),
                     End = group.Max(transfer => transfer.EndDate).ToUnixTimeSeconds(),
-                })
+                }),
+            Metadata = new PageInfo()
+            {
+                Count = transfers.Count(),
+                Limit = int.MaxValue,
+                Offset = 0,
+                Total = transfers.Count(),
+            }
         };
     }
 

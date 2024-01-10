@@ -71,14 +71,15 @@ public class WalletService : V1.WalletService.WalletServiceBase
     {
         var subject = context.GetSubject();
 
-        var certificates = await _unitOfWork.CertificateRepository.GetAllOwnedCertificates(subject, new CertificatesFilter
+        var result = await _unitOfWork.CertificateRepository.QueryAvailableCertificates(new CertificatesFilter
         {
+            Owner = subject,
             Start = request.Filter?.Start.ToNullableDateTimeOffset(),
             End = request.Filter?.End.ToNullableDateTimeOffset(),
         });
 
         var response = new QueryResponse();
-        foreach (var gc in certificates)
+        foreach (var gc in result.Items)
         {
             response.GranularCertificates.Add(gc.ToProto());
         }

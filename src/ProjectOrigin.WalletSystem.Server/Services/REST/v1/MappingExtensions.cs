@@ -1,4 +1,5 @@
 using ProjectOrigin.WalletSystem.Server.Models;
+using ProjectOrigin.WalletSystem.Server.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,9 +27,9 @@ public static class MappingExtensions
             FederatedStreamId = new()
             {
                 Registry = vm.RegistryName,
-                StreamId = vm.Id
+                StreamId = vm.CertificateId
             },
-            Quantity = (uint)vm.Slices.Sum(slice => slice.Quantity),
+            Quantity = vm.Quantity,
             Start = vm.StartDate.ToUnixTimeSeconds(),
             End = vm.EndDate.ToUnixTimeSeconds(),
             GridArea = vm.GridArea,

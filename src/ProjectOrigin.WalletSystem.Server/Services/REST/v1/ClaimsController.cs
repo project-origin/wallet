@@ -40,7 +40,17 @@ public class ClaimsController : ControllerBase
             End = end != null ? DateTimeOffset.FromUnixTimeSeconds(end.Value) : null,
         });
 
-        return new ResultList<Claim> { Result = claims.Select(c => c.MapToV1()) };
+        return new ResultList<Claim>
+        {
+            Result = claims.Select(c => c.MapToV1()),
+            Metadata = new PageInfo()
+            {
+                Count = claims.Count(),
+                Limit = int.MaxValue,
+                Offset = 0,
+                Total = claims.Count(),
+            }
+        };
     }
 
     /// <summary>
@@ -85,7 +95,14 @@ public class ClaimsController : ControllerBase
                     Quantity = group.Sum(claim => claim.Quantity),
                     Start = group.Min(claim => claim.ProductionStart).ToUnixTimeSeconds(),
                     End = group.Max(claim => claim.ProductionEnd).ToUnixTimeSeconds(),
-                })
+                }),
+            Metadata = new PageInfo()
+            {
+                Count = claims.Count(),
+                Limit = int.MaxValue,
+                Offset = 0,
+                Total = claims.Count(),
+            }
         };
     }
 

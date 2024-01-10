@@ -167,11 +167,14 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         await _repository.InsertWalletSlice(slice3);
         await _repository.InsertWalletSlice(sliceWithDifferentOwner);
 
-        var certificates = await _repository.GetAllOwnedCertificates(owner1, new CertificatesFilter());
+        var result = await _repository.QueryAvailableCertificates(new CertificatesFilter
+        {
+            Owner = owner1
+        });
 
-        certificates.Should().HaveCount(2).And.Satisfy(
-            c => c.Id == certificate1.Id && c.Slices.Sum(x => x.Quantity) == slice1.Quantity + slice2.Quantity,
-            c => c.Id == certificate2.Id && c.Slices.Sum(x => x.Quantity) == slice3.Quantity
+        result.Items.Should().HaveCount(2).And.Satisfy(
+            c => c.CertificateId == certificate1.Id && c.Quantity == slice1.Quantity + slice2.Quantity,
+            c => c.CertificateId == certificate2.Id && c.Quantity == slice3.Quantity
         );
     }
 
@@ -233,14 +236,15 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         await _repository.InsertWalletSlice(consSlice);
         await _repository.InsertWalletSlice(sliceWithDifferentOwner);
 
-        var certificates = await _repository.GetAllOwnedCertificates(owner1, new CertificatesFilter
+        var result = await _repository.QueryAvailableCertificates(new CertificatesFilter
         {
+            Owner = owner1,
             Type = GranularCertificateType.Consumption
         });
 
-        certificates.Should().HaveCount(1).And.Satisfy(
-            foundCertificate => foundCertificate.Id == consumptionCertificate.Id
-                && foundCertificate.Slices.Sum(x => x.Quantity) == consSlice.Quantity
+        result.Items.Should().HaveCount(1).And.Satisfy(
+            foundCertificate => foundCertificate.CertificateId == consumptionCertificate.Id
+                && foundCertificate.Quantity == consSlice.Quantity
         );
     }
 
@@ -253,13 +257,14 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
 
         await CreateCertificatesAndSlices(wallet, 5, startDate);
 
-        var certificates = await _repository.GetAllOwnedCertificates(owner, new CertificatesFilter
+        var result = await _repository.QueryAvailableCertificates(new CertificatesFilter
         {
+            Owner = owner,
             Start = startDate,
             End = startDate.AddHours(4)
         });
 
-        certificates.Should().HaveCount(4);
+        result.Items.Should().HaveCount(4);
     }
 
     [Fact]
@@ -272,12 +277,13 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
 
         await CreateCertificatesAndSlices(wallet, numberOfCerts, startDate);
 
-        var certificates = await _repository.GetAllOwnedCertificates(owner, new CertificatesFilter
+        var result = await _repository.QueryAvailableCertificates(new CertificatesFilter
         {
+            Owner = owner,
             Start = startDate.AddHours(numberOfCerts - 4)
         });
 
-        certificates.Should().HaveCount(4);
+        result.Items.Should().HaveCount(4);
     }
 
     [Fact]
@@ -290,12 +296,13 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
 
         await CreateCertificatesAndSlices(wallet, numberOfCerts, startDate);
 
-        var certificates = await _repository.GetAllOwnedCertificates(owner, new CertificatesFilter
+        var result = await _repository.QueryAvailableCertificates(new CertificatesFilter
         {
+            Owner = owner,
             End = startDate.AddHours(4)
         });
 
-        certificates.Should().HaveCount(4);
+        result.Items.Should().HaveCount(4);
     }
 
     [Fact]
@@ -352,12 +359,15 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         await _repository.InsertWalletSlice(slice);
 
         // Act
-        var certificates = await _repository.GetAllOwnedCertificates(owner, new CertificatesFilter());
+        var result = await _repository.QueryAvailableCertificates(new CertificatesFilter
+        {
+            Owner = owner
+        });
 
         // Assert
-        certificates.Should().HaveCount(1).And.Satisfy(
-            c => c.Id == certificate.Id
-                 && c.Slices.Sum(x => x.Quantity) == slice.Quantity
+        result.Items.Should().HaveCount(1).And.Satisfy(
+            c => c.CertificateId == certificate.Id
+                 && c.Quantity == slice.Quantity
                  && c.Attributes.Count == 3
                  && c.Attributes.SingleOrDefault(x => x.Key == assetIdWalletAttribute.Key && x.Value == assetIdWalletAttribute.Value) != null
         );
@@ -394,10 +404,13 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         await _repository.InsertWalletSlice(slice);
         await _repository.SetWalletSliceState(slice.Id, sliceState);
 
-        var certificates = await _repository.GetAllOwnedCertificates(owner, new CertificatesFilter());
+        var result = await _repository.QueryAvailableCertificates(new CertificatesFilter
+        {
+            Owner = owner
+        });
 
         // Assert
-        certificates.Should().HaveCount(expectedCertificateCount);
+        result.Items.Should().HaveCount(expectedCertificateCount);
     }
 
     [Fact]
