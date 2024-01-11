@@ -41,6 +41,7 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
         var result = await controller.GetClaims(
             _unitOfWork,
             null,
+            null,
             null);
 
         // Assert
@@ -95,7 +96,8 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
             TimeAggregate.Day,
             timezone,
             queryStartDate.ToUnixTimeSeconds(),
-            queryEndDate.ToUnixTimeSeconds());
+            queryEndDate.ToUnixTimeSeconds(),
+            null);
 
         // Assert
         result.Value.Should().NotBeNull();
@@ -120,6 +122,7 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
             _unitOfWork,
             TimeAggregate.Day,
             "invalid-time-zone",
+            null,
             null,
             null);
 

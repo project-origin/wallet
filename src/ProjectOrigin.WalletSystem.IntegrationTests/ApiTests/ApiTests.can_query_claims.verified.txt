@@ -1,12 +1,12 @@
 ﻿{
   result: [
     {
-      claimId: Guid_1,
+      claimId: Guid_Empty,
       quantity: 42,
       productionCertificate: {
         federatedStreamId: {
-          registry: Guid_2,
-          streamId: Guid_3
+          registry: Guid_1,
+          streamId: Guid_2
         },
         start: 1672574400,
         end: 1672578000,
@@ -19,8 +19,8 @@
       },
       consumptionCertificate: {
         federatedStreamId: {
-          registry: Guid_2,
-          streamId: Guid_4
+          registry: Guid_1,
+          streamId: Guid_3
         },
         start: 1672574400,
         end: 1672578000,

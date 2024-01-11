@@ -9,6 +9,7 @@ public class UnitOfWork : IUnitOfWork, IDisposable
 {
     public IWalletRepository WalletRepository => GetRepository(connection => new WalletRepository(connection));
     public ICertificateRepository CertificateRepository => GetRepository(connection => new CertificateRepository(connection));
+    public IClaimRepository ClaimRepository => GetRepository(connection => new ClaimRepository(connection));
 
     private readonly Dictionary<Type, object> _repositories = new Dictionary<Type, object>();
     private readonly Lazy<IDbConnection> _lazyConnection;

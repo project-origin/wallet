@@ -87,7 +87,7 @@ public class CertificatesController : ControllerBase
         if (!User.TryGetSubject(out var subject)) return Unauthorized();
         if (!timeZone.TryParseTimeZone(out var timeZoneInfo)) return BadRequest("Invalid time zone");
 
-        var certificates = await unitOfWork.CertificateRepository.QueryAvailableCertificatesAggregated(new CertificatesFilter
+        var certificates = await unitOfWork.CertificateRepository.QueryAggregatedAvailableCertificates(new CertificatesFilter
         {
             Owner = subject,
             Start = start != null ? DateTimeOffset.FromUnixTimeSeconds(start.Value) : null,

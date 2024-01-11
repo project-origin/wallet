@@ -1,8 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using ProjectOrigin.WalletSystem.Server.Models;
 
-namespace ProjectOrigin.WalletSystem.Server.Models;
+namespace ProjectOrigin.WalletSystem.Server.ViewModels;
 
 public record ClaimViewModel
 {

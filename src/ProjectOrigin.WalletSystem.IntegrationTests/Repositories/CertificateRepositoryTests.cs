@@ -18,11 +18,13 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests.Repositories;
 
 public class CertificateRepositoryTests : AbstractRepositoryTests
 {
-    private readonly CertificateRepository _repository;
+    private readonly CertificateRepository _certRepository;
+    private readonly ClaimRepository _claimRepository;
 
     public CertificateRepositoryTests(PostgresDatabaseFixture dbFixture) : base(dbFixture)
     {
-        _repository = new CertificateRepository(_connection);
+        _certRepository = new CertificateRepository(_connection);
+        _claimRepository = new ClaimRepository(_connection);
     }
 
     [Fact]
@@ -48,10 +50,10 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         };
 
         // Act
-        await _repository.InsertCertificate(certificate);
+        await _certRepository.InsertCertificate(certificate);
 
         // Assert
-        var insertedCertificate = await _repository.GetCertificate(certificate.RegistryName, certificate.Id);
+        var insertedCertificate = await _certRepository.GetCertificate(certificate.RegistryName, certificate.Id);
         insertedCertificate.Should().BeEquivalentTo(certificate);
     }
 
@@ -63,7 +65,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         var certificate = await CreateCertificate(registry);
 
         // Act
-        var result = await _repository.GetCertificate(registry, certificate.Id);
+        var result = await _certRepository.GetCertificate(registry, certificate.Id);
 
         // Assert
         result.Should().BeEquivalentTo(certificate);
@@ -91,7 +93,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         };
 
         // Act
-        await _repository.InsertWalletSlice(slice);
+        await _certRepository.InsertWalletSlice(slice);
 
         // Assert
         var insertedSlice = await _connection.QueryFirstOrDefaultAsync<WalletSlice>("SELECT * FROM wallet_slices WHERE id = @id", new { slice.Id });
@@ -162,12 +164,12 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
             State = WalletSliceState.Available
         };
 
-        await _repository.InsertWalletSlice(slice1);
-        await _repository.InsertWalletSlice(slice2);
-        await _repository.InsertWalletSlice(slice3);
-        await _repository.InsertWalletSlice(sliceWithDifferentOwner);
+        await _certRepository.InsertWalletSlice(slice1);
+        await _certRepository.InsertWalletSlice(slice2);
+        await _certRepository.InsertWalletSlice(slice3);
+        await _certRepository.InsertWalletSlice(sliceWithDifferentOwner);
 
-        var result = await _repository.QueryAvailableCertificates(new CertificatesFilter
+        var result = await _certRepository.QueryAvailableCertificates(new CertificatesFilter
         {
             Owner = owner1
         });
@@ -232,11 +234,11 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
             State = WalletSliceState.Available
         };
 
-        await _repository.InsertWalletSlice(prodSlice);
-        await _repository.InsertWalletSlice(consSlice);
-        await _repository.InsertWalletSlice(sliceWithDifferentOwner);
+        await _certRepository.InsertWalletSlice(prodSlice);
+        await _certRepository.InsertWalletSlice(consSlice);
+        await _certRepository.InsertWalletSlice(sliceWithDifferentOwner);
 
-        var result = await _repository.QueryAvailableCertificates(new CertificatesFilter
+        var result = await _certRepository.QueryAvailableCertificates(new CertificatesFilter
         {
             Owner = owner1,
             Type = GranularCertificateType.Consumption
@@ -257,7 +259,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
 
         await CreateCertificatesAndSlices(wallet, 5, startDate);
 
-        var result = await _repository.QueryAvailableCertificates(new CertificatesFilter
+        var result = await _certRepository.QueryAvailableCertificates(new CertificatesFilter
         {
             Owner = owner,
             Start = startDate,
@@ -277,7 +279,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
 
         await CreateCertificatesAndSlices(wallet, numberOfCerts, startDate);
 
-        var result = await _repository.QueryAvailableCertificates(new CertificatesFilter
+        var result = await _certRepository.QueryAvailableCertificates(new CertificatesFilter
         {
             Owner = owner,
             Start = startDate.AddHours(numberOfCerts - 4)
@@ -296,7 +298,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
 
         await CreateCertificatesAndSlices(wallet, numberOfCerts, startDate);
 
-        var result = await _repository.QueryAvailableCertificates(new CertificatesFilter
+        var result = await _certRepository.QueryAvailableCertificates(new CertificatesFilter
         {
             Owner = owner,
             End = startDate.AddHours(4)
@@ -354,12 +356,12 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
             State = WalletSliceState.Available
         };
 
-        await _repository.InsertCertificate(certificate);
-        await _repository.InsertWalletAttribute(wallet.Id, assetIdWalletAttribute);
-        await _repository.InsertWalletSlice(slice);
+        await _certRepository.InsertCertificate(certificate);
+        await _certRepository.InsertWalletAttribute(wallet.Id, assetIdWalletAttribute);
+        await _certRepository.InsertWalletSlice(slice);
 
         // Act
-        var result = await _repository.QueryAvailableCertificates(new CertificatesFilter
+        var result = await _certRepository.QueryAvailableCertificates(new CertificatesFilter
         {
             Owner = owner
         });
@@ -401,10 +403,10 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         };
 
         // Act
-        await _repository.InsertWalletSlice(slice);
-        await _repository.SetWalletSliceState(slice.Id, sliceState);
+        await _certRepository.InsertWalletSlice(slice);
+        await _certRepository.SetWalletSliceState(slice.Id, sliceState);
 
-        var result = await _repository.QueryAvailableCertificates(new CertificatesFilter
+        var result = await _certRepository.QueryAvailableCertificates(new CertificatesFilter
         {
             Owner = owner
         });
@@ -433,9 +435,9 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
             State = WalletSliceState.Available
         };
 
-        await _repository.InsertWalletSlice(slice);
+        await _certRepository.InsertWalletSlice(slice);
 
-        var sliceDb = await _repository.GetOwnersAvailableSlices(registry, slice.CertificateId, wallet1.Owner);
+        var sliceDb = await _certRepository.GetOwnersAvailableSlices(registry, slice.CertificateId, wallet1.Owner);
 
         sliceDb.Should().HaveCount(1);
         sliceDb.Should().ContainEquivalentOf(slice);
@@ -472,10 +474,10 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
             State = WalletSliceState.Slicing
         };
 
-        await _repository.InsertWalletSlice(slice1);
-        await _repository.InsertWalletSlice(slice2);
+        await _certRepository.InsertWalletSlice(slice1);
+        await _certRepository.InsertWalletSlice(slice2);
 
-        var sliceDb = await _repository.GetOwnersAvailableSlices(registry, certificate.Id, wallet1.Owner);
+        var sliceDb = await _certRepository.GetOwnersAvailableSlices(registry, certificate.Id, wallet1.Owner);
 
         sliceDb.Should().BeEmpty();
     }
@@ -500,11 +502,11 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
             State = WalletSliceState.Available
         };
 
-        await _repository.InsertWalletSlice(slice);
+        await _certRepository.InsertWalletSlice(slice);
 
-        await _repository.SetWalletSliceState(slice.Id, WalletSliceState.Slicing);
+        await _certRepository.SetWalletSliceState(slice.Id, WalletSliceState.Slicing);
 
-        var sliceDb = await _repository.GetWalletSlice(slice.Id);
+        var sliceDb = await _certRepository.GetWalletSlice(slice.Id);
 
         sliceDb.State.Should().Be(WalletSliceState.Slicing);
     }
@@ -529,10 +531,10 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
             RandomR = _fixture.Create<byte[]>(),
             State = WalletSliceState.Available
         };
-        await _repository.InsertWalletSlice(slice);
+        await _certRepository.InsertWalletSlice(slice);
 
         // Act
-        var reservedSlices = await _repository.ReserveQuantity(owner, certificate.RegistryName, certificate.Id, 100);
+        var reservedSlices = await _certRepository.ReserveQuantity(owner, certificate.RegistryName, certificate.Id, 100);
 
         // Assert
         reservedSlices.Should().ContainEquivalentOf(slice);
@@ -547,7 +549,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         var owner = _fixture.Create<string>();
 
         // Act
-        var act = () => _repository.ReserveQuantity(owner, certificate.RegistryName, certificate.Id, 200);
+        var act = () => _certRepository.ReserveQuantity(owner, certificate.RegistryName, certificate.Id, 200);
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("Owner has no available slices to reserve");
@@ -573,10 +575,10 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
             RandomR = _fixture.Create<byte[]>(),
             State = WalletSliceState.Available
         };
-        await _repository.InsertWalletSlice(slice);
+        await _certRepository.InsertWalletSlice(slice);
 
         // Act
-        var act = () => _repository.ReserveQuantity(owner, certificate.RegistryName, certificate.Id, 200);
+        var act = () => _certRepository.ReserveQuantity(owner, certificate.RegistryName, certificate.Id, 200);
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("Owner has less to reserve than available");
@@ -602,8 +604,8 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
             RandomR = _fixture.Create<byte[]>(),
             State = WalletSliceState.Available
         };
-        await _repository.InsertWalletSlice(slice);
-        await _repository.InsertWalletSlice(slice with
+        await _certRepository.InsertWalletSlice(slice);
+        await _certRepository.InsertWalletSlice(slice with
         {
             Id = Guid.NewGuid(),
             WalletEndpointPosition = 2,
@@ -612,7 +614,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         });
 
         // Act
-        var act = () => _repository.ReserveQuantity(owner, certificate.RegistryName, certificate.Id, 200);
+        var act = () => _certRepository.ReserveQuantity(owner, certificate.RegistryName, certificate.Id, 200);
 
         // Assert
         await act.Should().ThrowAsync<TransientException>().WithMessage("Owner has enough quantity, but it is not yet available to reserve");
@@ -638,7 +640,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
             RandomR = _fixture.Create<byte[]>(),
             State = WalletSliceState.Available
         };
-        await _repository.InsertWalletSlice(slice);
+        await _certRepository.InsertWalletSlice(slice);
         var claim = new Claim
         {
             Id = Guid.NewGuid(),
@@ -648,9 +650,9 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         };
 
         // Act
-        await _repository.InsertClaim(claim);
-        await _repository.SetClaimState(claim.Id, ClaimState.Claimed);
-        var insertedClaim = await _repository.GetClaim(claim.Id);
+        await _claimRepository.InsertClaim(claim);
+        await _claimRepository.SetClaimState(claim.Id, ClaimState.Claimed);
+        var insertedClaim = await _claimRepository.GetClaim(claim.Id);
 
         // Assert
         insertedClaim.Should().BeEquivalentTo(claim with { State = ClaimState.Claimed });
@@ -663,11 +665,14 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         var owner = _fixture.Create<string>();
 
         // Act
-        var claims = await _repository.GetClaims(owner, new ClaimFilter());
+        var result = await _claimRepository.QueryClaims(new ClaimFilter
+        {
+            Owner = owner
+        });
 
         // Assert
-        claims.Should().NotBeNull();
-        claims.Should().BeEmpty();
+        result.Items.Should().NotBeNull();
+        result.Items.Should().BeEmpty();
     }
 
 
@@ -680,12 +685,15 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         await CreateClaimsAndCerts(owner, 48, startDate);
 
         // Act
-        var claims = await _repository.GetClaims(owner, new ClaimFilter());
+        var result = await _claimRepository.QueryClaims(new ClaimFilter
+        {
+            Owner = owner
+        });
 
         // Assert
-        claims.Should().NotBeNull();
-        claims.Should().HaveCount(48);
-        claims.Sum(x => x.Quantity).Should().Be(16500);
+        result.Items.Should().NotBeNull();
+        result.Items.Should().HaveCount(48);
+        result.Items.Sum(x => x.Quantity).Should().Be(16500);
     }
 
     [Fact]
@@ -697,15 +705,16 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         await CreateClaimsAndCerts(owner, 48, startDate);
 
         // Act
-        var claims = await _repository.GetClaims(owner, new ClaimFilter()
+        var result = await _claimRepository.QueryClaims(new ClaimFilter()
         {
+            Owner = owner,
             Start = startDate.AddHours(48 - 4)
         });
 
         // Assert
-        claims.Should().NotBeNull();
-        claims.Should().HaveCount(4);
-        claims.Sum(x => x.Quantity).Should().Be(1300);
+        result.Items.Should().NotBeNull();
+        result.Items.Should().HaveCount(4);
+        result.Items.Sum(x => x.Quantity).Should().Be(1300);
     }
 
     [Fact]
@@ -717,15 +726,16 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         await CreateClaimsAndCerts(owner, 48, startDate);
 
         // Act
-        var claims = await _repository.GetClaims(owner, new ClaimFilter()
+        var result = await _claimRepository.QueryClaims(new ClaimFilter()
         {
+            Owner = owner,
             End = startDate.AddHours(4)
         });
 
         // Assert
-        claims.Should().NotBeNull();
-        claims.Should().HaveCount(4);
-        claims.Sum(x => x.Quantity).Should().Be(1200);
+        result.Items.Should().NotBeNull();
+        result.Items.Should().HaveCount(4);
+        result.Items.Sum(x => x.Quantity).Should().Be(1200);
     }
 
     [Fact]
@@ -737,16 +747,17 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         await CreateClaimsAndCerts(owner, 48, startDate);
 
         // Act
-        var claims = await _repository.GetClaims(owner, new ClaimFilter()
+        var result = await _claimRepository.QueryClaims(new ClaimFilter()
         {
+            Owner = owner,
             Start = startDate.AddHours(10),
             End = startDate.AddHours(15)
         });
 
         // Assert
-        claims.Should().NotBeNull();
-        claims.Should().HaveCount(5);
-        claims.Sum(x => x.Quantity).Should().Be(1750L);
+        result.Items.Should().NotBeNull();
+        result.Items.Should().HaveCount(5);
+        result.Items.Sum(x => x.Quantity).Should().Be(1750L);
     }
 
     [Fact]
@@ -783,11 +794,11 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
             CertificateType = GranularCertificateType.Production,
             Attributes = attributes
         };
-        await _repository.InsertCertificate(certificate);
+        await _certRepository.InsertCertificate(certificate);
 
         // Act
-        await _repository.InsertWalletAttribute(wallet.Id, assetIdWalletAttribute);
-        var walletAttributeFromRepo = await _repository.GetWalletAttributes(wallet.Id, certificate.Id, certificate.RegistryName, new string[] { assetIdWalletAttribute.Key });
+        await _certRepository.InsertWalletAttribute(wallet.Id, assetIdWalletAttribute);
+        var walletAttributeFromRepo = await _certRepository.GetWalletAttributes(wallet.Id, certificate.Id, certificate.RegistryName, new string[] { assetIdWalletAttribute.Key });
 
         // Assert
         var foundAttribute = walletAttributeFromRepo.Should().ContainSingle().Which;
@@ -828,8 +839,9 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         }
 
         // Act
-        var result = await _repository.GetTransfers(subject, new TransferFilter
+        var result = await _certRepository.GetTransfers(new TransferFilter
         {
+            Owner = subject,
             Start = queryStartDate,
             End = queryEndDate
         });
@@ -865,7 +877,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
                 RandomR = _fixture.Create<byte[]>(),
                 State = WalletSliceState.Claimed
             };
-            await _repository.InsertWalletSlice(conSlice);
+            await _certRepository.InsertWalletSlice(conSlice);
 
             var prodCert = await CreateCertificate(registry, GranularCertificateType.Production, startDate.AddHours(i), endDate: startDate.AddHours(i + 1));
             var prodSlice = new WalletSlice
@@ -879,7 +891,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
                 RandomR = _fixture.Create<byte[]>(),
                 State = WalletSliceState.Claimed
             };
-            await _repository.InsertWalletSlice(prodSlice);
+            await _certRepository.InsertWalletSlice(prodSlice);
 
             var claim = new Claim
             {
@@ -888,7 +900,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
                 ProductionSliceId = prodSlice.Id,
                 State = ClaimState.Claimed
             };
-            await _repository.InsertClaim(claim);
+            await _claimRepository.InsertClaim(claim);
         }
     }
 
@@ -913,7 +925,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
                 State = WalletSliceState.Available
             };
 
-            await _repository.InsertWalletSlice(slice);
+            await _certRepository.InsertWalletSlice(slice);
         }
     }
 }

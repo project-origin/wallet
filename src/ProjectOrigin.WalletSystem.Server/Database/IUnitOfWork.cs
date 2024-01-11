@@ -9,4 +9,5 @@ public interface IUnitOfWork
 
     IWalletRepository WalletRepository { get; }
     ICertificateRepository CertificateRepository { get; }
+    IClaimRepository ClaimRepository { get; }
 }

@@ -147,7 +147,7 @@ public static class PostgresFixtureExtensions
     {
         using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
         {
-            var certificateRepository = new CertificateRepository(connection);
+            var claimRepository = new ClaimRepository(connection);
             var walletRepository = new WalletRepository(connection);
             var claim = new Claim
             {
@@ -157,7 +157,7 @@ public static class PostgresFixtureExtensions
                 State = state,
             };
 
-            await certificateRepository.InsertClaim(claim);
+            await claimRepository.InsertClaim(claim);
 
             return claim;
         }

@@ -169,15 +169,16 @@ public class WalletService : V1.WalletService.WalletServiceBase
     {
         var owner = context.GetSubject();
 
-        var claims = await _unitOfWork.CertificateRepository.GetClaims(owner, new ClaimFilter()
+        var claims = await _unitOfWork.ClaimRepository.QueryClaims(new ClaimFilter()
         {
+            Owner = owner,
             Start = request.Filter?.Start.ToNullableDateTimeOffset(),
             End = request.Filter?.End.ToNullableDateTimeOffset(),
         });
 
         return new ClaimQueryResponse
         {
-            Claims = { claims.Select(c => c.ToProto()) }
+            Claims = { claims.Items.Select(c => c.ToProto()) }
         };
     }
 }

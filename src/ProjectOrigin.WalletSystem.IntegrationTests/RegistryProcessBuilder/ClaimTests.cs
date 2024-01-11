@@ -124,7 +124,7 @@ public class ClaimTests : IClassFixture<PostgresDatabaseFixture>
 
         slip.Itinerary.Count.Should().Be(10);
 
-        Claim claim = await _unitOfWork.CertificateRepository.GetClaim(Guid.Parse(a1.AllocationId.Value));
+        Claim claim = await _unitOfWork.ClaimRepository.GetClaim(Guid.Parse(a1.AllocationId.Value));
         claim.ConsumptionSliceId.Should().Be(consSlice.Id);
         claim.ProductionSliceId.Should().Be(prodSlice.Id);
         claim.State.Should().Be(ClaimState.Created);

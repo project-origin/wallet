@@ -40,7 +40,7 @@ public class UpdateClaimStateActivityTests
         await _activity.Execute(_context);
 
         // Assert
-        await _unitOfWork.Received(1).CertificateRepository.SetClaimState(Arg.Is(_context.Arguments.Id), Arg.Is(_context.Arguments.State));
+        await _unitOfWork.Received(1).ClaimRepository.SetClaimState(Arg.Is(_context.Arguments.Id), Arg.Is(_context.Arguments.State));
         _unitOfWork.Received(1).Commit();
         _context.Received(1).Completed();
     }
@@ -55,7 +55,7 @@ public class UpdateClaimStateActivityTests
             Id = Guid.NewGuid(),
             State = ClaimState.Claimed
         });
-        _unitOfWork.CertificateRepository.When(x => x.SetClaimState(Arg.Any<Guid>(), Arg.Any<ClaimState>())).Do(x => throw exceptionToBeThrown);
+        _unitOfWork.ClaimRepository.When(x => x.SetClaimState(Arg.Any<Guid>(), Arg.Any<ClaimState>())).Do(x => throw exceptionToBeThrown);
 
         // Act
         await _activity.Execute(_context);

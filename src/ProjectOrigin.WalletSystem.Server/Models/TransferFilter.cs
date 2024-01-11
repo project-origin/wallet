@@ -4,6 +4,7 @@ namespace ProjectOrigin.WalletSystem.Server.Models;
 
 public record TransferFilter
 {
+    public required string Owner { get; init; }
     public DateTimeOffset? Start { get; init; }
     public DateTimeOffset? End { get; init; }
 }

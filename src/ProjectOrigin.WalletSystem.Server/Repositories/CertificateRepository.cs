@@ -134,7 +134,7 @@ public class CertificateRepository : ICertificateRepository
         {
             var totalCouunt = gridReader.ReadSingle<int>();
             var certificates = gridReader.Read<CertificateViewModel>();
-            var attributes = gridReader.Read<ExtendedAttribute>();
+            var attributes = gridReader.Read<AttributeViewModel>();
 
             foreach (var certificate in certificates)
             {
@@ -154,7 +154,7 @@ public class CertificateRepository : ICertificateRepository
         }
     }
 
-    public async Task<PageResult<AggregatedCertificatesViewModel>> QueryAvailableCertificatesAggregated(CertificatesFilter filter, TimeAggregate timeAggregate, string timeZone)
+    public async Task<PageResult<AggregatedCertificatesViewModel>> QueryAggregatedAvailableCertificates(CertificatesFilter filter, TimeAggregate timeAggregate, string timeZone)
     {
         string sql = @"
             CREATE TEMPORARY TABLE certificates_work_table ON COMMIT DROP AS (
@@ -360,129 +360,8 @@ public class CertificateRepository : ICertificateRepository
         return takenSlices;
     }
 
-    public Task InsertClaim(Claim newClaim)
-    {
-        return _connection.ExecuteAsync(
-            @"INSERT INTO claims(id, production_slice_id, consumption_slice_id, state)
-              VALUES (@id, @productionSliceId, @consumptionSliceId, @state)",
-            new
-            {
-                newClaim.Id,
-                newClaim.ProductionSliceId,
-                newClaim.ConsumptionSliceId,
-                newClaim.State
-            });
-    }
 
-    public Task SetClaimState(Guid claimId, ClaimState state)
-    {
-        return _connection.ExecuteAsync(
-            @"UPDATE claims
-              SET state = @state
-              WHERE id = @claimId",
-            new
-            {
-                claimId,
-                state
-            });
-    }
-
-    public Task<Claim> GetClaim(Guid claimId)
-    {
-        return _connection.QuerySingleAsync<Claim>(
-            @"SELECT *
-              FROM claims
-              WHERE id = @claimId",
-            new
-            {
-                claimId
-            });
-    }
-
-    public async Task<IEnumerable<ClaimViewModel>> GetClaims(string owner, ClaimFilter claimFilter)
-    {
-        string sql = @"
-        CREATE TEMPORARY TABLE claims_work_table ON COMMIT DROP AS (
-            SELECT
-                claims.Id,
-                slice_cons.quantity AS Quantity,
-                wallet_cons.id as WalletId,
-
-                slice_prod.registry_name AS ProductionRegistryName,
-                slice_prod.certificate_id AS ProductionCertificateId,
-                cert_prod.start_date AS ProductionStart,
-                cert_prod.end_date AS ProductionEnd,
-                cert_prod.grid_area AS ProductionGridArea,
-
-                slice_cons.registry_name AS ConsumptionRegistryName,
-                slice_cons.certificate_id AS ConsumptionCertificateId,
-                cert_cons.start_date AS ConsumptionStart,
-                cert_cons.end_date AS ConsumptionEnd,
-                cert_cons.grid_area AS ConsumptionGridArea
-
-            FROM claims
-
-            INNER JOIN wallet_slices slice_prod
-                ON claims.production_slice_id = slice_prod.id
-            INNER JOIN certificates cert_prod
-                ON slice_prod.certificate_id = cert_prod.id
-                AND slice_prod.registry_name = cert_prod.registry_name
-
-            INNER JOIN wallet_slices slice_cons
-                ON claims.consumption_slice_id = slice_cons.id
-            INNER JOIN certificates cert_cons
-                ON slice_cons.certificate_id = cert_cons.id
-                AND slice_cons.registry_name = cert_cons.registry_name
-
-            INNER JOIN wallet_endpoints dep_cons
-                ON slice_cons.wallet_endpoint_id = dep_cons.id
-            INNER JOIN wallets wallet_cons
-                ON dep_cons.wallet_id = wallet_cons.id
-
-            WHERE
-                claims.state = @state
-                AND (@start IS NULL OR cert_prod.start_date >= @start)
-                AND (@end IS NULL OR cert_prod.end_date <= @end)
-                AND (@start IS NULL OR cert_cons.start_date >= @start)
-                AND (@end IS NULL OR cert_cons.end_date <= @end)
-                AND wallet_cons.owner = @owner
-        );
-        SELECT * FROM claims_work_table;
-        SELECT attributes.registry_name, attributes.certificate_id, attributes.attribute_key as key, attributes.attribute_value as value, attributes.attribute_type as type
-        FROM attributes_view attributes
-        WHERE ((registry_name, certificate_id) IN (SELECT ConsumptionRegistryName, ConsumptionCertificateId FROM claims_work_table) AND wallet_id IS NULL)
-            OR ((registry_name, certificate_id) IN (SELECT ProductionRegistryName, ProductionCertificateId FROM claims_work_table) AND wallet_id IS NULL)
-            OR (registry_name, certificate_id, wallet_id) IN (SELECT ConsumptionRegistryName, ConsumptionCertificateId, WalletId FROM claims_work_table)
-            OR (registry_name, certificate_id, wallet_id) IN (SELECT ProductionRegistryName, ProductionCertificateId, WalletId FROM claims_work_table);
-        ";
-
-        using (var gridReader = await _connection.QueryMultipleAsync(sql, new
-        {
-            owner,
-            state = (int)ClaimState.Claimed,
-            start = claimFilter.Start,
-            end = claimFilter.End,
-        }))
-        {
-            var claims = gridReader.Read<ClaimViewModel>();
-            var attributes = gridReader.Read<ExtendedAttribute>();
-
-            foreach (var claim in claims)
-            {
-                claim.ProductionAttributes.AddRange(attributes
-                    .Where(attr => attr.RegistryName == claim.ProductionRegistryName
-                            && attr.CertificateId == claim.ProductionCertificateId));
-
-                claim.ConsumptionAttributes.AddRange(attributes
-                    .Where(attr => attr.RegistryName == claim.ConsumptionRegistryName
-                            && attr.CertificateId == claim.ConsumptionCertificateId));
-            }
-
-            return claims;
-        }
-    }
-
-    public async Task<IEnumerable<TransferViewModel>> GetTransfers(string owner, TransferFilter filter)
+    public async Task<IEnumerable<TransferViewModel>> GetTransfers(TransferFilter filter)
     {
         var certsDictionary = new Dictionary<Guid, TransferViewModel>();
 
@@ -525,12 +404,7 @@ public class CertificateRepository : ICertificateRepository
                 return certificate;
             },
             splitOn: "key",
-            param: new
-            {
-                owner,
-                start = filter.Start,
-                end = filter.End,
-            });
+            param: filter);
 
         return certsDictionary.Values;
     }
@@ -568,11 +442,5 @@ public class CertificateRepository : ICertificateRepository
                 registryName,
                 keys = keys.ToArray(),
             })).AsList();
-    }
-
-    private sealed record ExtendedAttribute : CertificateAttribute
-    {
-        public required string RegistryName { get; init; }
-        public required Guid CertificateId { get; init; }
     }
 }

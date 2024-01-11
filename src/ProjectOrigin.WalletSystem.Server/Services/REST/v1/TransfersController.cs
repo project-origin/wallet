@@ -33,8 +33,9 @@ public class TransfersController : ControllerBase
     {
         if (!User.TryGetSubject(out var subject)) return Unauthorized();
 
-        var transfers = await unitOfWork.CertificateRepository.GetTransfers(subject, new TransferFilter
+        var transfers = await unitOfWork.CertificateRepository.GetTransfers(new TransferFilter
         {
+            Owner = subject,
             Start = start != null ? DateTimeOffset.FromUnixTimeSeconds(start.Value) : null,
             End = end != null ? DateTimeOffset.FromUnixTimeSeconds(end.Value) : null,
         });
@@ -91,8 +92,9 @@ public class TransfersController : ControllerBase
         if (!User.TryGetSubject(out var subject)) return Unauthorized();
         if (!timeZone.TryParseTimeZone(out var timeZoneInfo)) return BadRequest("Invalid time zone");
 
-        var transfers = await unitOfWork.CertificateRepository.GetTransfers(subject, new TransferFilter
+        var transfers = await unitOfWork.CertificateRepository.GetTransfers(new TransferFilter
         {
+            Owner = subject,
             Start = start != null ? DateTimeOffset.FromUnixTimeSeconds(start.Value) : null,
             End = end != null ? DateTimeOffset.FromUnixTimeSeconds(end.Value) : null,
         });
