@@ -31,7 +31,6 @@ CREATE VIEW certificates_query_model AS
         c.start_date ASC,
         c.id ASC;
 
-
 CREATE VIEW claims_query_model AS
     SELECT
         claims.Id as claim_id,
@@ -72,4 +71,20 @@ CREATE VIEW claims_query_model AS
         ON dep_cons.wallet_id = wallet_cons.id
 
     WHERE
-        claims.state = 10 -- Claimed
+        claims.state = 10; -- Claimed
+
+CREATE VIEW transfers_query_model AS
+    SELECT
+        c.id AS certificate_id,
+        c.registry_name AS registry_name,
+        ee.id AS receiver_id,
+        c.grid_area AS grid_area,
+        ts.quantity AS quantity,
+        c.start_date AS start_date,
+        c.end_date AS end_date,
+        ee.owner AS owner
+    FROM transferred_slices ts
+    INNER JOIN external_endpoints ee
+        ON ts.external_endpoint_id = ee.id
+    INNER JOIN certificates c
+        ON ts.certificate_id = c.id;

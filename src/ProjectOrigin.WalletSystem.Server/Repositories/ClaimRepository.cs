@@ -53,7 +53,7 @@ public class ClaimRepository : IClaimRepository
             });
     }
 
-    public async Task<PageResult<ClaimViewModel>> QueryClaims(ClaimFilter claimFilter)
+    public async Task<PageResult<ClaimViewModel>> QueryClaims(ClaimFilter filter)
     {
         string sql = @"
         CREATE TEMPORARY TABLE claims_work_table ON COMMIT DROP AS (
@@ -78,7 +78,7 @@ public class ClaimRepository : IClaimRepository
            OR (registry_name, certificate_id, wallet_id) IN (SELECT production_registry_name, production_certificate_id, wallet_id FROM claims_work_table);
         ";
 
-        using (var gridReader = await _connection.QueryMultipleAsync(sql, claimFilter))
+        using (var gridReader = await _connection.QueryMultipleAsync(sql, filter))
         {
             var totalCount = gridReader.ReadSingle<int>();
             var claims = gridReader.Read<ClaimViewModel>();
@@ -100,13 +100,13 @@ public class ClaimRepository : IClaimRepository
                 Items = claims,
                 TotalCount = totalCount,
                 Count = claims.Count(),
-                Offset = claimFilter.Skip,
-                Limit = claimFilter.Limit
+                Offset = filter.Skip,
+                Limit = filter.Limit
             };
         }
     }
 
-    public async Task<PageResult<AggregatedClaimViewModel>> QueryAggregatedClaims(ClaimFilter claimFilter, TimeAggregate timeAggregate, string timeZone)
+    public async Task<PageResult<AggregatedClaimViewModel>> QueryAggregatedClaims(ClaimFilter filter, TimeAggregate timeAggregate, string timeZone)
     {
         string sql = @"
             CREATE TEMPORARY TABLE certificates_work_table ON COMMIT DROP AS (
@@ -141,11 +141,11 @@ public class ClaimRepository : IClaimRepository
 
         using (var gridReader = await _connection.QueryMultipleAsync(sql, new
         {
-            claimFilter.Owner,
-            claimFilter.Start,
-            claimFilter.End,
-            claimFilter.Skip,
-            claimFilter.Limit,
+            filter.Owner,
+            filter.Start,
+            filter.End,
+            filter.Skip,
+            filter.Limit,
             timeAggregate = timeAggregate.ToString().ToLower(),
             timeZone
         }))
@@ -158,8 +158,8 @@ public class ClaimRepository : IClaimRepository
                 Items = claims,
                 TotalCount = totalCount,
                 Count = claims.Count(),
-                Offset = claimFilter.Skip,
-                Limit = claimFilter.Limit
+                Offset = filter.Skip,
+                Limit = filter.Limit
             };
         }
     }

@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using System.Threading.Tasks;
 using MassTransit;
 using Microsoft.AspNetCore.Authorization;
@@ -22,6 +21,8 @@ public class TransfersController : ControllerBase
     /// <param name="unitOfWork"></param>
     /// <param name="start">The start of the time range in Unix time in seconds.</param>
     /// <param name="end">The end of the time range in Unix time in seconds.</param>
+    /// <param name="skip">The number of items to skip.</param>
+    /// <param name="limit">The number of items to return.</param>
     /// <response code="200">Returns the individual transferes within the filter.</response>
     /// <response code="401">If the user is not authenticated.</response>
     [HttpGet]
@@ -29,40 +30,37 @@ public class TransfersController : ControllerBase
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
-    public async Task<ActionResult<ResultList<Transfer>>> GetTransfers([FromServices] IUnitOfWork unitOfWork, [FromQuery] long? start, [FromQuery] long? end)
+    public async Task<ActionResult<ResultList<Transfer>>> GetTransfers(
+        [FromServices] IUnitOfWork unitOfWork,
+        [FromQuery] long? start,
+        [FromQuery] long? end,
+        [FromQuery] int? limit,
+        [FromQuery] int skip = 0)
     {
         if (!User.TryGetSubject(out var subject)) return Unauthorized();
 
-        var transfers = await unitOfWork.CertificateRepository.GetTransfers(new TransferFilter
+        var transfers = await unitOfWork.TransferRepository.QueryTransfers(new TransferFilter
         {
             Owner = subject,
             Start = start != null ? DateTimeOffset.FromUnixTimeSeconds(start.Value) : null,
             End = end != null ? DateTimeOffset.FromUnixTimeSeconds(end.Value) : null,
+            Skip = skip,
+            Limit = limit ?? int.MaxValue,
         });
 
-        return new ResultList<Transfer>
+        return transfers.ToResultList(t => new Transfer()
         {
-            Result = transfers.Select(t => new Transfer()
+            FederatedStreamId = new FederatedStreamId
             {
-                FederatedStreamId = new FederatedStreamId
-                {
-                    Registry = t.RegistryName,
-                    StreamId = t.CertificateId
-                },
-                ReceiverId = t.ReceiverId.ToString(),
-                Start = t.StartDate.ToUnixTimeSeconds(),
-                End = t.EndDate.ToUnixTimeSeconds(),
-                Quantity = t.Quantity,
-                GridArea = t.GridArea,
-            }),
-            Metadata = new PageInfo()
-            {
-                Count = transfers.Count(),
-                Limit = int.MaxValue,
-                Offset = 0,
-                Total = transfers.Count(),
-            }
-        };
+                Registry = t.RegistryName,
+                StreamId = t.CertificateId
+            },
+            ReceiverId = t.ReceiverId.ToString(),
+            Start = t.StartDate.ToUnixTimeSeconds(),
+            End = t.EndDate.ToUnixTimeSeconds(),
+            Quantity = t.Quantity,
+            GridArea = t.GridArea,
+        });
     }
 
     /// <summary>
@@ -73,6 +71,8 @@ public class TransfersController : ControllerBase
     /// <param name="timeZone">The time zone. See https://en.wikipedia.org/wiki/List_of_tz_database_time_zones for a list of valid time zones.</param>
     /// <param name="start">The start of the time range in Unix time in seconds.</param>
     /// <param name="end">The end of the time range in Unix time in seconds.</param>
+    /// <param name="skip">The number of items to skip.</param>
+    /// <param name="limit">The number of items to return.</param>
     /// <response code="200">Returns the aggregated claims.</response>
     /// <response code="400">If the time zone is invalid.</response>
     /// <response code="401">If the user is not authenticated.</response>
@@ -87,36 +87,28 @@ public class TransfersController : ControllerBase
         [FromQuery] TimeAggregate timeAggregate,
         [FromQuery] string timeZone,
         [FromQuery] long? start,
-        [FromQuery] long? end)
+        [FromQuery] long? end,
+        [FromQuery] int? limit,
+        [FromQuery] int skip = 0)
     {
         if (!User.TryGetSubject(out var subject)) return Unauthorized();
         if (!timeZone.TryParseTimeZone(out var timeZoneInfo)) return BadRequest("Invalid time zone");
 
-        var transfers = await unitOfWork.CertificateRepository.GetTransfers(new TransferFilter
+        var transfers = await unitOfWork.TransferRepository.QueryAggregatedTransfers(new TransferFilter
         {
             Owner = subject,
             Start = start != null ? DateTimeOffset.FromUnixTimeSeconds(start.Value) : null,
             End = end != null ? DateTimeOffset.FromUnixTimeSeconds(end.Value) : null,
-        });
+            Skip = skip,
+            Limit = limit ?? int.MaxValue,
+        }, (Models.TimeAggregate)timeAggregate, timeZone);
 
-        return new ResultList<AggregatedTransfers>
+        return transfers.ToResultList(t => new AggregatedTransfers()
         {
-            Result = transfers
-                .GroupByTime(record => record.StartDate, (Models.TimeAggregate)timeAggregate, timeZoneInfo)
-                .Select(group => new AggregatedTransfers()
-                {
-                    Quantity = group.Sum(transfer => transfer.Quantity),
-                    Start = group.Min(transfer => transfer.StartDate).ToUnixTimeSeconds(),
-                    End = group.Max(transfer => transfer.EndDate).ToUnixTimeSeconds(),
-                }),
-            Metadata = new PageInfo()
-            {
-                Count = transfers.Count(),
-                Limit = int.MaxValue,
-                Offset = 0,
-                Total = transfers.Count(),
-            }
-        };
+            Start = t.Start.ToUnixTimeSeconds(),
+            End = t.End.ToUnixTimeSeconds(),
+            Quantity = t.Quantity,
+        });
     }
 
     /// <summary>

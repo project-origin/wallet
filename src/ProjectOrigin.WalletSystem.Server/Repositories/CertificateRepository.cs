@@ -25,14 +25,6 @@ public class CertificateRepository : ICertificateRepository
             newSlice);
     }
 
-    public async Task InsertTransferredSlice(TransferredSlice newSlice)
-    {
-        await _connection.ExecuteAsync(
-            @"INSERT INTO transferred_slices(id, certificate_id, registry_name, external_endpoint_id, external_endpoint_position, state, quantity, random_r)
-              VALUES (@id, @certificateId, @registryName, @externalEndpointId, @externalEndpointPosition, @state, @quantity, @randomR)",
-            newSlice);
-    }
-
     public async Task InsertCertificate(Certificate certificate)
     {
         await _connection.ExecuteAsync(
@@ -277,38 +269,11 @@ public class CertificateRepository : ICertificateRepository
             });
     }
 
-    public Task<TransferredSlice> GetTransferredSlice(Guid sliceId)
-    {
-        return _connection.QuerySingleAsync<TransferredSlice>(
-            @"SELECT s.*
-              FROM transferred_slices s
-              WHERE s.id = @sliceId",
-            new
-            {
-                sliceId
-            });
-    }
 
     public async Task SetWalletSliceState(Guid sliceId, WalletSliceState state)
     {
         var rowsChanged = await _connection.ExecuteAsync(
             @"UPDATE wallet_slices
-              SET state = @state
-              WHERE id = @sliceId",
-            new
-            {
-                sliceId,
-                state
-            });
-
-        if (rowsChanged != 1)
-            throw new InvalidOperationException($"Slice with id {sliceId} could not be found");
-    }
-
-    public async Task SetTransferredSliceState(Guid sliceId, TransferredSliceState state)
-    {
-        var rowsChanged = await _connection.ExecuteAsync(
-            @"UPDATE transferred_slices
               SET state = @state
               WHERE id = @sliceId",
             new
@@ -358,55 +323,6 @@ public class CertificateRepository : ICertificateRepository
         }
 
         return takenSlices;
-    }
-
-
-    public async Task<IEnumerable<TransferViewModel>> GetTransfers(TransferFilter filter)
-    {
-        var certsDictionary = new Dictionary<Guid, TransferViewModel>();
-
-        await _connection.QueryAsync<TransferViewModel, CertificateAttribute, TransferViewModel>(
-            @"SELECT
-                c.id AS CertificateId,
-                c.registry_name AS RegistryName,
-                ee.id AS ReceiverId,
-                c.grid_area AS GridArea,
-                ts.quantity AS Quantity,
-                c.start_date AS StartDate,
-                c.end_date AS EndDate,
-                a.attribute_key as key,
-                a.attribute_value as value,
-                a.attribute_type as type
-              FROM transferred_slices ts
-              INNER JOIN external_endpoints ee
-                ON ts.external_endpoint_id = ee.id
-              INNER JOIN certificates c
-                ON ts.certificate_id = c.id
-              LEFT JOIN attributes_view a
-                ON c.id = a.certificate_id
-                AND c.registry_name = a.registry_name
-                AND (a.wallet_id IS NULL)
-              WHERE ee.owner = @owner
-                AND (@start IS NULL OR c.start_date >= @start)
-                AND (@end IS NULL OR c.end_date <= @end)
-                ",
-            (cert, atr) =>
-            {
-                if (!certsDictionary.TryGetValue(cert.CertificateId, out var certificate))
-                {
-                    certificate = cert;
-                    certsDictionary.Add(cert.CertificateId, cert);
-                }
-
-                if (atr != null && atr.Key != null && atr.Value != null && !certificate.Attributes.Contains(atr))
-                    certificate.Attributes.Add(atr);
-
-                return certificate;
-            },
-            splitOn: "key",
-            param: filter);
-
-        return certsDictionary.Values;
     }
 
     public async Task InsertWalletAttribute(Guid walletId, WalletAttribute walletAttribute)

@@ -62,7 +62,7 @@ public class TransferFullSliceActivity : IExecuteActivity<TransferFullSliceArgum
                 RandomR = sourceSlice.RandomR,
                 State = TransferredSliceState.Registering
             };
-            await _unitOfWork.CertificateRepository.InsertTransferredSlice(transferredSlice);
+            await _unitOfWork.TransferRepository.InsertTransferredSlice(transferredSlice);
 
 
             var transferredEvent = CreateTransferEvent(sourceSlice, receiverPublicKey);

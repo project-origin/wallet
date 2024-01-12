@@ -41,6 +41,7 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
         var result = await controller.GetTransfers(
             _unitOfWork,
             null,
+            null,
             null);
 
         // Assert
@@ -79,7 +80,8 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
         var result = await controller.GetTransfers(
             _unitOfWork,
             queryStartDate.ToUnixTimeSeconds(),
-            queryEndDate.ToUnixTimeSeconds());
+            queryEndDate.ToUnixTimeSeconds(),
+            null);
 
         // Assert
         result.Value.Should().NotBeNull();
@@ -125,7 +127,8 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
             TimeAggregate.Day,
             timezone,
             queryStartDate.ToUnixTimeSeconds(),
-            queryEndDate.ToUnixTimeSeconds());
+            queryEndDate.ToUnixTimeSeconds(),
+            null);
 
         // Assert
         result.Value.Should().NotBeNull();
@@ -150,6 +153,7 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
             _unitOfWork,
             TimeAggregate.Day,
             "invalid-time-zone",
+            null,
             null,
             null);
 

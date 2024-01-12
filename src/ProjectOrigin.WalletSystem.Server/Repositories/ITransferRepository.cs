@@ -1,7 +1,7 @@
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using ProjectOrigin.WalletSystem.Server.Models;
+using ProjectOrigin.WalletSystem.Server.ViewModels;
 
 namespace ProjectOrigin.WalletSystem.Server.Repositories;
 
@@ -11,5 +11,6 @@ public interface ITransferRepository
     Task<TransferredSlice> GetTransferredSlice(Guid sliceId);
     Task SetTransferredSliceState(Guid sliceId, TransferredSliceState state);
 
-    Task<IEnumerable<TransferViewModel>> GetTransfers(TransferFilter filter);
+    Task<PageResult<TransferViewModel>> QueryTransfers(TransferFilter filter);
+    Task<PageResult<AggregatedTransferViewModel>> QueryAggregatedTransfers(TransferFilter filter, TimeAggregate timeAggregate, string timeZone);
 }

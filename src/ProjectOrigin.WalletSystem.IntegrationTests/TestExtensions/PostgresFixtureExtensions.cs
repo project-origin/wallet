@@ -172,7 +172,7 @@ public static class PostgresFixtureExtensions
         using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
         {
             var walletRepository = new WalletRepository(connection);
-            var certificateRepository = new CertificateRepository(connection);
+            var transferRepository = new TransferRepository(connection);
             var transferredSlice = new TransferredSlice()
             {
                 Id = Guid.NewGuid(),
@@ -184,7 +184,7 @@ public static class PostgresFixtureExtensions
                 Quantity = secretCommitmentInfo.Message,
                 RandomR = secretCommitmentInfo.BlindingValue.ToArray()
             };
-            await certificateRepository.InsertTransferredSlice(transferredSlice);
+            await transferRepository.InsertTransferredSlice(transferredSlice);
             return transferredSlice;
         }
     }

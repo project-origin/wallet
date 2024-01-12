@@ -12,19 +12,16 @@ using Xunit;
 using ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures;
 using ProjectOrigin.WalletSystem.Server.Activities.Exceptions;
 using System.Text;
-using ProjectOrigin.WalletSystem.IntegrationTests.TestExtensions;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests.Repositories;
 
 public class CertificateRepositoryTests : AbstractRepositoryTests
 {
     private readonly CertificateRepository _certRepository;
-    private readonly ClaimRepository _claimRepository;
 
     public CertificateRepositoryTests(PostgresDatabaseFixture dbFixture) : base(dbFixture)
     {
         _certRepository = new CertificateRepository(_connection);
-        _claimRepository = new ClaimRepository(_connection);
     }
 
     [Fact]
@@ -621,146 +618,6 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
     }
 
     [Fact]
-    public async Task Claims_InsertSetState_GetResult()
-    {
-        // Arrange
-        var registry = _fixture.Create<string>();
-        var certificate = await CreateCertificate(registry);
-        var owner = _fixture.Create<string>();
-        var wallet = await CreateWallet(owner);
-        var endpoint = await CreateWalletEndpoint(wallet);
-        var slice = new WalletSlice
-        {
-            Id = Guid.NewGuid(),
-            WalletEndpointId = endpoint.Id,
-            WalletEndpointPosition = 1,
-            RegistryName = registry,
-            CertificateId = certificate.Id,
-            Quantity = 150,
-            RandomR = _fixture.Create<byte[]>(),
-            State = WalletSliceState.Available
-        };
-        await _certRepository.InsertWalletSlice(slice);
-        var claim = new Claim
-        {
-            Id = Guid.NewGuid(),
-            ConsumptionSliceId = slice.Id,
-            ProductionSliceId = slice.Id,
-            State = ClaimState.Created
-        };
-
-        // Act
-        await _claimRepository.InsertClaim(claim);
-        await _claimRepository.SetClaimState(claim.Id, ClaimState.Claimed);
-        var insertedClaim = await _claimRepository.GetClaim(claim.Id);
-
-        // Assert
-        insertedClaim.Should().BeEquivalentTo(claim with { State = ClaimState.Claimed });
-    }
-
-    [Fact]
-    public async Task Claims_Query_Empty()
-    {
-        // Arrange
-        var owner = _fixture.Create<string>();
-
-        // Act
-        var result = await _claimRepository.QueryClaims(new ClaimFilter
-        {
-            Owner = owner
-        });
-
-        // Assert
-        result.Items.Should().NotBeNull();
-        result.Items.Should().BeEmpty();
-    }
-
-
-    [Fact]
-    public async Task Claims_Query_Success()
-    {
-        // Arrange
-        var owner = _fixture.Create<string>();
-        var startDate = new DateTimeOffset(2023, 7, 1, 0, 0, 0, TimeSpan.Zero);
-        await CreateClaimsAndCerts(owner, 48, startDate);
-
-        // Act
-        var result = await _claimRepository.QueryClaims(new ClaimFilter
-        {
-            Owner = owner
-        });
-
-        // Assert
-        result.Items.Should().NotBeNull();
-        result.Items.Should().HaveCount(48);
-        result.Items.Sum(x => x.Quantity).Should().Be(16500);
-    }
-
-    [Fact]
-    public async Task ClaimQuery_Filter_StartDate()
-    {
-        // Arrange
-        var owner = _fixture.Create<string>();
-        var startDate = new DateTimeOffset(2023, 7, 1, 0, 0, 0, TimeSpan.Zero);
-        await CreateClaimsAndCerts(owner, 48, startDate);
-
-        // Act
-        var result = await _claimRepository.QueryClaims(new ClaimFilter()
-        {
-            Owner = owner,
-            Start = startDate.AddHours(48 - 4)
-        });
-
-        // Assert
-        result.Items.Should().NotBeNull();
-        result.Items.Should().HaveCount(4);
-        result.Items.Sum(x => x.Quantity).Should().Be(1300);
-    }
-
-    [Fact]
-    public async Task ClaimQuery_Filter_EndDate()
-    {
-        // Arrange
-        var owner = _fixture.Create<string>();
-        var startDate = new DateTimeOffset(2023, 7, 1, 0, 0, 0, TimeSpan.Zero);
-        await CreateClaimsAndCerts(owner, 48, startDate);
-
-        // Act
-        var result = await _claimRepository.QueryClaims(new ClaimFilter()
-        {
-            Owner = owner,
-            End = startDate.AddHours(4)
-        });
-
-        // Assert
-        result.Items.Should().NotBeNull();
-        result.Items.Should().HaveCount(4);
-        result.Items.Sum(x => x.Quantity).Should().Be(1200);
-    }
-
-    [Fact]
-    public async Task ClaimQuery_Filter_StartRange()
-    {
-        // Arrange
-        var owner = _fixture.Create<string>();
-        var startDate = new DateTimeOffset(2023, 7, 1, 0, 0, 0, TimeSpan.Zero);
-        await CreateClaimsAndCerts(owner, 48, startDate);
-
-        // Act
-        var result = await _claimRepository.QueryClaims(new ClaimFilter()
-        {
-            Owner = owner,
-            Start = startDate.AddHours(10),
-            End = startDate.AddHours(15)
-        });
-
-        // Assert
-        result.Items.Should().NotBeNull();
-        result.Items.Should().HaveCount(5);
-        result.Items.Sum(x => x.Quantity).Should().Be(1750L);
-    }
-
-    [Fact]
     public async Task InsertAndGetWalletAttributes()
     {
         // Arrange
@@ -803,105 +660,6 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         // Assert
         var foundAttribute = walletAttributeFromRepo.Should().ContainSingle().Which;
         foundAttribute.Value.Should().Be(assetIdWalletAttribute.Value);
-    }
-
-
-    [Fact]
-    public async Task Test_GetTransfers()
-    {
-        // Arrange
-        var issuestartDate = new DateTimeOffset(2020, 6, 1, 12, 0, 0, TimeSpan.Zero);
-        var issueEndDate = new DateTimeOffset(2020, 6, 30, 12, 0, 0, TimeSpan.Zero);
-        var queryStartDate = new DateTimeOffset(2020, 6, 8, 12, 0, 0, TimeSpan.Zero);
-        var queryEndDate = new DateTimeOffset(2020, 6, 10, 12, 0, 0, TimeSpan.Zero);
-
-        string subject = _fixture.Create<string>();
-
-        for (int ownerNumber = 0; ownerNumber < 2; ownerNumber++)
-        {
-            subject = _fixture.Create<string>();
-
-            for (int endpointNumber = 0; endpointNumber < 2; endpointNumber++)
-            {
-                var externalEndpoint = await _dbFixture.CreateExternalEndpoint(subject);
-
-                for (DateTimeOffset i = issuestartDate; i < issueEndDate; i = i.AddHours(1))
-                {
-                    var certificate = await _dbFixture.CreateCertificate(
-                        Guid.NewGuid(),
-                        _fixture.Create<string>(),
-                        GranularCertificateType.Production,
-                        start: i,
-                        end: i.AddHours(1));
-                    await _dbFixture.CreateTransferredSlice(externalEndpoint, certificate, new PedersenCommitment.SecretCommitmentInfo(100));
-                }
-            }
-        }
-
-        // Act
-        var result = await _certRepository.GetTransfers(new TransferFilter
-        {
-            Owner = subject,
-            Start = queryStartDate,
-            End = queryEndDate
-        });
-
-        //assert
-        result.Should().HaveCount(96);
-        result.Select(x => x.ReceiverId).Distinct().Should().HaveCount(2);
-        result.SelectMany(x => x.Attributes).Should().HaveCount(96 * 2);
-        result.Select(x => x.StartDate).Distinct().Should().HaveCount(48);
-        result.Min(x => x.StartDate).Should().Be(queryStartDate);
-        result.Select(x => x.EndDate).Distinct().Should().HaveCount(48);
-        result.Max(x => x.EndDate).Should().Be(queryEndDate);
-    }
-
-    private async Task CreateClaimsAndCerts(string owner, int numberOfClaims, DateTimeOffset startDate)
-    {
-        var registry = _fixture.Create<string>();
-        var wallet = await CreateWallet(owner);
-        var endpoint = await CreateWalletEndpoint(wallet);
-
-        var position = 1;
-        for (int i = 0; i < numberOfClaims; i++)
-        {
-            var conCert = await CreateCertificate(registry, GranularCertificateType.Consumption, startDate.AddHours(i), endDate: startDate.AddHours(i + 1));
-            var conSlice = new WalletSlice
-            {
-                Id = Guid.NewGuid(),
-                WalletEndpointId = endpoint.Id,
-                WalletEndpointPosition = position++,
-                RegistryName = registry,
-                CertificateId = conCert.Id,
-                Quantity = 150 + 100 * (i % 5),
-                RandomR = _fixture.Create<byte[]>(),
-                State = WalletSliceState.Claimed
-            };
-            await _certRepository.InsertWalletSlice(conSlice);
-
-            var prodCert = await CreateCertificate(registry, GranularCertificateType.Production, startDate.AddHours(i), endDate: startDate.AddHours(i + 1));
-            var prodSlice = new WalletSlice
-            {
-                Id = Guid.NewGuid(),
-                WalletEndpointId = endpoint.Id,
-                WalletEndpointPosition = position++,
-                RegistryName = registry,
-                CertificateId = prodCert.Id,
-                Quantity = 150 + 100 * (i % 5),
-                RandomR = _fixture.Create<byte[]>(),
-                State = WalletSliceState.Claimed
-            };
-            await _certRepository.InsertWalletSlice(prodSlice);
-
-            var claim = new Claim
-            {
-                Id = Guid.NewGuid(),
-                ConsumptionSliceId = conSlice.Id,
-                ProductionSliceId = prodSlice.Id,
-                State = ClaimState.Claimed
-            };
-            await _claimRepository.InsertClaim(claim);
-        }
     }
 
     private async Task CreateCertificatesAndSlices(Wallet wallet, int numberOfCertificates, DateTimeOffset startDate)

@@ -11,6 +11,6 @@ public interface IClaimRepository
     Task InsertClaim(Claim newClaim);
     Task SetClaimState(Guid claimId, ClaimState state);
 
-    Task<PageResult<ClaimViewModel>> QueryClaims(ClaimFilter claimFilter);
-    Task<PageResult<AggregatedClaimViewModel>> QueryAggregatedClaims(ClaimFilter claimFilter, TimeAggregate timeAggregate, string timeZone);
+    Task<PageResult<ClaimViewModel>> QueryClaims(ClaimFilter filter);
+    Task<PageResult<AggregatedClaimViewModel>> QueryAggregatedClaims(ClaimFilter filter, TimeAggregate timeAggregate, string timeZone);
 }
