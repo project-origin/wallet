@@ -124,7 +124,7 @@ public class TransferRepository : ITransferRepository
                 start
         );
         SELECT count(*) FROM transfer_work_table;
-        SELECT * FROM transfer_work_table;
+        SELECT * FROM transfer_work_table LIMIT @limit OFFSET @skip;
         ";
 
         using (var gridReader = await _connection.QueryMultipleAsync(sql, new
