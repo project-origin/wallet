@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using ProjectOrigin.WalletSystem.Server.Services.REST.v1;
 
+namespace ProjectOrigin.WalletSystem.Server.Models;
+
 public record PageResult<T>
 {
     public required IEnumerable<T> Items { get; init; }
