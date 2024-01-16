@@ -662,6 +662,68 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         foundAttribute.Value.Should().Be(assetIdWalletAttribute.Value);
     }
 
+    [Theory]
+    [InlineData("2020-06-08T12:00:00", "2020-06-10T12:00:00", 10, 0, 10, 48)]
+    [InlineData("2020-06-08T12:00:00", "2020-06-10T12:00:00", 10, 20, 10, 48)]
+    [InlineData("2020-06-08T12:00:00", "2020-06-10T12:00:00", 10, 40, 8, 48)]
+    public async Task QueryCertificates_Pagination(string from, string to, int take, int skip, int numberOfResults, int total)
+    {
+        // Arrange
+        var owner = _fixture.Create<string>();
+        var wallet = await CreateWallet(owner);
+        var startDate = new DateTimeOffset(2020, 6, 1, 0, 0, 0, TimeSpan.Zero);
+        await CreateCertificatesAndSlices(wallet, 31 * 24, startDate);
+
+        // Act
+        var result = await _certRepository.QueryAvailableCertificates(new CertificatesFilter
+        {
+            Owner = owner,
+            Start = DateTimeOffset.Parse(from),
+            End = DateTimeOffset.Parse(to),
+            Limit = take,
+            Skip = skip,
+        });
+
+        // Assert
+        result.Items.Should().HaveCount(numberOfResults);
+        result.Offset.Should().Be(skip);
+        result.Limit.Should().Be(take);
+        result.Count.Should().Be(numberOfResults);
+        result.TotalCount.Should().Be(total);
+    }
+
+    [Theory]
+    [InlineData("2020-06-08T12:00:00", "2020-06-12T12:00:00", TimeAggregate.Total, "Europe/Copenhagen", 2, 0, 1, 1)]
+    [InlineData("2020-06-08T12:00:00", "2020-06-12T12:00:00", TimeAggregate.Day, "Europe/Copenhagen", 2, 2, 2, 5)]
+    [InlineData("2020-06-08T00:00:00", "2020-06-12T00:00:00", TimeAggregate.Day, "Europe/Copenhagen", 2, 4, 1, 5)]
+    [InlineData("2020-06-01T00:00:00", "2020-06-03T12:00:00", TimeAggregate.Day, "Europe/Copenhagen", 2, 0, 2, 3)]
+    [InlineData("2020-06-01T00:00:00", "2020-06-03T12:00:00", TimeAggregate.Day, "America/Toronto", 2, 0, 2, 4)]
+    public async Task QueryAggregatedCertificates_Pagination(string from, string to, TimeAggregate aggregate, string timeZone, int take, int skip, int numberOfResults, int total)
+    {
+        // Arrange
+        var owner = _fixture.Create<string>();
+        var wallet = await CreateWallet(owner);
+        var startDate = new DateTimeOffset(2020, 6, 1, 0, 0, 0, TimeSpan.Zero);
+        await CreateCertificatesAndSlices(wallet, 31 * 24, startDate);
+
+        // Act
+        var result = await _certRepository.QueryAggregatedAvailableCertificates(new CertificatesFilter
+        {
+            Owner = owner,
+            Start = DateTimeOffset.Parse(from),
+            End = DateTimeOffset.Parse(to),
+            Limit = take,
+            Skip = skip,
+        }, aggregate, timeZone);
+
+        //assert
+        result.Items.Should().HaveCount(numberOfResults);
+        result.Offset.Should().Be(skip);
+        result.Limit.Should().Be(take);
+        result.Count.Should().Be(numberOfResults);
+        result.TotalCount.Should().Be(total);
+    }
+
     private async Task CreateCertificatesAndSlices(Wallet wallet, int numberOfCertificates, DateTimeOffset startDate)
     {
         var registry = _fixture.Create<string>();

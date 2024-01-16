@@ -69,7 +69,7 @@ public class ClaimRepository : IClaimRepository
                 AND (@end IS NULL OR consumption_end <= @end)
         );
         SELECT count(*) FROM claims_work_table;
-        SELECT * FROM claims_work_table;
+        SELECT * FROM claims_work_table LIMIT @limit OFFSET @skip;
         SELECT attributes.registry_name, attributes.certificate_id, attributes.attribute_key as key, attributes.attribute_value as value, attributes.attribute_type as type
         FROM attributes_view attributes
         WHERE (wallet_id IS NULL AND (registry_name, certificate_id) IN (SELECT consumption_registry_name, consumption_certificate_id FROM claims_work_table))

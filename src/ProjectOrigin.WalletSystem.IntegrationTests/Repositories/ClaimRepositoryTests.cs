@@ -1,18 +1,12 @@
 using AutoFixture;
-using Dapper;
 using FluentAssertions;
 using ProjectOrigin.WalletSystem.Server.Models;
 using ProjectOrigin.WalletSystem.Server.Repositories;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using ProjectOrigin.WalletSystem.Server.Extensions;
 using Xunit;
 using ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures;
-using ProjectOrigin.WalletSystem.Server.Activities.Exceptions;
-using System.Text;
-using ProjectOrigin.WalletSystem.IntegrationTests.TestExtensions;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests.Repositories;
 
@@ -165,6 +159,66 @@ public class ClaimRepositoryTests : AbstractRepositoryTests
         result.Items.Should().NotBeNull();
         result.Items.Should().HaveCount(5);
         result.Items.Sum(x => x.Quantity).Should().Be(1750L);
+    }
+
+    [Theory]
+    [InlineData("2020-06-08T12:00:00", "2020-06-10T12:00:00", 10, 0, 10, 48)]
+    [InlineData("2020-06-08T12:00:00", "2020-06-10T12:00:00", 10, 20, 10, 48)]
+    [InlineData("2020-06-08T12:00:00", "2020-06-10T12:00:00", 10, 40, 8, 48)]
+    public async Task QueryClaims_Pagination(string from, string to, int take, int skip, int numberOfResults, int total)
+    {
+        // Arrange
+        var owner = _fixture.Create<string>();
+        var startDate = new DateTimeOffset(2020, 6, 1, 0, 0, 0, TimeSpan.Zero);
+        await CreateClaimsAndCerts(owner, 31 * 24, startDate);
+
+        // Act
+        var result = await _claimRepository.QueryClaims(new ClaimFilter()
+        {
+            Owner = owner,
+            Start = DateTimeOffset.Parse(from),
+            End = DateTimeOffset.Parse(to),
+            Limit = take,
+            Skip = skip,
+        });
+
+        // Assert
+        result.Items.Should().HaveCount(numberOfResults);
+        result.Offset.Should().Be(skip);
+        result.Limit.Should().Be(take);
+        result.Count.Should().Be(numberOfResults);
+        result.TotalCount.Should().Be(total);
+    }
+
+    [Theory]
+    [InlineData("2020-06-08T12:00:00", "2020-06-12T12:00:00", TimeAggregate.Total, "Europe/Copenhagen", 2, 0, 1, 1)]
+    [InlineData("2020-06-08T12:00:00", "2020-06-12T12:00:00", TimeAggregate.Day, "Europe/Copenhagen", 2, 2, 2, 5)]
+    [InlineData("2020-06-08T00:00:00", "2020-06-12T00:00:00", TimeAggregate.Day, "Europe/Copenhagen", 2, 4, 1, 5)]
+    [InlineData("2020-06-01T00:00:00", "2020-06-03T12:00:00", TimeAggregate.Day, "Europe/Copenhagen", 2, 0, 2, 3)]
+    [InlineData("2020-06-01T00:00:00", "2020-06-03T12:00:00", TimeAggregate.Day, "America/Toronto", 2, 0, 2, 4)]
+    public async Task QueryAggregatedClaims_Pagination(string from, string to, TimeAggregate aggregate, string timeZone, int take, int skip, int numberOfResults, int total)
+    {
+        // Arrange
+        var owner = _fixture.Create<string>();
+        var startDate = new DateTimeOffset(2020, 1, 1, 0, 0, 0, TimeSpan.Zero);
+        await CreateClaimsAndCerts(owner, 365 * 24, startDate);
+
+        // Act
+        var result = await _claimRepository.QueryAggregatedClaims(new ClaimFilter()
+        {
+            Owner = owner,
+            Start = DateTimeOffset.Parse(from),
+            End = DateTimeOffset.Parse(to),
+            Limit = take,
+            Skip = skip,
+        }, aggregate, timeZone);
+
+        //assert
+        result.Items.Should().HaveCount(numberOfResults);
+        result.Offset.Should().Be(skip);
+        result.Limit.Should().Be(take);
+        result.Count.Should().Be(numberOfResults);
+        result.TotalCount.Should().Be(total);
     }
 
     private async Task CreateClaimsAndCerts(string owner, int numberOfClaims, DateTimeOffset startDate)
