@@ -21,7 +21,7 @@ public class TransferRepositoryTests : AbstractRepositoryTests
     }
 
     [Fact]
-    public async Task Test_GetTransfers()
+    public async Task GetTransfers()
     {
         // Arrange
         var issuestartDate = new DateTimeOffset(2020, 6, 1, 12, 0, 0, TimeSpan.Zero);
