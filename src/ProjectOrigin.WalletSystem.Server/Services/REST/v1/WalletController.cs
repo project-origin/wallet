@@ -111,6 +111,13 @@ public class WalletController : ControllerBase
         return Ok(new ResultList<WalletRecord>
         {
             Result = list,
+            Metadata = new PageInfo
+            {
+                Count = list.Count,
+                Limit = int.MaxValue,
+                Offset = 0,
+                Total = list.Count,
+            }
         });
     }
 

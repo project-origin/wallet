@@ -71,14 +71,15 @@ public class WalletService : V1.WalletService.WalletServiceBase
     {
         var subject = context.GetSubject();
 
-        var certificates = await _unitOfWork.CertificateRepository.GetAllOwnedCertificates(subject, new CertificatesFilter
+        var result = await _unitOfWork.CertificateRepository.QueryAvailableCertificates(new CertificatesFilter
         {
+            Owner = subject,
             Start = request.Filter?.Start.ToNullableDateTimeOffset(),
             End = request.Filter?.End.ToNullableDateTimeOffset(),
         });
 
         var response = new QueryResponse();
-        foreach (var gc in certificates)
+        foreach (var gc in result.Items)
         {
             response.GranularCertificates.Add(gc.ToProto());
         }
@@ -168,15 +169,16 @@ public class WalletService : V1.WalletService.WalletServiceBase
     {
         var owner = context.GetSubject();
 
-        var claims = await _unitOfWork.CertificateRepository.GetClaims(owner, new ClaimFilter()
+        var claims = await _unitOfWork.ClaimRepository.QueryClaims(new ClaimFilter()
         {
+            Owner = owner,
             Start = request.Filter?.Start.ToNullableDateTimeOffset(),
             End = request.Filter?.End.ToNullableDateTimeOffset(),
         });
 
         return new ClaimQueryResponse
         {
-            Claims = { claims.Select(c => c.ToProto()) }
+            Claims = { claims.Items.Select(c => c.ToProto()) }
         };
     }
 }

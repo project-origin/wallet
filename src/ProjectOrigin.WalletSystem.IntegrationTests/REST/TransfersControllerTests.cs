@@ -41,6 +41,7 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
         var result = await controller.GetTransfers(
             _unitOfWork,
             null,
+            null,
             null);
 
         // Assert
@@ -48,7 +49,7 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
     }
 
     [Fact]
-    public async Task Test_GetTransfers()
+    public async Task GetTransfers()
     {
         // Arrange
         var issuestartDate = new DateTimeOffset(2020, 6, 1, 12, 0, 0, TimeSpan.Zero);
@@ -79,7 +80,8 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
         var result = await controller.GetTransfers(
             _unitOfWork,
             queryStartDate.ToUnixTimeSeconds(),
-            queryEndDate.ToUnixTimeSeconds());
+            queryEndDate.ToUnixTimeSeconds(),
+            null);
 
         // Assert
         result.Value.Should().NotBeNull();
@@ -92,7 +94,7 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
     [InlineData("Europe/Copenhagen", new long[] { 1000, 2400, 1400 })]
     [InlineData("Europe/London", new long[] { 1100, 2400, 1300 })]
     [InlineData("America/Toronto", new long[] { 1600, 2400, 800 })]
-    public async Task Test_AggregateTransfers(string timezone, long[] values)
+    public async Task AggregateTransfers(string timezone, long[] values)
     {
         // Arrange
         var issuestartDate = new DateTimeOffset(2020, 6, 1, 12, 0, 0, TimeSpan.Zero);
@@ -125,7 +127,8 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
             TimeAggregate.Day,
             timezone,
             queryStartDate.ToUnixTimeSeconds(),
-            queryEndDate.ToUnixTimeSeconds());
+            queryEndDate.ToUnixTimeSeconds(),
+            null);
 
         // Assert
         result.Value.Should().NotBeNull();
@@ -150,6 +153,7 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
             _unitOfWork,
             TimeAggregate.Day,
             "invalid-time-zone",
+            null,
             null,
             null);
 

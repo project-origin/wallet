@@ -23,6 +23,8 @@ public class ClaimsController : ControllerBase
     /// <param name="unitOfWork"></param>
     /// <param name="start">The start of the time range in Unix time in seconds.</param>
     /// <param name="end">The end of the time range in Unix time in seconds.</param>
+    /// <param name="skip">The number of items to skip.</param>
+    /// <param name="limit">The number of items to return.</param>
     /// <response code="200">Returns all the indiviual claims.</response>
     /// <response code="401">If the user is not authenticated.</response>
     [HttpGet]
@@ -30,17 +32,25 @@ public class ClaimsController : ControllerBase
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
-    public async Task<ActionResult<ResultList<Claim>>> GetClaims([FromServices] IUnitOfWork unitOfWork, [FromQuery] long? start, [FromQuery] long? end)
+    public async Task<ActionResult<ResultList<Claim>>> GetClaims(
+        [FromServices] IUnitOfWork unitOfWork,
+        [FromQuery] long? start,
+        [FromQuery] long? end,
+        [FromQuery] int? limit,
+        [FromQuery] int skip = 0)
     {
         if (!User.TryGetSubject(out var subject)) return Unauthorized();
 
-        var claims = await unitOfWork.CertificateRepository.GetClaims(subject, new ClaimFilter
+        var claims = await unitOfWork.ClaimRepository.QueryClaims(new ClaimFilter
         {
+            Owner = subject,
             Start = start != null ? DateTimeOffset.FromUnixTimeSeconds(start.Value) : null,
             End = end != null ? DateTimeOffset.FromUnixTimeSeconds(end.Value) : null,
+            Skip = skip,
+            Limit = limit ?? int.MaxValue,
         });
 
-        return new ResultList<Claim> { Result = claims.Select(c => c.MapToV1()) };
+        return claims.ToResultList(c => c.MapToV1());
     }
 
     /// <summary>
@@ -51,6 +61,8 @@ public class ClaimsController : ControllerBase
     /// <param name="timeZone">The time zone. See https://en.wikipedia.org/wiki/List_of_tz_database_time_zones for a list of valid time zones.</param>
     /// <param name="start">The start of the time range in Unix time in seconds.</param>
     /// <param name="end">The end of the time range in Unix time in seconds.</param>
+    /// <param name="skip">The number of items to skip.</param>
+    /// <param name="limit">The number of items to return.</param>
     /// <response code="200">Returns the aggregated claims.</response>
     /// <response code="400">If the time zone is invalid.</response>
     /// <response code="401">If the user is not authenticated.</response>
@@ -65,28 +77,28 @@ public class ClaimsController : ControllerBase
         [FromQuery] TimeAggregate timeAggregate,
         [FromQuery] string timeZone,
         [FromQuery] long? start,
-        [FromQuery] long? end)
+        [FromQuery] long? end,
+        [FromQuery] int? limit,
+        [FromQuery] int skip = 0)
     {
         if (!User.TryGetSubject(out var subject)) return Unauthorized();
         if (!timeZone.TryParseTimeZone(out var timeZoneInfo)) return BadRequest("Invalid time zone");
 
-        var claims = await unitOfWork.CertificateRepository.GetClaims(subject, new ClaimFilter
+        var result = await unitOfWork.ClaimRepository.QueryAggregatedClaims(new ClaimFilter
         {
+            Owner = subject,
             Start = start != null ? DateTimeOffset.FromUnixTimeSeconds(start.Value) : null,
             End = end != null ? DateTimeOffset.FromUnixTimeSeconds(end.Value) : null,
-        });
+            Skip = skip,
+            Limit = limit ?? int.MaxValue
+        }, (Models.TimeAggregate)timeAggregate, timeZone);
 
-        return new ResultList<AggregatedClaims>
+        return result.ToResultList(c => new AggregatedClaims()
         {
-            Result = claims
-                .GroupByTime(x => x.ProductionStart, (Models.TimeAggregate)timeAggregate, timeZoneInfo)
-                .Select(group => new AggregatedClaims
-                {
-                    Quantity = group.Sum(claim => claim.Quantity),
-                    Start = group.Min(claim => claim.ProductionStart).ToUnixTimeSeconds(),
-                    End = group.Max(claim => claim.ProductionEnd).ToUnixTimeSeconds(),
-                })
-        };
+            Start = c.Start.ToUnixTimeSeconds(),
+            End = c.End.ToUnixTimeSeconds(),
+            Quantity = c.Quantity,
+        });
     }
 
     /// <summary>

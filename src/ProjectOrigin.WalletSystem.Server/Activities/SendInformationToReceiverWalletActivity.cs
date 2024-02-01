@@ -37,7 +37,7 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
     {
         _logger.LogDebug("RoutingSlip {TrackingNumber} - Executing {ActivityName}", context.TrackingNumber, context.ActivityName);
 
-        var newSlice = await _unitOfWork.CertificateRepository.GetTransferredSlice(context.Arguments.SliceId);
+        var newSlice = await _unitOfWork.TransferRepository.GetTransferredSlice(context.Arguments.SliceId);
         var externalEndpoint = await _unitOfWork.WalletRepository.GetExternalEndpoint(context.Arguments.ExternalEndpointId);
 
         if (_walletSystemOptions.Value.EndpointAddress.Equals(externalEndpoint.Endpoint))
@@ -79,7 +79,7 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
 
             _logger.LogDebug("Sending information to receiver");
             await client.ReceiveSliceAsync(request);
-            await _unitOfWork.CertificateRepository.SetTransferredSliceState(newSlice.Id, TransferredSliceState.Transferred);
+            await _unitOfWork.TransferRepository.SetTransferredSliceState(newSlice.Id, TransferredSliceState.Transferred);
 
 
             _logger.LogDebug("Information Sent to receiver");
@@ -117,7 +117,7 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
             State = WalletSliceState.Available
         };
         await _unitOfWork.CertificateRepository.InsertWalletSlice(slice);
-        await _unitOfWork.CertificateRepository.SetTransferredSliceState(newSlice.Id, TransferredSliceState.Transferred);
+        await _unitOfWork.TransferRepository.SetTransferredSliceState(newSlice.Id, TransferredSliceState.Transferred);
         foreach (var walletAttribute in context.Arguments.WalletAttributes)
         {
             await _unitOfWork.CertificateRepository.InsertWalletAttribute(walletEndpoint.WalletId, walletAttribute);

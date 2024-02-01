@@ -174,6 +174,7 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
 
             var regName = _fixture.Create<string>();
             var certificateRepository = new CertificateRepository(connection);
+            var claimRepository = new ClaimRepository(connection);
 
             var productionCertificate = new Certificate
             {
@@ -239,7 +240,7 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
                 State = ClaimState.Claimed
             };
 
-            await certificateRepository.InsertClaim(claim);
+            await claimRepository.InsertClaim(claim);
         }
 
         var filterStart = startDate.ToUnixTimeSeconds();

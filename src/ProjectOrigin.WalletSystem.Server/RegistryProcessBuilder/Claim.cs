@@ -37,7 +37,7 @@ public partial class RegistryProcessBuilder
             ConsumptionSliceId = consumptionSlice.Id,
             State = ClaimState.Created,
         };
-        await _unitOfWork.CertificateRepository.InsertClaim(newClaim);
+        await _unitOfWork.ClaimRepository.InsertClaim(newClaim);
 
         var prodClaimedEvent = CreateClaimedEvent(allocationId, productionId);
         AddRegistryTransactionActivity(productionKey.SignRegistryTransaction(productionId, prodClaimedEvent));

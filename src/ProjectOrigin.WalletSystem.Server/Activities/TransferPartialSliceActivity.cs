@@ -67,7 +67,7 @@ public class TransferPartialSliceActivity : IExecuteActivity<TransferPartialSlic
                 RandomR = receiverCommitment.BlindingValue.ToArray(),
                 State = TransferredSliceState.Registering
             };
-            await _unitOfWork.CertificateRepository.InsertTransferredSlice(transferredSlice);
+            await _unitOfWork.TransferRepository.InsertTransferredSlice(transferredSlice);
 
             var remainderEndpoint = await _unitOfWork.WalletRepository.GetWalletRemainderEndpoint(sourceEndpoint.WalletId);
             var remainderPosition = await _unitOfWork.WalletRepository.GetNextNumberForId(remainderEndpoint.Id);

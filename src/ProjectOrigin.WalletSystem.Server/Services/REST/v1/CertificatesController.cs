@@ -21,6 +21,9 @@ public class CertificatesController : ControllerBase
     /// <param name="unitOfWork"></param>
     /// <param name="start">The start of the time range in Unix time in seconds.</param>
     /// <param name="end">The end of the time range in Unix time in seconds.</param>
+    /// <param name="type">Filter the type of certificates to return.</param>
+    /// <param name="skip">The number of items to skip.</param>
+    /// <param name="limit">The number of items to return.</param>
     /// <response code="200">Returns the aggregated claims.</response>
     /// <response code="401">If the user is not authenticated.</response>
     [HttpGet]
@@ -28,17 +31,27 @@ public class CertificatesController : ControllerBase
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
-    public async Task<ActionResult<ResultList<GranularCertificate>>> GetCertificates([FromServices] IUnitOfWork unitOfWork, [FromQuery] long? start, [FromQuery] long? end)
+    public async Task<ActionResult<ResultList<GranularCertificate>>> GetCertificates(
+        [FromServices] IUnitOfWork unitOfWork,
+        [FromQuery] long? start,
+        [FromQuery] long? end,
+        [FromQuery] CertificateType? type,
+        [FromQuery] int? limit,
+        [FromQuery] int skip = 0)
     {
         if (!User.TryGetSubject(out var subject)) return Unauthorized();
 
-        var certificates = await unitOfWork.CertificateRepository.GetAllOwnedCertificates(subject, new CertificatesFilter
+        var certificates = await unitOfWork.CertificateRepository.QueryAvailableCertificates(new CertificatesFilter
         {
+            Owner = subject,
             Start = start != null ? DateTimeOffset.FromUnixTimeSeconds(start.Value) : null,
-            End = end != null ? DateTimeOffset.FromUnixTimeSeconds(end.Value) : null
+            End = end != null ? DateTimeOffset.FromUnixTimeSeconds(end.Value) : null,
+            Type = type != null ? (GranularCertificateType)type.Value : null,
+            Skip = skip,
+            Limit = limit ?? int.MaxValue
         });
 
-        return new ResultList<GranularCertificate> { Result = certificates.Select(c => c.MapToV1()) };
+        return certificates.ToResultList(c => c.MapToV1());
     }
 
     /// <summary>
@@ -50,6 +63,8 @@ public class CertificatesController : ControllerBase
     /// <param name="start">The start of the time range in Unix time in seconds.</param>
     /// <param name="end">The end of the time range in Unix time in seconds.</param>
     /// <param name="type">Filter the type of certificates to return.</param>
+    /// <param name="skip">The number of items to skip.</param>
+    /// <param name="limit">The number of items to return.</param>
     /// <response code="200">Returns the aggregated claims.</response>
     /// <response code="400">If the time zone is invalid.</response>
     /// <response code="401">If the user is not authenticated.</response>
@@ -65,32 +80,30 @@ public class CertificatesController : ControllerBase
         [FromQuery] string timeZone,
         [FromQuery] long? start,
         [FromQuery] long? end,
-        [FromQuery] CertificateType? type)
+        [FromQuery] CertificateType? type,
+        [FromQuery] int? limit,
+        [FromQuery] int skip = 0)
     {
         if (!User.TryGetSubject(out var subject)) return Unauthorized();
         if (!timeZone.TryParseTimeZone(out var timeZoneInfo)) return BadRequest("Invalid time zone");
 
-        var certificates = await unitOfWork.CertificateRepository.GetAllOwnedCertificates(subject, new CertificatesFilter
+        var certificates = await unitOfWork.CertificateRepository.QueryAggregatedAvailableCertificates(new CertificatesFilter
         {
+            Owner = subject,
             Start = start != null ? DateTimeOffset.FromUnixTimeSeconds(start.Value) : null,
             End = end != null ? DateTimeOffset.FromUnixTimeSeconds(end.Value) : null,
-            Type = type != null ? (GranularCertificateType)type.Value : null
-        });
+            Type = type != null ? (GranularCertificateType)type.Value : null,
+            Skip = skip,
+            Limit = limit ?? int.MaxValue
+        }, (Models.TimeAggregate)timeAggregate, timeZone);
 
-        return new ResultList<AggregatedCertificates>
+        return certificates.ToResultList(c => new AggregatedCertificates
         {
-            Result = certificates
-                .GroupBy(cert => cert.CertificateType)
-                .SelectMany(typeGroup => typeGroup
-                    .GroupByTime(x => x.StartDate, (Models.TimeAggregate)timeAggregate, timeZoneInfo)
-                    .Select(timeGroup => new AggregatedCertificates
-                    {
-                        Type = (CertificateType)typeGroup.Key,
-                        Quantity = timeGroup.Sum(certificate => certificate.Slices.Sum(slice => slice.Quantity)),
-                        Start = timeGroup.Min(certificate => certificate.StartDate).ToUnixTimeSeconds(),
-                        End = timeGroup.Max(certificate => certificate.EndDate).ToUnixTimeSeconds(),
-                    }))
-        };
+            Start = c.Start,
+            End = c.End,
+            Quantity = c.Quantity,
+            Type = (CertificateType)c.Type
+        });
     }
 }
 

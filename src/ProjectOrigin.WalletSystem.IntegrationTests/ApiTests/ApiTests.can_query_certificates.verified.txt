@@ -30,5 +30,11 @@
         techCode: T070000
       }
     }
-  ]
+  ],
+  metadata: {
+    count: 2,
+    offset: 0,
+    limit: 2147483647,
+    total: 2
+  }
 }

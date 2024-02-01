@@ -30,7 +30,7 @@ public class UpdateClaimStateActivity : IExecuteActivity<UpdateClaimStateArgumen
 
         try
         {
-            await _unitOfWork.CertificateRepository.SetClaimState(context.Arguments.Id, context.Arguments.State);
+            await _unitOfWork.ClaimRepository.SetClaimState(context.Arguments.Id, context.Arguments.State);
             _unitOfWork.Commit();
             return context.Completed();
         }

@@ -29,6 +29,33 @@
               "type": "integer",
               "format": "int64"
             }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "description": "Filter the type of certificates to return.",
+            "schema": {
+              "$ref": "#/components/schemas/CertificateType"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "The number of items to return.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "description": "The number of items to skip.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
           }
         ],
         "responses": {
@@ -96,6 +123,25 @@
             "schema": {
               "$ref": "#/components/schemas/CertificateType"
             }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "The number of items to return.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "description": "The number of items to skip.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
           }
         ],
         "responses": {
@@ -141,6 +187,25 @@
             "schema": {
               "type": "integer",
               "format": "int64"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "The number of items to return.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "description": "The number of items to skip.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
             }
           }
         ],
@@ -242,6 +307,25 @@
               "type": "integer",
               "format": "int64"
             }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "The number of items to return.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "description": "The number of items to skip.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
           }
         ],
         "responses": {
@@ -342,6 +426,25 @@
               "type": "integer",
               "format": "int64"
             }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "The number of items to return.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "description": "The number of items to skip.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
           }
         ],
         "responses": {
@@ -441,6 +544,25 @@
             "schema": {
               "type": "integer",
               "format": "int64"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "The number of items to return.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "description": "The number of items to skip.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
             }
           }
         ],
@@ -694,6 +816,9 @@
             "items": {
               "$ref": "#/components/schemas/AggregatedCertificates"
             }
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/PageInfo"
           }
         },
         "additionalProperties": false
@@ -728,6 +853,9 @@
             "items": {
               "$ref": "#/components/schemas/AggregatedClaims"
             }
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/PageInfo"
           }
         },
         "additionalProperties": false
@@ -762,6 +890,9 @@
             "items": {
               "$ref": "#/components/schemas/AggregatedTransfers"
             }
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/PageInfo"
           }
         },
         "additionalProperties": false
@@ -832,6 +963,9 @@
             "items": {
               "$ref": "#/components/schemas/Claim"
             }
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/PageInfo"
           }
         },
         "additionalProperties": false
@@ -988,6 +1122,9 @@
             "items": {
               "$ref": "#/components/schemas/GranularCertificate"
             }
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/PageInfo"
           }
         },
         "additionalProperties": false
@@ -1014,6 +1151,28 @@
       },
       "IHDPublicKey": {
         "type": "string",
+        "additionalProperties": false
+      },
+      "PageInfo": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "offset": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "limit": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "total": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
         "additionalProperties": false
       },
       "ProblemDetails": {
@@ -1168,6 +1327,9 @@
             "items": {
               "$ref": "#/components/schemas/Transfer"
             }
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/PageInfo"
           }
         },
         "additionalProperties": false
@@ -1213,6 +1375,9 @@
             "items": {
               "$ref": "#/components/schemas/WalletRecord"
             }
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/PageInfo"
           }
         },
         "additionalProperties": false
