@@ -95,6 +95,7 @@ public class ClaimRepositoryTests : AbstractRepositoryTests
         result.Items.Should().NotBeNull();
         result.Items.Should().HaveCount(48);
         result.Items.Sum(x => x.Quantity).Should().Be(16500);
+        result.Items.First().ClaimId.Should().NotBe(Guid.Empty);
     }
 
     [Fact]
