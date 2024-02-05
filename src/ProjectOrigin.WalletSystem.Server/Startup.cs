@@ -25,6 +25,12 @@ using System.IO;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using MassTransit.Logging;
+using MassTransit.Monitoring;
+using Npgsql;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 
 namespace ProjectOrigin.WalletSystem.Server;
 
@@ -76,6 +82,11 @@ public class Startup
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
+        services.AddOptions<OtlpOptions>()
+            .Bind(_configuration.GetSection(OtlpOptions.Prefix))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
         services.ConfigurePersistance(_configuration);
 
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -86,6 +97,39 @@ public class Startup
             });
 
         services.AddAuthorization();
+
+        void ConfigureResource(ResourceBuilder r)
+        {
+            r.AddService("ProjectOrigin.WalletSystem.Server",
+                serviceInstanceId: Environment.MachineName);
+        }
+
+        services.AddOpenTelemetry()
+            .ConfigureResource(ConfigureResource)
+            .WithMetrics(metrics => metrics
+                .AddHttpClientInstrumentation()
+                .AddMeter(InstrumentationOptions.MeterName)
+                .AddAspNetCoreInstrumentation()
+                .AddRuntimeInstrumentation()
+                .AddProcessInstrumentation()
+                .AddOtlpExporter(o =>
+                    o.Endpoint = _configuration.GetValue<OtlpOptions>(OtlpOptions.Prefix)?.ReceiverEndpoint))
+            .WithTracing(provider =>
+                provider
+                    .AddGrpcClientInstrumentation(grpcOptions =>
+                    {
+                        grpcOptions.EnrichWithHttpRequestMessage = (activity, httpRequestMessage) =>
+                            activity.SetTag("requestVersion", httpRequestMessage.Version);
+                        grpcOptions.EnrichWithHttpResponseMessage = (activity, httpResponseMessage) =>
+                            activity.SetTag("responseVersion", httpResponseMessage.Version);
+                        grpcOptions.SuppressDownstreamInstrumentation = true;
+                    })
+                    .AddHttpClientInstrumentation()
+                    .AddAspNetCoreInstrumentation()
+                    .AddNpgsql()
+                    .AddSource(DiagnosticHeaders.DefaultListenerName)
+                    .AddOtlpExporter(o =>
+                        o.Endpoint = _configuration.GetValue<OtlpOptions>(OtlpOptions.Prefix)?.ReceiverEndpoint));
 
         services.AddMassTransit(o =>
         {
