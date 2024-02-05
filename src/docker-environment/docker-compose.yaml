@@ -11,7 +11,7 @@ services:
       POSTGRES_PASSWORD: admin
     volumes:
       - postgres:/var/lib/postgresql/data
-
+#djh
   pgadmin:
     image: dpage/pgadmin4
     container_name: pgadmin
@@ -25,7 +25,7 @@ services:
       PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
     volumes:
       - pgadmin:/var/lib/pgadmin
-      
+
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
@@ -34,7 +34,7 @@ services:
       - prometheus:/prometheus
     ports:
       - "9090:9090"
-        
+
   jaeger:
     image: jaegertracing/all-in-one:latest
     container_name: jaeger
@@ -63,7 +63,7 @@ services:
       - "4318:4318" # OTLP http receiver port
     depends_on:
       - jaeger
-        
+
   loki:
     image: grafana/loki:latest
     command: -config.file=/mnt/config/loki-config.yml
@@ -71,7 +71,7 @@ services:
       - ./loki.yml:/mnt/config/loki-config.yml
     ports:
       - "3100:3100"
-        
+
   grafana:
     image: grafana/grafana:latest
     container_name: grafana
