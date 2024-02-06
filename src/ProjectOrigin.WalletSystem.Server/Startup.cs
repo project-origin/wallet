@@ -82,14 +82,10 @@ public class Startup
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
-
         services.AddOptions<OtlpOptions>()
             .BindConfiguration(OtlpOptions.Prefix)
             .ValidateDataAnnotations()
             .ValidateOnStart();
-
-        var otlpConfiguration = _configuration.GetSection(OtlpOptions.Prefix);
-        var otlpOptions = otlpConfiguration.Get<OtlpOptions>()!;
 
         services.ConfigurePersistance(_configuration);
 
@@ -108,6 +104,7 @@ public class Startup
                 serviceInstanceId: Environment.MachineName);
         }
 
+        var otlpOptions = _configuration.GetSection(OtlpOptions.Prefix).GetValid<OtlpOptions>();
         if (otlpOptions.Enabled)
         {
             services.AddOpenTelemetry()

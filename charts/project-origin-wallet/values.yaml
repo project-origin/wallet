@@ -44,6 +44,13 @@ config:
       #   # pemFileName defines the name of the file containing the pem encoded key
       #   pemFileName: /etc/keyfile.pem
 
+# otlp holds the configuration for the opentelemetry collector
+otlp:
+  # enabled determines if the opentelemetry collector is enabled
+  enabled: false
+  # endpoint defines the endpoint of the opentelemetry collector, example "http://otel-collector:4317"
+  endpoint:
+
 messageBroker:
   # type defines the type of message broker to use, allowed values are (inMemory | rabbitmq | rabbitmqOperator)
   type:
