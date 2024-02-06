@@ -111,8 +111,8 @@ public class Startup
                 .ConfigureResource(ConfigureResource)
                 .WithMetrics(metrics => metrics
                     .AddHttpClientInstrumentation()
-                    .AddMeter(InstrumentationOptions.MeterName)
                     .AddAspNetCoreInstrumentation()
+                    .AddMeter(InstrumentationOptions.MeterName)
                     .AddRuntimeInstrumentation()
                     .AddProcessInstrumentation()
                     .AddOtlpExporter(o => o.Endpoint = otlpOptions.ReceiverEndpoint))
