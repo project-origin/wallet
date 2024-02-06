@@ -21,9 +21,6 @@ public class UnitOfWorkTests : IClassFixture<PostgresDatabaseFixture>
     {
         _algorithm = new Secp256k1Algorithm();
         _dbFixture = fixture;
-
-        SqlMapper.AddTypeHandler(new HDPrivateKeyTypeHandler(_algorithm));
-        SqlMapper.AddTypeHandler(new HDPublicKeyTypeHandler(_algorithm));
     }
 
     [Fact]

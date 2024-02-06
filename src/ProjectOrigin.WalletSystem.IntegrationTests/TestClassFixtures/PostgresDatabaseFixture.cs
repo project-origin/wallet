@@ -28,9 +28,7 @@ public class PostgresDatabaseFixture : IAsyncLifetime
         });
 
         var algorithm = new Secp256k1Algorithm();
-        Dapper.SqlMapper.AddTypeHandler(new HDPrivateKeyTypeHandler(algorithm));
-        Dapper.SqlMapper.AddTypeHandler(new HDPublicKeyTypeHandler(algorithm));
-        Dapper.DefaultTypeMap.MatchNamesWithUnderscores = true;
+        ApplicationBuilderExtension.ConfigureMappers(algorithm);
     }
 
     public async Task InitializeAsync()
