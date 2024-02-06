@@ -82,10 +82,14 @@ public class Startup
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
+
         services.AddOptions<OtlpOptions>()
-            .Bind(_configuration.GetSection(OtlpOptions.Prefix))
+            .BindConfiguration(OtlpOptions.Prefix)
             .ValidateDataAnnotations()
             .ValidateOnStart();
+
+        var otlpConfiguration = _configuration.GetSection(OtlpOptions.Prefix);
+        var otlpOptions = otlpConfiguration.Get<OtlpOptions>()!;
 
         services.ConfigurePersistance(_configuration);
 
@@ -112,8 +116,7 @@ public class Startup
                 .AddAspNetCoreInstrumentation()
                 .AddRuntimeInstrumentation()
                 .AddProcessInstrumentation()
-                .AddOtlpExporter(o =>
-                    o.Endpoint = _configuration.GetValue<OtlpOptions>(OtlpOptions.Prefix)?.ReceiverEndpoint))
+                .AddOtlpExporter(o => o.Endpoint = otlpOptions.ReceiverEndpoint))
             .WithTracing(provider =>
                 provider
                     .AddGrpcClientInstrumentation(grpcOptions =>
@@ -128,8 +131,7 @@ public class Startup
                     .AddAspNetCoreInstrumentation()
                     .AddNpgsql()
                     .AddSource(DiagnosticHeaders.DefaultListenerName)
-                    .AddOtlpExporter(o =>
-                        o.Endpoint = _configuration.GetValue<OtlpOptions>(OtlpOptions.Prefix)?.ReceiverEndpoint));
+                    .AddOtlpExporter(o => o.Endpoint = otlpOptions.ReceiverEndpoint));
 
         services.AddMassTransit(o =>
         {
