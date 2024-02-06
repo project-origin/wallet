@@ -108,30 +108,33 @@ public class Startup
                 serviceInstanceId: Environment.MachineName);
         }
 
-        services.AddOpenTelemetry()
-            .ConfigureResource(ConfigureResource)
-            .WithMetrics(metrics => metrics
-                .AddHttpClientInstrumentation()
-                .AddMeter(InstrumentationOptions.MeterName)
-                .AddAspNetCoreInstrumentation()
-                .AddRuntimeInstrumentation()
-                .AddProcessInstrumentation()
-                .AddOtlpExporter(o => o.Endpoint = otlpOptions.ReceiverEndpoint))
-            .WithTracing(provider =>
-                provider
-                    .AddGrpcClientInstrumentation(grpcOptions =>
-                    {
-                        grpcOptions.EnrichWithHttpRequestMessage = (activity, httpRequestMessage) =>
-                            activity.SetTag("requestVersion", httpRequestMessage.Version);
-                        grpcOptions.EnrichWithHttpResponseMessage = (activity, httpResponseMessage) =>
-                            activity.SetTag("responseVersion", httpResponseMessage.Version);
-                        grpcOptions.SuppressDownstreamInstrumentation = true;
-                    })
+        if (otlpOptions.Enabled)
+        {
+            services.AddOpenTelemetry()
+                .ConfigureResource(ConfigureResource)
+                .WithMetrics(metrics => metrics
                     .AddHttpClientInstrumentation()
+                    .AddMeter(InstrumentationOptions.MeterName)
                     .AddAspNetCoreInstrumentation()
-                    .AddNpgsql()
-                    .AddSource(DiagnosticHeaders.DefaultListenerName)
-                    .AddOtlpExporter(o => o.Endpoint = otlpOptions.ReceiverEndpoint));
+                    .AddRuntimeInstrumentation()
+                    .AddProcessInstrumentation()
+                    .AddOtlpExporter(o => o.Endpoint = otlpOptions.ReceiverEndpoint))
+                .WithTracing(provider =>
+                    provider
+                        .AddGrpcClientInstrumentation(grpcOptions =>
+                        {
+                            grpcOptions.EnrichWithHttpRequestMessage = (activity, httpRequestMessage) =>
+                                activity.SetTag("requestVersion", httpRequestMessage.Version);
+                            grpcOptions.EnrichWithHttpResponseMessage = (activity, httpResponseMessage) =>
+                                activity.SetTag("responseVersion", httpResponseMessage.Version);
+                            grpcOptions.SuppressDownstreamInstrumentation = true;
+                        })
+                        .AddHttpClientInstrumentation()
+                        .AddAspNetCoreInstrumentation()
+                        .AddNpgsql()
+                        .AddSource(DiagnosticHeaders.DefaultListenerName)
+                        .AddOtlpExporter(o => o.Endpoint = otlpOptions.ReceiverEndpoint));
+        }
 
         services.AddMassTransit(o =>
         {
