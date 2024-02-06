@@ -7,7 +7,7 @@ namespace ProjectOrigin.WalletSystem.Server.ViewModels;
 
 public record ClaimViewModel
 {
-    public required Guid Id { get; init; }
+    public required Guid ClaimId { get; init; }
     public required uint Quantity { get; init; }
 
     public required string ProductionRegistryName { get; init; }
@@ -28,7 +28,7 @@ public record ClaimViewModel
     {
         return new V1.Claim
         {
-            ClaimId = new Common.V1.Uuid { Value = Id.ToString() },
+            ClaimId = new Common.V1.Uuid { Value = ClaimId.ToString() },
             Quantity = Quantity,
             ProductionCertificate = new V1.Claim.Types.ClaimCertificateInfo
             {

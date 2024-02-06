@@ -40,7 +40,7 @@ public static class MappingExtensions
     public static Claim MapToV1(this ClaimViewModel vm) =>
         new()
         {
-            ClaimId = vm.Id,
+            ClaimId = vm.ClaimId,
             Quantity = vm.Quantity,
             ProductionCertificate = new ClaimedCertificate
             {
