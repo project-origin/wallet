@@ -30,9 +30,6 @@ public abstract class AbstractRepositoryTests : IClassFixture<PostgresDatabaseFi
         _algorithm = new Secp256k1Algorithm();
         _connection = CreateConnection();
         _fixture = new Fixture();
-
-        SqlMapper.AddTypeHandler(new HDPrivateKeyTypeHandler(_algorithm));
-        SqlMapper.AddTypeHandler(new HDPublicKeyTypeHandler(_algorithm));
     }
 
     protected virtual void Dispose(bool disposing)

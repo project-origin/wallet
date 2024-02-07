@@ -36,9 +36,6 @@ public class ApiBasePathTests : WalletSystemTestsBase, IClassFixture<InMemoryFix
             null)
     {
         serverFixture.ConfigureTestServices += SetRestApiOptions;
-
-        SqlMapper.AddTypeHandler<IHDPrivateKey>(new HDPrivateKeyTypeHandler(Algorithm));
-        SqlMapper.AddTypeHandler<IHDPublicKey>(new HDPublicKeyTypeHandler(Algorithm));
     }
 
     private void SetRestApiOptions(IServiceCollection services) =>
