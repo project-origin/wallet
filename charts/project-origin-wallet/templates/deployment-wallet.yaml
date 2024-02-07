@@ -117,7 +117,7 @@ spec:
 
             # OpenTelemetry Collector Configuration
             - name: Otlp__Enabled
-              value: {{ .Values.otlp.enabled }}
+              value: {{ .Values.otlp.enabled | quote }}
             - name: Otlp__ReceiverEndpoint
               value: {{ .Values.otlp.endpoint }}
 
