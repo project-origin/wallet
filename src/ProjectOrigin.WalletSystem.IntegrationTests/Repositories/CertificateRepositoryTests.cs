@@ -663,9 +663,9 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
     }
 
     [Theory]
-    [InlineData("2020-06-08T12:00:00", "2020-06-10T12:00:00", 10, 0, 10, 48)]
-    [InlineData("2020-06-08T12:00:00", "2020-06-10T12:00:00", 10, 20, 10, 48)]
-    [InlineData("2020-06-08T12:00:00", "2020-06-10T12:00:00", 10, 40, 8, 48)]
+    [InlineData("2020-06-08T12:00:00Z", "2020-06-10T12:00:00Z", 10, 0, 10, 48)]
+    [InlineData("2020-06-08T12:00:00Z", "2020-06-10T12:00:00Z", 10, 20, 10, 48)]
+    [InlineData("2020-06-08T12:00:00Z", "2020-06-10T12:00:00Z", 10, 40, 8, 48)]
     public async Task QueryCertificates_Pagination(string from, string to, int take, int skip, int numberOfResults, int total)
     {
         // Arrange
@@ -693,11 +693,11 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
     }
 
     [Theory]
-    [InlineData("2020-06-08T12:00:00", "2020-06-12T12:00:00", TimeAggregate.Total, "Europe/Copenhagen", 2, 0, 1, 1)]
-    [InlineData("2020-06-08T12:00:00", "2020-06-12T12:00:00", TimeAggregate.Day, "Europe/Copenhagen", 2, 2, 2, 5)]
-    [InlineData("2020-06-08T00:00:00", "2020-06-12T00:00:00", TimeAggregate.Day, "Europe/Copenhagen", 2, 4, 1, 5)]
-    [InlineData("2020-06-01T00:00:00", "2020-06-03T12:00:00", TimeAggregate.Day, "Europe/Copenhagen", 2, 0, 2, 3)]
-    [InlineData("2020-06-01T00:00:00", "2020-06-03T12:00:00", TimeAggregate.Day, "America/Toronto", 2, 0, 2, 4)]
+    [InlineData("2020-06-08T12:00:00Z", "2020-06-12T12:00:00Z", TimeAggregate.Total, "Europe/Copenhagen", 2, 0, 1, 1)]
+    [InlineData("2020-06-08T12:00:00Z", "2020-06-12T12:00:00Z", TimeAggregate.Day, "Europe/Copenhagen", 2, 2, 2, 5)]
+    [InlineData("2020-06-08T00:00:00Z", "2020-06-12T00:00:00Z", TimeAggregate.Day, "Europe/Copenhagen", 2, 4, 1, 5)]
+    [InlineData("2020-06-01T00:00:00Z", "2020-06-03T12:00:00Z", TimeAggregate.Day, "Europe/Copenhagen", 2, 0, 2, 3)]
+    [InlineData("2020-06-01T00:00:00Z", "2020-06-03T12:00:00Z", TimeAggregate.Day, "America/Toronto", 2, 0, 2, 4)]
     public async Task QueryAggregatedCertificates_Pagination(string from, string to, TimeAggregate aggregate, string timeZone, int take, int skip, int numberOfResults, int total)
     {
         // Arrange

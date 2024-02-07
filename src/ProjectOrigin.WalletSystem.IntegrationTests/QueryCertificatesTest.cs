@@ -36,8 +36,6 @@ public class QueryCertificatesTest : WalletSystemTestsBase, IClassFixture<InMemo
               outputHelper,
               null)
     {
-        SqlMapper.AddTypeHandler<IHDPrivateKey>(new HDPrivateKeyTypeHandler(Algorithm));
-        SqlMapper.AddTypeHandler<IHDPublicKey>(new HDPublicKeyTypeHandler(Algorithm));
     }
 
     [Fact]
