@@ -24,15 +24,15 @@ public record OtlpOptions : IValidatableObject
                     new[] { nameof(Endpoint) });
                 break;
             case true:
-            {
-                if (!Uri.IsWellFormedUriString(Endpoint.ToString(), UriKind.Absolute))
                 {
-                    yield return new ValidationResult(
-                        $"The {nameof(Endpoint)} field must be a valid URI.",
-                        new[] { nameof(Endpoint) });
+                    if (!Uri.IsWellFormedUriString(Endpoint.ToString(), UriKind.Absolute))
+                    {
+                        yield return new ValidationResult(
+                            $"The {nameof(Endpoint)} field must be a valid URI.",
+                            new[] { nameof(Endpoint) });
+                    }
+                    break;
                 }
-                break;
-            }
         }
     }
 }
