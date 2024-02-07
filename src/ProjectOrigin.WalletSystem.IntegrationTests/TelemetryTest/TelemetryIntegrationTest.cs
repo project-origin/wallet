@@ -11,6 +11,7 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests.TelemetryTest;
 
 public class TelemetryIntegrationTest
 {
+
     [Fact]
     public async Task MetricsAreExportedOnActivityTest()
     {
