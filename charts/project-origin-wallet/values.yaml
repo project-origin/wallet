@@ -49,7 +49,7 @@ otlp:
   # enabled determines if the opentelemetry collector is enabled
   enabled: false
   # endpoint defines the endpoint of the opentelemetry collector, example "http://otel-collector:4317"
-  endpoint:
+  endpoint: "http://opentelemetry-collector.otel-collector:4317"
 
 messageBroker:
   # type defines the type of message broker to use, allowed values are (inMemory | rabbitmq | rabbitmqOperator)
