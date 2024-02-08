@@ -16,23 +16,30 @@ public record OtlpOptions : IValidatableObject
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
-        switch (Enabled)
+        if (Enabled)
         {
-            case true when Endpoint == null:
+            if (Endpoint == null)
+            {
                 yield return new ValidationResult(
                     $"The {nameof(Endpoint)} field is required when telemetry is enabled.",
                     new[] { nameof(Endpoint) });
-                break;
-            case true:
+            }
+            else
+            {
+                if (!Uri.IsWellFormedUriString(Endpoint.ToString(), UriKind.Absolute))
                 {
-                    if (!Uri.IsWellFormedUriString(Endpoint.ToString(), UriKind.Absolute))
-                    {
-                        yield return new ValidationResult(
-                            $"The {nameof(Endpoint)} field must be a valid URI.",
-                            new[] { nameof(Endpoint) });
-                    }
-                    break;
+                    yield return new ValidationResult(
+                        $"The {nameof(Endpoint)} field must be a valid, well-formed URI.",
+                        new[] { nameof(Endpoint) });
                 }
+                else if (Endpoint.Scheme != Uri.UriSchemeHttp && Endpoint.Scheme != Uri.UriSchemeHttps)
+                {
+                    yield return new ValidationResult(
+                        $"The {nameof(Endpoint)} must use the HTTP or HTTPS scheme.",
+                        new[] { nameof(Endpoint) });
+                }
+            }
         }
     }
+
 }
