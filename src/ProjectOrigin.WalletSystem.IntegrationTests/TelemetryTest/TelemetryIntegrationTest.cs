@@ -5,10 +5,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using FluentAssertions;
-using MassTransit.Logging;
-using MassTransit.Monitoring;
 using Microsoft.Extensions.DependencyInjection;
-using Npgsql;
 using OpenTelemetry;
 using OpenTelemetry.Exporter;
 using OpenTelemetry.Metrics;
@@ -68,6 +65,14 @@ public class TelemetryIntegrationTest : IClassFixture<TestServerFixture<Startup>
                 .WithTracing(provider =>
                     provider
                         .AddHttpClientInstrumentation()
+                        .AddGrpcClientInstrumentation(grpcOptions =>
+                        {
+                            grpcOptions.EnrichWithHttpRequestMessage = (activity, httpRequestMessage) =>
+                                activity.SetTag("requestVersion", httpRequestMessage.Version);
+                            grpcOptions.EnrichWithHttpResponseMessage = (activity, httpResponseMessage) =>
+                                activity.SetTag("responseVersion", httpResponseMessage.Version);
+                            grpcOptions.SuppressDownstreamInstrumentation = true;
+                        })
                         .AddOtlpExporter(o =>
                         {
                             o.Endpoint = new Uri(_wireMockServer.Urls[0]);
@@ -103,10 +108,10 @@ public class TelemetryIntegrationTest : IClassFixture<TestServerFixture<Startup>
 
         incomingRequests.Should().NotBeEmpty();
     }
-
     public void Dispose()
     {
         _wireMockServer.Stop();
         _wireMockServer.Dispose();
+        GC.SuppressFinalize(this);
     }
 }
