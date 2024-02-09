@@ -8,7 +8,7 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests.TelemetryTest
 {
     public class OtlpOptionsTests
     {
-        
+
         [Fact]
         public void OtlpOptions_CanBeInstantiated()
         {
@@ -18,7 +18,7 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests.TelemetryTest
             };
             Assert.NotNull(options);
         }
-        
+
         [Fact]
         public void Validate_GeneratesError_WhenEnabledTrueAndEndpointNull()
         {

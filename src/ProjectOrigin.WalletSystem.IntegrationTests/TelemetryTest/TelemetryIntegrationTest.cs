@@ -65,14 +65,6 @@ public class TelemetryIntegrationTest : IClassFixture<TestServerFixture<Startup>
                 .WithTracing(provider =>
                     provider
                         .AddHttpClientInstrumentation()
-                        .AddGrpcClientInstrumentation(grpcOptions =>
-                        {
-                            grpcOptions.EnrichWithHttpRequestMessage = (activity, httpRequestMessage) =>
-                                activity.SetTag("requestVersion", httpRequestMessage.Version);
-                            grpcOptions.EnrichWithHttpResponseMessage = (activity, httpResponseMessage) =>
-                                activity.SetTag("responseVersion", httpResponseMessage.Version);
-                            grpcOptions.SuppressDownstreamInstrumentation = true;
-                        })
                         .AddOtlpExporter(o =>
                         {
                             o.Endpoint = new Uri(_wireMockServer.Urls[0]);
