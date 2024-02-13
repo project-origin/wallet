@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace ProjectOrigin.WalletSystem.Server.Options;
 
-public record OtlpOptions : IValidatableObject
+public record OtlpOptions() : IValidatableObject
 {
     public const string Prefix = "Otlp";
 
