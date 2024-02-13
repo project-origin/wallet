@@ -47,7 +47,6 @@ public abstract class WalletSystemTestsBase : IClassFixture<TestServerFixture<St
         var config = new Dictionary<string, string?>()
         {
             {"Otlp:Enabled", "false"},
-            {"Otlp:Endpoint", "http://otel-hotel.com:4317"},
             {"ConnectionStrings:Database", dbFixture.ConnectionString},
             {"ServiceOptions:EndpointAddress", endpoint},
             {"VerifySlicesWorkerOptions:SleepTime", "00:00:02"},
