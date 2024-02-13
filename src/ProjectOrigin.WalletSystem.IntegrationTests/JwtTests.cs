@@ -243,6 +243,7 @@ public class JwtTests : IClassFixture<PostgresDatabaseFixture>, IClassFixture<In
 
         var config = new Dictionary<string, string?>()
         {
+            {"Otlp:Enabled", "false"},
             {"ConnectionStrings:Database", _dbFixture.ConnectionString},
             {"ServiceOptions:EndpointAddress", endpoint},
             {"VerifySlicesWorkerOptions:SleepTime", "00:00:02"},
