@@ -8,10 +8,8 @@ public record OtlpOptions : IValidatableObject
 {
     public const string Prefix = "Otlp";
 
-    [Required]
     public Uri? Endpoint { get; init; }
 
-    [Required]
     public required bool Enabled { get; init; }
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
