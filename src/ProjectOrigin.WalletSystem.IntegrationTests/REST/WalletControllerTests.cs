@@ -139,7 +139,7 @@ public class WalletControllerTests : IClassFixture<PostgresDatabaseFixture>
     }
 
     [Fact]
-    public async Task Verify_OnlySingleAllowedPerSubject()
+    public async Task Verify_MultipleWalletsAllowedPerSubject()
     {
         // Arrange
         var subject = _fixture.Create<string>();
@@ -154,7 +154,8 @@ public class WalletControllerTests : IClassFixture<PostgresDatabaseFixture>
             _options,
             new CreateWalletRequest());
 
-        firstCreateResult.Result.Should().BeOfType<CreatedResult>();
+        var firstResponse = firstCreateResult.Result.Should().BeOfType<CreatedResult>()
+                .Which.Value.Should().BeOfType<CreateWalletResponse>().Which;
 
         // Act
         var secondCreateResult = await controller.CreateWallet(
@@ -164,8 +165,9 @@ public class WalletControllerTests : IClassFixture<PostgresDatabaseFixture>
             new CreateWalletRequest());
 
         // Assert
-        secondCreateResult.Result.Should().BeOfType<BadRequestObjectResult>()
-            .Which.Value.Should().Be("Wallet already exists.");
+        var secondResponse = secondCreateResult.Result.Should().BeOfType<CreatedResult>()
+                .Which.Value.Should().BeOfType<CreateWalletResponse>().Which;
+        firstResponse.WalletId.Should().NotBe(secondResponse.WalletId);
     }
 
     [Fact]
