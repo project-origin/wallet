@@ -93,7 +93,7 @@ public class TelemetryIntegrationTest : IClassFixture<TestServerFixture<Startup>
 
         await client.GetAsync("/health");
 
-        await Task.Delay(1100);
+        await Task.Delay(1200);
 
         var incomingRequests = _wireMockServer.LogEntries
             .ToList();
