@@ -1,5 +1,7 @@
 using System;
+using System.Linq;
 using System.Net;
+using System.Text.Json;
 using System.Threading.Tasks;
 using AutoFixture;
 using Dapper;
@@ -12,6 +14,7 @@ using ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures;
 using ProjectOrigin.WalletSystem.Server;
 using ProjectOrigin.WalletSystem.Server.Database.Mapping;
 using ProjectOrigin.WalletSystem.Server.Options;
+using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -77,5 +80,47 @@ public class ApiBasePathTests : WalletSystemTestsBase, IClassFixture<InMemoryFix
         var result = await httpClient.GetAsync($"{wrongBasePath}/v1/certificates");
 
         result.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task SwaggerJson_ContainsWalletTag()
+    {
+        var httpClient = _serverFixture.CreateHttpClient();
+        var swaggerJsonUrl = "swagger/v1/swagger.json";
+        var swaggerResponse = await httpClient.GetAsync(swaggerJsonUrl);
+        swaggerResponse.EnsureSuccessStatusCode();
+        var swaggerJson = await swaggerResponse.Content.ReadAsStringAsync();
+
+        using var doc = JsonDocument.Parse(swaggerJson);
+        var tags = doc.RootElement.GetProperty("tags");
+
+        var containsWalletTag = tags.EnumerateArray().Any(tag => tag.TryGetProperty("name", out var name) && name.GetString() == "Wallet");
+
+        containsWalletTag.Should().BeTrue("Swagger JSON should contain a 'Wallet' tag.");
+    }
+
+    [Fact]
+    public async Task SwaggerJson_WalletTagHasCorrectContent()
+    {
+        var httpClient = _serverFixture.CreateHttpClient();
+        var swaggerJsonUrl = "swagger/v1/swagger.json";
+        var swaggerResponse = await httpClient.GetAsync(swaggerJsonUrl);
+        swaggerResponse.EnsureSuccessStatusCode();
+        var swaggerJson = await swaggerResponse.Content.ReadAsStringAsync();
+
+        using var doc = JsonDocument.Parse(swaggerJson);
+        var tags = doc.RootElement.GetProperty("tags");
+
+        var walletTag = tags.EnumerateArray()
+            .FirstOrDefault(tag => tag.GetProperty("name").GetString() == "Wallet");
+
+        var tagDetails = new
+        {
+            Name = walletTag.GetProperty("name").GetString(),
+            Description = walletTag.GetProperty("description").GetString()
+        };
+
+        await Verifier.Verify(tagDetails)
+            .UseMethodName("SwaggerJson_VerifyWalletTagContent");
     }
 }
