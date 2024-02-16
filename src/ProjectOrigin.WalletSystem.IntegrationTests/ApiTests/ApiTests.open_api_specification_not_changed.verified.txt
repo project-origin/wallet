@@ -13,7 +13,7 @@
         "summary": "Gets all certificates in the wallet that are <b>available</b> for use.",
         "parameters": [
           {
-            "name": "start",
+            "name": "Start",
             "in": "query",
             "description": "The start of the time range in Unix time in seconds.",
             "schema": {
@@ -22,7 +22,7 @@
             }
           },
           {
-            "name": "end",
+            "name": "End",
             "in": "query",
             "description": "The end of the time range in Unix time in seconds.",
             "schema": {
@@ -31,7 +31,7 @@
             }
           },
           {
-            "name": "type",
+            "name": "Type",
             "in": "query",
             "description": "Filter the type of certificates to return.",
             "schema": {
@@ -39,7 +39,7 @@
             }
           },
           {
-            "name": "limit",
+            "name": "Limit",
             "in": "query",
             "description": "The number of items to return.",
             "schema": {
@@ -48,7 +48,7 @@
             }
           },
           {
-            "name": "skip",
+            "name": "Skip",
             "in": "query",
             "description": "The number of items to skip.",
             "schema": {
@@ -83,15 +83,15 @@
         "summary": "Returns aggregates certificates that are <b>available</b> to use, based on the specified time zone and time range.",
         "parameters": [
           {
-            "name": "timeAggregate",
+            "name": "TimeAggregate",
             "in": "query",
-            "description": "The size of each bucket in the aggregation",
+            "description": "The size of each bucket in the aggregation.",
             "schema": {
               "$ref": "#/components/schemas/TimeAggregate"
             }
           },
           {
-            "name": "timeZone",
+            "name": "TimeZone",
             "in": "query",
             "description": "The time zone. See https://en.wikipedia.org/wiki/List_of_tz_database_time_zones for a list of valid time zones.",
             "schema": {
@@ -99,7 +99,7 @@
             }
           },
           {
-            "name": "start",
+            "name": "Start",
             "in": "query",
             "description": "The start of the time range in Unix time in seconds.",
             "schema": {
@@ -108,7 +108,7 @@
             }
           },
           {
-            "name": "end",
+            "name": "End",
             "in": "query",
             "description": "The end of the time range in Unix time in seconds.",
             "schema": {
@@ -117,7 +117,7 @@
             }
           },
           {
-            "name": "type",
+            "name": "Type",
             "in": "query",
             "description": "Filter the type of certificates to return.",
             "schema": {
@@ -125,7 +125,7 @@
             }
           },
           {
-            "name": "limit",
+            "name": "Limit",
             "in": "query",
             "description": "The number of items to return.",
             "schema": {
@@ -134,7 +134,7 @@
             }
           },
           {
-            "name": "skip",
+            "name": "Skip",
             "in": "query",
             "description": "The number of items to skip.",
             "schema": {
