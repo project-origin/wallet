@@ -54,11 +54,6 @@ jobs:
         run: |
           echo "name=$(yq .name < this/${{ env.CHART_FOLDER }}/Chart.yaml)" >> $GITHUB_OUTPUT
 
-      - name: Install yq
-        run: |
-          wget -O /usr/bin/yq https://github.com/mikefarah/yq/releases/download/v4.42.1/yq_linux_amd64
-          chmod +x /usr/bin/yq
-
       - name: Conditionally set artifacthub.io/prerelease annotation
         run: |
           if [ "${{ github.event.release.prerelease }}" = "true" ]; then
