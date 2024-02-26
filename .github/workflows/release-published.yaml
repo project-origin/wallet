@@ -3,6 +3,12 @@ name: Create new release
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      prerelease:
+        description: 'Simulate prerelease condition (true or false)'
+        required: true
+        default: 'false'
 
 jobs:
   define-version:
@@ -56,11 +62,14 @@ jobs:
 
       - name: Conditionally set artifacthub.io/prerelease annotation
         run: |
-          if [ "${{ github.event.release.prerelease }}" = "true" ]; then
+          if [ "${{ github.event.release.prerelease }}" = "true" ] || [ "${{ github.event.inputs.prerelease }}" = "true" ]; then
             yq eval '.annotations += {"artifacthub.io/prerelease": "true"}' -i this/${{ env.CHART_FOLDER }}/Chart.yaml
           else
             yq eval 'del(.annotations.artifacthub.io/prerelease)' -i this/${{ env.CHART_FOLDER }}/Chart.yaml
           fi
+
+      - name: Print Chart.yaml content
+        run: cat this/${{ env.CHART_FOLDER }}/Chart.yaml
 
       - name: Package and generate index
         run: |
