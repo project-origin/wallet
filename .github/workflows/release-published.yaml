@@ -3,12 +3,6 @@ name: Create new release
 on:
   release:
     types: [published]
-  workflow_dispatch:
-    inputs:
-      prerelease:
-        description: 'Simulate prerelease condition (true or false)'
-        required: true
-        default: 'false'
 
 jobs:
   define-version:
