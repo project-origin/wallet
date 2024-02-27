@@ -55,12 +55,9 @@ jobs:
           echo "name=$(yq .name < this/${{ env.CHART_FOLDER }}/Chart.yaml)" >> $GITHUB_OUTPUT
 
       - name: Conditionally set artifacthub.io/prerelease annotation
+        if: ${{ github.event.release.prerelease }}
         run: |
-          if [ "${{ github.event.release.prerelease }}" = "true" ]; then
-            yq eval '.annotations += {"artifacthub.io/prerelease": "true"}' -i this/${{ env.CHART_FOLDER }}/Chart.yaml
-          else
-            yq eval 'del(.annotations.artifacthub.io/prerelease)' -i this/${{ env.CHART_FOLDER }}/Chart.yaml
-          fi
+          yq eval '.annotations += {"artifacthub.io/prerelease": "true"}' -i this/${{ env.CHART_FOLDER }}/Chart.yaml
 
       - name: Package and generate index
         run: |
@@ -99,7 +96,7 @@ jobs:
         run: npm i -g swaggerhub-cli
 
       - name: Prepare openapi.json
-        run: jq '.info.version = "${{ needs.define-version.outputs.version }}"' src/ProjectOrigin.WalletSystem.IntegrationTests/ApiTests.open_api_specification_not_changed.verified.txt > openapi.json
+        run: jq '.info.version = "${{ needs.define-version.outputs.version }}"' src/ProjectOrigin.WalletSystem.IntegrationTests/ApiTests/ApiTests.open_api_specification_not_changed.verified.txt > openapi.json
 
       - name: Publish to swaggerhub
         env:
