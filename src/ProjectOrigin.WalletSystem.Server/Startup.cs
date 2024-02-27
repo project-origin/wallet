@@ -170,10 +170,12 @@ public class Startup
 
         services.AddSwaggerGen(options =>
         {
+            options.EnableAnnotations();
             options.SchemaFilter<IHDPublicKeySchemaFilter>();
             var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
             var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
             options.IncludeXmlComments(xmlPath);
+            options.DocumentFilter<AddWalletTagDocumentFilter>();
         });
     }
 

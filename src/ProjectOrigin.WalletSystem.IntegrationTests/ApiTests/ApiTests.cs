@@ -20,7 +20,6 @@ using Claim = ProjectOrigin.WalletSystem.Server.Models.Claim;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests;
 
-[UsesVerify]
 public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
 {
     public ApiTests(
