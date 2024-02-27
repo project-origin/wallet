@@ -92,7 +92,7 @@ public class GranularCertificateProjectorTests
         certificate.Should().NotBeNull();
     }
 
-    private Electricity.V1.IssuedEvent Issue(Common.V1.FederatedStreamId id, SecretCommitmentInfo commitment, IPublicKey publicKey)
+    private static Electricity.V1.IssuedEvent Issue(Common.V1.FederatedStreamId id, SecretCommitmentInfo commitment, IPublicKey publicKey)
     {
         return new Electricity.V1.IssuedEvent
         {
@@ -117,7 +117,7 @@ public class GranularCertificateProjectorTests
         };
     }
 
-    private Electricity.V1.SlicedEvent Slice(Common.V1.FederatedStreamId id, SecretCommitmentInfo source, SecretCommitmentInfo a, SecretCommitmentInfo b, IPublicKey publicKey)
+    private static Electricity.V1.SlicedEvent Slice(Common.V1.FederatedStreamId id, SecretCommitmentInfo source, SecretCommitmentInfo a, SecretCommitmentInfo b, IPublicKey publicKey)
     {
         var equalityProof = SecretCommitmentInfo.CreateEqualityProof(source, a + b, id.StreamId.Value);
 
@@ -155,7 +155,7 @@ public class GranularCertificateProjectorTests
         };
     }
 
-    private Registry.V1.Transaction CreateAndSignTransaction(Common.V1.FederatedStreamId federatedStreamId, IMessage payload, IPrivateKey privateKey)
+    private static Registry.V1.Transaction CreateAndSignTransaction(Common.V1.FederatedStreamId federatedStreamId, IMessage payload, IPrivateKey privateKey)
     {
         var header = new Registry.V1.TransactionHeader
         {
