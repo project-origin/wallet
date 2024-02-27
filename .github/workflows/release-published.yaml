@@ -57,7 +57,7 @@ jobs:
       - name: Conditionally set artifacthub.io/prerelease annotation
         if: ${{ github.event.release.prerelease }}
         run: |
-          yq eval '.annotations += {"artifacthub.io/prerelease": "true"}' -i this/${{ env.CHART_FOLDER }}/Chart.yaml
+          yq eval '.annotations."artifacthub.io/prerelease"="true"' -i this/${{ env.CHART_FOLDER }}/Chart.yaml
 
       - name: Package and generate index
         run: |
