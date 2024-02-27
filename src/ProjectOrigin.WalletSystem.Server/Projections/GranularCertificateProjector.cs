@@ -41,7 +41,7 @@ public class GranularCertificateProjector : IStreamProjector<GranularCertificate
             var method = granularCertificate.GetType().GetMethod(nameof(granularCertificate.Apply), new[] { @event.GetType() });
             if (method == null)
                 throw new ProjectionException($"Event type ”{@event.GetType().FullName}” is not supported");
-            method.Invoke(this, new[] { @event });
+            method.Invoke(granularCertificate, new[] { @event });
         }
 
         return granularCertificate;
