@@ -7,6 +7,7 @@ namespace ProjectOrigin.WalletSystem.Server.Options;
 public class JwtOptions : IValidatableObject
 {
     public bool AllowAnyJwtToken { get; init; } = false;
+    public string Authority { get; init; } = string.Empty;
     public string Audience { get; init; } = string.Empty;
     public IEnumerable<JwtIssuer> Issuers { get; init; } = new List<JwtIssuer>();
 

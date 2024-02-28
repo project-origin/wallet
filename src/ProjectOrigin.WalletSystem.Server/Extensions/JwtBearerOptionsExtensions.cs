@@ -26,6 +26,18 @@ public static class JwtBearerOptionsExtensions
                 SignatureValidator = (token, _) => new Microsoft.IdentityModel.JsonWebTokens.JsonWebToken(token)
             };
         }
+        else if (jwtOptions.Authority != string.Empty)
+        {
+            bearerOptions.Authority = jwtOptions.Authority;
+            bearerOptions.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = true,
+                ValidateIssuer = true,
+                ValidateAudience = !jwtOptions.Audience.IsEmpty(),
+                ValidateLifetime = true,
+                ClockSkew = TimeSpan.Zero
+            };
+        }
         else if (jwtOptions.Issuers.Any())
         {
             bearerOptions.TokenValidationParameters = new TokenValidationParameters
