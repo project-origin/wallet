@@ -1,0 +1,22 @@
+﻿{
+  result: [
+    {
+      start: 1672574400,
+      end: 1672578000,
+      quantity: 85,
+      type: production
+    },
+    {
+      start: 1672578000,
+      end: 1672581600,
+      quantity: 44,
+      type: production
+    }
+  ],
+  metadata: {
+    count: 2,
+    offset: 0,
+    limit: 2147483647,
+    total: 2
+  }
+}
