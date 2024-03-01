@@ -44,15 +44,15 @@ restore:
 
 ## Builds all the code
 build: restore
-	dotnet build $(src_path)
+	dotnet build --no-restore $(src_path)
 
 ## Formats files using dotnet format
 format:
 	dotnet format $(src_path)
 
 ## Run all tests
-test:
-	dotnet test $(src_path)
+test: build
+	dotnet test --no-build $(src_path)
 
 ## Run all Unit-tests
 unit-test:
