@@ -38,6 +38,7 @@ public class WalletController : ControllerBase
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
+    [Authorize("wallet:create")]
     public async Task<ActionResult<CreateWalletResponse>> CreateWallet(
         [FromServices] IUnitOfWork unitOfWork,
         [FromServices] IHDAlgorithm hdAlgorithm,
@@ -92,6 +93,7 @@ public class WalletController : ControllerBase
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
+    [Authorize("wallet:read")]
     public async Task<ActionResult<ResultList<WalletRecord>>> GetWallets(
         [FromServices] IUnitOfWork unitOfWork
     )
@@ -135,6 +137,7 @@ public class WalletController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
+    [Authorize("wallet:read")]
     public async Task<ActionResult<WalletRecord>> GetWallet(
         [FromServices] IUnitOfWork unitOfWork,
         [FromRoute] Guid walletId
@@ -168,6 +171,7 @@ public class WalletController : ControllerBase
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
+    [Authorize("wallet_endpoint:create")]
     public async Task<ActionResult<CreateWalletEndpointResponse>> CreateWalletEndpoint(
         [FromServices] IUnitOfWork unitOfWork,
         [FromServices] IOptions<ServiceOptions> serviceOptions,
@@ -193,7 +197,6 @@ public class WalletController : ControllerBase
                 PublicKey = walletEndpoint.PublicKey
             }
         });
-
     }
 
     /// <summary>
@@ -208,6 +211,7 @@ public class WalletController : ControllerBase
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
+    [Authorize("external_endpoint:create")]
     public async Task<ActionResult<CreateExternalEndpointResponse>> CreateExternalEndpoint(
         [FromServices] IUnitOfWork unitOfWork,
         [FromBody] CreateExternalEndpointRequest request
