@@ -31,7 +31,8 @@ config:
     # audience defines the audience to use for the jwt tokens, defaults to empty string, which means the audience is not checked
     audience: ""
 
-    # authority defines the authority to use for the jwt tokens, defaults to empty string, should be set to a authority that has .well-known/openid-configuration endpoint
+    # authority defines the authority to use for the jwt tokens, defaults to empty string, should be set to a authority
+    # example "https://example.com/auth" where it will pull the "/.well-known/openid-configuration" information from.
     authority: ""
 
     # allowAnyJwtToken determines if any jwt token is allowed, defaults to false, if set to true then any jwt token is allowed, NOT RECOMMENDED FOR PRODUCTION!
