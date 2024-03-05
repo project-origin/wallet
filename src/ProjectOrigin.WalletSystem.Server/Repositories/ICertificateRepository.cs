@@ -11,8 +11,8 @@ public interface ICertificateRepository
     Task InsertCertificate(Certificate certificate);
     Task<Certificate?> GetCertificate(string registryName, Guid certificateId);
 
-    Task<PageResult<CertificateViewModel>> QueryAvailableCertificates(CertificatesFilter filter);
-    Task<PageResult<AggregatedCertificatesViewModel>> QueryAggregatedAvailableCertificates(CertificatesFilter filter, TimeAggregate timeAggregate, string timeZone);
+    Task<PageResult<CertificateViewModel>> QueryAvailableCertificates(QueryCertificatesFilter filter);
+    Task<PageResult<AggregatedCertificatesViewModel>> QueryAggregatedAvailableCertificates(QueryAggregatedCertificatesFilter filter);
 
     Task InsertWalletSlice(WalletSlice newSlice);
     Task<WalletSlice> GetWalletSlice(Guid sliceId);
