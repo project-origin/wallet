@@ -417,27 +417,32 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
     {
         var registry = _fixture.Create<string>();
         var wallet1 = await CreateWallet(_fixture.Create<string>());
-        var endpointPosition = 1;
-        var endpoint = await CreateWalletEndpoint(wallet1);
-        var certificate = await CreateCertificate(registry);
-        var slice = new WalletSlice
-        {
-            Id = Guid.NewGuid(),
-            WalletEndpointId = endpoint.Id,
-            WalletEndpointPosition = endpointPosition,
-            RegistryName = registry,
-            CertificateId = certificate.Id,
-            Quantity = _fixture.Create<int>(),
-            RandomR = _fixture.Create<byte[]>(),
-            State = WalletSliceState.Available
-        };
 
-        await _certRepository.InsertWalletSlice(slice);
+        var slice = await CreateAndInsertCertificateWithSlice(registry, await CreateWalletEndpoint(wallet1), 1);
 
         var sliceDb = await _certRepository.GetOwnersAvailableSlices(registry, slice.CertificateId, wallet1.Owner);
 
         sliceDb.Should().HaveCount(1);
         sliceDb.Should().ContainEquivalentOf(slice);
+    }
+
+    [Fact]
+    public async Task QueryAvailableCertificates_MultipleWallets()
+    {
+        var registry = _fixture.Create<string>();
+        var subject = _fixture.Create<string>();
+        var wallet1 = await CreateWallet(subject);
+        var wallet2 = await CreateWallet(subject);
+        var slice1 = await CreateAndInsertCertificateWithSlice(registry, await CreateWalletEndpoint(wallet1), 1);
+        var slice2 = await CreateAndInsertCertificateWithSlice(registry, await CreateWalletEndpoint(wallet2), 1);
+
+        var result = await _certRepository.QueryAvailableCertificates(new CertificatesFilter
+        {
+            Owner = subject
+        });
+
+        result.Count.Should().Be(2);
+        result.Items.Sum(x => x.Quantity).Should().Be(slice1.Quantity + slice2.Quantity);
     }
 
     [Fact]
@@ -513,25 +518,12 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
     {
         // Arrange
         var registry = _fixture.Create<string>();
-        var certificate = await CreateCertificate(registry);
         var owner = _fixture.Create<string>();
         var wallet = await CreateWallet(owner);
-        var endpoint = await CreateWalletEndpoint(wallet);
-        var slice = new WalletSlice
-        {
-            Id = Guid.NewGuid(),
-            WalletEndpointId = endpoint.Id,
-            WalletEndpointPosition = 1,
-            RegistryName = registry,
-            CertificateId = certificate.Id,
-            Quantity = 150,
-            RandomR = _fixture.Create<byte[]>(),
-            State = WalletSliceState.Available
-        };
-        await _certRepository.InsertWalletSlice(slice);
+        var slice = await CreateAndInsertCertificateWithSlice(registry, await CreateWalletEndpoint(wallet), 1, quantity: 150);
 
         // Act
-        var reservedSlices = await _certRepository.ReserveQuantity(owner, certificate.RegistryName, certificate.Id, 100);
+        var reservedSlices = await _certRepository.ReserveQuantity(owner, slice.RegistryName, slice.CertificateId, 100);
 
         // Assert
         reservedSlices.Should().ContainEquivalentOf(slice);
@@ -557,25 +549,13 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
     {
         // Arrange
         var registry = _fixture.Create<string>();
-        var certificate = await CreateCertificate(registry);
         var owner = _fixture.Create<string>();
         var wallet = await CreateWallet(owner);
         var endpoint = await CreateWalletEndpoint(wallet);
-        var slice = new WalletSlice
-        {
-            Id = Guid.NewGuid(),
-            WalletEndpointId = endpoint.Id,
-            WalletEndpointPosition = 1,
-            RegistryName = registry,
-            CertificateId = certificate.Id,
-            Quantity = 150,
-            RandomR = _fixture.Create<byte[]>(),
-            State = WalletSliceState.Available
-        };
-        await _certRepository.InsertWalletSlice(slice);
+        var slice = await CreateAndInsertCertificateWithSlice(registry, await CreateWalletEndpoint(wallet), 1, quantity: 150);
 
         // Act
-        var act = () => _certRepository.ReserveQuantity(owner, certificate.RegistryName, certificate.Id, 200);
+        var act = () => _certRepository.ReserveQuantity(owner, slice.RegistryName, slice.CertificateId, 200);
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("Owner has less to reserve than available");
@@ -586,22 +566,10 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
     {
         // Arrange
         var registry = _fixture.Create<string>();
-        var certificate = await CreateCertificate(registry);
         var owner = _fixture.Create<string>();
         var wallet = await CreateWallet(owner);
-        var endpoint = await CreateWalletEndpoint(wallet);
-        var slice = new WalletSlice
-        {
-            Id = Guid.NewGuid(),
-            WalletEndpointId = endpoint.Id,
-            WalletEndpointPosition = 1,
-            RegistryName = registry,
-            CertificateId = certificate.Id,
-            Quantity = 150,
-            RandomR = _fixture.Create<byte[]>(),
-            State = WalletSliceState.Available
-        };
-        await _certRepository.InsertWalletSlice(slice);
+
+        var slice = await CreateAndInsertCertificateWithSlice(registry, await CreateWalletEndpoint(wallet), 1, quantity: 150);
         await _certRepository.InsertWalletSlice(slice with
         {
             Id = Guid.NewGuid(),
@@ -611,7 +579,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         });
 
         // Act
-        var act = () => _certRepository.ReserveQuantity(owner, certificate.RegistryName, certificate.Id, 200);
+        var act = () => _certRepository.ReserveQuantity(owner, slice.RegistryName, slice.CertificateId, 200);
 
         // Assert
         await act.Should().ThrowAsync<TransientException>().WithMessage("Owner has enough quantity, but it is not yet available to reserve");
@@ -747,5 +715,31 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
 
             await _certRepository.InsertWalletSlice(slice);
         }
+    }
+
+    private async Task<WalletSlice> CreateAndInsertCertificateWithSlice(
+        string registry,
+        WalletEndpoint endpoint,
+        int endpointPosition,
+        int? quantity = null)
+    {
+        quantity = quantity ?? _fixture.Create<int>();
+
+        var certificate = await CreateCertificate(registry);
+        var slice = new WalletSlice
+        {
+            Id = Guid.NewGuid(),
+            WalletEndpointId = endpoint.Id,
+            WalletEndpointPosition = endpointPosition,
+            RegistryName = registry,
+            CertificateId = certificate.Id,
+            Quantity = quantity.Value,
+            RandomR = _fixture.Create<byte[]>(),
+            State = WalletSliceState.Available
+        };
+
+        await _certRepository.InsertWalletSlice(slice);
+
+        return slice;
     }
 }

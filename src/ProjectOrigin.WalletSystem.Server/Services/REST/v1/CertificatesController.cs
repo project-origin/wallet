@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.ComponentModel;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -18,12 +18,6 @@ public class CertificatesController : ControllerBase
     /// <summary>
     /// Gets all certificates in the wallet that are <b>available</b> for use.
     /// </summary>
-    /// <param name="unitOfWork"></param>
-    /// <param name="start">The start of the time range in Unix time in seconds.</param>
-    /// <param name="end">The end of the time range in Unix time in seconds.</param>
-    /// <param name="type">Filter the type of certificates to return.</param>
-    /// <param name="skip">The number of items to skip.</param>
-    /// <param name="limit">The number of items to return.</param>
     /// <response code="200">Returns the aggregated claims.</response>
     /// <response code="401">If the user is not authenticated.</response>
     [HttpGet]
@@ -33,22 +27,18 @@ public class CertificatesController : ControllerBase
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ResultList<GranularCertificate>>> GetCertificates(
         [FromServices] IUnitOfWork unitOfWork,
-        [FromQuery] long? start,
-        [FromQuery] long? end,
-        [FromQuery] CertificateType? type,
-        [FromQuery] int? limit,
-        [FromQuery] int skip = 0)
+        [FromQuery] GetCertificatesQueryParameters param)
     {
         if (!User.TryGetSubject(out var subject)) return Unauthorized();
 
         var certificates = await unitOfWork.CertificateRepository.QueryAvailableCertificates(new CertificatesFilter
         {
             Owner = subject,
-            Start = start != null ? DateTimeOffset.FromUnixTimeSeconds(start.Value) : null,
-            End = end != null ? DateTimeOffset.FromUnixTimeSeconds(end.Value) : null,
-            Type = type != null ? (GranularCertificateType)type.Value : null,
-            Skip = skip,
-            Limit = limit ?? int.MaxValue
+            Start = param.Start != null ? DateTimeOffset.FromUnixTimeSeconds(param.Start.Value) : null,
+            End = param.End != null ? DateTimeOffset.FromUnixTimeSeconds(param.End.Value) : null,
+            Type = param.Type != null ? (GranularCertificateType)param.Type.Value : null,
+            Skip = param.Skip,
+            Limit = param.Limit ?? int.MaxValue
         });
 
         return certificates.ToResultList(c => c.MapToV1());
@@ -57,14 +47,6 @@ public class CertificatesController : ControllerBase
     /// <summary>
     /// Returns aggregates certificates that are <b>available</b> to use, based on the specified time zone and time range.
     /// </summary>
-    /// <param name="unitOfWork"></param>
-    /// <param name="timeAggregate">The size of each bucket in the aggregation</param>
-    /// <param name="timeZone">The time zone. See https://en.wikipedia.org/wiki/List_of_tz_database_time_zones for a list of valid time zones.</param>
-    /// <param name="start">The start of the time range in Unix time in seconds.</param>
-    /// <param name="end">The end of the time range in Unix time in seconds.</param>
-    /// <param name="type">Filter the type of certificates to return.</param>
-    /// <param name="skip">The number of items to skip.</param>
-    /// <param name="limit">The number of items to return.</param>
     /// <response code="200">Returns the aggregated claims.</response>
     /// <response code="400">If the time zone is invalid.</response>
     /// <response code="401">If the user is not authenticated.</response>
@@ -76,26 +58,22 @@ public class CertificatesController : ControllerBase
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ResultList<AggregatedCertificates>>> AggregateCertificates(
         [FromServices] IUnitOfWork unitOfWork,
-        [FromQuery] TimeAggregate timeAggregate,
-        [FromQuery] string timeZone,
-        [FromQuery] long? start,
-        [FromQuery] long? end,
-        [FromQuery] CertificateType? type,
-        [FromQuery] int? limit,
-        [FromQuery] int skip = 0)
+        [FromQuery] AggregateCertificatesQueryParameters parameters)
     {
         if (!User.TryGetSubject(out var subject)) return Unauthorized();
-        if (!timeZone.TryParseTimeZone(out var timeZoneInfo)) return BadRequest("Invalid time zone");
+        if (!parameters.TimeZone.TryParseTimeZone(out var timeZoneInfo)) return BadRequest("Invalid time zone");
 
         var certificates = await unitOfWork.CertificateRepository.QueryAggregatedAvailableCertificates(new CertificatesFilter
         {
             Owner = subject,
-            Start = start != null ? DateTimeOffset.FromUnixTimeSeconds(start.Value) : null,
-            End = end != null ? DateTimeOffset.FromUnixTimeSeconds(end.Value) : null,
-            Type = type != null ? (GranularCertificateType)type.Value : null,
-            Skip = skip,
-            Limit = limit ?? int.MaxValue
-        }, (Models.TimeAggregate)timeAggregate, timeZone);
+            Start = parameters.Start != null ? DateTimeOffset.FromUnixTimeSeconds(parameters.Start.Value) : null,
+            End = parameters.End != null ? DateTimeOffset.FromUnixTimeSeconds(parameters.End.Value) : null,
+            Type = parameters.Type != null ? (GranularCertificateType)parameters.Type.Value : null,
+            Skip = parameters.Skip,
+            Limit = parameters.Limit ?? int.MaxValue
+        },
+        (Models.TimeAggregate)parameters.TimeAggregate,
+        parameters.TimeZone);
 
         return certificates.ToResultList(c => new AggregatedCertificates
         {
@@ -108,6 +86,73 @@ public class CertificatesController : ControllerBase
 }
 
 #region Records
+public record GetCertificatesQueryParameters
+{
+    /// <summary>
+    /// The start of the time range in Unix time in seconds.
+    /// </summary>
+    public long? Start { get; init; }
+
+    /// <summary>
+    /// The end of the time range in Unix time in seconds.
+    /// </summary>
+    public long? End { get; init; }
+
+    /// <summary>
+    /// Filter the type of certificates to return.
+    /// </summary>
+    public CertificateType? Type { get; init; }
+
+    /// <summary>
+    /// The number of items to return.
+    /// </summary>
+    public int? Limit { get; init; }
+
+    /// <summary>
+    /// The number of items to skip.
+    /// </summary>
+    [DefaultValue(0)]
+    public int Skip { get; init; }
+}
+
+public record AggregateCertificatesQueryParameters
+{
+    /// <summary>
+    /// The size of each bucket in the aggregation.
+    /// </summary>
+    public required TimeAggregate TimeAggregate { get; init; }
+
+    /// <summary>
+    /// The time zone. See https://en.wikipedia.org/wiki/List_of_tz_database_time_zones for a list of valid time zones.
+    /// </summary>
+    public required string TimeZone { get; init; }
+
+    /// <summary>
+    ///The start of the time range in Unix time in seconds.
+    /// </summary>
+    public long? Start { get; init; }
+
+    /// <summary>
+    /// The end of the time range in Unix time in seconds.
+    /// </summary>
+    public long? End { get; init; }
+
+    /// <summary>
+    /// Filter the type of certificates to return.
+    /// </summary>
+    public CertificateType? Type { get; init; }
+
+    /// <summary>
+    /// The number of items to return.
+    /// </summary>
+    public int? Limit { get; init; }
+
+    /// <summary>
+    /// The number of items to skip.
+    /// </summary>
+    [DefaultValue(0)]
+    public int Skip { get; init; }
+}
 
 /// <summary>
 /// A certificate that is available to use in the wallet.

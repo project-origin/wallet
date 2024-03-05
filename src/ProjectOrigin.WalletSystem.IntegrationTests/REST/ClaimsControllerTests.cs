@@ -40,9 +40,7 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
         // Act
         var result = await controller.GetClaims(
             _unitOfWork,
-            null,
-            null,
-            null);
+            new GetClaimsQueryParameters());
 
         // Assert
         result.Result.Should().BeOfType<UnauthorizedResult>();
@@ -93,11 +91,13 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
         // Act
         var result = await controller.AggregateClaims(
             _unitOfWork,
-            TimeAggregate.Day,
-            timezone,
-            queryStartDate.ToUnixTimeSeconds(),
-            queryEndDate.ToUnixTimeSeconds(),
-            null);
+            new AggregateClaimsQueryParameters
+            {
+                TimeAggregate = TimeAggregate.Day,
+                TimeZone = timezone,
+                Start = queryStartDate.ToUnixTimeSeconds(),
+                End = queryEndDate.ToUnixTimeSeconds()
+            });
 
         // Assert
         result.Value.Should().NotBeNull();
@@ -120,11 +120,11 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
         // Act
         var result = await controller.AggregateClaims(
             _unitOfWork,
-            TimeAggregate.Day,
-            "invalid-time-zone",
-            null,
-            null,
-            null);
+            new AggregateClaimsQueryParameters
+            {
+                TimeAggregate = TimeAggregate.Day,
+                TimeZone = "invalid-time-zone"
+            });
 
         // Assert
         result.Result.Should().BeOfType<BadRequestObjectResult>();
