@@ -3,7 +3,6 @@ using FluentAssertions;
 using ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures;
 using ProjectOrigin.WalletSystem.Server;
 using System.Net;
-using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using Xunit;
@@ -13,6 +12,9 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests;
 
 public class AuthTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
 {
+    private const string EndpointId = "58c092ae-7637-461e-ab7a-5ea972b1295c";
+    private const string AggregateParam = "timeAggregate=hour&timeZone=Europe/Copenhagen";
+
     public AuthTests(
         TestServerFixture<Startup> serverFixture,
         PostgresDatabaseFixture dbFixture,
@@ -33,12 +35,14 @@ public class AuthTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
     }
 
     [Theory]
+    [InlineData("v1/wallets")]
+    [InlineData($"v1/wallets/{EndpointId}")]
     [InlineData("v1/certificates")]
-    [InlineData("v1/aggregate-certificates?timeAggregate=hour&timeZone=Europe/Copenhagen")]
     [InlineData("v1/claims")]
-    [InlineData("v1/aggregate-claims?timeAggregate=hour&timeZone=Europe/Copenhagen")]
     [InlineData("v1/transfers")]
-    [InlineData("v1/aggregate-transfers?timeAggregate=hour&timeZone=Europe/Copenhagen")]
+    [InlineData($"v1/aggregate-certificates?{AggregateParam}")]
+    [InlineData($"v1/aggregate-claims?{AggregateParam}")]
+    [InlineData($"v1/aggregate-transfers?{AggregateParam}")]
     public async Task Verify_Get_Forbidden(string url)
     {
         //Arrange
@@ -54,13 +58,15 @@ public class AuthTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
     }
 
     [Theory]
-    [InlineData("certificate:read", "v1/certificates")]
-    [InlineData("certificate:read", "v1/aggregate-certificates?timeAggregate=hour&timeZone=Europe/Copenhagen")]
-    [InlineData("claim:read", "v1/claims")]
-    [InlineData("claim:read", "v1/aggregate-claims?timeAggregate=hour&timeZone=Europe/Copenhagen")]
-    [InlineData("transfer:read", "v1/transfers")]
-    [InlineData("transfer:read", "v1/aggregate-transfers?timeAggregate=hour&timeZone=Europe/Copenhagen")]
-    public async Task Verify_Get_Allowed(string scope, string url)
+    [InlineData("wallet:read", "v1/wallets", HttpStatusCode.OK)]
+    [InlineData("wallet:read", $"v1/wallets/{EndpointId}", HttpStatusCode.NotFound)]
+    [InlineData("certificate:read", "v1/certificates", HttpStatusCode.OK)]
+    [InlineData("certificate:read", $"v1/aggregate-certificates?{AggregateParam}", HttpStatusCode.OK)]
+    [InlineData("claim:read", "v1/claims", HttpStatusCode.OK)]
+    [InlineData("claim:read", $"v1/aggregate-claims?{AggregateParam}", HttpStatusCode.OK)]
+    [InlineData("transfer:read", "v1/transfers", HttpStatusCode.OK)]
+    [InlineData("transfer:read", $"v1/aggregate-transfers??{AggregateParam}", HttpStatusCode.OK)]
+    public async Task Verify_Get_Allowed(string scope, string url, HttpStatusCode expected)
     {
         //Arrange
         var httpClient = CreateAuthenticatedHttpClient(
@@ -72,10 +78,13 @@ public class AuthTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
         var res = await httpClient.GetAsync(url);
 
         //Assert
-        res.StatusCode.Should().Be(HttpStatusCode.OK);
+        res.StatusCode.Should().Be(expected);
     }
 
     [Theory]
+    [InlineData("v1/wallets")]
+    [InlineData($"v1/wallets/{EndpointId}/endpoints")]
+    [InlineData("v1/external-endpoints")]
     [InlineData("v1/claims")]
     [InlineData("v1/transfers")]
     public async Task Verify_Post_Forbidden(string url)
@@ -93,12 +102,12 @@ public class AuthTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
     }
 
     [Theory]
-    [InlineData("claim:create", "v1/claims")]
-    [InlineData("transfer:create", "v1/transfers")]
-    /// <summary>
-    /// Bad request equals that call was allowed but the request was not valid.
-    /// </summary>
-    public async Task Verify_Post_Allowed(string scope, string url)
+    [InlineData("wallet:create", "v1/wallets", HttpStatusCode.Created)]
+    [InlineData("wallet-endpoint:create", $"v1/wallets/{EndpointId}/endpoints", HttpStatusCode.NotFound)]
+    [InlineData("external-endpoint:create", "v1/external-endpoints", HttpStatusCode.BadRequest)]
+    [InlineData("claim:create", "v1/claims", HttpStatusCode.BadRequest)]
+    [InlineData("transfer:create", "v1/transfers", HttpStatusCode.BadRequest)]
+    public async Task Verify_Post_Allowed(string scope, string url, HttpStatusCode expected)
     {
         //Arrange
         var httpClient = CreateAuthenticatedHttpClient(
@@ -110,6 +119,6 @@ public class AuthTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
         var res = await httpClient.PostAsync(url, JsonContent.Create(new { }));
 
         //Assert
-        res.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        res.StatusCode.Should().Be(expected);
     }
 }

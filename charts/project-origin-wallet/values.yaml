@@ -31,6 +31,9 @@ config:
     # audience defines the audience to use for the jwt tokens, defaults to empty string, which means the audience is not checked
     audience: ""
 
+    # enableScopeValidation determines if scope validation is enabled, defaults to false, if set to true then scope validation is enabled
+    enableScopeValidation: false
+
     # allowAnyJwtToken determines if any jwt token is allowed, defaults to false, if set to true then any jwt token is allowed, NOT RECOMMENDED FOR PRODUCTION!
     allowAnyJwtToken: false
 

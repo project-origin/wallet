@@ -35,7 +35,7 @@ public class WalletController : ControllerBase
     /// <response code="401">If the user is not authenticated.</response>
     [HttpPost]
     [Route("v1/wallets")]
-    [RequiredScope("wallet:read")]
+    [RequiredScope("wallet:create")]
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
