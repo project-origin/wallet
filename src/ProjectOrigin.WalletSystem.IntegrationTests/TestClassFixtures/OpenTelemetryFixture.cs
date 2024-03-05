@@ -1,4 +1,3 @@
-using System;
 using System.Threading.Tasks;
 using DotNet.Testcontainers.Builders;
 using DotNet.Testcontainers.Containers;
@@ -8,17 +7,32 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures;
 
 public class OpenTelemetryFixture : IAsyncLifetime
 {
-    private readonly Lazy<IContainer> OtelCollectorContainer = new(() =>
+    private const int OtelPort = 4317;
+    private readonly IContainer _container;
+
+    public OpenTelemetryFixture()
     {
-        return new ContainerBuilder()
-            .WithImage("otel/opentelemetry-collector-contrib:latest")
-            .WithPortBinding(4317, true)
-            .WithPortBinding(55681, true)
-            .WithEnvironment("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4317")
+        _container = new ContainerBuilder()
+            .WithImage("otel/opentelemetry-collector:0.95.0")
+            .WithPortBinding(OtelPort, true)
             .Build();
-    });
+    }
 
-    public Task InitializeAsync() => OtelCollectorContainer.Value.StartAsync();
+    public string OtelUrl
+    {
+        get
+        {
+            return $"http://localhost:{_container.GetMappedPublicPort(OtelPort)}";
+        }
+    }
 
-    public Task DisposeAsync() => OtelCollectorContainer.Value.StopAsync();
+    public Task InitializeAsync() => _container.StartAsync();
+
+    public Task DisposeAsync() => _container.StopAsync();
+
+    public async Task<string> GetContainerLog()
+    {
+        var (stdout, strerr) = await _container.GetLogsAsync();
+        return stdout + "\n" + strerr;
+    }
 }

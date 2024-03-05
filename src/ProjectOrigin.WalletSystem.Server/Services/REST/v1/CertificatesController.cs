@@ -99,8 +99,8 @@ public class CertificatesController : ControllerBase
 
         return certificates.ToResultList(c => new AggregatedCertificates
         {
-            Start = c.Start,
-            End = c.End,
+            Start = c.Start.ToUnixTimeSeconds(),
+            End = c.End.ToUnixTimeSeconds(),
             Quantity = c.Quantity,
             Type = (CertificateType)c.Type
         });
