@@ -28,7 +28,7 @@ public class TransfersController : ControllerBase
     /// <response code="401">If the user is not authenticated.</response>
     [HttpGet]
     [Route("v1/transfers")]
-    [RequiredScope("transfer:read")]
+    [RequiredScope("po:transfers:read")]
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
@@ -80,7 +80,7 @@ public class TransfersController : ControllerBase
     /// <response code="401">If the user is not authenticated.</response>
     [HttpGet]
     [Route("v1/aggregate-transfers")]
-    [RequiredScope("transfer:read")]
+    [RequiredScope("po:transfers:read")]
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
@@ -123,7 +123,7 @@ public class TransfersController : ControllerBase
     /// <response code="401">If the user is not authenticated.</response>
     [HttpPost]
     [Route("v1/transfers")]
-    [RequiredScope("transfer:create")]
+    [RequiredScope("po:transfers:create")]
     [Produces("application/json")]
     [ProducesResponseType(typeof(TransferResponse), StatusCodes.Status202Accepted)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]

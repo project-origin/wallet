@@ -58,14 +58,14 @@ public class AuthTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
     }
 
     [Theory]
-    [InlineData("wallet:read", "v1/wallets", HttpStatusCode.OK)]
-    [InlineData("wallet:read", $"v1/wallets/{EndpointId}", HttpStatusCode.NotFound)]
-    [InlineData("certificate:read", "v1/certificates", HttpStatusCode.OK)]
-    [InlineData("certificate:read", $"v1/aggregate-certificates?{AggregateParam}", HttpStatusCode.OK)]
-    [InlineData("claim:read", "v1/claims", HttpStatusCode.OK)]
-    [InlineData("claim:read", $"v1/aggregate-claims?{AggregateParam}", HttpStatusCode.OK)]
-    [InlineData("transfer:read", "v1/transfers", HttpStatusCode.OK)]
-    [InlineData("transfer:read", $"v1/aggregate-transfers??{AggregateParam}", HttpStatusCode.OK)]
+    [InlineData("po:wallets:read", "v1/wallets", HttpStatusCode.OK)]
+    [InlineData("po:wallets:read", $"v1/wallets/{EndpointId}", HttpStatusCode.NotFound)]
+    [InlineData("po:certificates:read", "v1/certificates", HttpStatusCode.OK)]
+    [InlineData("po:certificates:read", $"v1/aggregate-certificates?{AggregateParam}", HttpStatusCode.OK)]
+    [InlineData("po:claims:read", "v1/claims", HttpStatusCode.OK)]
+    [InlineData("po:claims:read", $"v1/aggregate-claims?{AggregateParam}", HttpStatusCode.OK)]
+    [InlineData("po:transfers:read", "v1/transfers", HttpStatusCode.OK)]
+    [InlineData("po:transfers:read", $"v1/aggregate-transfers??{AggregateParam}", HttpStatusCode.OK)]
     public async Task Verify_Get_Allowed(string scope, string url, HttpStatusCode expected)
     {
         //Arrange
@@ -102,11 +102,11 @@ public class AuthTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
     }
 
     [Theory]
-    [InlineData("wallet:create", "v1/wallets", HttpStatusCode.Created)]
-    [InlineData("wallet-endpoint:create", $"v1/wallets/{EndpointId}/endpoints", HttpStatusCode.NotFound)]
-    [InlineData("external-endpoint:create", "v1/external-endpoints", HttpStatusCode.BadRequest)]
-    [InlineData("claim:create", "v1/claims", HttpStatusCode.BadRequest)]
-    [InlineData("transfer:create", "v1/transfers", HttpStatusCode.BadRequest)]
+    [InlineData("po:wallets:create", "v1/wallets", HttpStatusCode.Created)]
+    [InlineData("po:wallet-endpoints:create", $"v1/wallets/{EndpointId}/endpoints", HttpStatusCode.NotFound)]
+    [InlineData("po:external-endpoints:create", "v1/external-endpoints", HttpStatusCode.BadRequest)]
+    [InlineData("po:claims:create", "v1/claims", HttpStatusCode.BadRequest)]
+    [InlineData("po:transfers:create", "v1/transfers", HttpStatusCode.BadRequest)]
     public async Task Verify_Post_Allowed(string scope, string url, HttpStatusCode expected)
     {
         //Arrange

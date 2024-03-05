@@ -28,7 +28,7 @@ public class CertificatesController : ControllerBase
     /// <response code="401">If the user is not authenticated.</response>
     [HttpGet]
     [Route("v1/certificates")]
-    [RequiredScope("certificate:read")]
+    [RequiredScope("po:certificates:read")]
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
@@ -71,7 +71,7 @@ public class CertificatesController : ControllerBase
     /// <response code="401">If the user is not authenticated.</response>
     [HttpGet]
     [Route("v1/aggregate-certificates")]
-    [RequiredScope("certificate:read")]
+    [RequiredScope("po:certificates:read")]
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]

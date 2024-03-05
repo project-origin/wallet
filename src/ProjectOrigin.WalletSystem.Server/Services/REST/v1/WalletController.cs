@@ -35,7 +35,7 @@ public class WalletController : ControllerBase
     /// <response code="401">If the user is not authenticated.</response>
     [HttpPost]
     [Route("v1/wallets")]
-    [RequiredScope("wallet:create")]
+    [RequiredScope("po:wallets:create")]
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -91,7 +91,7 @@ public class WalletController : ControllerBase
     /// <response code="401">If the user is not authenticated.</response>
     [HttpGet]
     [Route("v1/wallets")]
-    [RequiredScope("wallet:read")]
+    [RequiredScope("po:wallets:read")]
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
@@ -134,7 +134,7 @@ public class WalletController : ControllerBase
     /// <response code="404">If the wallet specified is not found for the user.</response>
     [HttpGet]
     [Route("v1/wallets/{walletId}")]
-    [RequiredScope("wallet:read")]
+    [RequiredScope("po:wallets:read")]
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
@@ -168,7 +168,7 @@ public class WalletController : ControllerBase
     /// <response code="404">If the wallet specified is not found for the user.</response>
     [HttpPost]
     [Route("v1/wallets/{walletId}/endpoints")]
-    [RequiredScope("wallet-endpoint:create")]
+    [RequiredScope("po:wallet-endpoints:create")]
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
@@ -210,7 +210,7 @@ public class WalletController : ControllerBase
     /// <response code="401">If the user is not authenticated.</response>
     [HttpPost]
     [Route("v1/external-endpoints")]
-    [RequiredScope("external-endpoint:create")]
+    [RequiredScope("po:external-endpoints:create")]
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]

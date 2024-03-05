@@ -29,7 +29,7 @@ public class ClaimsController : ControllerBase
     /// <response code="401">If the user is not authenticated.</response>
     [HttpGet]
     [Route("v1/claims")]
-    [RequiredScope("claim:read")]
+    [RequiredScope("po:claims:read")]
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
@@ -69,7 +69,7 @@ public class ClaimsController : ControllerBase
     /// <response code="401">If the user is not authenticated.</response>
     [HttpGet]
     [Route("v1/aggregate-claims")]
-    [RequiredScope("claim:read")]
+    [RequiredScope("po:claims:read")]
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
@@ -112,7 +112,7 @@ public class ClaimsController : ControllerBase
     /// <response code="401">If the user is not authenticated.</response>
     [HttpPost]
     [Route("v1/claims")]
-    [RequiredScope("claim:create")]
+    [RequiredScope("po:claims:create")]
     [Produces("application/json")]
     [ProducesResponseType(typeof(ClaimResponse), StatusCodes.Status202Accepted)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
