@@ -4,6 +4,7 @@ using MassTransit;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Identity.Web.Resource;
 using ProjectOrigin.WalletSystem.Server.CommandHandlers;
 using ProjectOrigin.WalletSystem.Server.Database;
 using ProjectOrigin.WalletSystem.Server.Extensions;
@@ -27,6 +28,7 @@ public class TransfersController : ControllerBase
     /// <response code="401">If the user is not authenticated.</response>
     [HttpGet]
     [Route("v1/transfers")]
+    [RequiredScope("transfer:read")]
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
@@ -78,6 +80,7 @@ public class TransfersController : ControllerBase
     /// <response code="401">If the user is not authenticated.</response>
     [HttpGet]
     [Route("v1/aggregate-transfers")]
+    [RequiredScope("transfer:read")]
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
@@ -120,6 +123,7 @@ public class TransfersController : ControllerBase
     /// <response code="401">If the user is not authenticated.</response>
     [HttpPost]
     [Route("v1/transfers")]
+    [RequiredScope("transfer:create")]
     [Produces("application/json")]
     [ProducesResponseType(typeof(TransferResponse), StatusCodes.Status202Accepted)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]

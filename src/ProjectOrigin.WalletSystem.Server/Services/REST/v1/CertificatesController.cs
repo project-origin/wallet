@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Identity.Web.Resource;
 using ProjectOrigin.WalletSystem.Server.Database;
 using ProjectOrigin.WalletSystem.Server.Extensions;
 using ProjectOrigin.WalletSystem.Server.Models;
@@ -28,6 +28,7 @@ public class CertificatesController : ControllerBase
     /// <response code="401">If the user is not authenticated.</response>
     [HttpGet]
     [Route("v1/certificates")]
+    [RequiredScope("certificate:read")]
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
@@ -70,6 +71,7 @@ public class CertificatesController : ControllerBase
     /// <response code="401">If the user is not authenticated.</response>
     [HttpGet]
     [Route("v1/aggregate-certificates")]
+    [RequiredScope("certificate:read")]
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
