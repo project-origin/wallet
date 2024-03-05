@@ -29,13 +29,16 @@ public static class JwtBearerOptionsExtensions
         else if (jwtOptions.Authority != string.Empty)
         {
             bearerOptions.Authority = jwtOptions.Authority;
+            bearerOptions.RequireHttpsMetadata = jwtOptions.RequireHttpsMetadata;
             bearerOptions.TokenValidationParameters = new TokenValidationParameters
             {
                 ValidateIssuerSigningKey = true,
                 ValidateIssuer = true,
+                ValidIssuer = jwtOptions.Authority,
                 ValidateAudience = !jwtOptions.Audience.IsEmpty(),
+                ValidAudience = jwtOptions.Audience,
                 ValidateLifetime = true,
-                ClockSkew = TimeSpan.Zero
+                ClockSkew = TimeSpan.Zero,
             };
         }
         else if (jwtOptions.Issuers.Any())

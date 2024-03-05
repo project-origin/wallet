@@ -9,15 +9,16 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures;
 
-public class JwtTokenIssuerFixture : IDisposable
+public sealed class JwtTokenIssuerFixture : IDisposable
 {
-    public string Issuer { get; init; } = "TestIssuer";
-    public string Audience { get; } = "WalletSystem";
-    public int ExpirationMinutes { get; } = 60;
-    public string PemFilepath { get; }
-
     private readonly ECDsa _ecdsa;
-    private bool _disposed = false;
+
+    public string Issuer { get; init; } = "TestIssuer";
+    public string Audience => "WalletSystem";
+    public string Algorith => SecurityAlgorithms.EcdsaSha256;
+    public byte[] PublicKeyInfo => _ecdsa.ExportSubjectPublicKeyInfo();
+    public int ExpirationMinutes => 60;
+    public string PemFilepath { get; }
 
     public JwtTokenIssuerFixture()
     {
@@ -37,7 +38,7 @@ public class JwtTokenIssuerFixture : IDisposable
         };
 
         var key = new ECDsaSecurityKey(_ecdsa);
-        var credentials = new SigningCredentials(key, SecurityAlgorithms.EcdsaSha256);
+        var credentials = new SigningCredentials(key, Algorith);
 
         var token = new JwtSecurityToken(
             issuer: Issuer,
@@ -67,27 +68,8 @@ public class JwtTokenIssuerFixture : IDisposable
         return (subject, headers);
     }
 
-    protected virtual void Dispose(bool disposing)
-    {
-        if (!_disposed)
-        {
-            if (disposing)
-            {
-                File.Delete(PemFilepath);
-            }
-            _disposed = true;
-        }
-    }
-
     public void Dispose()
     {
-        Dispose(true);
-        GC.SuppressFinalize(this);
+        File.Delete(PemFilepath);
     }
-
-    ~JwtTokenIssuerFixture()
-    {
-        Dispose(false);
-    }
-
 }
