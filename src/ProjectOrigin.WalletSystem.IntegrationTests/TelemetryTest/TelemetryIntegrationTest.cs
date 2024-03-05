@@ -40,7 +40,7 @@ public class TelemetryIntegrationTest :
             {"Jwt:Audience", jwtTokenIssuerFixture.Audience},
             {"Jwt:Issuers:0:IssuerName", jwtTokenIssuerFixture.Issuer},
             {"Jwt:Issuers:0:PemKeyFile", jwtTokenIssuerFixture.PemFilepath},
-            {"Jwt:Issuers:0:Type", jwtTokenIssuerFixture1.KeyType},
+            {"Jwt:Issuers:0:Type", jwtTokenIssuerFixture.KeyType},
         };
 
         serverFixture.ConfigureHostConfiguration(combinedConfiguration);
