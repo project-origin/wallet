@@ -232,10 +232,10 @@ public class JwtTests : IClassFixture<PostgresDatabaseFixture>, IClassFixture<In
     }
 
     [Fact]
-    public async Task JwtVerification_VerifyAuthority()
+    public async Task JwtVerification_Authority_Valid()
     {
         // Arrange
-        var wireMockServer = WireMockServer.Start(port: 8443, useSSL: false);
+        var wireMockServer = WireMockServer.Start();
         var jwtTokenIssuerFixture = new JwtTokenIssuerFixture()
         {
             Issuer = wireMockServer.Urls[0]
@@ -261,6 +261,40 @@ public class JwtTests : IClassFixture<PostgresDatabaseFixture>, IClassFixture<In
 
         // Assert
         result.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task JwtVerification_Authority_InvalidIssuer()
+    {
+        // Arrange
+        var wireMockServer = WireMockServer.Start();
+        var jwtTokenIssuerFixture = new JwtTokenIssuerFixture()
+        {
+            Issuer = wireMockServer.Urls[0]
+        };
+
+        wireMockServer.Given(Request.Create().WithPath("/.well-known/openid-configuration").UsingGet())
+            .RespondWith(Response.Create().WithBody(jwtTokenIssuerFixture.GetJsonOpenIdConfiguration()));
+        wireMockServer.Given(Request.Create().WithPath("/keys").UsingGet())
+            .RespondWith(Response.Create().WithBody(jwtTokenIssuerFixture.GetJsonKeys()));
+
+        var jwtConfiguration = new Dictionary<string, string?>()
+        {
+            {"Jwt:Authority", jwtTokenIssuerFixture.Issuer},
+            {"Jwt:Audience", jwtTokenIssuerFixture.Audience},
+            {"Jwt:RequireHttpsMetadata", "false"},
+        };
+
+        using TestServerFixture<Startup> server = CreateServer(jwtConfiguration);
+        server.GetTestLogger(_outputHelper);
+
+        var invalidIssuer = new JwtTokenIssuerFixture();
+
+        // Act
+        var testMethod = () => TestGrpc(invalidIssuer, server);
+
+        // Assert
+        await testMethod.Should().ThrowAsync<RpcException>().WithMessage("Status(StatusCode=\"Unauthenticated\", Detail=\"Bad gRPC response. HTTP status code: 401\")");
     }
 
     private static async Task<CreateWalletDepositEndpointResponse> TestGrpc(JwtTokenIssuerFixture jwtTokenIssuerFixture, TestServerFixture<Startup> server)
