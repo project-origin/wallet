@@ -42,8 +42,8 @@ config:
       # example
       # - # name defines the name of the issuer
       #   name: test
-      #   # type defines the type of the key used, allowed values are (ecdsa)
-      #   type: ecdsa
+      #   # type defines the type of the key used, allowed values are (rsa | ecdsa)
+      #   type: rsa
       #   # pemFileName defines the name of the file containing the pem encoded key
       #   pemFileName: /etc/keyfile.pem
 
