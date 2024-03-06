@@ -228,7 +228,7 @@ public class JwtTests : IClassFixture<PostgresDatabaseFixture>, IClassFixture<In
 
         // Assert
         await testMethod.Should().ThrowAsync<ValidationException>()
-            .WithMessage("Issuer key could not be imported as type ”rsa”, No supported key formats were found. Check that the input represents the contents of a PEM-encoded key file, not the path to such a file. (Parameter 'input')");
+            .WithMessage("Issuer key could not be imported as type ”RSA”, No supported key formats were found. Check that the input represents the contents of a PEM-encoded key file, not the path to such a file. (Parameter 'input')");
     }
 
     [Fact]
