@@ -53,7 +53,7 @@ public class ClaimRepository : IClaimRepository
             });
     }
 
-    public async Task<PageResult<ClaimViewModel>> QueryClaims(ClaimFilter filter)
+    public async Task<PageResult<ClaimViewModel>> QueryClaims(QueryClaimsFilter filter)
     {
         string sql = @"
         CREATE TEMPORARY TABLE claims_work_table ON COMMIT DROP AS (
@@ -106,7 +106,7 @@ public class ClaimRepository : IClaimRepository
         }
     }
 
-    public async Task<PageResult<AggregatedClaimViewModel>> QueryAggregatedClaims(ClaimFilter filter, TimeAggregate timeAggregate, string timeZone)
+    public async Task<PageResult<AggregatedClaimViewModel>> QueryAggregatedClaims(QueryAggregatedClaimsFilter filter)
     {
         string sql = @"
             CREATE TEMPORARY TABLE certificates_work_table ON COMMIT DROP AS (
@@ -146,8 +146,8 @@ public class ClaimRepository : IClaimRepository
             filter.End,
             filter.Skip,
             filter.Limit,
-            timeAggregate = timeAggregate.ToString().ToLower(),
-            timeZone
+            timeAggregate = filter.TimeAggregate.ToString().ToLower(),
+            filter.TimeZone
         }))
         {
             var totalCount = gridReader.ReadSingle<int>();

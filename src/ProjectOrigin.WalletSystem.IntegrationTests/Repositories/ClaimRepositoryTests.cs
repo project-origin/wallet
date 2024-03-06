@@ -66,7 +66,7 @@ public class ClaimRepositoryTests : AbstractRepositoryTests
         var owner = _fixture.Create<string>();
 
         // Act
-        var result = await _claimRepository.QueryClaims(new ClaimFilter
+        var result = await _claimRepository.QueryClaims(new QueryClaimsFilter
         {
             Owner = owner
         });
@@ -86,7 +86,7 @@ public class ClaimRepositoryTests : AbstractRepositoryTests
         await CreateClaimsAndCerts(owner, 48, startDate);
 
         // Act
-        var result = await _claimRepository.QueryClaims(new ClaimFilter
+        var result = await _claimRepository.QueryClaims(new QueryClaimsFilter
         {
             Owner = owner
         });
@@ -107,7 +107,7 @@ public class ClaimRepositoryTests : AbstractRepositoryTests
         await CreateClaimsAndCerts(owner, 48, startDate);
 
         // Act
-        var result = await _claimRepository.QueryClaims(new ClaimFilter()
+        var result = await _claimRepository.QueryClaims(new QueryClaimsFilter()
         {
             Owner = owner,
             Start = startDate.AddHours(48 - 4)
@@ -128,7 +128,7 @@ public class ClaimRepositoryTests : AbstractRepositoryTests
         await CreateClaimsAndCerts(owner, 48, startDate);
 
         // Act
-        var result = await _claimRepository.QueryClaims(new ClaimFilter()
+        var result = await _claimRepository.QueryClaims(new QueryClaimsFilter()
         {
             Owner = owner,
             End = startDate.AddHours(4)
@@ -149,7 +149,7 @@ public class ClaimRepositoryTests : AbstractRepositoryTests
         await CreateClaimsAndCerts(owner, 48, startDate);
 
         // Act
-        var result = await _claimRepository.QueryClaims(new ClaimFilter()
+        var result = await _claimRepository.QueryClaims(new QueryClaimsFilter()
         {
             Owner = owner,
             Start = startDate.AddHours(10),
@@ -174,7 +174,7 @@ public class ClaimRepositoryTests : AbstractRepositoryTests
         await CreateClaimsAndCerts(owner, 31 * 24, startDate);
 
         // Act
-        var result = await _claimRepository.QueryClaims(new ClaimFilter()
+        var result = await _claimRepository.QueryClaims(new QueryClaimsFilter()
         {
             Owner = owner,
             Start = DateTimeOffset.Parse(from),
@@ -205,14 +205,16 @@ public class ClaimRepositoryTests : AbstractRepositoryTests
         await CreateClaimsAndCerts(owner, 365 * 24, startDate);
 
         // Act
-        var result = await _claimRepository.QueryAggregatedClaims(new ClaimFilter()
+        var result = await _claimRepository.QueryAggregatedClaims(new QueryAggregatedClaimsFilter()
         {
             Owner = owner,
             Start = DateTimeOffset.Parse(from),
             End = DateTimeOffset.Parse(to),
             Limit = take,
             Skip = skip,
-        }, aggregate, timeZone);
+            TimeAggregate = aggregate,
+            TimeZone = timeZone
+        });
 
         //assert
         result.Items.Should().HaveCount(numberOfResults);
