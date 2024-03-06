@@ -31,19 +31,23 @@ config:
     # audience defines the audience to use for the jwt tokens, defaults to empty string, which means the audience is not checked
     audience: ""
 
+    # authority defines the authority to use for the jwt tokens, defaults to empty string, should be set to a authority
+    # example "https://example.com/auth" where it will pull the "/.well-known/openid-configuration" information from.
+    authority: ""
+
     # enableScopeValidation determines if scope validation is enabled, defaults to true, if set to true then scope validation is enabled
     enableScopeValidation: true
 
     # allowAnyJwtToken determines if any jwt token is allowed, defaults to false, if set to true then any jwt token is allowed, NOT RECOMMENDED FOR PRODUCTION!
     allowAnyJwtToken: false
 
-    # issuer defines a list of valid issuers for the jwt tokens
+    # issuer defines a list of valid issuers for the jwt tokens, disabled if authority url is set
     issuers: []
       # example
       # - # name defines the name of the issuer
       #   name: test
-      #   # type defines the type of the key used, allowed values are (ecdsa)
-      #   type: ecdsa
+      #   # type defines the type of the key used, allowed values are (rsa | ecdsa)
+      #   type: rsa
       #   # pemFileName defines the name of the file containing the pem encoded key
       #   pemFileName: /etc/keyfile.pem
 

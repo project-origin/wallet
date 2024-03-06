@@ -52,7 +52,7 @@ public abstract class WalletSystemTestsBase : IClassFixture<TestServerFixture<St
             {"VerifySlicesWorkerOptions:SleepTime", "00:00:02"},
             {"Jwt:Audience", jwtTokenIssuerFixture.Audience},
             {"Jwt:Issuers:0:IssuerName", jwtTokenIssuerFixture.Issuer},
-            {"Jwt:Issuers:0:Type", "ecdsa"},
+            {"Jwt:Issuers:0:Type", jwtTokenIssuerFixture.KeyType},
             {"Jwt:Issuers:0:PemKeyFile", jwtTokenIssuerFixture.PemFilepath}
         };
 

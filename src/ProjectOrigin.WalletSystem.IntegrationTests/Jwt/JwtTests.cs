@@ -9,6 +9,9 @@ using Grpc.Core;
 using ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures;
 using ProjectOrigin.WalletSystem.Server;
 using ProjectOrigin.WalletSystem.V1;
+using WireMock.RequestBuilders;
+using WireMock.ResponseBuilders;
+using WireMock.Server;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -43,7 +46,7 @@ public class JwtTests : IClassFixture<PostgresDatabaseFixture>, IClassFixture<In
             {"Jwt:Audience", jwtTokenIssuerFixture.Audience},
             {"Jwt:Issuers:0:IssuerName", jwtTokenIssuerFixture.Issuer},
             {"Jwt:Issuers:0:PemKeyFile", jwtTokenIssuerFixture.PemFilepath},
-            {"Jwt:Issuers:0:Type", "ecdsa"},
+            {"Jwt:Issuers:0:Type", jwtTokenIssuerFixture.KeyType},
         };
 
         using TestServerFixture<Startup> server = CreateServer(jwtConfiguration);
@@ -67,10 +70,10 @@ public class JwtTests : IClassFixture<PostgresDatabaseFixture>, IClassFixture<In
         {
             {"Jwt:Issuers:0:IssuerName", jwtTokenIssuerFixture1.Issuer},
             {"Jwt:Issuers:0:PemKeyFile", jwtTokenIssuerFixture1.PemFilepath},
-            {"Jwt:Issuers:0:Type", "ecdsa"},
+            {"Jwt:Issuers:0:Type", jwtTokenIssuerFixture1.KeyType},
             {"Jwt:Issuers:1:IssuerName", jwtTokenIssuerFixture2.Issuer},
             {"Jwt:Issuers:1:PemKeyFile", jwtTokenIssuerFixture2.PemFilepath},
-            {"Jwt:Issuers:1:Type", "ecdsa"},
+            {"Jwt:Issuers:1:Type", jwtTokenIssuerFixture2.KeyType},
         };
 
         using TestServerFixture<Startup> server = CreateServer(jwtConfiguration);
@@ -98,7 +101,7 @@ public class JwtTests : IClassFixture<PostgresDatabaseFixture>, IClassFixture<In
         {
             {"Jwt:Issuers:0:IssuerName", jwtTokenIssuerFixture.Issuer},
             {"Jwt:Issuers:0:PemKeyFile", jwtTokenIssuerFixture.PemFilepath},
-            {"Jwt:Issuers:0:Type", "ecdsa"},
+            {"Jwt:Issuers:0:Type", jwtTokenIssuerFixture.KeyType},
         };
 
         using TestServerFixture<Startup> server = CreateServer(jwtConfiguration);
@@ -121,7 +124,7 @@ public class JwtTests : IClassFixture<PostgresDatabaseFixture>, IClassFixture<In
             {"Jwt:Audience", "InvalidAudience"},
             {"Jwt:Issuers:0:IssuerName", jwtTokenIssuerFixture.Issuer},
             {"Jwt:Issuers:0:PemKeyFile", jwtTokenIssuerFixture.PemFilepath},
-            {"Jwt:Issuers:0:Type", "ecdsa"},
+            {"Jwt:Issuers:0:Type", jwtTokenIssuerFixture.KeyType},
         };
 
         using TestServerFixture<Startup> server = CreateServer(jwtConfiguration);
@@ -214,7 +217,7 @@ public class JwtTests : IClassFixture<PostgresDatabaseFixture>, IClassFixture<In
         {
             {"Jwt:Issuers:0:IssuerName", jwtTokenIssuerFixture.Issuer},
             {"Jwt:Issuers:0:PemKeyFile", fakeFilepath},
-            {"Jwt:Issuers:0:Type", "ecdsa"},
+            {"Jwt:Issuers:0:Type", jwtTokenIssuerFixture.KeyType},
         };
 
         using TestServerFixture<Startup> server = CreateServer(jwtConfiguration);
@@ -228,9 +231,75 @@ public class JwtTests : IClassFixture<PostgresDatabaseFixture>, IClassFixture<In
             .WithMessage("Issuer key could not be imported as type ”ecdsa”, No supported key formats were found. Check that the input represents the contents of a PEM-encoded key file, not the path to such a file. (Parameter 'input')");
     }
 
+    [Fact]
+    public async Task JwtVerification_Authority_Valid()
+    {
+        // Arrange
+        var wireMockServer = WireMockServer.Start();
+        var jwtTokenIssuerFixture = new JwtTokenIssuerFixture()
+        {
+            Issuer = wireMockServer.Urls[0]
+        };
+
+        wireMockServer.Given(Request.Create().WithPath("/.well-known/openid-configuration").UsingGet())
+            .RespondWith(Response.Create().WithBody(jwtTokenIssuerFixture.GetJsonOpenIdConfiguration()));
+        wireMockServer.Given(Request.Create().WithPath("/keys").UsingGet())
+            .RespondWith(Response.Create().WithBody(jwtTokenIssuerFixture.GetJsonKeys()));
+
+        var jwtConfiguration = new Dictionary<string, string?>()
+        {
+            {"Jwt:Authority", jwtTokenIssuerFixture.Issuer},
+            {"Jwt:Audience", jwtTokenIssuerFixture.Audience},
+            {"Jwt:RequireHttpsMetadata", "false"},
+        };
+
+        using TestServerFixture<Startup> server = CreateServer(jwtConfiguration);
+        server.GetTestLogger(_outputHelper);
+
+        // Act
+        var result = await TestGrpc(jwtTokenIssuerFixture, server);
+
+        // Assert
+        result.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task JwtVerification_Authority_InvalidIssuer()
+    {
+        // Arrange
+        var wireMockServer = WireMockServer.Start();
+        var jwtTokenIssuerFixture = new JwtTokenIssuerFixture()
+        {
+            Issuer = wireMockServer.Urls[0]
+        };
+
+        wireMockServer.Given(Request.Create().WithPath("/.well-known/openid-configuration").UsingGet())
+            .RespondWith(Response.Create().WithBody(jwtTokenIssuerFixture.GetJsonOpenIdConfiguration()));
+        wireMockServer.Given(Request.Create().WithPath("/keys").UsingGet())
+            .RespondWith(Response.Create().WithBody(jwtTokenIssuerFixture.GetJsonKeys()));
+
+        var jwtConfiguration = new Dictionary<string, string?>()
+        {
+            {"Jwt:Authority", jwtTokenIssuerFixture.Issuer},
+            {"Jwt:Audience", jwtTokenIssuerFixture.Audience},
+            {"Jwt:RequireHttpsMetadata", "false"},
+        };
+
+        using TestServerFixture<Startup> server = CreateServer(jwtConfiguration);
+        server.GetTestLogger(_outputHelper);
+
+        var invalidIssuer = new JwtTokenIssuerFixture();
+
+        // Act
+        var testMethod = () => TestGrpc(invalidIssuer, server);
+
+        // Assert
+        await testMethod.Should().ThrowAsync<RpcException>().WithMessage("Status(StatusCode=\"Unauthenticated\", Detail=\"Bad gRPC response. HTTP status code: 401\")");
+    }
+
     private static async Task<CreateWalletDepositEndpointResponse> TestGrpc(JwtTokenIssuerFixture jwtTokenIssuerFixture, TestServerFixture<Startup> server)
     {
-        var (subject, header) = jwtTokenIssuerFixture.GenerateUserHeader();
+        var (_, header) = jwtTokenIssuerFixture.GenerateUserHeader();
         var grpcClient = new WalletService.WalletServiceClient(server.Channel);
         var request = new CreateWalletDepositEndpointRequest();
 
