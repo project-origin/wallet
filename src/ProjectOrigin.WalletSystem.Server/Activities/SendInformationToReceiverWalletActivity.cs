@@ -1,8 +1,9 @@
 using System;
 using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Json;
 using System.Threading.Tasks;
 using Google.Protobuf;
-using Grpc.Net.Client;
 using MassTransit;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -46,41 +47,42 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
         }
         else
         {
-            return await SendOverGrpcToExternalWallet(context, newSlice, externalEndpoint);
+            return await SendOverRestToExternalWallet(context, newSlice, externalEndpoint);
         }
     }
 
-    private async Task<ExecutionResult> SendOverGrpcToExternalWallet(ExecuteContext<SendInformationToReceiverWalletArgument> context, TransferredSlice newSlice, ExternalEndpoint externalEndpoint)
+    private async Task<ExecutionResult> SendOverRestToExternalWallet(
+        ExecuteContext<SendInformationToReceiverWalletArgument> context,
+        TransferredSlice newSlice,
+        ExternalEndpoint externalEndpoint)
     {
         try
         {
             _logger.LogDebug("Preparing to send information to receiver");
 
-            var request = new V1.ReceiveRequest
+            var request = new
             {
                 WalletDepositEndpointPublicKey = ByteString.CopyFrom(externalEndpoint.PublicKey.Export()),
                 WalletDepositEndpointPosition = (uint)newSlice.ExternalEndpointPosition,
                 CertificateId = newSlice.GetFederatedStreamId(),
                 Quantity = (uint)newSlice.Quantity,
                 RandomR = ByteString.CopyFrom(newSlice.RandomR),
-                HashedAttributes = {
+                HashedAttributes =
                     context.Arguments.WalletAttributes.Select(ha =>
-                        new V1.ReceiveRequest.Types.HashedAttribute
+                        new
                         {
                             Key = ha.Key,
                             Value = ha.Value,
                             Salt = ByteString.CopyFrom(ha.Salt),
                         })
-                }
             };
 
-            using var channel = GrpcChannel.ForAddress(externalEndpoint.Endpoint);
-            var client = new V1.ReceiveSliceService.ReceiveSliceServiceClient(channel);
+            HttpClient client = new();
 
             _logger.LogDebug("Sending information to receiver");
-            await client.ReceiveSliceAsync(request);
+            var response = await client.PostAsJsonAsync(externalEndpoint.Endpoint, request);
+            response.EnsureSuccessStatusCode();
             await _unitOfWork.TransferRepository.SetTransferredSliceState(newSlice.Id, TransferredSliceState.Transferred);
-
 
             _logger.LogDebug("Information Sent to receiver");
 

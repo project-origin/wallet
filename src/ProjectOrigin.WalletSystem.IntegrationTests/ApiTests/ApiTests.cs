@@ -1,11 +1,8 @@
 using AutoFixture;
-using Dapper;
 using FluentAssertions;
 using Npgsql;
-using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
 using ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures;
 using ProjectOrigin.WalletSystem.Server;
-using ProjectOrigin.WalletSystem.Server.Database.Mapping;
 using ProjectOrigin.WalletSystem.Server.Models;
 using ProjectOrigin.WalletSystem.Server.Repositories;
 using ProjectOrigin.WalletSystem.Server.Services.REST.v1;
