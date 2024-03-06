@@ -93,7 +93,7 @@ public class CertificateRepository : ICertificateRepository
         return certsDictionary.Values.FirstOrDefault();
     }
 
-    public async Task<PageResult<CertificateViewModel>> QueryAvailableCertificates(CertificatesFilter filter)
+    public async Task<PageResult<CertificateViewModel>> QueryAvailableCertificates(QueryCertificatesFilter filter)
     {
         string sql = @"
             CREATE TEMPORARY TABLE certificates_work_table ON COMMIT DROP AS (
@@ -146,16 +146,16 @@ public class CertificateRepository : ICertificateRepository
         }
     }
 
-    public async Task<PageResult<AggregatedCertificatesViewModel>> QueryAggregatedAvailableCertificates(CertificatesFilter filter, TimeAggregate timeAggregate, string timeZone)
+    public async Task<PageResult<AggregatedCertificatesViewModel>> QueryAggregatedAvailableCertificates(QueryAggregatedCertificatesFilter filter)
     {
         string sql = @"
             CREATE TEMPORARY TABLE certificates_work_table ON COMMIT DROP AS (
                 SELECT *
                 FROM (
                     SELECT
-                        certificate_type,
-                        min(start_date) as start_date,
-                        max(end_date) as end_date,
+                        certificate_type as type,
+                        min(start_date) as start,
+                        max(end_date) as end,
                         sum(quantity) as quantity
                     FROM
                         certificates_query_model
@@ -171,11 +171,11 @@ public class CertificateRepository : ICertificateRepository
                             WHEN @timeAggregate = 'actual' THEN start_date AT TIME ZONE @timeZone
                             ELSE date_trunc(@timeAggregate, start_date AT TIME ZONE @timeZone)
                         END,
-                        certificate_type
+                        type
                     ) as aggregates
                 ORDER BY
-                    start_date,
-                    certificate_type
+                    start,
+                    type
             );
             SELECT count(*) FROM certificates_work_table;
             SELECT * FROM certificates_work_table LIMIT @limit OFFSET @skip;
@@ -189,18 +189,17 @@ public class CertificateRepository : ICertificateRepository
             filter.Type,
             filter.Skip,
             filter.Limit,
-            timeAggregate = timeAggregate.ToString().ToLower(),
-            timeZone
-
+            timeAggregate = filter.TimeAggregate.ToString().ToLower(),
+            filter.TimeZone
         }))
         {
-            var totalCouunt = gridReader.ReadSingle<int>();
+            var totalCount = gridReader.ReadSingle<int>();
             var certificates = gridReader.Read<AggregatedCertificatesViewModel>();
 
             return new PageResult<AggregatedCertificatesViewModel>()
             {
                 Items = certificates,
-                TotalCount = totalCouunt,
+                TotalCount = totalCount,
                 Count = certificates.Count(),
                 Offset = filter.Skip,
                 Limit = filter.Limit

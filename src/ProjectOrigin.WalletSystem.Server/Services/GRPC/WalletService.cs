@@ -71,7 +71,7 @@ public class WalletService : V1.WalletService.WalletServiceBase
     {
         var subject = context.GetSubject();
 
-        var result = await _unitOfWork.CertificateRepository.QueryAvailableCertificates(new CertificatesFilter
+        var result = await _unitOfWork.CertificateRepository.QueryAvailableCertificates(new QueryCertificatesFilter
         {
             Owner = subject,
             Start = request.Filter?.Start.ToNullableDateTimeOffset(),
@@ -169,7 +169,7 @@ public class WalletService : V1.WalletService.WalletServiceBase
     {
         var owner = context.GetSubject();
 
-        var claims = await _unitOfWork.ClaimRepository.QueryClaims(new ClaimFilter()
+        var claims = await _unitOfWork.ClaimRepository.QueryClaims(new QueryClaimsFilter()
         {
             Owner = owner,
             Start = request.Filter?.Start.ToNullableDateTimeOffset(),

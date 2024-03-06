@@ -20,7 +20,6 @@ using Claim = ProjectOrigin.WalletSystem.Server.Models.Claim;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests;
 
-[UsesVerify]
 public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
 {
     public ApiTests(
@@ -55,92 +54,26 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
         var owner = _fixture.Create<string>();
         var someOwnerName = _fixture.Create<string>();
         var httpClient = CreateAuthenticatedHttpClient(owner, someOwnerName);
-
-        using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
-        {
-            var walletRepository = new WalletRepository(connection);
-            var wallet = new Wallet
-            {
-                Id = Guid.NewGuid(),
-                Owner = owner,
-                PrivateKey = Algorithm.GenerateNewPrivateKey()
-            };
-            await walletRepository.Create(wallet);
-
-            var walletEndpoint = await walletRepository.CreateWalletEndpoint(wallet.Id);
-
-            var regName = _fixture.Create<string>();
-            var certificateRepository = new CertificateRepository(connection);
-
-            var attributes = new List<CertificateAttribute>
-                {
-                    new(){ Key="TechCode", Value="T070000", Type=CertificateAttributeType.ClearText},
-                    new(){ Key="FuelCode", Value="F00000000", Type=CertificateAttributeType.ClearText},
-                };
-
-            var certificate1 = new Certificate
-            {
-                Id = Guid.NewGuid(),
-                RegistryName = regName,
-                StartDate = DateTimeOffset.Parse("2023-01-01T12:00Z"),
-                EndDate = DateTimeOffset.Parse("2023-01-01T13:00Z"),
-                GridArea = "DK1",
-                CertificateType = GranularCertificateType.Production,
-                Attributes = attributes
-            };
-            var certificate2 = new Certificate
-            {
-                Id = Guid.NewGuid(),
-                RegistryName = regName,
-                StartDate = DateTimeOffset.Parse("2023-01-01T13:00Z"),
-                EndDate = DateTimeOffset.Parse("2023-01-01T14:00Z"),
-                GridArea = "DK1",
-                CertificateType = GranularCertificateType.Production,
-                Attributes = attributes
-            };
-            await certificateRepository.InsertCertificate(certificate1);
-            await certificateRepository.InsertCertificate(certificate2);
-
-            var slice1 = new WalletSlice
-            {
-                Id = Guid.NewGuid(),
-                WalletEndpointId = walletEndpoint.Id,
-                WalletEndpointPosition = 1,
-                RegistryName = regName,
-                CertificateId = certificate1.Id,
-                Quantity = 42,
-                RandomR = _fixture.Create<byte[]>(),
-                State = WalletSliceState.Available
-            };
-            var slice2 = new WalletSlice
-            {
-                Id = Guid.NewGuid(),
-                WalletEndpointId = walletEndpoint.Id,
-                WalletEndpointPosition = 1,
-                RegistryName = regName,
-                CertificateId = certificate1.Id,
-                Quantity = 43,
-                RandomR = _fixture.Create<byte[]>(),
-                State = WalletSliceState.Available
-            };
-            var slice3 = new WalletSlice
-            {
-                Id = Guid.NewGuid(),
-                WalletEndpointId = walletEndpoint.Id,
-                WalletEndpointPosition = 1,
-                RegistryName = regName,
-                CertificateId = certificate2.Id,
-                Quantity = 44,
-                RandomR = _fixture.Create<byte[]>(),
-                State = WalletSliceState.Available
-            };
-            await certificateRepository.InsertWalletSlice(slice1);
-            await certificateRepository.InsertWalletSlice(slice2);
-            await certificateRepository.InsertWalletSlice(slice3);
-        }
+        await AddCertificatesToOwner(owner);
 
         //Act
         var res = await httpClient.GetStringAsync("v1/certificates");
+
+        //Assert
+        await Verifier.VerifyJson(res);
+    }
+
+    [Fact]
+    public async Task can_query_certificates_aggregated()
+    {
+        //Arrange
+        var owner = _fixture.Create<string>();
+        var someOwnerName = _fixture.Create<string>();
+        var httpClient = CreateAuthenticatedHttpClient(owner, someOwnerName);
+        await AddCertificatesToOwner(owner);
+
+        //Act
+        var res = await httpClient.GetStringAsync("v1/aggregate-certificates?timeAggregate=hour&timeZone=Europe/Copenhagen");
 
         //Assert
         await Verifier.VerifyJson(res);
@@ -259,5 +192,91 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
         resultWithoutFilters.Should().Be(resultWithFilterStartAndEnd);
         resultWithFilterOutsideAnyClaims1!.Result.Should().BeEmpty();
         resultWithFilterOutsideAnyClaims2!.Result.Should().BeEmpty();
+    }
+
+    private async Task AddCertificatesToOwner(string owner)
+    {
+        using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
+        {
+            var walletRepository = new WalletRepository(connection);
+            var wallet = new Wallet
+            {
+                Id = Guid.NewGuid(),
+                Owner = owner,
+                PrivateKey = Algorithm.GenerateNewPrivateKey()
+            };
+            await walletRepository.Create(wallet);
+
+            var walletEndpoint = await walletRepository.CreateWalletEndpoint(wallet.Id);
+
+            var regName = _fixture.Create<string>();
+            var certificateRepository = new CertificateRepository(connection);
+
+            var attributes = new List<CertificateAttribute>
+                {
+                    new(){ Key="TechCode", Value="T070000", Type=CertificateAttributeType.ClearText},
+                    new(){ Key="FuelCode", Value="F00000000", Type=CertificateAttributeType.ClearText},
+                };
+
+            var certificate1 = new Certificate
+            {
+                Id = Guid.NewGuid(),
+                RegistryName = regName,
+                StartDate = DateTimeOffset.Parse("2023-01-01T12:00Z"),
+                EndDate = DateTimeOffset.Parse("2023-01-01T13:00Z"),
+                GridArea = "DK1",
+                CertificateType = GranularCertificateType.Production,
+                Attributes = attributes
+            };
+            var certificate2 = new Certificate
+            {
+                Id = Guid.NewGuid(),
+                RegistryName = regName,
+                StartDate = DateTimeOffset.Parse("2023-01-01T13:00Z"),
+                EndDate = DateTimeOffset.Parse("2023-01-01T14:00Z"),
+                GridArea = "DK1",
+                CertificateType = GranularCertificateType.Production,
+                Attributes = attributes
+            };
+            await certificateRepository.InsertCertificate(certificate1);
+            await certificateRepository.InsertCertificate(certificate2);
+
+            var slice1 = new WalletSlice
+            {
+                Id = Guid.NewGuid(),
+                WalletEndpointId = walletEndpoint.Id,
+                WalletEndpointPosition = 1,
+                RegistryName = regName,
+                CertificateId = certificate1.Id,
+                Quantity = 42,
+                RandomR = _fixture.Create<byte[]>(),
+                State = WalletSliceState.Available
+            };
+            var slice2 = new WalletSlice
+            {
+                Id = Guid.NewGuid(),
+                WalletEndpointId = walletEndpoint.Id,
+                WalletEndpointPosition = 1,
+                RegistryName = regName,
+                CertificateId = certificate1.Id,
+                Quantity = 43,
+                RandomR = _fixture.Create<byte[]>(),
+                State = WalletSliceState.Available
+            };
+            var slice3 = new WalletSlice
+            {
+                Id = Guid.NewGuid(),
+                WalletEndpointId = walletEndpoint.Id,
+                WalletEndpointPosition = 1,
+                RegistryName = regName,
+                CertificateId = certificate2.Id,
+                Quantity = 44,
+                RandomR = _fixture.Create<byte[]>(),
+                State = WalletSliceState.Available
+            };
+            await certificateRepository.InsertWalletSlice(slice1);
+            await certificateRepository.InsertWalletSlice(slice2);
+            await certificateRepository.InsertWalletSlice(slice3);
+        }
     }
 }

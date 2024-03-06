@@ -13,7 +13,7 @@
         "summary": "Gets all certificates in the wallet that are <b>available</b> for use.",
         "parameters": [
           {
-            "name": "start",
+            "name": "Start",
             "in": "query",
             "description": "The start of the time range in Unix time in seconds.",
             "schema": {
@@ -22,7 +22,7 @@
             }
           },
           {
-            "name": "end",
+            "name": "End",
             "in": "query",
             "description": "The end of the time range in Unix time in seconds.",
             "schema": {
@@ -31,7 +31,7 @@
             }
           },
           {
-            "name": "type",
+            "name": "Type",
             "in": "query",
             "description": "Filter the type of certificates to return.",
             "schema": {
@@ -39,7 +39,7 @@
             }
           },
           {
-            "name": "limit",
+            "name": "Limit",
             "in": "query",
             "description": "The number of items to return.",
             "schema": {
@@ -48,7 +48,7 @@
             }
           },
           {
-            "name": "skip",
+            "name": "Skip",
             "in": "query",
             "description": "The number of items to skip.",
             "schema": {
@@ -83,15 +83,15 @@
         "summary": "Returns aggregates certificates that are <b>available</b> to use, based on the specified time zone and time range.",
         "parameters": [
           {
-            "name": "timeAggregate",
+            "name": "TimeAggregate",
             "in": "query",
-            "description": "The size of each bucket in the aggregation",
+            "description": "The size of each bucket in the aggregation.",
             "schema": {
               "$ref": "#/components/schemas/TimeAggregate"
             }
           },
           {
-            "name": "timeZone",
+            "name": "TimeZone",
             "in": "query",
             "description": "The time zone. See https://en.wikipedia.org/wiki/List_of_tz_database_time_zones for a list of valid time zones.",
             "schema": {
@@ -99,7 +99,7 @@
             }
           },
           {
-            "name": "start",
+            "name": "Start",
             "in": "query",
             "description": "The start of the time range in Unix time in seconds.",
             "schema": {
@@ -108,7 +108,7 @@
             }
           },
           {
-            "name": "end",
+            "name": "End",
             "in": "query",
             "description": "The end of the time range in Unix time in seconds.",
             "schema": {
@@ -117,7 +117,7 @@
             }
           },
           {
-            "name": "type",
+            "name": "Type",
             "in": "query",
             "description": "Filter the type of certificates to return.",
             "schema": {
@@ -125,7 +125,7 @@
             }
           },
           {
-            "name": "limit",
+            "name": "Limit",
             "in": "query",
             "description": "The number of items to return.",
             "schema": {
@@ -134,7 +134,7 @@
             }
           },
           {
-            "name": "skip",
+            "name": "Skip",
             "in": "query",
             "description": "The number of items to skip.",
             "schema": {
@@ -172,7 +172,7 @@
         "summary": "Gets all claims in the wallet",
         "parameters": [
           {
-            "name": "start",
+            "name": "Start",
             "in": "query",
             "description": "The start of the time range in Unix time in seconds.",
             "schema": {
@@ -181,7 +181,7 @@
             }
           },
           {
-            "name": "end",
+            "name": "End",
             "in": "query",
             "description": "The end of the time range in Unix time in seconds.",
             "schema": {
@@ -190,7 +190,7 @@
             }
           },
           {
-            "name": "limit",
+            "name": "Limit",
             "in": "query",
             "description": "The number of items to return.",
             "schema": {
@@ -199,7 +199,7 @@
             }
           },
           {
-            "name": "skip",
+            "name": "Skip",
             "in": "query",
             "description": "The number of items to skip.",
             "schema": {
@@ -275,7 +275,7 @@
         "summary": "Returns a list of aggregates claims for the authenticated user based on the specified time zone and time range.",
         "parameters": [
           {
-            "name": "timeAggregate",
+            "name": "TimeAggregate",
             "in": "query",
             "description": "The size of each bucket in the aggregation",
             "schema": {
@@ -283,7 +283,7 @@
             }
           },
           {
-            "name": "timeZone",
+            "name": "TimeZone",
             "in": "query",
             "description": "The time zone. See https://en.wikipedia.org/wiki/List_of_tz_database_time_zones for a list of valid time zones.",
             "schema": {
@@ -291,7 +291,7 @@
             }
           },
           {
-            "name": "start",
+            "name": "Start",
             "in": "query",
             "description": "The start of the time range in Unix time in seconds.",
             "schema": {
@@ -300,7 +300,7 @@
             }
           },
           {
-            "name": "end",
+            "name": "End",
             "in": "query",
             "description": "The end of the time range in Unix time in seconds.",
             "schema": {
@@ -309,7 +309,7 @@
             }
           },
           {
-            "name": "limit",
+            "name": "Limit",
             "in": "query",
             "description": "The number of items to return.",
             "schema": {
@@ -318,7 +318,7 @@
             }
           },
           {
-            "name": "skip",
+            "name": "Skip",
             "in": "query",
             "description": "The number of items to skip.",
             "schema": {
@@ -410,7 +410,7 @@
         "summary": "Gets detailed list of all of the transfers that have been made to other wallets.",
         "parameters": [
           {
-            "name": "start",
+            "name": "Start",
             "in": "query",
             "description": "The start of the time range in Unix time in seconds.",
             "schema": {
@@ -419,7 +419,7 @@
             }
           },
           {
-            "name": "end",
+            "name": "End",
             "in": "query",
             "description": "The end of the time range in Unix time in seconds.",
             "schema": {
@@ -428,7 +428,7 @@
             }
           },
           {
-            "name": "limit",
+            "name": "Limit",
             "in": "query",
             "description": "The number of items to return.",
             "schema": {
@@ -437,7 +437,7 @@
             }
           },
           {
-            "name": "skip",
+            "name": "Skip",
             "in": "query",
             "description": "The number of items to skip.",
             "schema": {
@@ -513,7 +513,7 @@
         "summary": "Returns a list of aggregates transfers, for all certificates transferred to another wallet for the authenticated user based.",
         "parameters": [
           {
-            "name": "timeAggregate",
+            "name": "TimeAggregate",
             "in": "query",
             "description": "The size of each bucket in the aggregation",
             "schema": {
@@ -521,7 +521,7 @@
             }
           },
           {
-            "name": "timeZone",
+            "name": "TimeZone",
             "in": "query",
             "description": "The time zone. See https://en.wikipedia.org/wiki/List_of_tz_database_time_zones for a list of valid time zones.",
             "schema": {
@@ -529,7 +529,7 @@
             }
           },
           {
-            "name": "start",
+            "name": "Start",
             "in": "query",
             "description": "The start of the time range in Unix time in seconds.",
             "schema": {
@@ -538,7 +538,7 @@
             }
           },
           {
-            "name": "end",
+            "name": "End",
             "in": "query",
             "description": "The end of the time range in Unix time in seconds.",
             "schema": {
@@ -547,7 +547,7 @@
             }
           },
           {
-            "name": "limit",
+            "name": "Limit",
             "in": "query",
             "description": "The number of items to return.",
             "schema": {
@@ -556,7 +556,7 @@
             }
           },
           {
-            "name": "skip",
+            "name": "Skip",
             "in": "query",
             "description": "The number of items to skip.",
             "schema": {
@@ -1383,5 +1383,11 @@
         "additionalProperties": false
       }
     }
-  }
+  },
+  "tags": [
+    {
+      "name": "Wallet",
+      "description": "The Wallet is essential for Energy Origin, since it keeps track of all the user’s Granular Certificates – both the ones generated from the user’s own metering points, but also the ones transferred from other users. In other words, the Wallet will hold all available certificates for the user. Moreover, it will show all transfers, that may have been made, to other users’ wallets as well.\n"
+    }
+  ]
 }
