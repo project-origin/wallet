@@ -35,6 +35,9 @@ config:
     # example "https://example.com/auth" where it will pull the "/.well-known/openid-configuration" information from.
     authority: ""
 
+    # enableScopeValidation determines if scope validation is enabled, defaults to true, if set to true then scope validation is enabled
+    enableScopeValidation: true
+
     # allowAnyJwtToken determines if any jwt token is allowed, defaults to false, if set to true then any jwt token is allowed, NOT RECOMMENDED FOR PRODUCTION!
     allowAnyJwtToken: false
 

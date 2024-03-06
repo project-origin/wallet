@@ -87,10 +87,10 @@ public abstract class WalletSystemTestsBase : IClassFixture<TestServerFixture<St
         Dispose(false);
     }
 
-    protected HttpClient CreateAuthenticatedHttpClient(string subject, string name)
+    protected HttpClient CreateAuthenticatedHttpClient(string subject, string name, string[]? scopes = null)
     {
         var client = _serverFixture.CreateHttpClient();
-        var token = _jwtTokenIssuerFixture.GenerateToken(subject, name);
+        var token = _jwtTokenIssuerFixture.GenerateToken(subject, name, scopes);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         return client;
     }

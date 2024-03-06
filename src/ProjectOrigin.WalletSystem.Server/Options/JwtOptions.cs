@@ -11,6 +11,7 @@ public class JwtOptions : IValidatableObject
     public string Audience { get; init; } = string.Empty;
     public bool RequireHttpsMetadata { get; init; } = true;
     public IEnumerable<JwtIssuer> Issuers { get; init; } = new List<JwtIssuer>();
+    public bool EnableScopeValidation { get; init; } = false;
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {

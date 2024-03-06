@@ -63,7 +63,13 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures
 
         public void ConfigureHostConfiguration(Dictionary<string, string?> configuration)
         {
-            _configurationDictionary = configuration;
+            if (_configurationDictionary != null)
+                foreach (var keyValuePair in configuration)
+                {
+                    _configurationDictionary[keyValuePair.Key] = keyValuePair.Value;
+                }
+            else
+                _configurationDictionary = configuration;
         }
 
         private void EnsureServer()

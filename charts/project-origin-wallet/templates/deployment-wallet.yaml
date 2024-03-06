@@ -108,6 +108,8 @@ spec:
               value: {{ .Values.config.jwt.authority | quote }}
             - name: jwt__allowAnyJwtToken
               value: {{ .Values.config.jwt.allowAnyJwtToken | quote }}
+            - name: jwt__enableScopeValidation
+              value: {{ .Values.config.jwt.enableScopeValidation | quote }}
             {{- range  $i, $issuer := .Values.config.jwt.issuers }}
             - name: jwt__issuers__{{ $i }}__name
               value: {{ $issuer.name }}

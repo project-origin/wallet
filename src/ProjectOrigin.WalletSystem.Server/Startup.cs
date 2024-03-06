@@ -31,6 +31,8 @@ using Npgsql;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+using Microsoft.Identity.Web;
+using Microsoft.IdentityModel.JsonWebTokens;
 
 namespace ProjectOrigin.WalletSystem.Server;
 
@@ -89,14 +91,19 @@ public class Startup
 
         services.ConfigurePersistance(_configuration);
 
+        JsonWebTokenHandler.DefaultInboundClaimTypeMap["scope"] = "http://schemas.microsoft.com/identity/claims/scope";
+        var jwtOptions = _configuration.GetSection("jwt").GetValid<JwtOptions>();
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(o =>
             {
-                var jwtOptions = _configuration.GetSection("jwt").GetValid<JwtOptions>();
                 o.ConfigureJwtVerification(jwtOptions);
             });
 
         services.AddAuthorization();
+        if (jwtOptions.EnableScopeValidation)
+        {
+            services.AddRequiredScopeAuthorization();
+        }
 
         void ConfigureResource(ResourceBuilder r)
         {

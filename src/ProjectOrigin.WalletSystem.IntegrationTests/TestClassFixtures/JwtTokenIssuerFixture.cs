@@ -30,13 +30,14 @@ public sealed class JwtTokenIssuerFixture : IDisposable
         File.WriteAllText(PemFilepath, pem);
     }
 
-    public string GenerateToken(string subject, string name)
+    public string GenerateToken(string subject, string name, string[]? scopes = null)
     {
         var claims = new[]
         {
             new Claim("sub", subject),
             new Claim("name", name),
             new Claim("iat", DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64),
+            new Claim("scope", string.Join(" ", scopes ?? Array.Empty<string>())),
         };
 
         var key = new RsaSecurityKey(_rsa);

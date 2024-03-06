@@ -11,7 +11,6 @@ public static class JwtBearerOptionsExtensions
 {
     public static void ConfigureJwtVerification(this JwtBearerOptions bearerOptions, JwtOptions jwtOptions)
     {
-
         if (jwtOptions.AllowAnyJwtToken)
         {
             Log.Warning("No JWT issuers configured. Server will accept any jwt-tokens! This is not recommended for production environments.");
