@@ -10,7 +10,6 @@ public interface ITransferRepository
     Task InsertTransferredSlice(TransferredSlice newSlice);
     Task<TransferredSlice> GetTransferredSlice(Guid sliceId);
     Task SetTransferredSliceState(Guid sliceId, TransferredSliceState state);
-
-    Task<PageResult<TransferViewModel>> QueryTransfers(TransferFilter filter);
-    Task<PageResult<AggregatedTransferViewModel>> QueryAggregatedTransfers(TransferFilter filter, TimeAggregate timeAggregate, string timeZone);
+    Task<PageResult<TransferViewModel>> QueryTransfers(QueryTransfersFilter filter);
+    Task<PageResult<AggregatedTransferViewModel>> QueryAggregatedTransfers(QueryAggregatedTransfersFilter filter);
 }

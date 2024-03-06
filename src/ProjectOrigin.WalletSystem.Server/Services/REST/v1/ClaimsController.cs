@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Threading.Tasks;
 using MassTransit;
 using Microsoft.AspNetCore.Authorization;
@@ -20,11 +21,6 @@ public class ClaimsController : ControllerBase
     /// <summary>
     /// Gets all claims in the wallet
     /// </summary>
-    /// <param name="unitOfWork"></param>
-    /// <param name="start">The start of the time range in Unix time in seconds.</param>
-    /// <param name="end">The end of the time range in Unix time in seconds.</param>
-    /// <param name="skip">The number of items to skip.</param>
-    /// <param name="limit">The number of items to return.</param>
     /// <response code="200">Returns all the indiviual claims.</response>
     /// <response code="401">If the user is not authenticated.</response>
     [HttpGet]
@@ -35,20 +31,17 @@ public class ClaimsController : ControllerBase
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ResultList<Claim>>> GetClaims(
         [FromServices] IUnitOfWork unitOfWork,
-        [FromQuery] long? start,
-        [FromQuery] long? end,
-        [FromQuery] int? limit,
-        [FromQuery] int skip = 0)
+        [FromQuery] GetClaimsQueryParameters param)
     {
         if (!User.TryGetSubject(out var subject)) return Unauthorized();
 
-        var claims = await unitOfWork.ClaimRepository.QueryClaims(new ClaimFilter
+        var claims = await unitOfWork.ClaimRepository.QueryClaims(new QueryClaimsFilter
         {
             Owner = subject,
-            Start = start != null ? DateTimeOffset.FromUnixTimeSeconds(start.Value) : null,
-            End = end != null ? DateTimeOffset.FromUnixTimeSeconds(end.Value) : null,
-            Skip = skip,
-            Limit = limit ?? int.MaxValue,
+            Start = param.Start != null ? DateTimeOffset.FromUnixTimeSeconds(param.Start.Value) : null,
+            End = param.End != null ? DateTimeOffset.FromUnixTimeSeconds(param.End.Value) : null,
+            Skip = param.Skip,
+            Limit = param.Limit ?? int.MaxValue,
         });
 
         return claims.ToResultList(c => c.MapToV1());
@@ -57,13 +50,6 @@ public class ClaimsController : ControllerBase
     /// <summary>
     /// Returns a list of aggregates claims for the authenticated user based on the specified time zone and time range.
     /// </summary>
-    /// <param name="unitOfWork"></param>
-    /// <param name="timeAggregate">The size of each bucket in the aggregation</param>
-    /// <param name="timeZone">The time zone. See https://en.wikipedia.org/wiki/List_of_tz_database_time_zones for a list of valid time zones.</param>
-    /// <param name="start">The start of the time range in Unix time in seconds.</param>
-    /// <param name="end">The end of the time range in Unix time in seconds.</param>
-    /// <param name="skip">The number of items to skip.</param>
-    /// <param name="limit">The number of items to return.</param>
     /// <response code="200">Returns the aggregated claims.</response>
     /// <response code="400">If the time zone is invalid.</response>
     /// <response code="401">If the user is not authenticated.</response>
@@ -76,24 +62,21 @@ public class ClaimsController : ControllerBase
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ResultList<AggregatedClaims>>> AggregateClaims(
         [FromServices] IUnitOfWork unitOfWork,
-        [FromQuery] TimeAggregate timeAggregate,
-        [FromQuery] string timeZone,
-        [FromQuery] long? start,
-        [FromQuery] long? end,
-        [FromQuery] int? limit,
-        [FromQuery] int skip = 0)
+        [FromQuery] AggregateClaimsQueryParameters param)
     {
         if (!User.TryGetSubject(out var subject)) return Unauthorized();
-        if (!timeZone.TryParseTimeZone(out var timeZoneInfo)) return BadRequest("Invalid time zone");
+        if (!param.TimeZone.TryParseTimeZone(out var timeZoneInfo)) return BadRequest("Invalid time zone");
 
-        var result = await unitOfWork.ClaimRepository.QueryAggregatedClaims(new ClaimFilter
+        var result = await unitOfWork.ClaimRepository.QueryAggregatedClaims(new QueryAggregatedClaimsFilter
         {
             Owner = subject,
-            Start = start != null ? DateTimeOffset.FromUnixTimeSeconds(start.Value) : null,
-            End = end != null ? DateTimeOffset.FromUnixTimeSeconds(end.Value) : null,
-            Skip = skip,
-            Limit = limit ?? int.MaxValue
-        }, (Models.TimeAggregate)timeAggregate, timeZone);
+            Start = param.Start != null ? DateTimeOffset.FromUnixTimeSeconds(param.Start.Value) : null,
+            End = param.End != null ? DateTimeOffset.FromUnixTimeSeconds(param.End.Value) : null,
+            Skip = param.Skip,
+            Limit = param.Limit ?? int.MaxValue,
+            TimeAggregate = (Models.TimeAggregate)param.TimeAggregate,
+            TimeZone = param.TimeZone
+        });
 
         return result.ToResultList(c => new AggregatedClaims()
         {
@@ -144,6 +127,64 @@ public class ClaimsController : ControllerBase
 }
 
 #region Records
+
+public record GetClaimsQueryParameters
+{
+    /// <summary>
+    /// The start of the time range in Unix time in seconds.
+    /// </summary>
+    public long? Start { get; init; }
+
+    /// <summary>
+    /// The end of the time range in Unix time in seconds.
+    /// </summary>
+    public long? End { get; init; }
+
+    /// <summary>
+    /// The number of items to return.
+    /// </summary>
+    public int? Limit { get; init; }
+
+    /// <summary>
+    /// The number of items to skip.
+    /// </summary>
+    [DefaultValue(0)]
+    public int Skip { get; init; }
+}
+
+public record AggregateClaimsQueryParameters
+{
+    /// <summary>
+    /// The size of each bucket in the aggregation
+    /// </summary>
+    public required TimeAggregate TimeAggregate { get; init; }
+
+    /// <summary>
+    /// The time zone. See https://en.wikipedia.org/wiki/List_of_tz_database_time_zones for a list of valid time zones.
+    /// </summary>
+    public required string TimeZone { get; init; }
+
+    /// <summary>
+    /// The start of the time range in Unix time in seconds.
+    /// </summary>
+    public long? Start { get; init; }
+
+    /// <summary>
+    /// The end of the time range in Unix time in seconds.
+    /// </summary>
+    public long? End { get; init; }
+
+    /// <summary>
+    /// The number of items to return.
+    /// </summary>
+    public int? Limit { get; init; }
+
+    /// <summary>
+    /// The number of items to skip.
+    /// </summary>
+    [DefaultValue(0)]
+    public int Skip { get; init; }
+}
 
 /// <summary>
 /// A claim record representing a claim of a production and consumption certificate.

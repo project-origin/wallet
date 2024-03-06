@@ -93,7 +93,7 @@ public class CertificateRepository : ICertificateRepository
         return certsDictionary.Values.FirstOrDefault();
     }
 
-    public async Task<PageResult<CertificateViewModel>> QueryAvailableCertificates(CertificatesFilter filter)
+    public async Task<PageResult<CertificateViewModel>> QueryAvailableCertificates(QueryCertificatesFilter filter)
     {
         string sql = @"
             CREATE TEMPORARY TABLE certificates_work_table ON COMMIT DROP AS (
@@ -146,7 +146,7 @@ public class CertificateRepository : ICertificateRepository
         }
     }
 
-    public async Task<PageResult<AggregatedCertificatesViewModel>> QueryAggregatedAvailableCertificates(CertificatesFilter filter, TimeAggregate timeAggregate, string timeZone)
+    public async Task<PageResult<AggregatedCertificatesViewModel>> QueryAggregatedAvailableCertificates(QueryAggregatedCertificatesFilter filter)
     {
         string sql = @"
             CREATE TEMPORARY TABLE certificates_work_table ON COMMIT DROP AS (
@@ -189,9 +189,8 @@ public class CertificateRepository : ICertificateRepository
             filter.Type,
             filter.Skip,
             filter.Limit,
-            timeAggregate = timeAggregate.ToString().ToLower(),
-            timeZone
-
+            timeAggregate = filter.TimeAggregate.ToString().ToLower(),
+            filter.TimeZone
         }))
         {
             var totalCount = gridReader.ReadSingle<int>();

@@ -53,7 +53,7 @@ public class TransferRepositoryTests : AbstractRepositoryTests
         }
 
         // Act
-        var result = await _transferRepository.QueryTransfers(new TransferFilter
+        var result = await _transferRepository.QueryTransfers(new QueryTransfersFilter
         {
             Owner = subject,
             Start = queryStartDate,
@@ -106,7 +106,7 @@ public class TransferRepositoryTests : AbstractRepositoryTests
         }
 
         // Act
-        var result = await _transferRepository.QueryTransfers(new TransferFilter
+        var result = await _transferRepository.QueryTransfers(new QueryTransfersFilter
         {
             Owner = subject,
             Start = queryStartDate,
@@ -161,14 +161,16 @@ public class TransferRepositoryTests : AbstractRepositoryTests
         }
 
         // Act
-        var result = await _transferRepository.QueryAggregatedTransfers(new TransferFilter
+        var result = await _transferRepository.QueryAggregatedTransfers(new QueryAggregatedTransfersFilter
         {
             Owner = subject,
             Start = queryStartDate,
             End = queryEndDate,
             Limit = take,
-            Skip = skip
-        }, aggregate, timeZone);
+            Skip = skip,
+            TimeAggregate = aggregate,
+            TimeZone = timeZone
+        });
 
         //assert
         result.Items.Should().HaveCount(numberOfResults);

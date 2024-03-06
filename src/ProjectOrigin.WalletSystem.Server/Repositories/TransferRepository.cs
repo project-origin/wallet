@@ -50,7 +50,7 @@ public class TransferRepository : ITransferRepository
             });
     }
 
-    public async Task<PageResult<TransferViewModel>> QueryTransfers(TransferFilter filter)
+    public async Task<PageResult<TransferViewModel>> QueryTransfers(QueryTransfersFilter filter)
     {
         string sql = @"
         CREATE TEMPORARY TABLE transfer_work_table ON COMMIT DROP AS (
@@ -79,7 +79,6 @@ public class TransferRepository : ITransferRepository
 
             foreach (var transfer in transfers)
             {
-
                 transfer.Attributes.AddRange(attributes
                     .Where(attr => attr.RegistryName == transfer.RegistryName
                             && attr.CertificateId == transfer.CertificateId));
@@ -96,7 +95,7 @@ public class TransferRepository : ITransferRepository
         }
     }
 
-    public async Task<PageResult<AggregatedTransferViewModel>> QueryAggregatedTransfers(TransferFilter filter, TimeAggregate timeAggregate, string timeZone)
+    public async Task<PageResult<AggregatedTransferViewModel>> QueryAggregatedTransfers(QueryAggregatedTransfersFilter filter)
     {
         string sql = @"
         CREATE TEMPORARY TABLE transfer_work_table ON COMMIT DROP AS (
@@ -134,8 +133,8 @@ public class TransferRepository : ITransferRepository
             filter.End,
             filter.Skip,
             filter.Limit,
-            timeAggregate = timeAggregate.ToString().ToLowerInvariant(),
-            timeZone
+            timeAggregate = filter.TimeAggregate.ToString().ToLowerInvariant(),
+            filter.TimeZone,
         }))
         {
             var totalCount = gridReader.ReadSingle<int>();

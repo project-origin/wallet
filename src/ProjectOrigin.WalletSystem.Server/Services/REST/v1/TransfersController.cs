@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using System.ComponentModel;
 using MassTransit;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -19,11 +20,6 @@ public class TransfersController : ControllerBase
     /// <summary>
     /// Gets detailed list of all of the transfers that have been made to other wallets.
     /// </summary>
-    /// <param name="unitOfWork"></param>
-    /// <param name="start">The start of the time range in Unix time in seconds.</param>
-    /// <param name="end">The end of the time range in Unix time in seconds.</param>
-    /// <param name="skip">The number of items to skip.</param>
-    /// <param name="limit">The number of items to return.</param>
     /// <response code="200">Returns the individual transferes within the filter.</response>
     /// <response code="401">If the user is not authenticated.</response>
     [HttpGet]
@@ -34,20 +30,17 @@ public class TransfersController : ControllerBase
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ResultList<Transfer>>> GetTransfers(
         [FromServices] IUnitOfWork unitOfWork,
-        [FromQuery] long? start,
-        [FromQuery] long? end,
-        [FromQuery] int? limit,
-        [FromQuery] int skip = 0)
+        [FromQuery] GetTransfersQueryParameters param)
     {
         if (!User.TryGetSubject(out var subject)) return Unauthorized();
 
-        var transfers = await unitOfWork.TransferRepository.QueryTransfers(new TransferFilter
+        var transfers = await unitOfWork.TransferRepository.QueryTransfers(new QueryTransfersFilter
         {
             Owner = subject,
-            Start = start != null ? DateTimeOffset.FromUnixTimeSeconds(start.Value) : null,
-            End = end != null ? DateTimeOffset.FromUnixTimeSeconds(end.Value) : null,
-            Skip = skip,
-            Limit = limit ?? int.MaxValue,
+            Start = param.Start != null ? DateTimeOffset.FromUnixTimeSeconds(param.Start.Value) : null,
+            End = param.End != null ? DateTimeOffset.FromUnixTimeSeconds(param.End.Value) : null,
+            Skip = param.Skip,
+            Limit = param.Limit ?? int.MaxValue,
         });
 
         return transfers.ToResultList(t => new Transfer()
@@ -68,13 +61,6 @@ public class TransfersController : ControllerBase
     /// <summary>
     /// Returns a list of aggregates transfers, for all certificates transferred to another wallet for the authenticated user based.
     /// </summary>
-    /// <param name="unitOfWork"></param>
-    /// <param name="timeAggregate">The size of each bucket in the aggregation</param>
-    /// <param name="timeZone">The time zone. See https://en.wikipedia.org/wiki/List_of_tz_database_time_zones for a list of valid time zones.</param>
-    /// <param name="start">The start of the time range in Unix time in seconds.</param>
-    /// <param name="end">The end of the time range in Unix time in seconds.</param>
-    /// <param name="skip">The number of items to skip.</param>
-    /// <param name="limit">The number of items to return.</param>
     /// <response code="200">Returns the aggregated claims.</response>
     /// <response code="400">If the time zone is invalid.</response>
     /// <response code="401">If the user is not authenticated.</response>
@@ -87,24 +73,21 @@ public class TransfersController : ControllerBase
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ResultList<AggregatedTransfers>>> AggregateTransfers(
         [FromServices] IUnitOfWork unitOfWork,
-        [FromQuery] TimeAggregate timeAggregate,
-        [FromQuery] string timeZone,
-        [FromQuery] long? start,
-        [FromQuery] long? end,
-        [FromQuery] int? limit,
-        [FromQuery] int skip = 0)
+        [FromQuery] AggregateTransfersQueryParameters param)
     {
         if (!User.TryGetSubject(out var subject)) return Unauthorized();
-        if (!timeZone.TryParseTimeZone(out var timeZoneInfo)) return BadRequest("Invalid time zone");
+        if (!param.TimeZone.TryParseTimeZone(out var timeZoneInfo)) return BadRequest("Invalid time zone");
 
-        var transfers = await unitOfWork.TransferRepository.QueryAggregatedTransfers(new TransferFilter
+        var transfers = await unitOfWork.TransferRepository.QueryAggregatedTransfers(new QueryAggregatedTransfersFilter
         {
             Owner = subject,
-            Start = start != null ? DateTimeOffset.FromUnixTimeSeconds(start.Value) : null,
-            End = end != null ? DateTimeOffset.FromUnixTimeSeconds(end.Value) : null,
-            Skip = skip,
-            Limit = limit ?? int.MaxValue,
-        }, (Models.TimeAggregate)timeAggregate, timeZone);
+            Start = param.Start != null ? DateTimeOffset.FromUnixTimeSeconds(param.Start.Value) : null,
+            End = param.End != null ? DateTimeOffset.FromUnixTimeSeconds(param.End.Value) : null,
+            Skip = param.Skip,
+            Limit = param.Limit ?? int.MaxValue,
+            TimeAggregate = (Models.TimeAggregate)param.TimeAggregate,
+            TimeZone = param.TimeZone
+        });
 
         return transfers.ToResultList(t => new AggregatedTransfers()
         {
@@ -155,6 +138,65 @@ public class TransfersController : ControllerBase
 }
 
 #region Records
+
+
+public record GetTransfersQueryParameters
+{
+    /// <summary>
+    /// The start of the time range in Unix time in seconds.
+    /// </summary>
+    public long? Start { get; init; }
+
+    /// <summary>
+    /// The end of the time range in Unix time in seconds.
+    /// </summary>
+    public long? End { get; init; }
+
+    /// <summary>
+    /// The number of items to return.
+    /// </summary>
+    public int? Limit { get; init; }
+
+    /// <summary>
+    /// The number of items to skip.
+    /// </summary>
+    [DefaultValue(0)]
+    public int Skip { get; init; }
+}
+
+public record AggregateTransfersQueryParameters
+{
+    /// <summary>
+    /// The size of each bucket in the aggregation
+    /// </summary>
+    public required TimeAggregate TimeAggregate { get; init; }
+
+    /// <summary>
+    /// The time zone. See https://en.wikipedia.org/wiki/List_of_tz_database_time_zones for a list of valid time zones.
+    /// </summary>
+    public required string TimeZone { get; init; }
+
+    /// <summary>
+    /// The start of the time range in Unix time in seconds.
+    /// </summary>
+    public long? Start { get; init; }
+
+    /// <summary>
+    /// The end of the time range in Unix time in seconds.
+    /// </summary>
+    public long? End { get; init; }
+
+    /// <summary>
+    /// The number of items to return.
+    /// </summary>
+    public int? Limit { get; init; }
+
+    /// <summary>
+    /// The number of items to skip.
+    /// </summary>
+    [DefaultValue(0)]
+    public int Skip { get; init; }
+}
 
 /// <summary>
 /// A transfer record of a transfer of a part of a certificate to another wallet.
