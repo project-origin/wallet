@@ -4,18 +4,19 @@ using System.Collections.Generic;
 using Xunit.Abstractions;
 using System.Threading.Tasks;
 using ProjectOrigin.PedersenCommitment;
-using ProjectOrigin.HierarchicalDeterministicKeys;
-using Google.Protobuf;
 using Xunit;
 using System;
 using System.Linq;
 using Xunit.Sdk;
+using ProjectOrigin.WalletSystem.Server.Services.REST.v1;
+using System.Net.Http.Json;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests;
 
 public abstract class AbstractFlowTests : WalletSystemTestsBase, IClassFixture<RegistryFixture>, IClassFixture<InMemoryFixture>, IClassFixture<JwtTokenIssuerFixture>
 {
     private readonly RegistryFixture _registryFixture;
+    protected readonly JwtTokenIssuerFixture _jwtTokenIssuer;
 
     public AbstractFlowTests(
         TestServerFixture<Startup> serverFixture,
@@ -26,44 +27,51 @@ public abstract class AbstractFlowTests : WalletSystemTestsBase, IClassFixture<R
         RegistryFixture registryFixture) : base(serverFixture, dbFixture, messageBrokerFixture, jwtTokenIssuerFixture, outputHelper, registryFixture)
     {
         _registryFixture = registryFixture;
+        _jwtTokenIssuer = jwtTokenIssuerFixture;
     }
 
-    protected async Task<Common.V1.FederatedStreamId> IssueCertificateToEndpoint(
-        V1.WalletDepositEndpoint endpoint,
+    protected async Task<FederatedStreamId> IssueCertificateToEndpoint(
+        WalletEndpointReference endpoint,
         Electricity.V1.GranularCertificateType type,
         SecretCommitmentInfo issuedCommitment,
         int position,
         List<(string Key, string Value, byte[]? Salt)>? attributes = null)
     {
-        var publicKey = Algorithms.Secp256k1.ImportHDPublicKey(endpoint.PublicKey.Span);
-
         var issuedEvent = await _registryFixture.IssueCertificate(
             type,
             issuedCommitment,
-            publicKey.Derive(position).GetPublicKey(),
+            endpoint.PublicKey.Derive(position).GetPublicKey(),
             attributes);
 
-        var receiveClient = new V1.ReceiveSliceService.ReceiveSliceServiceClient(_serverFixture.Channel);
+        var client = _serverFixture.CreateHttpClient();
 
-        var request = new V1.ReceiveRequest()
+        var receiveRequest = new ReceiveRequest
         {
-            WalletDepositEndpointPublicKey = endpoint.PublicKey,
-            WalletDepositEndpointPosition = (uint)position,
-            CertificateId = issuedEvent.CertificateId,
+            CertificateId = new FederatedStreamId()
+            {
+                Registry = issuedEvent.CertificateId.Registry,
+                StreamId = Guid.Parse(issuedEvent.CertificateId.StreamId.Value)
+            },
+            PublicKey = endpoint.PublicKey.Export().ToArray(),
+            Position = (uint)position,
             Quantity = issuedCommitment.Message,
-            RandomR = ByteString.CopyFrom(issuedCommitment.BlindingValue),
-        };
-
-        if (attributes is not null)
-            request.HashedAttributes.Add(attributes.Where(attribute => attribute.Salt is not null).Select(attribute => new V1.ReceiveRequest.Types.HashedAttribute
+            RandomR = issuedCommitment.BlindingValue.ToArray(),
+            HashedAttributes = attributes?.Where(attribute => attribute.Salt is not null).Select(attribute => new HashedAttribute
             {
                 Key = attribute.Key,
                 Value = attribute.Value,
-                Salt = ByteString.CopyFrom(attribute.Salt)
-            }));
+                Salt = attribute.Salt!
+            }) ?? []
+        };
 
-        await receiveClient.ReceiveSliceAsync(request);
-        return issuedEvent.CertificateId;
+        var response = await client.PostAsJsonAsync("v1/slices", receiveRequest);
+        response.EnsureSuccessStatusCode();
+
+        return new FederatedStreamId
+        {
+            Registry = issuedEvent.CertificateId.Registry,
+            StreamId = Guid.Parse(issuedEvent.CertificateId.StreamId.Value)
+        };
     }
 
     protected static async Task<T> Timeout<T>(Func<Task<T>> func, TimeSpan timeout)

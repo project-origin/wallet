@@ -7,6 +7,8 @@ using Xunit.Abstractions;
 using ProjectOrigin.PedersenCommitment;
 using FluentAssertions;
 using System.Linq;
+using System.Net.Http.Headers;
+using ProjectOrigin.WalletSystem.Server.Services.REST.v1;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests.FlowTests;
 
@@ -33,40 +35,35 @@ public class ClaimTests : AbstractFlowTests
     public async Task Claim150_FromTwoLargerSlices_Success()
     {
         //Arrange
-        var client = new V1.WalletService.WalletServiceClient(_serverFixture.Channel);
         var position = 1;
 
-        var (owner, header) = GenerateUserHeader();
-        var endpoint = await client.CreateWalletDepositEndpointAsync(new V1.CreateWalletDepositEndpointRequest(), header);
+        var client = _serverFixture.CreateHttpClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _jwtTokenIssuer.GenerateRandomToken());
 
-        var productionId = await IssueCertificateToEndpoint(endpoint.WalletDepositEndpoint, Electricity.V1.GranularCertificateType.Production, new SecretCommitmentInfo(200), position++);
-        var consumptionId = await IssueCertificateToEndpoint(endpoint.WalletDepositEndpoint, Electricity.V1.GranularCertificateType.Consumption, new SecretCommitmentInfo(300), position++);
+        var wallet = await client.CreateWallet();
+        var endpoint = await client.CreateWalletEndpoint(wallet.WalletId);
 
-        await Timeout(async () =>
-        {
-            var result = await client.QueryGranularCertificatesAsync(new V1.QueryRequest(), header);
-            result.GranularCertificates.Should().HaveCount(2);
-            return result.GranularCertificates;
-        }, TimeSpan.FromMinutes(1));
+        var productionId = await IssueCertificateToEndpoint(endpoint.WalletReference, Electricity.V1.GranularCertificateType.Production, new SecretCommitmentInfo(200), position++);
+        var consumptionId = await IssueCertificateToEndpoint(endpoint.WalletReference, Electricity.V1.GranularCertificateType.Consumption, new SecretCommitmentInfo(300), position++);
+
+        await client.GetCertificatesWithTimeout(2, TimeSpan.FromMinutes(1));
 
         //Act
-        var response = await client.ClaimCertificatesAsync(new V1.ClaimRequest()
-        {
-            ConsumptionCertificateId = consumptionId,
-            ProductionCertificateId = productionId,
-            Quantity = 150u,
-        }, header);
+        var response = await client.CreateClaim(
+            consumptionId,
+            productionId,
+            150u);
 
         //Assert
         var queryClaims = await Timeout(async () =>
         {
-            var queryClaims = await client.QueryClaimsAsync(new V1.ClaimQueryRequest(), header);
-            queryClaims.Claims.Should().NotBeEmpty();
+            var queryClaims = await client.GetAsync("v1/claims").ParseJson<ResultList<Claim>>();
+            queryClaims.Result.Should().NotBeEmpty();
             return queryClaims;
         }, TimeSpan.FromMinutes(3));
 
-        queryClaims.Claims.Should().HaveCount(1);
-        queryClaims.Claims.Single().ConsumptionCertificate.FederatedId.Should().BeEquivalentTo(consumptionId);
-        queryClaims.Claims.Single().ProductionCertificate.FederatedId.Should().BeEquivalentTo(productionId);
+        queryClaims.Result.Should().HaveCount(1);
+        queryClaims.Result.Single().ConsumptionCertificate.FederatedStreamId.Should().BeEquivalentTo(consumptionId);
+        queryClaims.Result.Single().ProductionCertificate.FederatedStreamId.Should().BeEquivalentTo(productionId);
     }
 }

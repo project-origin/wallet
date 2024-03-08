@@ -11,18 +11,12 @@ using System;
 using AutoFixture;
 using System.Collections.Generic;
 using ProjectOrigin.WalletSystem.Server.Services.REST.v1;
-using ProjectOrigin.WalletSystem.Server.Serialization;
-using ProjectOrigin.HierarchicalDeterministicKeys.Implementations;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests;
 
 public class RestFlowTest : AbstractFlowTests
 {
-    private readonly RegistryFixture _registryFixture;
-    private readonly JwtTokenIssuerFixture _jwtTokenIssuer;
-
     public RestFlowTest(
             TestServerFixture<Startup> serverFixture,
             PostgresDatabaseFixture dbFixture,
@@ -38,8 +32,6 @@ public class RestFlowTest : AbstractFlowTests
                   outputHelper,
                   registryFixture)
     {
-        _registryFixture = registryFixture;
-        _jwtTokenIssuer = jwtTokenIssuerFixture;
     }
 
     [Fact]
@@ -60,11 +52,11 @@ public class RestFlowTest : AbstractFlowTests
         // issue certificate to registry
         var position = 1;
         var issuedCommitment = new PedersenCommitment.SecretCommitmentInfo(150);
-        var issuedEvent = await _registryFixture.IssueCertificate(
+        var issuedCertificateId = await IssueCertificateToEndpoint(
+            createEndpointResponse.WalletReference,
             Electricity.V1.GranularCertificateType.Consumption,
             issuedCommitment,
-            createEndpointResponse.WalletReference.PublicKey.Derive(position).GetPublicKey(),
-            new List<(string Key, string Value, byte[]? Salt)>());
+            position);
 
         // Act
         // send slice to wallet
@@ -72,11 +64,7 @@ public class RestFlowTest : AbstractFlowTests
         {
             PublicKey = createEndpointResponse.WalletReference.PublicKey.Export().ToArray(),
             Position = (uint)position,
-            CertificateId = new FederatedStreamId
-            {
-                Registry = issuedEvent.CertificateId.Registry,
-                StreamId = Guid.Parse(issuedEvent.CertificateId.StreamId.Value),
-            },
+            CertificateId = issuedCertificateId,
             Quantity = issuedCommitment.Message,
             RandomR = issuedCommitment.BlindingValue.ToArray(),
             HashedAttributes = new List<HashedAttribute>()

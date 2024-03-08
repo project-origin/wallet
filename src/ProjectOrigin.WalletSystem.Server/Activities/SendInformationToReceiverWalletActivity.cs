@@ -3,14 +3,13 @@ using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
-using Google.Protobuf;
 using MassTransit;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ProjectOrigin.WalletSystem.Server.Database;
-using ProjectOrigin.WalletSystem.Server.Extensions;
 using ProjectOrigin.WalletSystem.Server.Models;
 using ProjectOrigin.WalletSystem.Server.Options;
+using ProjectOrigin.WalletSystem.Server.Services.REST.v1;
 
 namespace ProjectOrigin.WalletSystem.Server.Activities;
 
@@ -26,12 +25,14 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
     private readonly IUnitOfWork _unitOfWork;
     private readonly IOptions<ServiceOptions> _walletSystemOptions;
     private readonly ILogger<SendInformationToReceiverWalletActivity> _logger;
+    private readonly Uri _ownEndpoint;
 
     public SendInformationToReceiverWalletActivity(IUnitOfWork unitOfWork, IOptions<ServiceOptions> walletSystemOptions, ILogger<SendInformationToReceiverWalletActivity> logger)
     {
         _unitOfWork = unitOfWork;
         _walletSystemOptions = walletSystemOptions;
         _logger = logger;
+        _ownEndpoint = new Uri(_walletSystemOptions.Value.EndpointAddress, "/v1/slices");
     }
 
     public async Task<ExecutionResult> Execute(ExecuteContext<SendInformationToReceiverWalletArgument> context)
@@ -40,8 +41,7 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
 
         var newSlice = await _unitOfWork.TransferRepository.GetTransferredSlice(context.Arguments.SliceId);
         var externalEndpoint = await _unitOfWork.WalletRepository.GetExternalEndpoint(context.Arguments.ExternalEndpointId);
-
-        if (_walletSystemOptions.Value.EndpointAddress.Equals(externalEndpoint.Endpoint))
+        if (externalEndpoint.Endpoint.Equals(_ownEndpoint.ToString()))
         {
             return await InsertIntoLocalWallet(context, newSlice, externalEndpoint);
         }
@@ -60,26 +60,29 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
         {
             _logger.LogDebug("Preparing to send information to receiver");
 
-            var request = new
+            var request = new ReceiveRequest
             {
-                WalletDepositEndpointPublicKey = ByteString.CopyFrom(externalEndpoint.PublicKey.Export()),
-                WalletDepositEndpointPosition = (uint)newSlice.ExternalEndpointPosition,
-                CertificateId = newSlice.GetFederatedStreamId(),
+                PublicKey = externalEndpoint.PublicKey.Export().ToArray(),
+                Position = (uint)newSlice.ExternalEndpointPosition,
+                CertificateId = new FederatedStreamId
+                {
+                    Registry = newSlice.RegistryName,
+                    StreamId = newSlice.CertificateId
+                },
                 Quantity = (uint)newSlice.Quantity,
-                RandomR = ByteString.CopyFrom(newSlice.RandomR),
-                HashedAttributes =
-                    context.Arguments.WalletAttributes.Select(ha =>
-                        new
-                        {
-                            Key = ha.Key,
-                            Value = ha.Value,
-                            Salt = ByteString.CopyFrom(ha.Salt),
-                        })
+                RandomR = newSlice.RandomR,
+                HashedAttributes = context.Arguments.WalletAttributes.Select(ha =>
+                    new HashedAttribute
+                    {
+                        Key = ha.Key,
+                        Value = ha.Value,
+                        Salt = ha.Salt,
+                    })
             };
 
-            HttpClient client = new();
-
+            var client = new HttpClient();
             _logger.LogDebug("Sending information to receiver");
+
             var response = await client.PostAsJsonAsync(externalEndpoint.Endpoint, request);
             response.EnsureSuccessStatusCode();
             await _unitOfWork.TransferRepository.SetTransferredSliceState(newSlice.Id, TransferredSliceState.Transferred);

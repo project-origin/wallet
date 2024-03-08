@@ -1,7 +1,5 @@
 using AutoFixture;
-using Dapper;
 using Npgsql;
-using ProjectOrigin.WalletSystem.Server.Database.Mapping;
 using ProjectOrigin.WalletSystem.Server.Models;
 using ProjectOrigin.WalletSystem.Server.Repositories;
 using System;
