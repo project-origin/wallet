@@ -11,7 +11,6 @@ public static class JwtBearerOptionsExtensions
 {
     public static void ConfigureJwtVerification(this JwtBearerOptions bearerOptions, JwtOptions jwtOptions)
     {
-
         if (jwtOptions.AllowAnyJwtToken)
         {
             Log.Warning("No JWT issuers configured. Server will accept any jwt-tokens! This is not recommended for production environments.");
@@ -24,6 +23,21 @@ public static class JwtBearerOptionsExtensions
                 ValidateTokenReplay = false,
                 ValidateLifetime = false,
                 SignatureValidator = (token, _) => new Microsoft.IdentityModel.JsonWebTokens.JsonWebToken(token)
+            };
+        }
+        else if (jwtOptions.Authority != string.Empty)
+        {
+            bearerOptions.Authority = jwtOptions.Authority;
+            bearerOptions.RequireHttpsMetadata = jwtOptions.RequireHttpsMetadata;
+            bearerOptions.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = true,
+                ValidateIssuer = true,
+                ValidIssuer = jwtOptions.Authority,
+                ValidateAudience = !jwtOptions.Audience.IsEmpty(),
+                ValidAudience = jwtOptions.Audience,
+                ValidateLifetime = true,
+                ClockSkew = TimeSpan.Zero,
             };
         }
         else if (jwtOptions.Issuers.Any())

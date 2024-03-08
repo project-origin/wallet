@@ -3,47 +3,51 @@ using System.IdentityModel.Tokens.Jwt;
 using System.IO;
 using System.Security.Claims;
 using System.Security.Cryptography;
+using System.Text.Json;
 using AutoFixture;
 using Grpc.Core;
 using Microsoft.IdentityModel.Tokens;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures;
 
-public class JwtTokenIssuerFixture : IDisposable
+public sealed class JwtTokenIssuerFixture : IDisposable
 {
-    public string Issuer { get; init; } = "TestIssuer";
-    public string Audience { get; } = "WalletSystem";
-    public int ExpirationMinutes { get; } = 60;
-    public string PemFilepath { get; }
+    private readonly RSA _rsa = RSA.Create();
 
-    private readonly ECDsa _ecdsa;
-    private bool _disposed = false;
+    public string KeyType => "RSA";
+    public string Algorithm => SecurityAlgorithms.RsaSha256;
+    public byte[] PublicKeyInfo => _rsa.ExportSubjectPublicKeyInfo();
+    public int ExpirationMinutes => 60;
+    public string PemFilepath { get; private init; }
+    public string Audience => "WalletSystem";
+
+    public string Issuer { get; init; } = "TestIssuer";
 
     public JwtTokenIssuerFixture()
     {
-        _ecdsa = ECDsa.Create(ECCurve.NamedCurves.nistP256);
         PemFilepath = Path.GetTempFileName();
-        var pem = _ecdsa.ExportSubjectPublicKeyInfoPem();
+        var pem = _rsa.ExportSubjectPublicKeyInfoPem();
         File.WriteAllText(PemFilepath, pem);
     }
 
-    public string GenerateToken(string subject, string name)
+    public string GenerateToken(string subject, string name, string[]? scopes = null)
     {
         var claims = new[]
         {
             new Claim("sub", subject),
             new Claim("name", name),
             new Claim("iat", DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64),
+            new Claim("scope", string.Join(" ", scopes ?? Array.Empty<string>())),
         };
 
-        var key = new ECDsaSecurityKey(_ecdsa);
-        var credentials = new SigningCredentials(key, SecurityAlgorithms.EcdsaSha256);
+        var key = new RsaSecurityKey(_rsa);
+        var credentials = new SigningCredentials(key, Algorithm);
 
         var token = new JwtSecurityToken(
             issuer: Issuer,
             audience: Audience,
             claims: claims,
-            notBefore: DateTime.UtcNow,
+            //notBefore: DateTime.UtcNow,
             expires: DateTime.UtcNow.AddMinutes(ExpirationMinutes),
             signingCredentials: credentials
         );
@@ -67,27 +71,34 @@ public class JwtTokenIssuerFixture : IDisposable
         return (subject, headers);
     }
 
-    protected virtual void Dispose(bool disposing)
+    public string GetJsonOpenIdConfiguration()
     {
-        if (!_disposed)
+        return JsonSerializer.Serialize(new
         {
-            if (disposing)
-            {
-                File.Delete(PemFilepath);
+            issuer = $"{Issuer}",
+            jwks_uri = $"{Issuer}/keys",
+        });
+    }
+
+    public string GetJsonKeys()
+    {
+        return JsonSerializer.Serialize(new
+        {
+            keys = new[]{
+                new
+                    {
+                        use = "sig",
+                        kty = KeyType,
+                        alg = Algorithm,
+                        n = Convert.ToBase64String(_rsa.ExportParameters(true).Modulus!),
+                        e = Convert.ToBase64String(_rsa.ExportParameters(true).Exponent!),
+                    }
             }
-            _disposed = true;
-        }
+        });
     }
 
     public void Dispose()
     {
-        Dispose(true);
-        GC.SuppressFinalize(this);
+        File.Delete(PemFilepath);
     }
-
-    ~JwtTokenIssuerFixture()
-    {
-        Dispose(false);
-    }
-
 }

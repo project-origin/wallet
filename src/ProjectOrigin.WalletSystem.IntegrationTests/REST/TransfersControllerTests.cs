@@ -40,9 +40,7 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
         // Act
         var result = await controller.GetTransfers(
             _unitOfWork,
-            null,
-            null,
-            null);
+            new GetTransfersQueryParameters());
 
         // Assert
         result.Result.Should().BeOfType<UnauthorizedResult>();
@@ -79,9 +77,11 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
         // Act
         var result = await controller.GetTransfers(
             _unitOfWork,
-            queryStartDate.ToUnixTimeSeconds(),
-            queryEndDate.ToUnixTimeSeconds(),
-            null);
+            new GetTransfersQueryParameters
+            {
+                Start = queryStartDate.ToUnixTimeSeconds(),
+                End = queryEndDate.ToUnixTimeSeconds(),
+            });
 
         // Assert
         result.Value.Should().NotBeNull();
@@ -124,11 +124,13 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
         // Act
         var result = await controller.AggregateTransfers(
             _unitOfWork,
-            TimeAggregate.Day,
-            timezone,
-            queryStartDate.ToUnixTimeSeconds(),
-            queryEndDate.ToUnixTimeSeconds(),
-            null);
+            new AggregateTransfersQueryParameters
+            {
+                TimeAggregate = TimeAggregate.Day,
+                TimeZone = timezone,
+                Start = queryStartDate.ToUnixTimeSeconds(),
+                End = queryEndDate.ToUnixTimeSeconds(),
+            });
 
         // Assert
         result.Value.Should().NotBeNull();
@@ -151,11 +153,11 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
         // Act
         var result = await controller.AggregateTransfers(
             _unitOfWork,
-            TimeAggregate.Day,
-            "invalid-time-zone",
-            null,
-            null,
-            null);
+            new AggregateTransfersQueryParameters
+            {
+                TimeAggregate = TimeAggregate.Day,
+                TimeZone = "invalid-time-zone",
+            });
 
         // Assert
         result.Result.Should().BeOfType<BadRequestObjectResult>();

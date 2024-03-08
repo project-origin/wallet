@@ -34,12 +34,7 @@ public class CertificatesControllerTests : IClassFixture<PostgresDatabaseFixture
         var controller = new CertificatesController();
 
         // Act
-        var result = await controller.GetCertificates(
-            _unitOfWork,
-            null,
-            null,
-            null,
-            null);
+        var result = await controller.GetCertificates(_unitOfWork, new GetCertificatesQueryParameters());
 
         // Assert
         result.Result.Should().BeOfType<UnauthorizedResult>();
@@ -88,12 +83,14 @@ public class CertificatesControllerTests : IClassFixture<PostgresDatabaseFixture
         // Act
         var result = await controller.AggregateCertificates(
             _unitOfWork,
-            TimeAggregate.Day,
-            timezone,
-            queryStartDate.ToUnixTimeSeconds(),
-            queryEndDate.ToUnixTimeSeconds(),
-            type,
-            null);
+            new AggregateCertificatesQueryParameters
+            {
+                TimeAggregate = TimeAggregate.Day,
+                TimeZone = timezone,
+                Start = queryStartDate.ToUnixTimeSeconds(),
+                End = queryEndDate.ToUnixTimeSeconds(),
+                Type = type
+            });
 
         // Assert
         result.Value.Should().NotBeNull();
@@ -116,12 +113,11 @@ public class CertificatesControllerTests : IClassFixture<PostgresDatabaseFixture
         // Act
         var result = await controller.AggregateCertificates(
             _unitOfWork,
-            TimeAggregate.Day,
-            "invalid-time-zone",
-            null,
-            null,
-            null,
-            null);
+            new AggregateCertificatesQueryParameters
+            {
+                TimeAggregate = TimeAggregate.Day,
+                TimeZone = "invalid-time-zone",
+            });
 
         // Assert
         result.Result.Should().BeOfType<BadRequestObjectResult>();

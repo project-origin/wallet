@@ -52,7 +52,7 @@ public abstract class WalletSystemTestsBase : IClassFixture<TestServerFixture<St
             {"VerifySlicesWorkerOptions:SleepTime", "00:00:02"},
             {"Jwt:Audience", jwtTokenIssuerFixture.Audience},
             {"Jwt:Issuers:0:IssuerName", jwtTokenIssuerFixture.Issuer},
-            {"Jwt:Issuers:0:Type", "ecdsa"},
+            {"Jwt:Issuers:0:Type", jwtTokenIssuerFixture.KeyType},
             {"Jwt:Issuers:0:PemKeyFile", jwtTokenIssuerFixture.PemFilepath}
         };
 
@@ -87,10 +87,10 @@ public abstract class WalletSystemTestsBase : IClassFixture<TestServerFixture<St
         Dispose(false);
     }
 
-    protected HttpClient CreateAuthenticatedHttpClient(string subject, string name)
+    protected HttpClient CreateAuthenticatedHttpClient(string subject, string name, string[]? scopes = null)
     {
         var client = _serverFixture.CreateHttpClient();
-        var token = _jwtTokenIssuerFixture.GenerateToken(subject, name);
+        var token = _jwtTokenIssuerFixture.GenerateToken(subject, name, scopes);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         return client;
     }
