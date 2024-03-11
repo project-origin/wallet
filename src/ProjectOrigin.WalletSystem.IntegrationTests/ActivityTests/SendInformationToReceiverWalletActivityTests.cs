@@ -1,10 +1,8 @@
 using System;
-using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using AutoFixture;
 using FluentAssertions;
-using JsonConverter.Abstractions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NSubstitute;
@@ -92,11 +90,30 @@ public class SendInformationToReceiverWalletActivityTests
         };
         _transferRepository.GetTransferredSlice(Arg.Any<Guid>()).Returns(transferredSlice);
 
+        var attribute1 = new WalletAttribute
+        {
+            CertificateId = transferredSlice.CertificateId,
+            RegistryName = transferredSlice.RegistryName,
+            Key = _fixture.Create<string>(),
+            Value = _fixture.Create<string>(),
+            Salt = _fixture.Create<byte[]>()
+        };
+        var attribute2 = new WalletAttribute
+        {
+            CertificateId = transferredSlice.CertificateId,
+            RegistryName = transferredSlice.RegistryName,
+            Key = _fixture.Create<string>(),
+            Value = _fixture.Create<string>(),
+            Salt = _fixture.Create<byte[]>()
+        };
         _context.Arguments.Returns(new SendInformationToReceiverWalletArgument()
         {
             ExternalEndpointId = endpoint.Id,
             SliceId = transferredSlice.Id,
-            WalletAttributes = []
+            WalletAttributes = [
+                attribute1,
+                attribute2
+            ]
         });
 
         // Act
@@ -116,10 +133,74 @@ public class SendInformationToReceiverWalletActivityTests
             },
             Quantity = (uint)transferredSlice.Quantity,
             RandomR = transferredSlice.RandomR,
-            HashedAttributes = []
+            HashedAttributes = new[]
+            {
+                new HashedAttribute
+                {
+                    Key = attribute1.Key,
+                    Value = attribute1.Value,
+                    Salt = attribute1.Salt
+                },
+                new HashedAttribute
+                {
+                    Key = attribute2.Key,
+                    Value = attribute2.Value,
+                    Salt = attribute2.Salt
+                }
+            }
         }, options);
 
         wireMockServer.FindLogEntries(Request.Create().WithPath("/v1/slices").WithBody(jsonBody).UsingPost()).Should().HaveCount(1);
+    }
+
+
+    [Fact]
+    public async Task SendOverRestToExternalWallet_EndpointNotExisting_404()
+    {
+        // Arrange
+        var nonExistingEndpoint = "http://example.com";
+        var hdAlgorithm = new Secp256k1Algorithm();
+
+        var options = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+        options.Converters.Add(new IHDPublicKeyConverter(hdAlgorithm));
+
+        var endpoint = new ExternalEndpoint
+        {
+            Id = Guid.NewGuid(),
+            Endpoint = $"{nonExistingEndpoint}/v1/slices",
+            PublicKey = hdAlgorithm.GenerateNewPrivateKey().Neuter(),
+            Owner = _fixture.Create<string>(),
+            ReferenceText = _fixture.Create<string>(),
+        };
+        _walletRepository.GetExternalEndpoint(Arg.Any<Guid>()).Returns(endpoint);
+
+        var transferredSlice = new TransferredSlice
+        {
+            Id = Guid.NewGuid(),
+            CertificateId = Guid.NewGuid(),
+            Quantity = _fixture.Create<int>(),
+            ExternalEndpointId = endpoint.Id,
+            ExternalEndpointPosition = _fixture.Create<int>(),
+            RandomR = _fixture.Create<byte[]>(),
+            RegistryName = _fixture.Create<string>(),
+            State = TransferredSliceState.Registering
+        };
+        _transferRepository.GetTransferredSlice(Arg.Any<Guid>()).Returns(transferredSlice);
+        _context.Arguments.Returns(new SendInformationToReceiverWalletArgument()
+        {
+            ExternalEndpointId = endpoint.Id,
+            SliceId = transferredSlice.Id,
+            WalletAttributes = []
+        });
+
+        // Act
+        Func<Task> act = async () => await _activity.Execute(_context);
+
+        // Assert
+        await act.Should().ThrowAsync<System.Net.Http.HttpRequestException>()
+            .WithMessage($"Response status code does not indicate success: 404 (Not Found).");
+
+        await _transferRepository.Received(0).SetTransferredSliceState(Arg.Any<Guid>(), TransferredSliceState.Transferred);
     }
 
     [Fact]
@@ -164,11 +245,30 @@ public class SendInformationToReceiverWalletActivityTests
         };
         _transferRepository.GetTransferredSlice(Arg.Any<Guid>()).Returns(transferredSlice);
 
+        var attribute1 = new WalletAttribute
+        {
+            CertificateId = transferredSlice.CertificateId,
+            RegistryName = transferredSlice.RegistryName,
+            Key = _fixture.Create<string>(),
+            Value = _fixture.Create<string>(),
+            Salt = _fixture.Create<byte[]>()
+        };
+        var attribute2 = new WalletAttribute
+        {
+            CertificateId = transferredSlice.CertificateId,
+            RegistryName = transferredSlice.RegistryName,
+            Key = _fixture.Create<string>(),
+            Value = _fixture.Create<string>(),
+            Salt = _fixture.Create<byte[]>()
+        };
         _context.Arguments.Returns(new SendInformationToReceiverWalletArgument()
         {
             ExternalEndpointId = externalEndpoint.Id,
             SliceId = transferredSlice.Id,
-            WalletAttributes = []
+            WalletAttributes = [
+                attribute1,
+                attribute2
+            ]
         });
 
         // Act
@@ -185,5 +285,60 @@ public class SendInformationToReceiverWalletActivityTests
             slice.WalletEndpointId == walletEndpoint.Id &&
             slice.WalletEndpointPosition == transferredSlice.ExternalEndpointPosition &&
             slice.State == WalletSliceState.Available));
+        await _certificateRepository.Received(1).InsertWalletAttribute(walletEndpoint.WalletId, attribute1);
+        await _certificateRepository.Received(1).InsertWalletAttribute(walletEndpoint.WalletId, attribute2);
+    }
+
+    [Fact]
+    public async Task InsertIntoLocalWallet_MissingEndpoint()
+    {
+        // Arrange
+        var hdAlgorithm = new Secp256k1Algorithm();
+
+        var options = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+        options.Converters.Add(new IHDPublicKeyConverter(hdAlgorithm));
+
+        var externalEndpoint = new ExternalEndpoint
+        {
+            Id = Guid.NewGuid(),
+            Endpoint = $"{_endpoint}/v1/slices",
+            PublicKey = hdAlgorithm.GenerateNewPrivateKey().Neuter(),
+            Owner = _fixture.Create<string>(),
+            ReferenceText = _fixture.Create<string>(),
+        };
+        _walletRepository.GetExternalEndpoint(externalEndpoint.Id).Returns(externalEndpoint);
+        WalletEndpoint? missingEndpoint = null;
+        _walletRepository.GetWalletEndpoint(externalEndpoint.PublicKey).Returns(missingEndpoint);
+
+        var transferredSlice = new TransferredSlice
+        {
+            Id = Guid.NewGuid(),
+            CertificateId = Guid.NewGuid(),
+            Quantity = _fixture.Create<int>(),
+            ExternalEndpointId = externalEndpoint.Id,
+            ExternalEndpointPosition = _fixture.Create<int>(),
+            RandomR = _fixture.Create<byte[]>(),
+            RegistryName = _fixture.Create<string>(),
+            State = TransferredSliceState.Registering
+        };
+        _transferRepository.GetTransferredSlice(Arg.Any<Guid>()).Returns(transferredSlice);
+
+        _context.Arguments.Returns(new SendInformationToReceiverWalletArgument()
+        {
+            ExternalEndpointId = externalEndpoint.Id,
+            SliceId = transferredSlice.Id,
+            WalletAttributes = []
+        });
+
+        var fault = Substitute.For<MassTransit.ExecutionResult>();
+
+        _context.Faulted(Arg.Any<Exception>()).Returns(fault);
+
+        // Act
+        var result = await _activity.Execute(_context);
+
+        // Assert
+        await _transferRepository.Received(0).SetTransferredSliceState(Arg.Any<Guid>(), TransferredSliceState.Transferred);
+        result.Should().Be(fault);
     }
 }
