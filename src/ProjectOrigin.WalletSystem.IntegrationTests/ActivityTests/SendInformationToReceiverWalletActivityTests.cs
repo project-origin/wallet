@@ -131,7 +131,7 @@ public class SendInformationToReceiverWalletActivityTests
         var options = new JsonSerializerOptions(JsonSerializerDefaults.Web);
         options.Converters.Add(new IHDPublicKeyConverter(hdAlgorithm));
 
-        var endpoint = new ExternalEndpoint
+        var externalEndpoint = new ExternalEndpoint
         {
             Id = Guid.NewGuid(),
             Endpoint = $"{_endpoint}/v1/slices",
@@ -139,23 +139,24 @@ public class SendInformationToReceiverWalletActivityTests
             Owner = _fixture.Create<string>(),
             ReferenceText = _fixture.Create<string>(),
         };
-        _walletRepository.GetExternalEndpoint(endpoint.Id).Returns(endpoint);
+        _walletRepository.GetExternalEndpoint(externalEndpoint.Id).Returns(externalEndpoint);
 
-        _walletRepository.GetWalletEndpoint(endpoint.PublicKey).Returns(new WalletEndpoint
+        var walletEndpoint = new WalletEndpoint
         {
             Id = Guid.NewGuid(),
-            PublicKey = endpoint.PublicKey,
+            PublicKey = externalEndpoint.PublicKey,
             IsRemainderEndpoint = false,
             WalletId = _fixture.Create<Guid>(),
             WalletPosition = _fixture.Create<int>(),
-        });
+        };
+        _walletRepository.GetWalletEndpoint(externalEndpoint.PublicKey).Returns(walletEndpoint);
 
         var transferredSlice = new TransferredSlice
         {
             Id = Guid.NewGuid(),
             CertificateId = Guid.NewGuid(),
             Quantity = _fixture.Create<int>(),
-            ExternalEndpointId = endpoint.Id,
+            ExternalEndpointId = externalEndpoint.Id,
             ExternalEndpointPosition = _fixture.Create<int>(),
             RandomR = _fixture.Create<byte[]>(),
             RegistryName = _fixture.Create<string>(),
@@ -165,7 +166,7 @@ public class SendInformationToReceiverWalletActivityTests
 
         _context.Arguments.Returns(new SendInformationToReceiverWalletArgument()
         {
-            ExternalEndpointId = endpoint.Id,
+            ExternalEndpointId = externalEndpoint.Id,
             SliceId = transferredSlice.Id,
             WalletAttributes = []
         });
@@ -174,18 +175,15 @@ public class SendInformationToReceiverWalletActivityTests
         await _activity.Execute(_context);
 
         // Assert
-        await _transferRepository.Received(1).SetTransferredSliceState(transferredSlice.Id, TransferredSliceState.Transferred);
-        await _certificateRepository.Received(1).InsertWalletSlice(new WalletSlice
-        {
-            Id = Arg.Any<Guid>(),
-            RegistryName = transferredSlice.RegistryName,
-            CertificateId = transferredSlice.CertificateId,
-            Quantity = transferredSlice.Quantity,
-            RandomR = transferredSlice.RandomR,
-            WalletEndpointId = endpoint.Id,
-            WalletEndpointPosition = transferredSlice.ExternalEndpointPosition,
-            State = WalletSliceState.Available,
-        });
-
+        await _transferRepository.Received(1).SetTransferredSliceState(Arg.Any<Guid>(), TransferredSliceState.Transferred);
+        await _certificateRepository.Received(1).InsertWalletSlice(Arg.Is<WalletSlice>(slice =>
+            slice.Id != Guid.Empty &&
+            slice.RegistryName == transferredSlice.RegistryName &&
+            slice.CertificateId == transferredSlice.CertificateId &&
+            slice.Quantity == transferredSlice.Quantity &&
+            slice.RandomR == transferredSlice.RandomR &&
+            slice.WalletEndpointId == walletEndpoint.Id &&
+            slice.WalletEndpointPosition == transferredSlice.ExternalEndpointPosition &&
+            slice.State == WalletSliceState.Available));
     }
 }

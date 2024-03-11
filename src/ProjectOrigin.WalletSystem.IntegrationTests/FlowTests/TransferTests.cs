@@ -171,7 +171,7 @@ public class TransferTests : AbstractFlowTests
         //Assert
         var response = await recipientClient.GetCertificatesWithTimeout(1, TimeSpan.FromMinutes(1));
         response.Single().Attributes.Should().HaveCount(3);
-        response.Single().Attributes.Should().Contain(x => x.Key == "AssetId" && x.Value == "1264541");
+        response.Single().Attributes.Should().Contain(x => x.Key == "assetId" && x.Value == "1264541");
     }
 
     private async Task<(WalletEndpointReference, HttpClient)> CreateWalletEndpointAndHttpClient()
