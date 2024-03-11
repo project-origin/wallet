@@ -207,12 +207,14 @@ public class WalletController : ControllerBase
     /// <param name="unitOfWork"></param>
     /// <param name="request">The request to create the external endpoint.</param>
     /// <response code="201">The external endpoint was created.</response>
+    /// <response code="400">If the wallet reference is invalid or if the wallet reference is to the same wallet as the user.</response>
     /// <response code="401">If the user is not authenticated.</response>
     [HttpPost]
     [Route("v1/external-endpoints")]
     [RequiredScope("po:external-endpoints:create")]
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<CreateExternalEndpointResponse>> CreateExternalEndpoint(
         [FromServices] IUnitOfWork unitOfWork,
@@ -220,6 +222,16 @@ public class WalletController : ControllerBase
     )
     {
         if (!User.TryGetSubject(out var subject)) return Unauthorized();
+
+        var foundEndpoint = await unitOfWork.WalletRepository.GetWalletEndpoint(request.WalletReference.PublicKey);
+        if (foundEndpoint is not null)
+        {
+            var wallet = await unitOfWork.WalletRepository.GetWallet(foundEndpoint.WalletId) ?? throw new InvalidOperationException("Wallet not found.");
+            if (wallet.Owner == subject)
+            {
+                return BadRequest("Cannot create receiver deposit endpoint to self.");
+            }
+        }
 
         var externalEndpoint = await unitOfWork.WalletRepository.CreateExternalEndpoint(
             subject,

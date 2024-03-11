@@ -22,7 +22,12 @@ public static class HttpTaskExtensions
     public static async Task<T> ParseJson<T>(this Task<HttpResponseMessage> httpResponse)
     {
         var response = await httpResponse;
-        response.IsSuccessStatusCode.Should().BeTrue();
+        if (response.IsSuccessStatusCode == false)
+        {
+            var content = await response.Content.ReadAsStringAsync();
+            throw new Exception($"Failed to parse response: {response.StatusCode} - {content}");
+        }
+
         var responseString = await response.Content.ReadAsStringAsync();
 
         return JsonSerializer.Deserialize<T>(responseString, JsonOptions.Value)

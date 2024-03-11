@@ -375,10 +375,10 @@ public class WalletControllerTests : IClassFixture<PostgresDatabaseFixture>
         };
 
         var createResult = await controller.CreateWallet(
-              _unitOfWork,
-              _hdAlgorithm,
+            _unitOfWork,
+            _hdAlgorithm,
             _options,
-              new CreateWalletRequest());
+            new CreateWalletRequest());
 
         var createdResponse = createResult.Result.Should().BeOfType<CreatedResult>()
             .Which.Value.Should().BeOfType<CreateWalletResponse>().Which;
@@ -458,6 +458,50 @@ public class WalletControllerTests : IClassFixture<PostgresDatabaseFixture>
 
         var endpointFound = await _unitOfWork.WalletRepository.GetExternalEndpoint(response.ReceiverId);
         endpointFound.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task CreateExternalEndpoint_SelfReference_Invalid()
+    {
+        // Arrange
+        var subject = _fixture.Create<string>();
+        var controller = new WalletController()
+        {
+            ControllerContext = CreateContextWithUser(subject)
+        };
+
+        var createWalletResult = await controller.CreateWallet(
+            _unitOfWork,
+            _hdAlgorithm,
+            _options,
+            new CreateWalletRequest());
+
+        var walletCreationResult = createWalletResult.Result.Should().BeOfType<CreatedResult>()
+            .Which.Value.Should().BeOfType<CreateWalletResponse>().Which;
+
+        var createEndpointResponse = await controller.CreateWalletEndpoint(
+            _unitOfWork,
+            _options,
+            walletCreationResult.WalletId
+            );
+
+        var endpointCreatedResult = createEndpointResponse.Result.Should().BeOfType<CreatedResult>()
+            .Which.Value.Should().BeOfType<CreateWalletEndpointResponse>().Which;
+
+
+        // Act
+        var result = await controller.CreateExternalEndpoint(
+            _unitOfWork,
+            new CreateExternalEndpointRequest()
+            {
+                TextReference = _fixture.Create<string>(),
+                WalletReference = endpointCreatedResult.WalletReference
+            });
+
+        // Assert
+        result.Result.Should().BeOfType<BadRequestObjectResult>()
+            .Which.Value.Should().Be("Cannot create receiver deposit endpoint to self.");
+
     }
 
     private static ControllerContext CreateContextWithUser(string subject)

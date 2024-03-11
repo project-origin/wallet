@@ -59,7 +59,6 @@
     <Protobuf Include="../Protos/electricity.proto" Link="Protos\electricity.proto">
       <SourceUrl>https://raw.githubusercontent.com/project-origin/registry/v0.3.0/src/Protos/electricity.proto</SourceUrl>
     </Protobuf>
-    <Protobuf Include="../Protos/wallet.proto" GrpcServices="Both" />
   </ItemGroup>
 
 </Project>

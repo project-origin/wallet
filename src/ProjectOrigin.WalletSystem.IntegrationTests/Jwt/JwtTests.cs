@@ -3,12 +3,14 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using System.Threading.Tasks;
 using FluentAssertions;
-using Grpc.Core;
 using ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures;
 using ProjectOrigin.WalletSystem.Server;
-using ProjectOrigin.WalletSystem.V1;
 using WireMock.RequestBuilders;
 using WireMock.ResponseBuilders;
 using WireMock.Server;
@@ -33,8 +35,6 @@ public class JwtTests : IClassFixture<PostgresDatabaseFixture>, IClassFixture<In
         _outputHelper = outputHelper;
     }
 
-    protected readonly string endpoint = "http://localhost/";
-
     [Fact]
     public async Task JwtVerification_Valid()
     {
@@ -52,10 +52,10 @@ public class JwtTests : IClassFixture<PostgresDatabaseFixture>, IClassFixture<In
         using TestServerFixture<Startup> server = CreateServer(jwtConfiguration);
 
         // Act
-        var result = await TestGrpc(jwtTokenIssuerFixture, server);
+        var result = await CreateWallet(jwtTokenIssuerFixture, server);
 
         // Assert
-        result.Should().NotBeNull();
+        result.StatusCode.Should().Be(HttpStatusCode.Created);
     }
 
     [Fact]
@@ -79,16 +79,16 @@ public class JwtTests : IClassFixture<PostgresDatabaseFixture>, IClassFixture<In
         using TestServerFixture<Startup> server = CreateServer(jwtConfiguration);
 
         // Test valid-1
-        var result1 = await TestGrpc(jwtTokenIssuerFixture1, server);
-        result1.Should().NotBeNull();
+        var result1 = await CreateWallet(jwtTokenIssuerFixture1, server);
+        result1.StatusCode.Should().Be(HttpStatusCode.Created);
 
         // Test valid-2
-        var result2 = await TestGrpc(jwtTokenIssuerFixture2, server);
-        result2.Should().NotBeNull();
+        var result2 = await CreateWallet(jwtTokenIssuerFixture2, server);
+        result2.StatusCode.Should().Be(HttpStatusCode.Created);
 
         // Test invalid
-        var testMethod = () => TestGrpc(invalidIssuer, server);
-        await testMethod.Should().ThrowAsync<RpcException>().WithMessage("Status(StatusCode=\"Unauthenticated\", Detail=\"Bad gRPC response. HTTP status code: 401\")");
+        var result = await CreateWallet(invalidIssuer, server);
+        result.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
     [Fact]
@@ -107,10 +107,10 @@ public class JwtTests : IClassFixture<PostgresDatabaseFixture>, IClassFixture<In
         using TestServerFixture<Startup> server = CreateServer(jwtConfiguration);
 
         // Act
-        var result = await TestGrpc(jwtTokenIssuerFixture, server);
+        var result = await CreateWallet(jwtTokenIssuerFixture, server);
 
         // Assert
-        result.Should().NotBeNull();
+        result.StatusCode.Should().Be(HttpStatusCode.Created);
     }
 
     [Fact]
@@ -130,10 +130,10 @@ public class JwtTests : IClassFixture<PostgresDatabaseFixture>, IClassFixture<In
         using TestServerFixture<Startup> server = CreateServer(jwtConfiguration);
 
         // Act
-        var testMethod = () => TestGrpc(jwtTokenIssuerFixture, server);
+        var result = await CreateWallet(jwtTokenIssuerFixture, server);
 
         // Assert
-        await testMethod.Should().ThrowAsync<RpcException>().WithMessage("Status(StatusCode=\"Unauthenticated\", Detail=\"Bad gRPC response. HTTP status code: 401\")");
+        result.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
     [Fact]
@@ -152,10 +152,10 @@ public class JwtTests : IClassFixture<PostgresDatabaseFixture>, IClassFixture<In
         server.GetTestLogger(_outputHelper);
 
         // Act
-        var result = await TestGrpc(jwtTokenIssuerFixture, server);
+        var result = await CreateWallet(jwtTokenIssuerFixture, server);
 
         // Assert
-        result.Should().NotBeNull();
+        result.StatusCode.Should().Be(HttpStatusCode.Created);
     }
 
     [Fact]
@@ -173,11 +173,11 @@ public class JwtTests : IClassFixture<PostgresDatabaseFixture>, IClassFixture<In
         server.GetTestLogger(_outputHelper);
 
         // Act
-        var testMethod = () => TestGrpc(jwtTokenIssuerFixture, server);
+        var testMethod = () => CreateWallet(jwtTokenIssuerFixture, server);
 
         // Assert
-        var rpcException = await testMethod.Should().ThrowAsync<RpcException>();
-        rpcException.WithInnerException<NotSupportedException>().WithMessage("AllowAnyJwtToken is set to ”false” and no issuers are configured!");
+        await testMethod.Should().ThrowAsync<NotSupportedException>()
+            .WithMessage("AllowAnyJwtToken is set to ”false” and no issuers are configured!");
     }
 
     [Fact]
@@ -197,7 +197,7 @@ public class JwtTests : IClassFixture<PostgresDatabaseFixture>, IClassFixture<In
         server.GetTestLogger(_outputHelper);
 
         // Act
-        var testMethod = () => TestGrpc(jwtTokenIssuerFixture, server);
+        var testMethod = () => CreateWallet(jwtTokenIssuerFixture, server);
 
         // Assert
         await testMethod.Should().ThrowAsync<ValidationException>()
@@ -224,7 +224,7 @@ public class JwtTests : IClassFixture<PostgresDatabaseFixture>, IClassFixture<In
         server.GetTestLogger(_outputHelper);
 
         // Act
-        var testMethod = () => TestGrpc(jwtTokenIssuerFixture, server);
+        var testMethod = () => CreateWallet(jwtTokenIssuerFixture, server);
 
         // Assert
         await testMethod.Should().ThrowAsync<ValidationException>()
@@ -257,10 +257,10 @@ public class JwtTests : IClassFixture<PostgresDatabaseFixture>, IClassFixture<In
         server.GetTestLogger(_outputHelper);
 
         // Act
-        var result = await TestGrpc(jwtTokenIssuerFixture, server);
+        var result = await CreateWallet(jwtTokenIssuerFixture, server);
 
         // Assert
-        result.Should().NotBeNull();
+        result.StatusCode.Should().Be(HttpStatusCode.Created);
     }
 
     [Fact]
@@ -291,19 +291,18 @@ public class JwtTests : IClassFixture<PostgresDatabaseFixture>, IClassFixture<In
         var invalidIssuer = new JwtTokenIssuerFixture();
 
         // Act
-        var testMethod = () => TestGrpc(invalidIssuer, server);
+        var result = await CreateWallet(invalidIssuer, server);
 
         // Assert
-        await testMethod.Should().ThrowAsync<RpcException>().WithMessage("Status(StatusCode=\"Unauthenticated\", Detail=\"Bad gRPC response. HTTP status code: 401\")");
+        result.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
-    private static async Task<CreateWalletDepositEndpointResponse> TestGrpc(JwtTokenIssuerFixture jwtTokenIssuerFixture, TestServerFixture<Startup> server)
+    private static async Task<HttpResponseMessage> CreateWallet(JwtTokenIssuerFixture jwtTokenIssuerFixture, TestServerFixture<Startup> server)
     {
-        var (_, header) = jwtTokenIssuerFixture.GenerateUserHeader();
-        var grpcClient = new WalletService.WalletServiceClient(server.Channel);
-        var request = new CreateWalletDepositEndpointRequest();
-
-        return await grpcClient.CreateWalletDepositEndpointAsync(request, header);
+        var token = jwtTokenIssuerFixture.GenerateRandomToken();
+        var httpClient = server.CreateHttpClient();
+        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return await httpClient.PostAsync("v1/wallets", JsonContent.Create(new { }));
     }
 
     private TestServerFixture<Startup> CreateServer(Dictionary<string, string?> injectedConfig)
@@ -314,7 +313,7 @@ public class JwtTests : IClassFixture<PostgresDatabaseFixture>, IClassFixture<In
         {
             {"Otlp:Enabled", "false"},
             {"ConnectionStrings:Database", _dbFixture.ConnectionString},
-            {"ServiceOptions:EndpointAddress", endpoint},
+            {"ServiceOptions:EndpointAddress", "http://dummy.com/"},
             {"VerifySlicesWorkerOptions:SleepTime", "00:00:02"},
         };
 

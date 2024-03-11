@@ -30,6 +30,14 @@ public sealed class JwtTokenIssuerFixture : IDisposable
         File.WriteAllText(PemFilepath, pem);
     }
 
+    public string GenerateRandomToken()
+    {
+        var fixture = new Fixture();
+        var subject = fixture.Create<string>();
+        var name = fixture.Create<string>();
+        return GenerateToken(subject, name);
+    }
+
     public string GenerateToken(string subject, string name, string[]? scopes = null)
     {
         var claims = new[]
@@ -53,22 +61,6 @@ public sealed class JwtTokenIssuerFixture : IDisposable
         );
 
         return new JwtSecurityTokenHandler().WriteToken(token);
-    }
-
-    public (string, Metadata) GenerateUserHeader()
-    {
-        var fixture = new Fixture();
-        var subject = fixture.Create<string>();
-        var name = fixture.Create<string>();
-
-        var token = GenerateToken(subject, name);
-
-        var headers = new Metadata
-        {
-            { "Authorization", $"Bearer {token}" }
-        };
-
-        return (subject, headers);
     }
 
     public string GetJsonOpenIdConfiguration()

@@ -6,6 +6,8 @@ using Xunit.Abstractions;
 using ProjectOrigin.PedersenCommitment;
 using FluentAssertions;
 using System;
+using ProjectOrigin.WalletSystem.Server.Services.REST.v1;
+using System.Net.Http.Headers;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests.FlowTests;
 
@@ -31,80 +33,73 @@ public class ReceiveTests : AbstractFlowTests
     [Fact]
     public async Task IssueCertWithAndWithoutAttributes_Query_Success()
     {
-        var client = new V1.WalletService.WalletServiceClient(_serverFixture.Channel);
         var position = 1;
 
-        var (owner, header) = GenerateUserHeader();
-        var endpoint = await client.CreateWalletDepositEndpointAsync(new V1.CreateWalletDepositEndpointRequest(), header);
+        var client = _serverFixture.CreateHttpClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _jwtTokenIssuer.GenerateRandomToken());
+
+        var wallet = await client.CreateWallet();
+        var endpoint = await client.CreateWalletEndpoint(wallet.WalletId);
 
         var prodCertId = await IssueCertificateToEndpoint(
-            endpoint.WalletDepositEndpoint,
+            endpoint.WalletReference,
             Electricity.V1.GranularCertificateType.Production,
             new SecretCommitmentInfo(250),
             position++,
-            new(){
+            [
                 ("TechCode", "T010101", null),
                 ("FuelCode", "F010101", null),
-            });
+            ]);
 
         var conCertId = await IssueCertificateToEndpoint(
-            endpoint.WalletDepositEndpoint,
+            endpoint.WalletReference,
             Electricity.V1.GranularCertificateType.Consumption,
             new SecretCommitmentInfo(150),
             position++);
 
-        var certificates = await Timeout(async () =>
-        {
-            var result = await client.QueryGranularCertificatesAsync(new V1.QueryRequest(), header);
-            result.GranularCertificates.Should().HaveCount(2);
-            return result.GranularCertificates;
-        }, TimeSpan.FromMinutes(1));
+        var certificates = await client.GetCertificatesWithTimeout(2, TimeSpan.FromMinutes(1));
 
-        var gc1 = certificates.Should().Contain(x => x.FederatedId.StreamId.Value == prodCertId.StreamId.Value).Which;
-        gc1.Type.Should().Be(V1.GranularCertificateType.Production);
+        var gc1 = certificates.Should().Contain(x => x.FederatedStreamId.StreamId == prodCertId.StreamId).Which;
+        gc1.CertificateType.Should().Be(CertificateType.Production);
         gc1.Quantity.Should().Be(250);
         gc1.Attributes.Should().HaveCount(2);
 
-        var gc2 = certificates.Should().Contain(x => x.FederatedId.StreamId.Value == conCertId.StreamId.Value).Which;
-        gc2.Type.Should().Be(V1.GranularCertificateType.Consumption);
+        var gc2 = certificates.Should().Contain(x => x.FederatedStreamId.StreamId == conCertId.StreamId).Which;
+        gc2.CertificateType.Should().Be(CertificateType.Consumption);
         gc2.Quantity.Should().Be(150);
         gc2.Attributes.Should().HaveCount(0);
     }
 
-
     [Fact]
     public async Task IssueCertWithAttributes_Query_Success()
     {
-        var client = new V1.WalletService.WalletServiceClient(_serverFixture.Channel);
         var position = 1;
 
-        var (owner, header) = GenerateUserHeader();
-        var endpoint = await client.CreateWalletDepositEndpointAsync(new V1.CreateWalletDepositEndpointRequest(), header);
+        var client = _serverFixture.CreateHttpClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _jwtTokenIssuer.GenerateRandomToken());
+
+        var wallet = await client.CreateWallet();
+        var endpoint = await client.CreateWalletEndpoint(wallet.WalletId);
 
         var certificateId = await IssueCertificateToEndpoint(
-            endpoint.WalletDepositEndpoint,
+            endpoint.WalletReference,
             Electricity.V1.GranularCertificateType.Production,
             new SecretCommitmentInfo(250),
             position++,
             new(){
-                ("TechCode", "T010101", null),
-                ("FuelCode", "F010101", null),
-                ("AssetId", "1264541", new byte[] { 0x01, 0x02, 0x03, 0x04 }),
+                ("techCode", "T010101", null),
+                ("fuelCode", "F010101", null),
+                ("assetId", "1264541", new byte[] { 0x01, 0x02, 0x03, 0x04 }),
             });
 
-        var certificates = await Timeout(async () =>
-        {
-            var result = await client.QueryGranularCertificatesAsync(new V1.QueryRequest(), header);
-            result.GranularCertificates.Should().HaveCount(1);
-            return result.GranularCertificates;
-        }, TimeSpan.FromMinutes(1));
+        var certificates = await client.GetCertificatesWithTimeout(1, TimeSpan.FromMinutes(1));
 
-        var foundCertificate = certificates.Should().Contain(x => x.FederatedId.StreamId.Value == certificateId.StreamId.Value).Which;
-        foundCertificate.Type.Should().Be(V1.GranularCertificateType.Production);
+        var foundCertificate = certificates.Should().Contain(x => x.FederatedStreamId.StreamId == certificateId.StreamId).Which;
+        foundCertificate.CertificateType.Should().Be(CertificateType.Production);
         foundCertificate.Quantity.Should().Be(250);
         foundCertificate.Attributes.Should().HaveCount(3)
-            .And.Contain(x => x.Key == "TechCode" && x.Value == "T010101")
-            .And.Contain(x => x.Key == "FuelCode" && x.Value == "F010101")
-            .And.Contain(x => x.Key == "AssetId" && x.Value == "1264541");
+            .And.Contain(x => x.Key == "techCode" && x.Value == "T010101")
+            .And.Contain(x => x.Key == "fuelCode" && x.Value == "F010101")
+            .And.Contain(x => x.Key == "assetId" && x.Value == "1264541");
     }
 }

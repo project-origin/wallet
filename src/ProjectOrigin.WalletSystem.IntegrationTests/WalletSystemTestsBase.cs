@@ -1,5 +1,4 @@
 using AutoFixture;
-using Grpc.Core;
 using MassTransit;
 using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
 using ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures;
@@ -93,10 +92,5 @@ public abstract class WalletSystemTestsBase : IClassFixture<TestServerFixture<St
         var token = _jwtTokenIssuerFixture.GenerateToken(subject, name, scopes);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         return client;
-    }
-
-    protected (string, Metadata) GenerateUserHeader()
-    {
-        return _jwtTokenIssuerFixture.GenerateUserHeader();
     }
 }

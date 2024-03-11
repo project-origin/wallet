@@ -18,7 +18,6 @@ using ProjectOrigin.WalletSystem.Server.Options;
 using ProjectOrigin.WalletSystem.Server.Projections;
 using ProjectOrigin.WalletSystem.Server.Serialization;
 using ProjectOrigin.WalletSystem.Server.Services;
-using ProjectOrigin.WalletSystem.Server.Services.GRPC;
 using ProjectOrigin.WalletSystem.Server.Services.REST;
 using System;
 using System.IO;
@@ -200,8 +199,6 @@ public class Startup
 
         app.UseEndpoints(endpoints =>
         {
-            endpoints.MapGrpcService<WalletService>();
-            endpoints.MapGrpcService<ReceiveSliceService>();
             endpoints.MapControllers();
         });
 

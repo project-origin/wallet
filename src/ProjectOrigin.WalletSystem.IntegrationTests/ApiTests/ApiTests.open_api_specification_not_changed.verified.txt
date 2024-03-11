@@ -774,6 +774,16 @@
               }
             }
           },
+          "400": {
+            "description": "If the wallet reference is invalid or if the wallet reference is to the same wallet as the user.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "401": {
             "description": "If the user is not authenticated."
           }
