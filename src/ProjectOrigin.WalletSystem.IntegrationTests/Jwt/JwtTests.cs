@@ -297,7 +297,7 @@ public class JwtTests : IClassFixture<PostgresDatabaseFixture>, IClassFixture<In
         result.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
-    private async Task<HttpResponseMessage> CreateWallet(JwtTokenIssuerFixture jwtTokenIssuerFixture, TestServerFixture<Startup> server)
+    private static async Task<HttpResponseMessage> CreateWallet(JwtTokenIssuerFixture jwtTokenIssuerFixture, TestServerFixture<Startup> server)
     {
         var token = jwtTokenIssuerFixture.GenerateRandomToken();
         var httpClient = server.CreateHttpClient();

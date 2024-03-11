@@ -23,16 +23,14 @@ public record SendInformationToReceiverWalletArgument
 public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInformationToReceiverWalletArgument>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IOptions<ServiceOptions> _walletSystemOptions;
     private readonly ILogger<SendInformationToReceiverWalletActivity> _logger;
     private readonly Uri _ownEndpoint;
 
     public SendInformationToReceiverWalletActivity(IUnitOfWork unitOfWork, IOptions<ServiceOptions> walletSystemOptions, ILogger<SendInformationToReceiverWalletActivity> logger)
     {
         _unitOfWork = unitOfWork;
-        _walletSystemOptions = walletSystemOptions;
         _logger = logger;
-        _ownEndpoint = new Uri(_walletSystemOptions.Value.EndpointAddress, "/v1/slices");
+        _ownEndpoint = new Uri(walletSystemOptions.Value.EndpointAddress, "/v1/slices");
     }
 
     public async Task<ExecutionResult> Execute(ExecuteContext<SendInformationToReceiverWalletArgument> context)
