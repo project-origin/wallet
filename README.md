@@ -4,7 +4,7 @@
 OpenSource project to create a service which can hold users wallet for managing Granular Certificates across multiple registries.
 
 The name `OriginVault` is a play on words,
-where `Origin` links to the project's name, while `Vault` references a banks vault storing many owners asset in a secure manner.
+where `Origin` links to the project's name, while `Vault` references a banks vault storing many owners assets in a secure manner.
 
 ## tl:dr
 
