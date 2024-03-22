@@ -26,4 +26,3 @@ jobs:
       context: ./src
       dockerfile: ./src/ProjectOrigin.WalletSystem.Server/Dockerfile
       push: false
-
