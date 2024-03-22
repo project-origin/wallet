@@ -1,4 +1,4 @@
-name: Create new release
+name: Build release artifacts
 
 on:
   release:
@@ -6,18 +6,9 @@ on:
 
 jobs:
   define-version:
-    runs-on: ubuntu-22.04
-    outputs:
-      version: ${{ steps.output-version.outputs.version }}
+    uses: project-origin/.github/.github/workflows/reusable-tag-version.yaml@main
 
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set env
-        id: output-version
-        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
-
-  publish-server-container:
+  publish-container:
     needs:
       - define-version
     uses: project-origin/.github/.github/workflows/reusable-build-push-container-ghcr.yaml@main
@@ -29,60 +20,14 @@ jobs:
       push: true
 
   publish-chart:
-    name: Publish helm chart
-    runs-on: ubuntu-22.04
     needs:
       - define-version
-      - publish-server-container
-    env:
-      CHART_FOLDER: charts/project-origin-wallet
-      HELM_REGISTRY_REPOSITORY: project-origin/helm-registry
-
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          path: this
-
-      - uses: actions/checkout@v4
-        with:
-          repository: ${{ env.HELM_REGISTRY_REPOSITORY }}
-          path: helm-registry
-          ssh-key: ${{ secrets.HELM_REGISTRY_TOKEN }}
-
-      - name: Get chart name
-        id: variables
-        run: |
-          echo "name=$(yq .name < this/${{ env.CHART_FOLDER }}/Chart.yaml)" >> $GITHUB_OUTPUT
-
-      - name: Conditionally set artifacthub.io/prerelease annotation
-        if: ${{ github.event.release.prerelease }}
-        run: |
-          yq eval '.annotations."artifacthub.io/prerelease"="true"' -i this/${{ env.CHART_FOLDER }}/Chart.yaml
-
-      - name: Package and generate index
-        run: |
-          helm package this/${{ env.CHART_FOLDER }} --version ${{ needs.define-version.outputs.version }} --app-version "${{ needs.define-version.outputs.version }}" --destination helm-releases
-          helm repo index helm-releases --merge helm-registry/index.yaml --url https://github.com/${{ github.repository }}/releases/download/v${{ needs.define-version.outputs.version }}/
-          cp helm-releases/index.yaml helm-registry/index.yaml
-
-      - name: Upload release assets
-        uses: softprops/action-gh-release@v2
-        with:
-          files: helm-releases/${{ steps.variables.outputs.name }}-${{ needs.define-version.outputs.version }}.tgz
-
-      - name: Upload workflow artifact
-        uses: actions/upload-artifact@v4
-        with:
-          path: helm-releases/${{ steps.variables.outputs.name }}-${{ needs.define-version.outputs.version }}.tgz
-
-      - name: Commit index changes
-        run: |
-          cd helm-registry
-          git config --local user.name github-actions
-          git config --local user.email github-actions@github.com
-          git add index.yaml
-          git commit -m "Update index.yaml for ${{ steps.variables.outputs.name }}-${{ needs.define-version.outputs.version }}"
-          git push
+      - publish-container
+    uses: project-origin/.github/.github/workflows/reusable-publish-chart.yaml@main
+    with:
+      version: ${{ needs.define-version.outputs.version }}
+      chart_folder: charts/project-origin-wallet
+      helm_registry_repository: project-origin/helm-registry
 
   publish-openapi:
     name: Publish openapi to swaggerhub

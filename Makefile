@@ -54,6 +54,10 @@ format:
 test: build
 	dotnet test --no-build $(src_path)
 
+## Tests run with the sonarcloud analyser
+sonarcloud-test:
+	dotnet test --no-build $(src_path)
+
 ## Run all Unit-tests
 unit-test:
 	dotnet test $(src_path) --filter 'FullyQualifiedName!~IntegrationTests'
