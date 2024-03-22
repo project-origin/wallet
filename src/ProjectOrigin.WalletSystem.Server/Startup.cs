@@ -104,17 +104,15 @@ public class Startup
             services.AddRequiredScopeAuthorization();
         }
 
-        void ConfigureResource(ResourceBuilder r)
-        {
-            r.AddService("ProjectOrigin.WalletSystem.Server",
-                serviceInstanceId: Environment.MachineName);
-        }
-
         var otlpOptions = _configuration.GetSection(OtlpOptions.Prefix).GetValid<OtlpOptions>();
         if (otlpOptions.Enabled)
         {
             services.AddOpenTelemetry()
-                .ConfigureResource(ConfigureResource)
+                .ConfigureResource(r =>
+                {
+                    r.AddService("ProjectOrigin.WalletSystem.Server",
+                    serviceInstanceId: Environment.MachineName);
+                })
                 .WithMetrics(metrics => metrics
                     .AddHttpClientInstrumentation()
                     .AddAspNetCoreInstrumentation()
