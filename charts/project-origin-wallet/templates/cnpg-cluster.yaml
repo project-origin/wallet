@@ -1,5 +1,5 @@
 ---
-{{ if eq .Values.persistance.type "CloudNativePG" }}
+{{- if and (eq .Values.persistance.type "CloudNativePG") (.Values.persistance.enabled) }}
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
@@ -15,4 +15,4 @@ spec:
       owner: {{ .Values.persistance.cloudNativePG.owner }}
   monitoring:
     enablePodMonitor: true
-{{ end }}
+{{- end }}
