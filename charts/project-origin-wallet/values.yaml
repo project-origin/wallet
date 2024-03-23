@@ -104,7 +104,7 @@ persistance:
 
   # Type of database to use: "CloudNativePG" or "BYOD"
 
-  type: ""
+  type: "CloudNativePG"
   # cloudNativePG determines if the database is created as a cloud native postgresql instance
   cloudNativePG:
 
