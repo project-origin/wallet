@@ -109,9 +109,6 @@ spec:
           {{- else }}
             {{- fail "Unsupported database type specified. Please specify 'persistance.type' as either 'CloudNativePG' or 'BYOD'." }}
           {{- end }}
-        {{- else }}
-          {{- /* Configuration or resources related to the database should not be created or applied if persistance.enabled is false. */ }}
-        {{- end }}
             - name: jwt__audience
               value: {{ .Values.config.jwt.audience }}
             - name: jwt__authority
