@@ -17,7 +17,7 @@ spec:
           args:
             - "--migrate"
           env:
-          {{ if .Values.persistance.cloudNativePG.enabled }}
+          {{- if eq .Values.persistance.type "CloudNativePG" }}
             - name: DB_HOST
               value: {{ .Values.persistance.cloudNativePG.name }}-rw
             - name: DB_PORT
@@ -36,4 +36,10 @@ spec:
                   key: password
             - name: ConnectionStrings__Database
               value: Host=$(DB_HOST); Port=$(DB_PORT); Database=$(DB_DATABASE); Username=$(DB_USERNAME); Password=$(DB_PASSWORD);
+          {{- else if eq .Values.persistance.type "BYOD" }}
+            - name: ConnectionStrings__Database
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.persistance.byod.secretName }}
+                  key: connectionString
           {{ end }}

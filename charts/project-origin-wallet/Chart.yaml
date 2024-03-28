@@ -2,8 +2,8 @@ apiVersion: v2
 name: project-origin-wallet
 description: A helm chart for deploying the Project Origin Wallet
 type: application
-version: 0.1.0
-appVersion: "0.1.0"
+version: 0.1.1
+appVersion: "0.1.1"
 
 annotations:
   artifacthub.io/containsSecurityUpdates: "false"
