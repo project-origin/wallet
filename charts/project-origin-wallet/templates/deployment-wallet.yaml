@@ -80,7 +80,6 @@ spec:
             - name: RegistryUrls__{{ .name }}
               value: {{ .address }}
             {{- end }}
-          {{- if .Values.persistance.enabled }}
             {{- if eq .Values.persistance.type "CloudNativePG" }}
             - name: DB_HOST
               value: {{ .Values.persistance.cloudNativePG.name }}-rw
@@ -109,7 +108,6 @@ spec:
           {{- else }}
             {{- fail "Unsupported database type specified. Please specify 'persistance.type' as either 'CloudNativePG' or 'BYOD'." }}
           {{- end }}
-        {{- end }}
             - name: jwt__audience
               value: {{ .Values.config.jwt.audience }}
             - name: jwt__authority
