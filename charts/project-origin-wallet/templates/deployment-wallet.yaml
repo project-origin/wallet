@@ -36,10 +36,10 @@ spec:
               value: {{ required "A valid externalUrl is required!"  .Values.config.externalUrl }}
             - name: RestApiOptions__PathBase
               value: {{ .Values.config.pathBase }}
-            {{- if eq .Values.messageBroker.type "inMemory" }}
+          {{- if eq .Values.messageBroker.type "inMemory" }}
             - name: MessageBroker__Type
               value: InMemory
-            {{- else if eq .Values.messageBroker.type "rabbitmq" }}
+          {{- else if eq .Values.messageBroker.type "rabbitmq" }}
             - name: MessageBroker__Type
               value: RabbitMq
             - name: MessageBroker__RabbitMQ__Host
@@ -50,7 +50,7 @@ spec:
               value: {{ required "A valid messageBroker rabbitmq username is required!" .Values.messageBroker.rabbitmq.username }}
             - name: MessageBroker__RabbitMQ__Password
               value: {{ required "A valid messageBroker rabbitmq password is required!" .Values.messageBroker.rabbitmq.password }}
-            {{- else if eq .Values.messageBroker.type "rabbitmqOperator" }}
+          {{- else if eq .Values.messageBroker.type "rabbitmqOperator" }}
             - name: MessageBroker__Type
               value: RabbitMq
             - name: MessageBroker__RabbitMQ__Host
@@ -73,35 +73,43 @@ spec:
                 secretKeyRef:
                   name: {{ .Release.Name }}-rabbitmq-default-user
                   key: password
-            {{- else}}
+          {{- else}}
             {{- fail "messageBroker type must be one of (inMemory | rabbitmq | rabbitmqOperator)" }}
-            {{- end }}
-            {{- range .Values.registries }}
+          {{- end }}
+
+          {{- range .Values.registries }}
             - name: RegistryUrls__{{ .name }}
               value: {{ .address }}
-            {{- end }}
-          {{ if .Values.persistance.cloudNativePG.enabled }}
+          {{- end }}
+
+          {{- if eq .Values.persistence.type "CloudNativePG" }}
             - name: DB_HOST
-              value: {{ .Values.persistance.cloudNativePG.name }}-rw
+              value: {{ .Values.persistence.cloudNativePG.name }}-rw
             - name: DB_PORT
               value: "5432"
             - name: DB_DATABASE
-              value: {{ .Values.persistance.cloudNativePG.database }}
+              value: {{ .Values.persistence.cloudNativePG.database }}
             - name: DB_USERNAME
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.persistance.cloudNativePG.name }}-app
+                  name: {{ .Values.persistence.cloudNativePG.name }}-app
                   key: username
             - name: DB_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.persistance.cloudNativePG.name }}-app
+                  name: {{ .Values.persistence.cloudNativePG.name }}-app
                   key: password
             - name: ConnectionStrings__Database
-              value: Host=$(DB_HOST); Port=$(DB_PORT); Database=$(DB_DATABASE); Username=$(DB_USERNAME); Password=$(DB_PASSWORD);
+              value: "Host=$(DB_HOST);Port=$(DB_PORT);Database=$(DB_DATABASE);Username=$(DB_USERNAME);Password=$(DB_PASSWORD);"
+          {{- else if eq .Values.persistence.type "BYOD" }}
+            - name: ConnectionStrings__Database
+              valueFrom:
+                secretKeyRef:
+                  name: {{ required "BYOD is selected as the database type, but no secretName is provided in persistence.byod" .Values.persistence.byod.secretName }}
+                  key: {{ required "BYOD is selected as the database type, but no secretKey is provided in persistence.byod" .Values.persistence.byod.secretKey }}
           {{- else }}
-            {{- fail "currently only CloudNativePG is supported, and must be enabled." }}
-          {{ end }}
+            {{- fail "Unsupported database type specified. Please specify 'persistence.type' as either 'CloudNativePG' or 'BYOD'." }}
+          {{- end }}
             - name: jwt__audience
               value: {{ .Values.config.jwt.audience }}
             - name: jwt__authority
@@ -110,14 +118,14 @@ spec:
               value: {{ .Values.config.jwt.allowAnyJwtToken | quote }}
             - name: jwt__enableScopeValidation
               value: {{ .Values.config.jwt.enableScopeValidation | quote }}
-            {{- range  $i, $issuer := .Values.config.jwt.issuers }}
+          {{- range  $i, $issuer := .Values.config.jwt.issuers }}
             - name: jwt__issuers__{{ $i }}__name
               value: {{ $issuer.name }}
             - name: jwt__issuers__{{ $i }}__type
               value: {{ $issuer.type }}
             - name: jwt__issuers__{{ $i }}__pemFileName
               value: {{ $issuer.pemFileName }}
-            {{- end }}
+          {{- end }}
 
             # OpenTelemetry Collector Configuration
             - name: Otlp__Enabled
