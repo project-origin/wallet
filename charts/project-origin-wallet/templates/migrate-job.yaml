@@ -17,29 +17,29 @@ spec:
           args:
             - "--migrate"
           env:
-          {{- if eq .Values.persistance.type "CloudNativePG" }}
+          {{- if eq .Values.persistence.type "CloudNativePG" }}
             - name: DB_HOST
-              value: {{ .Values.persistance.cloudNativePG.name }}-rw
+              value: {{ .Values.persistence.cloudNativePG.name }}-rw
             - name: DB_PORT
               value: "5432"
             - name: DB_DATABASE
-              value: {{ .Values.persistance.cloudNativePG.database }}
+              value: {{ .Values.persistence.cloudNativePG.database }}
             - name: DB_USERNAME
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.persistance.cloudNativePG.name }}-app
+                  name: {{ .Values.persistence.cloudNativePG.name }}-app
                   key: username
             - name: DB_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.persistance.cloudNativePG.name }}-app
+                  name: {{ .Values.persistence.cloudNativePG.name }}-app
                   key: password
             - name: ConnectionStrings__Database
               value: Host=$(DB_HOST); Port=$(DB_PORT); Database=$(DB_DATABASE); Username=$(DB_USERNAME); Password=$(DB_PASSWORD);
-          {{- else if eq .Values.persistance.type "BYOD" }}
+          {{- else if eq .Values.persistence.type "BYOD" }}
             - name: ConnectionStrings__Database
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.persistance.byod.secretName }}
+                  name: {{ .Values.persistence.byod.secretName }}
                   key: connectionString
           {{ end }}

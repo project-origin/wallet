@@ -1,18 +1,18 @@
 ---
-{{- if and (eq .Values.persistance.type "CloudNativePG") }}
+{{- if and (eq .Values.persistence.type "CloudNativePG") }}
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
-  name: {{ .Values.persistance.cloudNativePG.name }}
+  name: {{ .Values.persistence.cloudNativePG.name }}
   namespace: {{ .Release.Namespace }}
 spec:
-  instances: {{ .Values.persistance.cloudNativePG.replicas }}
+  instances: {{ .Values.persistence.cloudNativePG.replicas }}
   storage:
-    size: {{ .Values.persistance.cloudNativePG.size }}
+    size: {{ .Values.persistence.cloudNativePG.size }}
   bootstrap:
     initdb:
-      database: {{ .Values.persistance.cloudNativePG.database }}
-      owner: {{ .Values.persistance.cloudNativePG.owner }}
+      database: {{ .Values.persistence.cloudNativePG.database }}
+      owner: {{ .Values.persistence.cloudNativePG.owner }}
   monitoring:
     enablePodMonitor: true
 {{- end }}

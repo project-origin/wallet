@@ -97,7 +97,7 @@ registries: []
   #   address: http://test-registry:80
 
 # persistence defines the persistence configuration for the wallet server
-persistance:
+persistence:
 
   # type defines which database to use. "CloudNativePG" for built-in PostgreSQL or "BYOD" (Bring Your Own Database) for using an external PostgreSQL database. Only PostgreSQL is supported.
   type: "CloudNativePG"
@@ -120,6 +120,10 @@ persistance:
     # storage defines the storage configuration for the database
     size: 10Gi
 
-  # Add BYOD configuration
+  # BYOD (Bring Your Own Database) configuration
   byod:
-    secretName: ""  # The user must create a secret with the necessary DB connection information
+
+    # Create a secret with the DB connection info and provide the secret name here
+    secretName: ""
+    # Specify the key within the secret that contains the DB connection string
+    secretKey: ""
