@@ -1,3 +1,17 @@
 {
-    "extends": ["github>project-origin/.github:renovate-defaults.json"]
+    "extends": [
+        "github>project-origin/.github:renovate-defaults.json"
+    ],
+    "customManagers": [
+        {
+            "customType": "regex",
+            "fileMatch": [
+                "RegistryFixture.cs$"
+            ],
+            "matchStrings": [
+                "Image = \"(?<depName>.+):(?<currentValue>.+)\";"
+            ],
+            "datasourceTemplate": "docker"
+        }
+    ]
 }
