@@ -41,5 +41,5 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.persistence.byod.secretName }}
-                  key: connectionString
+                  key:  {{ .Values.persistence.byod.secretKey }}
           {{ end }}
