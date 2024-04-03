@@ -36,10 +36,10 @@ spec:
               value: {{ required "A valid externalUrl is required!"  .Values.config.externalUrl }}
             - name: RestApiOptions__PathBase
               value: {{ .Values.config.pathBase }}
-            {{- if eq .Values.messageBroker.type "inMemory" }}
+          {{- if eq .Values.messageBroker.type "inMemory" }}
             - name: MessageBroker__Type
               value: InMemory
-            {{- else if eq .Values.messageBroker.type "rabbitmq" }}
+          {{- else if eq .Values.messageBroker.type "rabbitmq" }}
             - name: MessageBroker__Type
               value: RabbitMq
             - name: MessageBroker__RabbitMQ__Host
@@ -50,7 +50,7 @@ spec:
               value: {{ required "A valid messageBroker rabbitmq username is required!" .Values.messageBroker.rabbitmq.username }}
             - name: MessageBroker__RabbitMQ__Password
               value: {{ required "A valid messageBroker rabbitmq password is required!" .Values.messageBroker.rabbitmq.password }}
-            {{- else if eq .Values.messageBroker.type "rabbitmqOperator" }}
+          {{- else if eq .Values.messageBroker.type "rabbitmqOperator" }}
             - name: MessageBroker__Type
               value: RabbitMq
             - name: MessageBroker__RabbitMQ__Host
@@ -73,14 +73,16 @@ spec:
                 secretKeyRef:
                   name: {{ .Release.Name }}-rabbitmq-default-user
                   key: password
-            {{- else}}
+          {{- else}}
             {{- fail "messageBroker type must be one of (inMemory | rabbitmq | rabbitmqOperator)" }}
-            {{- end }}
-            {{- range .Values.registries }}
+          {{- end }}
+
+          {{- range .Values.registries }}
             - name: RegistryUrls__{{ .name }}
               value: {{ .address }}
-            {{- end }}
-            {{- if eq .Values.persistance.type "CloudNativePG" }}
+          {{- end }}
+
+          {{- if eq .Values.persistance.type "CloudNativePG" }}
             - name: DB_HOST
               value: {{ .Values.persistance.cloudNativePG.name }}-rw
             - name: DB_PORT
@@ -99,7 +101,7 @@ spec:
                   key: password
             - name: ConnectionStrings__Database
               value: "Host=$(DB_HOST);Port=$(DB_PORT);Database=$(DB_DATABASE);Username=$(DB_USERNAME);Password=$(DB_PASSWORD);"
-            {{- else if eq .Values.persistance.type "BYOD" }}
+          {{- else if eq .Values.persistance.type "BYOD" }}
             - name: ConnectionStrings__Database
               valueFrom:
                 secretKeyRef:
@@ -116,14 +118,14 @@ spec:
               value: {{ .Values.config.jwt.allowAnyJwtToken | quote }}
             - name: jwt__enableScopeValidation
               value: {{ .Values.config.jwt.enableScopeValidation | quote }}
-            {{- range  $i, $issuer := .Values.config.jwt.issuers }}
+          {{- range  $i, $issuer := .Values.config.jwt.issuers }}
             - name: jwt__issuers__{{ $i }}__name
               value: {{ $issuer.name }}
             - name: jwt__issuers__{{ $i }}__type
               value: {{ $issuer.type }}
             - name: jwt__issuers__{{ $i }}__pemFileName
               value: {{ $issuer.pemFileName }}
-            {{- end }}
+          {{- end }}
 
             # OpenTelemetry Collector Configuration
             - name: Otlp__Enabled

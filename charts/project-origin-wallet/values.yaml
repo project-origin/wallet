@@ -99,9 +99,9 @@ registries: []
 # persistence defines the persistence configuration for the wallet server
 persistance:
 
-  # Choose database type: "CloudNativePG" for built-in PostgreSQL or "BYOD" (Bring Your Own Database) for using an external PostgreSQL database. Only PostgreSQL is supported.
-
+  # type defines which database to use. "CloudNativePG" for built-in PostgreSQL or "BYOD" (Bring Your Own Database) for using an external PostgreSQL database. Only PostgreSQL is supported.
   type: "CloudNativePG"
+
   # cloudNativePG determines if the database is created as a cloud native postgresql instance
   cloudNativePG:
 
