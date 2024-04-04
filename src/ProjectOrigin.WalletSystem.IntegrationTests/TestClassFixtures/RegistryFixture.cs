@@ -19,7 +19,7 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures;
 
 public class RegistryFixture : IAsyncLifetime
 {
-    private const string RegistryImage = "ghcr.io/project-origin/registry-server:0.3.0";
+    private const string RegistryImage = "ghcr.io/project-origin/registry-server:1.2.4";
     private const string ElectricityVerifierImage = "ghcr.io/project-origin/electricity-server:0.3.0";
     private const int GrpcPort = 80;
     private const string Area = "Narnia";
