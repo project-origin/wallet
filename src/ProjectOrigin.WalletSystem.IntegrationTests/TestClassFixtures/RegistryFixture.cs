@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using DotNet.Testcontainers.Builders;
 using DotNet.Testcontainers.Containers;
+using DotNet.Testcontainers.Images;
 using DotNet.Testcontainers.Networks;
 using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
@@ -13,23 +14,28 @@ using Grpc.Net.Client;
 using ProjectOrigin.HierarchicalDeterministicKeys;
 using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
 using ProjectOrigin.PedersenCommitment;
+using Testcontainers.RabbitMq;
 using Xunit;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures;
 
 public class RegistryFixture : IAsyncLifetime
 {
-    private const string RegistryImage = "ghcr.io/project-origin/registry-server:0.3.0";
-    private const string ElectricityVerifierImage = "ghcr.io/project-origin/electricity-server:0.3.0";
-    private const int GrpcPort = 80;
+    private const string RegistryImage = "ghcr.io/project-origin/registry-server:1.2.4";
+    private const string ElectricityVerifierImage = "ghcr.io/project-origin/electricity-server:1.1.0";
+    private const int RabbitMqHttpPort = 15672;
+    private const int GrpcPort = 5000;
     private const string Area = "Narnia";
     private const string RegistryName = "TestRegistry";
     private const string RegistryAlias = "registry-container";
     private const string VerifierAlias = "verifier-container";
+    private const string RabbitMqAlias = "rabbitmq-container";
 
+    private readonly INetwork _network;
     private readonly IContainer _registryContainer;
     private readonly IContainer _verifierContainer;
-    private readonly INetwork _network;
+    private readonly IContainer _rabbitMqContainer;
+    private readonly IFutureDockerImage _rabbitMqImage;
 
     public string IssuerArea => Area;
     public string Name => RegistryName;
@@ -42,6 +48,18 @@ public class RegistryFixture : IAsyncLifetime
 
         _network = new NetworkBuilder()
             .WithName(Guid.NewGuid().ToString())
+            .Build();
+
+        _rabbitMqImage = new ImageFromDockerfileBuilder()
+            .WithDockerfileDirectory(CommonDirectoryPath.GetProjectDirectory(), string.Empty)
+            .WithDockerfile("rabbitmq.dockerfile")
+            .Build();
+
+        _rabbitMqContainer = new RabbitMqBuilder()
+            .WithImage(_rabbitMqImage)
+            .WithNetwork(_network)
+            .WithNetworkAliases(RabbitMqAlias)
+            .WithPortBinding(RabbitMqHttpPort, true)
             .Build();
 
         _verifierContainer = new ContainerBuilder()
@@ -65,10 +83,21 @@ public class RegistryFixture : IAsyncLifetime
                     .WithPortBinding(GrpcPort, true)
                     .WithCommand("--migrate", "--serve")
                     .WithEnvironment($"RegistryName", RegistryName)
-                    .WithEnvironment($"BlockFinalizer__Interval", "00:00:05")
+                    .WithEnvironment($"Otlp__Enabled", "false")
                     .WithEnvironment($"Verifiers__project_origin.electricity.v1", $"http://{VerifierAlias}:{GrpcPort}")
                     .WithEnvironment($"ImmutableLog__Type", "log")
+                    .WithEnvironment($"BlockFinalizer__Interval", "00:00:05")
                     .WithEnvironment($"Persistance__Type", "in_memory")
+                    .WithEnvironment($"Cache__Type", "InMemory")
+                    .WithEnvironment("RabbitMq__Hostname", RabbitMqAlias)
+                    .WithEnvironment("RabbitMq__AmqpPort", RabbitMqBuilder.RabbitMqPort.ToString())
+                    .WithEnvironment("RabbitMq__HttpApiPort", RabbitMqHttpPort.ToString())
+                    .WithEnvironment("RabbitMq__Username", RabbitMqBuilder.DefaultUsername)
+                    .WithEnvironment("RabbitMq__Password", RabbitMqBuilder.DefaultPassword)
+                    .WithEnvironment("TransactionProcessor__ServerNumber", "0")
+                    .WithEnvironment("TransactionProcessor__Servers", "1")
+                    .WithEnvironment("TransactionProcessor__Threads", "5")
+                    .WithEnvironment("TransactionProcessor__Weight", "10")
                     .WithWaitStrategy(
                         Wait.ForUnixContainer()
                             .UntilPortIsAvailable(GrpcPort)
@@ -78,7 +107,13 @@ public class RegistryFixture : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
+        await _rabbitMqImage.CreateAsync()
+            .ConfigureAwait(false);
+
         await _network.CreateAsync()
+            .ConfigureAwait(false);
+
+        await _rabbitMqContainer.StartAsync()
             .ConfigureAwait(false);
 
         await _verifierContainer.StartAsync()
