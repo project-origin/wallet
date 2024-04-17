@@ -1,5 +1,6 @@
 using AutoFixture;
 using FluentAssertions;
+using Microsoft.AspNetCore.Http;
 using Npgsql;
 using ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures;
 using ProjectOrigin.WalletSystem.Server;
@@ -42,6 +43,42 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
         var specificationResponse = await httpClient.GetAsync("swagger/v1/swagger.json");
         var specification = await specificationResponse.Content.ReadAsStringAsync();
         await Verifier.Verify(specification);
+    }
+
+    [Fact]
+    public async Task can_create_wallet()
+    {
+        //Arrange
+        var owner = _fixture.Create<string>();
+        var someOwnerName = _fixture.Create<string>();
+        var httpClient = CreateAuthenticatedHttpClient(owner, someOwnerName);
+
+        //Act
+        var res = await httpClient.PostAsJsonAsync("v1/wallets", new { });
+
+        //Assert
+        var content = await res.Content.ReadAsStringAsync();
+        await Verifier.VerifyJson(content);
+    }
+
+    [Fact]
+    public async Task can_create_wallet_endpoint()
+    {
+        //Arrange
+        var owner = _fixture.Create<string>();
+        var someOwnerName = _fixture.Create<string>();
+        var httpClient = CreateAuthenticatedHttpClient(owner, someOwnerName);
+
+        var httpResponse = await httpClient.PostAsJsonAsync("v1/wallets", new { });
+        var walletResponse = await httpResponse.Content.ReadFromJsonAsync<CreateWalletResponse>();
+
+        //Act
+        var res = await httpClient.PostAsJsonAsync($"v1/wallets/{walletResponse!.WalletId}/endpoints", new { });
+
+        //Assert
+        var content = await res.Content.ReadAsStringAsync();
+        await Verifier.VerifyJson(content)
+            .ScrubMember("publicKey");
     }
 
     [Fact]

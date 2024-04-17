@@ -8,9 +8,9 @@ namespace ProjectOrigin.WalletSystem.Server.Services.REST;
 
 public class PathBaseDocumentFilter : IDocumentFilter
 {
-    private readonly IOptions<RestApiOptions> _options;
+    private readonly IOptions<ServiceOptions> _options;
 
-    public PathBaseDocumentFilter(IOptions<RestApiOptions> options)
+    public PathBaseDocumentFilter(IOptions<ServiceOptions> options)
     {
         _options = options;
     }
