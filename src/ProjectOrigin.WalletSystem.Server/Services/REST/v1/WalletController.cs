@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -72,7 +73,7 @@ public class WalletController : ControllerBase
 
             unitOfWork.Commit();
 
-            return Created(new Uri(serviceOptions.Value.EndpointAddress, $"/v1/wallets/{newWallet.Id}"), new CreateWalletResponse
+            return Created(new Uri(serviceOptions.Value.EndpointAddress, Path.Combine(serviceOptions.Value.PathBase, "v1/wallets", newWallet.Id.ToString())), new CreateWalletResponse
             {
                 WalletId = newWallet.Id
             });
@@ -194,7 +195,7 @@ public class WalletController : ControllerBase
             WalletReference = new WalletEndpointReference
             {
                 Version = 1,
-                Endpoint = new Uri(serviceOptions.Value.EndpointAddress, $"/v1/slices"),
+                Endpoint = new Uri(serviceOptions.Value.EndpointAddress, Path.Combine(serviceOptions.Value.PathBase, $"v1/slices")),
                 PublicKey = walletEndpoint.PublicKey
             }
         });

@@ -1,0 +1,7 @@
+﻿{
+  walletReference: {
+    version: 1,
+    endpoint: http://localhost/foo-bar-baz/v1/slices,
+    publicKey: {Scrubbed}
+  }
+}

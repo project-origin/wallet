@@ -1,26 +1,21 @@
-using System;
 using System.Linq;
 using System.Net;
+using System.Net.Http.Json;
 using System.Text.Json;
 using System.Threading.Tasks;
 using AutoFixture;
-using Dapper;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
-using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
 using ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures;
 using ProjectOrigin.WalletSystem.Server;
-using ProjectOrigin.WalletSystem.Server.Database.Mapping;
-using ProjectOrigin.WalletSystem.Server.Options;
+using ProjectOrigin.WalletSystem.Server.Services.REST.v1;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests;
 
-public class ApiBasePathTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>, IDisposable
+public class ApiBasePathTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
 {
     private readonly PathString _basePath = "/foo-bar-baz";
 
@@ -38,17 +33,10 @@ public class ApiBasePathTests : WalletSystemTestsBase, IClassFixture<InMemoryFix
             outputHelper,
             null)
     {
-        serverFixture.ConfigureTestServices += SetRestApiOptions;
-    }
-
-    private void SetRestApiOptions(IServiceCollection services) =>
-        services.AddSingleton<IOptions<RestApiOptions>>(
-            new OptionsWrapper<RestApiOptions>(new RestApiOptions { PathBase = _basePath }));
-
-    public new void Dispose()
-    {
-        base.Dispose();
-        _serverFixture.ConfigureTestServices -= SetRestApiOptions;
+        serverFixture.ConfigureHostConfiguration(new()
+        {
+            {"ServiceOptions:PathBase", _basePath},
+        });
     }
 
     [Fact]
@@ -122,5 +110,25 @@ public class ApiBasePathTests : WalletSystemTestsBase, IClassFixture<InMemoryFix
 
         await Verifier.Verify(tagDetails)
             .UseMethodName("SwaggerJson_VerifyWalletTagContent");
+    }
+
+    [Fact]
+    public async Task can_create_wallet_endpoint()
+    {
+        //Arrange
+        var owner = _fixture.Create<string>();
+        var someOwnerName = _fixture.Create<string>();
+        var httpClient = CreateAuthenticatedHttpClient(owner, someOwnerName);
+
+        var httpResponse = await httpClient.PostAsJsonAsync("v1/wallets", new { });
+        var walletResponse = await httpResponse.Content.ReadFromJsonAsync<CreateWalletResponse>();
+
+        //Act
+        var res = await httpClient.PostAsJsonAsync($"v1/wallets/{walletResponse!.WalletId}/endpoints", new { });
+
+        //Assert
+        var content = await res.Content.ReadAsStringAsync();
+        await Verifier.VerifyJson(content)
+            .ScrubMember("publicKey");
     }
 }
