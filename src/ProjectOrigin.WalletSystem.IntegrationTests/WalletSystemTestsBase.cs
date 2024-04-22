@@ -49,10 +49,11 @@ public abstract class WalletSystemTestsBase : IClassFixture<TestServerFixture<St
             {"ConnectionStrings:Database", dbFixture.ConnectionString},
             {"ServiceOptions:EndpointAddress", endpoint},
             {"VerifySlicesWorkerOptions:SleepTime", "00:00:02"},
-            {"Jwt:Audience", jwtTokenIssuerFixture.Audience},
-            {"Jwt:Issuers:0:IssuerName", jwtTokenIssuerFixture.Issuer},
-            {"Jwt:Issuers:0:Type", jwtTokenIssuerFixture.KeyType},
-            {"Jwt:Issuers:0:PemKeyFile", jwtTokenIssuerFixture.PemFilepath}
+            {"auth:type", "jwt"},
+            {"auth:jwt:Audience", jwtTokenIssuerFixture.Audience},
+            {"auth:jwt:Issuers:0:IssuerName", jwtTokenIssuerFixture.Issuer},
+            {"auth:jwt:Issuers:0:Type", jwtTokenIssuerFixture.KeyType},
+            {"auth:jwt:Issuers:0:PemKeyFile", jwtTokenIssuerFixture.PemFilepath}
         };
 
         config = config.Concat(_messageBrokerFixture.Configuration).ToDictionary(kvp => kvp.Key, kvp => kvp.Value);

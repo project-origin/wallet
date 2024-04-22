@@ -43,10 +43,11 @@ public class JwtTests : IClassFixture<PostgresDatabaseFixture>, IClassFixture<In
 
         var jwtConfiguration = new Dictionary<string, string?>()
         {
-            {"Jwt:Audience", jwtTokenIssuerFixture.Audience},
-            {"Jwt:Issuers:0:IssuerName", jwtTokenIssuerFixture.Issuer},
-            {"Jwt:Issuers:0:PemKeyFile", jwtTokenIssuerFixture.PemFilepath},
-            {"Jwt:Issuers:0:Type", jwtTokenIssuerFixture.KeyType},
+            {"auth:type", "jwt"},
+            {"auth:jwt:Audience", jwtTokenIssuerFixture.Audience},
+            {"auth:jwt:Issuers:0:IssuerName", jwtTokenIssuerFixture.Issuer},
+            {"auth:jwt:Issuers:0:PemKeyFile", jwtTokenIssuerFixture.PemFilepath},
+            {"auth:jwt:Issuers:0:Type", jwtTokenIssuerFixture.KeyType},
         };
 
         using TestServerFixture<Startup> server = CreateServer(jwtConfiguration);
@@ -68,12 +69,13 @@ public class JwtTests : IClassFixture<PostgresDatabaseFixture>, IClassFixture<In
 
         var jwtConfiguration = new Dictionary<string, string?>()
         {
-            {"Jwt:Issuers:0:IssuerName", jwtTokenIssuerFixture1.Issuer},
-            {"Jwt:Issuers:0:PemKeyFile", jwtTokenIssuerFixture1.PemFilepath},
-            {"Jwt:Issuers:0:Type", jwtTokenIssuerFixture1.KeyType},
-            {"Jwt:Issuers:1:IssuerName", jwtTokenIssuerFixture2.Issuer},
-            {"Jwt:Issuers:1:PemKeyFile", jwtTokenIssuerFixture2.PemFilepath},
-            {"Jwt:Issuers:1:Type", jwtTokenIssuerFixture2.KeyType},
+            {"auth:type", "jwt"},
+            {"auth:jwt:Issuers:0:IssuerName", jwtTokenIssuerFixture1.Issuer},
+            {"auth:jwt:Issuers:0:PemKeyFile", jwtTokenIssuerFixture1.PemFilepath},
+            {"auth:jwt:Issuers:0:Type", jwtTokenIssuerFixture1.KeyType},
+            {"auth:jwt:Issuers:1:IssuerName", jwtTokenIssuerFixture2.Issuer},
+            {"auth:jwt:Issuers:1:PemKeyFile", jwtTokenIssuerFixture2.PemFilepath},
+            {"auth:jwt:Issuers:1:Type", jwtTokenIssuerFixture2.KeyType},
         };
 
         using TestServerFixture<Startup> server = CreateServer(jwtConfiguration);
@@ -99,9 +101,10 @@ public class JwtTests : IClassFixture<PostgresDatabaseFixture>, IClassFixture<In
 
         var jwtConfiguration = new Dictionary<string, string?>()
         {
-            {"Jwt:Issuers:0:IssuerName", jwtTokenIssuerFixture.Issuer},
-            {"Jwt:Issuers:0:PemKeyFile", jwtTokenIssuerFixture.PemFilepath},
-            {"Jwt:Issuers:0:Type", jwtTokenIssuerFixture.KeyType},
+            {"auth:type", "jwt"},
+            {"auth:jwt:Issuers:0:IssuerName", jwtTokenIssuerFixture.Issuer},
+            {"auth:jwt:Issuers:0:PemKeyFile", jwtTokenIssuerFixture.PemFilepath},
+            {"auth:jwt:Issuers:0:Type", jwtTokenIssuerFixture.KeyType},
         };
 
         using TestServerFixture<Startup> server = CreateServer(jwtConfiguration);
@@ -121,10 +124,11 @@ public class JwtTests : IClassFixture<PostgresDatabaseFixture>, IClassFixture<In
 
         var jwtConfiguration = new Dictionary<string, string?>()
         {
-            {"Jwt:Audience", "InvalidAudience"},
-            {"Jwt:Issuers:0:IssuerName", jwtTokenIssuerFixture.Issuer},
-            {"Jwt:Issuers:0:PemKeyFile", jwtTokenIssuerFixture.PemFilepath},
-            {"Jwt:Issuers:0:Type", jwtTokenIssuerFixture.KeyType},
+            {"auth:type", "jwt"},
+            {"auth:jwt:Audience", "InvalidAudience"},
+            {"auth:jwt:Issuers:0:IssuerName", jwtTokenIssuerFixture.Issuer},
+            {"auth:jwt:Issuers:0:PemKeyFile", jwtTokenIssuerFixture.PemFilepath},
+            {"auth:jwt:Issuers:0:Type", jwtTokenIssuerFixture.KeyType},
         };
 
         using TestServerFixture<Startup> server = CreateServer(jwtConfiguration);
@@ -144,8 +148,9 @@ public class JwtTests : IClassFixture<PostgresDatabaseFixture>, IClassFixture<In
 
         var jwtConfiguration = new Dictionary<string, string?>()
         {
-            {"Jwt:Audience", "InvalidAudience"},
-            {"Jwt:AllowAnyJwtToken", "true"},
+            {"auth:type", "jwt"},
+            {"auth:jwt:Audience", "InvalidAudience"},
+            {"auth:jwt:AllowAnyJwtToken", "true"},
         };
 
         using TestServerFixture<Startup> server = CreateServer(jwtConfiguration);
@@ -166,7 +171,8 @@ public class JwtTests : IClassFixture<PostgresDatabaseFixture>, IClassFixture<In
 
         var jwtConfiguration = new Dictionary<string, string?>()
         {
-            {"Jwt:AllowAnyJwtToken", "false"},
+            {"auth:type", "jwt"},
+            {"auth:jwt:AllowAnyJwtToken", "false"},
         };
 
         using TestServerFixture<Startup> server = CreateServer(jwtConfiguration);
@@ -188,9 +194,10 @@ public class JwtTests : IClassFixture<PostgresDatabaseFixture>, IClassFixture<In
 
         var jwtConfiguration = new Dictionary<string, string?>()
         {
-            {"Jwt:Issuers:0:IssuerName", jwtTokenIssuerFixture.Issuer},
-            {"Jwt:Issuers:0:PemKeyFile", jwtTokenIssuerFixture.PemFilepath},
-            {"Jwt:Issuers:0:Type", "invalidType"},
+            {"auth:type", "jwt"},
+            {"auth:jwt:Issuers:0:IssuerName", jwtTokenIssuerFixture.Issuer},
+            {"auth:jwt:Issuers:0:PemKeyFile", jwtTokenIssuerFixture.PemFilepath},
+            {"auth:jwt:Issuers:0:Type", "invalidType"},
         };
 
         using TestServerFixture<Startup> server = CreateServer(jwtConfiguration);
@@ -215,9 +222,10 @@ public class JwtTests : IClassFixture<PostgresDatabaseFixture>, IClassFixture<In
 
         var jwtConfiguration = new Dictionary<string, string?>()
         {
-            {"Jwt:Issuers:0:IssuerName", jwtTokenIssuerFixture.Issuer},
-            {"Jwt:Issuers:0:PemKeyFile", fakeFilepath},
-            {"Jwt:Issuers:0:Type", jwtTokenIssuerFixture.KeyType},
+            {"auth:type", "jwt"},
+            {"auth:jwt:Issuers:0:IssuerName", jwtTokenIssuerFixture.Issuer},
+            {"auth:jwt:Issuers:0:PemKeyFile", fakeFilepath},
+            {"auth:jwt:Issuers:0:Type", jwtTokenIssuerFixture.KeyType},
         };
 
         using TestServerFixture<Startup> server = CreateServer(jwtConfiguration);
@@ -248,9 +256,10 @@ public class JwtTests : IClassFixture<PostgresDatabaseFixture>, IClassFixture<In
 
         var jwtConfiguration = new Dictionary<string, string?>()
         {
-            {"Jwt:Authority", jwtTokenIssuerFixture.Issuer},
-            {"Jwt:Audience", jwtTokenIssuerFixture.Audience},
-            {"Jwt:RequireHttpsMetadata", "false"},
+            {"auth:type", "jwt"},
+            {"auth:jwt:Authority", jwtTokenIssuerFixture.Issuer},
+            {"auth:jwt:Audience", jwtTokenIssuerFixture.Audience},
+            {"auth:jwt:RequireHttpsMetadata", "false"},
         };
 
         using TestServerFixture<Startup> server = CreateServer(jwtConfiguration);
@@ -280,9 +289,10 @@ public class JwtTests : IClassFixture<PostgresDatabaseFixture>, IClassFixture<In
 
         var jwtConfiguration = new Dictionary<string, string?>()
         {
-            {"Jwt:Authority", jwtTokenIssuerFixture.Issuer},
-            {"Jwt:Audience", jwtTokenIssuerFixture.Audience},
-            {"Jwt:RequireHttpsMetadata", "false"},
+            {"auth:type", "jwt"},
+            {"auth:jwt:Authority", jwtTokenIssuerFixture.Issuer},
+            {"auth:jwt:Audience", jwtTokenIssuerFixture.Audience},
+            {"auth:jwt:RequireHttpsMetadata", "false"},
         };
 
         using TestServerFixture<Startup> server = CreateServer(jwtConfiguration);

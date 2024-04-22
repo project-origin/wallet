@@ -1,5 +1,4 @@
 using MassTransit;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -30,8 +29,7 @@ using Npgsql;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
-using Microsoft.Identity.Web;
-using Microsoft.IdentityModel.JsonWebTokens;
+using Microsoft.Extensions.Logging;
 
 namespace ProjectOrigin.WalletSystem.Server;
 
@@ -89,20 +87,7 @@ public class Startup
             .ValidateOnStart();
 
         services.ConfigurePersistance(_configuration);
-
-        JsonWebTokenHandler.DefaultInboundClaimTypeMap["scope"] = "http://schemas.microsoft.com/identity/claims/scope";
-        var jwtOptions = _configuration.GetSection("jwt").GetValid<JwtOptions>();
-        services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-            .AddJwtBearer(o =>
-            {
-                o.ConfigureJwtVerification(jwtOptions);
-            });
-
-        services.AddAuthorization();
-        if (jwtOptions.EnableScopeValidation)
-        {
-            services.AddRequiredScopeAuthorization();
-        }
+        services.ConfigureAuthentication(_configuration);
 
         var otlpOptions = _configuration.GetSection(OtlpOptions.Prefix).GetValid<OtlpOptions>();
         if (otlpOptions.Enabled)
