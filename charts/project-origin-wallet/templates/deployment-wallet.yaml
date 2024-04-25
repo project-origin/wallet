@@ -34,7 +34,7 @@ spec:
           env:
             - name: ServiceOptions__EndpointAddress
               value: {{ required "A valid externalUrl is required!"  .Values.config.externalUrl }}
-            - name: RestApiOptions__PathBase
+            - name: ServiceOptions__PathBase
               value: {{ .Values.config.pathBase }}
           {{- if eq .Values.messageBroker.type "inMemory" }}
             - name: MessageBroker__Type
