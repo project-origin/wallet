@@ -76,11 +76,6 @@ public class Startup
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
-        services.AddOptions<RestApiOptions>()
-            .Bind(_configuration.GetSection("RestApiOptions"))
-            .ValidateDataAnnotations()
-            .ValidateOnStart();
-
         services.AddOptions<OtlpOptions>()
             .BindConfiguration(OtlpOptions.Prefix)
             .ValidateDataAnnotations()
@@ -170,7 +165,7 @@ public class Startup
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
     {
-        var pathBase = app.ApplicationServices.GetRequiredService<IOptions<RestApiOptions>>().Value.PathBase;
+        var pathBase = app.ApplicationServices.GetRequiredService<IOptions<ServiceOptions>>().Value.PathBase;
         app.UsePathBase(pathBase);
 
         app.UseSwagger();

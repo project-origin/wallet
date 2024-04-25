@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using AutoFixture;
@@ -33,7 +34,8 @@ public class WalletControllerTests : IClassFixture<PostgresDatabaseFixture>
 
         _options = Options.Create(new ServiceOptions
         {
-            EndpointAddress = new Uri("https://example.com")
+            EndpointAddress = new Uri("https://example.com"),
+            PathBase = new PathString("/foo-bar-baz"),
         });
     }
 
@@ -395,7 +397,7 @@ public class WalletControllerTests : IClassFixture<PostgresDatabaseFixture>
             .Which.Value.Should().BeOfType<CreateWalletEndpointResponse>().Which;
 
         response.WalletReference.Version.Should().Be(1);
-        response.WalletReference.Endpoint.Should().BeEquivalentTo(new Uri(_options.Value.EndpointAddress, "/v1/slices"));
+        response.WalletReference.Endpoint.Should().BeEquivalentTo(new Uri(_options.Value.EndpointAddress, Path.Combine(_options.Value.PathBase, "v1/slices")));
         response.WalletReference.PublicKey.Should().NotBeNull();
 
         var endpointsFound = await _unitOfWork.WalletRepository.GetWalletEndpoint(response.WalletReference.PublicKey);
