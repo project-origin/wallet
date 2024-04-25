@@ -23,13 +23,6 @@ using System.IO;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using MassTransit.Logging;
-using MassTransit.Monitoring;
-using Npgsql;
-using OpenTelemetry.Metrics;
-using OpenTelemetry.Resources;
-using OpenTelemetry.Trace;
-using Microsoft.Extensions.Logging;
 
 namespace ProjectOrigin.WalletSystem.Server;
 
@@ -44,8 +37,6 @@ public class Startup
 
     public void ConfigureServices(IServiceCollection services)
     {
-        services.AddGrpc();
-
         var algorithm = new Secp256k1Algorithm();
         services.AddSingleton<IHDAlgorithm>(algorithm);
 
@@ -55,12 +46,6 @@ public class Startup
                 o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
                 o.JsonSerializerOptions.Converters.Add(new IHDPublicKeyConverter(algorithm));
             });
-
-        services.AddSwaggerGen(o =>
-        {
-            o.SupportNonNullableReferenceTypes();
-            o.DocumentFilter<PathBaseDocumentFilter>();
-        });
 
         services.AddTransient<IStreamProjector<GranularCertificate>, GranularCertificateProjector>();
         services.AddTransient<IRegistryProcessBuilderFactory, RegistryProcessBuilderFactory>();
@@ -87,40 +72,8 @@ public class Startup
             .ValidateOnStart();
 
         services.ConfigurePersistance(_configuration);
-        services.ConfigureAuthentication(_configuration);
-
-        var otlpOptions = _configuration.GetSection(OtlpOptions.Prefix).GetValid<OtlpOptions>();
-        if (otlpOptions.Enabled)
-        {
-            services.AddOpenTelemetry()
-                .ConfigureResource(r =>
-                {
-                    r.AddService("ProjectOrigin.WalletSystem.Server",
-                    serviceInstanceId: Environment.MachineName);
-                })
-                .WithMetrics(metrics => metrics
-                    .AddHttpClientInstrumentation()
-                    .AddAspNetCoreInstrumentation()
-                    .AddMeter(InstrumentationOptions.MeterName)
-                    .AddRuntimeInstrumentation()
-                    .AddProcessInstrumentation()
-                    .AddOtlpExporter(o => o.Endpoint = otlpOptions.Endpoint))
-                .WithTracing(provider =>
-                    provider
-                        .AddGrpcClientInstrumentation(grpcOptions =>
-                        {
-                            grpcOptions.EnrichWithHttpRequestMessage = (activity, httpRequestMessage) =>
-                                activity.SetTag("requestVersion", httpRequestMessage.Version);
-                            grpcOptions.EnrichWithHttpResponseMessage = (activity, httpResponseMessage) =>
-                                activity.SetTag("responseVersion", httpResponseMessage.Version);
-                            grpcOptions.SuppressDownstreamInstrumentation = true;
-                        })
-                        .AddHttpClientInstrumentation()
-                        .AddAspNetCoreInstrumentation()
-                        .AddNpgsql()
-                        .AddSource(DiagnosticHeaders.DefaultListenerName)
-                        .AddOtlpExporter(o => o.Endpoint = otlpOptions.Endpoint));
-        }
+        services.ConfigureAuthentication(_configuration.GetValidSection<AuthOptions>(AuthOptions.Prefix));
+        services.ConfigureOtlp(_configuration.GetValidSection<OtlpOptions>(OtlpOptions.Prefix));
 
         services.AddMassTransit(o =>
         {
@@ -159,11 +112,13 @@ public class Startup
 
         services.AddSwaggerGen(options =>
         {
+            options.SupportNonNullableReferenceTypes();
             options.EnableAnnotations();
             options.SchemaFilter<IHDPublicKeySchemaFilter>();
             var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
             var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
             options.IncludeXmlComments(xmlPath);
+            options.DocumentFilter<PathBaseDocumentFilter>();
             options.DocumentFilter<AddWalletTagDocumentFilter>();
         });
     }

@@ -1,10 +1,15 @@
 using System;
+using System.Reflection;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Identity.Web;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Protocols.Configuration;
+using Npgsql;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using ProjectOrigin.WalletSystem.Server.Database;
 using ProjectOrigin.WalletSystem.Server.Database.Postgres;
 using ProjectOrigin.WalletSystem.Server.Options;
@@ -25,10 +30,9 @@ public static class IServiceCollectionExtensions
             .ValidateOnStart();
     }
 
-    public static void ConfigureAuthentication(this IServiceCollection services, IConfiguration configuration)
+    public static void ConfigureAuthentication(this IServiceCollection services, AuthOptions authOptions)
     {
 
-        var authOptions = configuration.GetSection("auth").GetValid<AuthOptions>();
         switch (authOptions.Type)
         {
             case AuthType.Jwt:
@@ -59,6 +63,41 @@ public static class IServiceCollectionExtensions
             default:
                 throw new ArgumentOutOfRangeException(nameof(authOptions.Type));
         }
+    }
 
+    public static void ConfigureOtlp(this IServiceCollection services, OtlpOptions otlpOptions)
+    {
+        var assemblyName = Assembly.GetEntryAssembly()?.FullName ?? throw new NullReferenceException("Entry assembly name not found");
+
+        if (otlpOptions.Enabled)
+        {
+            services.AddOpenTelemetry()
+                .ConfigureResource(r =>
+                {
+                    r.AddService(assemblyName, serviceInstanceId: Environment.MachineName);
+                })
+                .WithMetrics(metrics => metrics
+                    .AddHttpClientInstrumentation()
+                    .AddAspNetCoreInstrumentation()
+                    .AddMeter(MassTransit.Monitoring.InstrumentationOptions.MeterName)
+                    .AddRuntimeInstrumentation()
+                    .AddProcessInstrumentation()
+                    .AddOtlpExporter(o => o.Endpoint = otlpOptions.Endpoint!))
+                .WithTracing(provider =>
+                    provider
+                        .AddGrpcClientInstrumentation(grpcOptions =>
+                        {
+                            grpcOptions.EnrichWithHttpRequestMessage = (activity, httpRequestMessage) =>
+                                activity.SetTag("requestVersion", httpRequestMessage.Version);
+                            grpcOptions.EnrichWithHttpResponseMessage = (activity, httpResponseMessage) =>
+                                activity.SetTag("responseVersion", httpResponseMessage.Version);
+                            grpcOptions.SuppressDownstreamInstrumentation = true;
+                        })
+                        .AddHttpClientInstrumentation()
+                        .AddAspNetCoreInstrumentation()
+                        .AddNpgsql()
+                        .AddSource(MassTransit.Logging.DiagnosticHeaders.DefaultListenerName)
+                        .AddOtlpExporter(o => o.Endpoint = otlpOptions.Endpoint!));
+        }
     }
 }

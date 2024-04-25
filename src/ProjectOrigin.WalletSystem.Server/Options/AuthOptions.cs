@@ -5,6 +5,7 @@ namespace ProjectOrigin.WalletSystem.Server.Options;
 
 public record AuthOptions : IValidatableObject
 {
+    public const string Prefix = "auth";
     public AuthType Type { get; init; }
     public JwtOptions? Jwt { get; init; }
     public HeaderOptions? Header { get; init; }
