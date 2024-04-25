@@ -61,13 +61,13 @@ public static class IServiceCollectionExtensions
                 break;
 
             default:
-                throw new ArgumentOutOfRangeException(nameof(authOptions.Type));
+                throw new NotSupportedException(nameof(authOptions.Type));
         }
     }
 
     public static void ConfigureOtlp(this IServiceCollection services, OtlpOptions otlpOptions)
     {
-        var assemblyName = Assembly.GetEntryAssembly()?.FullName ?? throw new NullReferenceException("Entry assembly name not found");
+        var assemblyName = Assembly.GetEntryAssembly()?.FullName ?? throw new InvalidOperationException("Entry assembly name not found");
 
         if (otlpOptions.Enabled)
         {
