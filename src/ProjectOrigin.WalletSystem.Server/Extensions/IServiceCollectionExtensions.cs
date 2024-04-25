@@ -8,6 +8,7 @@ using Microsoft.IdentityModel.Protocols.Configuration;
 using ProjectOrigin.WalletSystem.Server.Database;
 using ProjectOrigin.WalletSystem.Server.Database.Postgres;
 using ProjectOrigin.WalletSystem.Server.Options;
+using ProjectOrigin.WalletSystem.Server.Services.REST;
 using Serilog;
 
 namespace ProjectOrigin.WalletSystem.Server.Extensions;
@@ -31,7 +32,6 @@ public static class IServiceCollectionExtensions
         switch (authOptions.Type)
         {
             case AuthType.Jwt:
-                JsonWebTokenHandler.DefaultInboundClaimTypeMap["scope"] = "http://schemas.microsoft.com/identity/claims/scope";
                 var jwtOptions = authOptions.Jwt!;
                 services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(o =>
@@ -42,9 +42,11 @@ public static class IServiceCollectionExtensions
                 services.AddAuthorization();
                 if (jwtOptions.EnableScopeValidation)
                 {
+                    JsonWebTokenHandler.DefaultInboundClaimTypeMap["scope"] = "http://schemas.microsoft.com/identity/claims/scope";
                     services.AddRequiredScopeAuthorization();
                 }
                 break;
+
             case AuthType.Header:
                 Log.Warning("Authenticated user set based on header. Ensure that the header is set by a trusted source");
                 services.AddAuthentication()
@@ -53,6 +55,7 @@ public static class IServiceCollectionExtensions
                         opts.HeaderName = authOptions.Header!.HeaderName;
                     });
                 break;
+
             default:
                 throw new ArgumentOutOfRangeException(nameof(authOptions.Type));
         }

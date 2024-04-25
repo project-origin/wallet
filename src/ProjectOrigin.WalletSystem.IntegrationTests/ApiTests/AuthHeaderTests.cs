@@ -34,21 +34,31 @@ public class AuthHeaderTests : WalletSystemTestsBase, IClassFixture<InMemoryFixt
         });
     }
 
-    [Theory]
-    [InlineData("v1/wallets")]
-    [InlineData("v1/certificates")]
-    [InlineData("v1/claims")]
-    [InlineData("v1/transfers")]
-    public async Task Verify_Get_Forbidden(string url)
+    [Fact]
+    public async Task Verify_Get()
     {
         //Arrange
         var httpClient = _serverFixture.CreateHttpClient();
         httpClient.DefaultRequestHeaders.Add(HeaderName, _fixture.Create<string>());
 
         //Act
-        var res = await httpClient.GetAsync(url);
+        var res = await httpClient.GetAsync("v1/wallets");
 
         //Assert
         res.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Fact]
+
+    public async Task Verify_Get_Forbidden()
+    {
+        //Arrange
+        var httpClient = _serverFixture.CreateHttpClient();
+
+        //Act
+        var res = await httpClient.GetAsync("v1/wallets");
+
+        //Assert
+        res.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 }

@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
+namespace ProjectOrigin.WalletSystem.Server.Services.REST;
+
 public class HeaderAuthenticationHandler : AuthenticationHandler<HeaderAuthenticationHandlerOptions>
 {
 

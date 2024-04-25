@@ -17,7 +17,7 @@ using WireMock.Server;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace ProjectOrigin.WalletSystem.IntegrationTests;
+namespace ProjectOrigin.WalletSystem.IntegrationTests.Authentication;
 
 public class JwtTests : IClassFixture<PostgresDatabaseFixture>, IClassFixture<InMemoryFixture>
 {
