@@ -26,30 +26,39 @@ config:
   # pathBase defines the base part of all paths in the api of the wallet server, defaults to /api
   pathBase: /api
 
-  # jwt defines the configuration for the authentication of jwt tokens
-  jwt:
-    # audience defines the audience to use for the jwt tokens, defaults to empty string, which means the audience is not checked
-    audience: ""
+  # auth holds the configuration for the authentication of the wallet server
+  auth:
+    # type defines the type of authentication to use, allowed values are (jwt | header)
+    type: jwt
 
-    # authority defines the authority to use for the jwt tokens, defaults to empty string, should be set to a authority
-    # example "https://example.com/auth" where it will pull the "/.well-known/openid-configuration" information from.
-    authority: ""
+    # disables the jwt authentication, and sets the subject of the call from a header. This requires authentication and authorization to be done by another system.
+    header:
+      name:
 
-    # enableScopeValidation determines if scope validation is enabled, defaults to true, if set to true then scope validation is enabled
-    enableScopeValidation: true
+    # jwt defines the configuration for the authentication of jwt tokens
+    jwt:
+      # audience defines the audience to use for the jwt tokens, defaults to empty string, which means the audience is not checked
+      audience: ""
 
-    # allowAnyJwtToken determines if any jwt token is allowed, defaults to false, if set to true then any jwt token is allowed, NOT RECOMMENDED FOR PRODUCTION!
-    allowAnyJwtToken: false
+      # authority defines the authority to use for the jwt tokens, defaults to empty string, should be set to a authority
+      # example "https://example.com/auth" where it will pull the "/.well-known/openid-configuration" information from.
+      authority: ""
 
-    # issuer defines a list of valid issuers for the jwt tokens, disabled if authority url is set
-    issuers: []
-      # example
-      # - # name defines the name of the issuer
-      #   name: test
-      #   # type defines the type of the key used, allowed values are (rsa | ecdsa)
-      #   type: rsa
-      #   # pemFileName defines the name of the file containing the pem encoded key
-      #   pemFileName: /etc/keyfile.pem
+      # enableScopeValidation determines if scope validation is enabled, defaults to true, if set to true then scope validation is enabled
+      enableScopeValidation: true
+
+      # allowAnyJwtToken determines if any jwt token is allowed, defaults to false, if set to true then any jwt token is allowed, NOT RECOMMENDED FOR PRODUCTION!
+      allowAnyJwtToken: false
+
+      # issuer defines a list of valid issuers for the jwt tokens, disabled if authority url is set
+      issuers: []
+        # example
+        # - # name defines the name of the issuer
+        #   name: test
+        #   # type defines the type of the key used, allowed values are (rsa | ecdsa)
+        #   type: rsa
+        #   # pemFileName defines the name of the file containing the pem encoded key
+        #   pemFileName: /etc/keyfile.pem
 
 # otlp holds the configuration for the opentelemetry collector
 otlp:
@@ -58,6 +67,7 @@ otlp:
   # endpoint defines the endpoint of the opentelemetry collector, example "http://otel-collector:4317"
   endpoint: "http://opentelemetry-collector.otel-collector:4317"
 
+# messageBroker holds the configuration for the message broker
 messageBroker:
   # type defines the type of message broker to use, allowed values are (inMemory | rabbitmq | rabbitmqOperator)
   type:

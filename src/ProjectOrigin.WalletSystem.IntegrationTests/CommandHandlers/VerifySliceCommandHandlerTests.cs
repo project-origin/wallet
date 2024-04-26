@@ -59,6 +59,10 @@ public class VerifySliceCommandHandlerTests : IAsyncLifetime
             .AddMassTransitTestHarness(x =>
             {
                 x.AddConsumer<VerifySliceCommandHandler>();
+                x.SetTestTimeouts(
+                    testTimeout: TimeSpan.FromMinutes(1),
+                    testInactivityTimeout: TimeSpan.FromSeconds(15)
+                    );
             })
             .BuildServiceProvider(true);
     }

@@ -110,21 +110,32 @@ spec:
           {{- else }}
             {{- fail "Unsupported database type specified. Please specify 'persistence.type' as either 'CloudNativePG' or 'BYOD'." }}
           {{- end }}
-            - name: jwt__audience
-              value: {{ .Values.config.jwt.audience }}
-            - name: jwt__authority
-              value: {{ .Values.config.jwt.authority | quote }}
-            - name: jwt__allowAnyJwtToken
-              value: {{ .Values.config.jwt.allowAnyJwtToken | quote }}
-            - name: jwt__enableScopeValidation
-              value: {{ .Values.config.jwt.enableScopeValidation | quote }}
-          {{- range  $i, $issuer := .Values.config.jwt.issuers }}
-            - name: jwt__issuers__{{ $i }}__name
+
+          # Authentication
+            - name: auth__type
+              value: {{ .Values.config.auth.type }}
+          {{- if eq .Values.config.auth.type "header" }}
+            - name: auth__header__name
+              value: {{ .Values.config.auth.header.name }}
+          {{- else if eq .Values.config.auth.type "jwt" }}
+            - name: auth__jwt__audience
+              value: {{ .Values.config.auth.jwt.audience }}
+            - name: auth__jwt__authority
+              value: {{ .Values.config.auth.jwt.authority | quote }}
+            - name: auth__jwt__allowAnyJwtToken
+              value: {{ .Values.config.auth.jwt.allowAnyJwtToken | quote }}
+            - name: auth__jwt__enableScopeValidation
+              value: {{ .Values.config.auth.jwt.enableScopeValidation | quote }}
+            {{- range  $i, $issuer := .Values.config.auth.jwt.issuers }}
+            - name: auth__jwt__issuers__{{ $i }}__name
               value: {{ $issuer.name }}
-            - name: jwt__issuers__{{ $i }}__type
+            - name: auth__jwt__issuers__{{ $i }}__type
               value: {{ $issuer.type }}
-            - name: jwt__issuers__{{ $i }}__pemFileName
+            - name: auth__jwt__issuers__{{ $i }}__pemFileName
               value: {{ $issuer.pemFileName }}
+            {{- end }}
+          {{- else}}
+            {{- fail "Unsupported auth type specified. Please specify 'auth.type' as either 'jwt' or 'header'." }}
           {{- end }}
 
             # OpenTelemetry Collector Configuration

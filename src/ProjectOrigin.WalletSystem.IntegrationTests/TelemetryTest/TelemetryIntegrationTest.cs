@@ -37,10 +37,11 @@ public class TelemetryIntegrationTest :
             {"Otlp:Endpoint", openTelemetryFixture.OtelUrl},
             {"ConnectionStrings:Database", dbFixture.ConnectionString},
             {"ServiceOptions:EndpointAddress", "http://localhost/"},
-            {"Jwt:Audience", jwtTokenIssuerFixture.Audience},
-            {"Jwt:Issuers:0:IssuerName", jwtTokenIssuerFixture.Issuer},
-            {"Jwt:Issuers:0:PemKeyFile", jwtTokenIssuerFixture.PemFilepath},
-            {"Jwt:Issuers:0:Type", jwtTokenIssuerFixture.KeyType},
+            {"auth:type", "jwt"},
+            {"auth:jwt:Audience", jwtTokenIssuerFixture.Audience},
+            {"auth:jwt:Issuers:0:IssuerName", jwtTokenIssuerFixture.Issuer},
+            {"auth:jwt:Issuers:0:PemKeyFile", jwtTokenIssuerFixture.PemFilepath},
+            {"auth:jwt:Issuers:0:Type", jwtTokenIssuerFixture.KeyType},
         };
 
         serverFixture.ConfigureHostConfiguration(combinedConfiguration);

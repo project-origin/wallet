@@ -6,7 +6,7 @@ using FluentAssertions;
 using ProjectOrigin.WalletSystem.Server.Options;
 using Xunit;
 
-namespace ProjectOrigin.WalletSystem.IntegrationTests;
+namespace ProjectOrigin.WalletSystem.IntegrationTests.Authentication;
 
 public class JwtIssuerTests
 {

@@ -32,6 +32,11 @@ public static class IConfigurationExtensions
         }
     }
 
+    public static T GetValidSection<T>(this IConfiguration configuration, string sectionName) where T : IValidatableObject
+    {
+        return configuration.GetSection(sectionName).GetValid<T>();
+    }
+
     public static IRepositoryUpgrader GetRepositoryUpgrader(this IConfiguration configuration, Serilog.ILogger logger)
     {
         var services = new ServiceCollection();

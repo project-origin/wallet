@@ -39,8 +39,9 @@ image:
 
 config:
   externalUrl: http://wallet.example:80
-  jwt:
-    allowAnyJwtToken: true
+  auth:
+    jwt:
+      allowAnyJwtToken: true
 
 messageBroker:
   type: rabbitmqOperator

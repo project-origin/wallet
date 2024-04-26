@@ -10,12 +10,12 @@ using Xunit.Abstractions;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests;
 
-public class AuthTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
+public class AuthJwtTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
 {
     private const string EndpointId = "58c092ae-7637-461e-ab7a-5ea972b1295c";
     private const string AggregateParam = "timeAggregate=hour&timeZone=Europe/Copenhagen";
 
-    public AuthTests(
+    public AuthJwtTests(
         TestServerFixture<Startup> serverFixture,
         PostgresDatabaseFixture dbFixture,
         InMemoryFixture inMemoryFixture,
@@ -30,7 +30,7 @@ public class AuthTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
               null)
     {
         serverFixture.ConfigureHostConfiguration(new(){
-            {"Jwt:EnableScopeValidation", "true"}
+            {"auth:jwt:EnableScopeValidation", "true"}
         });
     }
 
