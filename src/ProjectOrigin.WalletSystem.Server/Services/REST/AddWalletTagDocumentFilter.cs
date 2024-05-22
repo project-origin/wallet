@@ -14,7 +14,7 @@ public class AddWalletTagDocumentFilter : IDocumentFilter
             swaggerDoc.Tags.Add(new OpenApiTag
             {
                 Name = "Wallet",
-                Description = "The Wallet is essential for Energy Origin," +
+                Description = "The Wallet is essential for Energy Track & Trace," +
                               " since it keeps track of all the user’s Granular Certificates" +
                               " – both the ones generated from the user’s own metering points," +
                               " but also the ones transferred from other users." +
