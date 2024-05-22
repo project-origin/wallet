@@ -6,12 +6,12 @@ on:
 
 jobs:
   define-version:
-    uses: project-origin/.github/.github/workflows/reusable-tag-version.yaml@1b13986ac50fae9c3a698e8ea2d44691866e0674
+    uses: project-origin/.github/.github/workflows/reusable-tag-version.yaml@7a3afc06579e2b30d0f0b1511a16ac2209a696a2
 
   publish-container:
     needs:
       - define-version
-    uses: project-origin/.github/.github/workflows/reusable-build-push-container-ghcr.yaml@1b13986ac50fae9c3a698e8ea2d44691866e0674
+    uses: project-origin/.github/.github/workflows/reusable-build-push-container-ghcr.yaml@7a3afc06579e2b30d0f0b1511a16ac2209a696a2
     with:
       imagename: ghcr.io/project-origin/wallet-server
       version: ${{ needs.define-version.outputs.version }}
@@ -23,7 +23,7 @@ jobs:
     needs:
       - define-version
       - publish-container
-    uses: project-origin/.github/.github/workflows/reusable-publish-chart.yaml@1b13986ac50fae9c3a698e8ea2d44691866e0674
+    uses: project-origin/.github/.github/workflows/reusable-publish-chart.yaml@7a3afc06579e2b30d0f0b1511a16ac2209a696a2
     with:
       version: ${{ needs.define-version.outputs.version }}
       chart_folder: charts/project-origin-wallet
@@ -37,7 +37,7 @@ jobs:
     needs:
       - define-version
     steps:
-      - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4
+      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4
 
       - name: Install swaggerhub cli
         run: npm i -g swaggerhub-cli
