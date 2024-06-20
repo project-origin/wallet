@@ -9,6 +9,8 @@ public record CertificateViewModel
     public required Guid CertificateId { get; init; }
     public required string RegistryName { get; init; }
     public required GranularCertificateType CertificateType { get; init; }
+
+    public required DateTimeOffset UpdatedAt { get; init; }
     public required string GridArea { get; init; }
     public required DateTimeOffset StartDate { get; init; }
     public required DateTimeOffset EndDate { get; init; }

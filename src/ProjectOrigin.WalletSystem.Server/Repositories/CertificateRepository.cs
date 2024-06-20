@@ -93,6 +93,61 @@ public class CertificateRepository : ICertificateRepository
         return certsDictionary.Values.FirstOrDefault();
     }
 
+    public async Task<PageResultCursor<CertificateViewModel>> QueryAvailableCertificates(QueryCertificatesFilterCursor filter)
+    {
+        string sql = @"
+            CREATE TEMPORARY TABLE certificates_work_table ON COMMIT DROP AS (
+                SELECT
+                    certificate_id,
+                    registry_name,
+                    certificate_type,
+                    grid_area,
+                    start_date,
+                    end_date,
+                    quantity,
+                    wallet_id,
+                    updated_at
+                FROM
+                    certificates_query_model
+                WHERE
+                    owner = @owner
+                    AND (@start IS NULL OR start_date >= @start)
+                    AND (@end IS NULL OR end_date <= @end)
+                    AND (@type IS NULL OR certificate_type = @type)
+            );
+            SELECT count(*) FROM certificates_work_table;
+            SELECT * FROM certificates_work_table WHERE updated_at > @FOOBARUPDATEDAT LIMIT @limit;
+            SELECT attributes.registry_name, attributes.certificate_id, attributes.attribute_key as key, attributes.attribute_value as value, attributes.attribute_type as type
+            FROM attributes_view attributes
+            WHERE (wallet_id IS NULL AND (registry_name, certificate_id) IN (SELECT registry_name, certificate_id FROM certificates_work_table))
+                OR (wallet_id, registry_name, certificate_id) IN (SELECT wallet_id, registry_name, certificate_id FROM certificates_work_table)
+
+            ";
+
+        using (var gridReader = await _connection.QueryMultipleAsync(sql, filter))
+        {
+            var totalCouunt = gridReader.ReadSingle<int>();
+            var certificates = gridReader.Read<CertificateViewModel>();
+            var attributes = gridReader.Read<AttributeViewModel>();
+
+            foreach (var certificate in certificates)
+            {
+                certificate.Attributes.AddRange(attributes
+                    .Where(attr => attr.RegistryName == certificate.RegistryName
+                            && attr.CertificateId == certificate.CertificateId));
+            }
+
+            return new PageResultCursor<CertificateViewModel>()
+            {
+                Items = certificates,
+                TotalCount = totalCouunt,
+                Count = certificates.Count(),
+                DatetimeOffset = filter.FOOBARUPDATEDAT,
+                Limit = filter.Limit
+            };
+        }
+    }
+
     public async Task<PageResult<CertificateViewModel>> QueryAvailableCertificates(QueryCertificatesFilter filter)
     {
         string sql = @"

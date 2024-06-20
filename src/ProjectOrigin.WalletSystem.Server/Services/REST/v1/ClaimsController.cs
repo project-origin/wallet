@@ -29,7 +29,7 @@ public class ClaimsController : ControllerBase
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
-    public async Task<ActionResult<ResultList<Claim>>> GetClaims(
+    public async Task<ActionResult<ResultList<Claim, PageInfo>>> GetClaims(
         [FromServices] IUnitOfWork unitOfWork,
         [FromQuery] GetClaimsQueryParameters param)
     {
@@ -60,7 +60,7 @@ public class ClaimsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
-    public async Task<ActionResult<ResultList<AggregatedClaims>>> AggregateClaims(
+    public async Task<ActionResult<ResultList<AggregatedClaims, PageInfo>>> AggregateClaims(
         [FromServices] IUnitOfWork unitOfWork,
         [FromQuery] AggregateClaimsQueryParameters param)
     {

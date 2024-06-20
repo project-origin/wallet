@@ -4,16 +4,24 @@ using System.Text.Json.Serialization;
 
 namespace ProjectOrigin.WalletSystem.Server.Services.REST.v1;
 
-public record ResultList<T>()
+public record ResultList<T, TPageInfo>()
 {
     public required IEnumerable<T> Result { get; init; }
-    public required PageInfo Metadata { get; init; }
+    public required TPageInfo Metadata { get; init; }
 }
 
 public record PageInfo()
 {
     public required int Count { get; init; }
     public required int Offset { get; init; }
+    public required int Limit { get; init; }
+    public required int Total { get; init; }
+}
+
+public record PageInfoCursor()
+{
+    public required int Count { get; init; }
+    public required DateTimeOffset DatetimeOffset { get; init; }
     public required int Limit { get; init; }
     public required int Total { get; init; }
 }

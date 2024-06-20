@@ -216,8 +216,8 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
         var resultWithFilterStart = await httpClient.GetStringAsync($"v1/claims?start={filterStart}");
         var resultWithFilterEnd = await httpClient.GetStringAsync($"v1/claims?end={filterEnd}");
         var resultWithFilterStartAndEnd = await httpClient.GetStringAsync($"v1/claims?start={filterStart}&end={filterEnd}");
-        var resultWithFilterOutsideAnyClaims1 = await httpClient.GetFromJsonAsync<ResultList<Server.Services.REST.v1.Claim>>($"v1/claims?start={filterEnd}");
-        var resultWithFilterOutsideAnyClaims2 = await httpClient.GetFromJsonAsync<ResultList<Server.Services.REST.v1.Claim>>($"v1/claims?end={filterStart}");
+        var resultWithFilterOutsideAnyClaims1 = await httpClient.GetFromJsonAsync<ResultList<Server.Services.REST.v1.Claim, PageInfo>>($"v1/claims?start={filterEnd}");
+        var resultWithFilterOutsideAnyClaims2 = await httpClient.GetFromJsonAsync<ResultList<Server.Services.REST.v1.Claim, PageInfo>>($"v1/claims?end={filterStart}");
 
         //Assert
         await Verifier.VerifyJson(resultWithoutFilters);

@@ -7,6 +7,8 @@ public record WalletSlice : AbstractSlice
     public required Guid WalletEndpointId { get; init; }
     public required int WalletEndpointPosition { get; init; }
     public required WalletSliceState State { get; init; }
+
+    public DateTimeOffset UpdatedAt { get; init; }
 }
 
 public enum WalletSliceState

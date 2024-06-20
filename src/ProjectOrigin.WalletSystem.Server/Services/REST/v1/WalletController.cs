@@ -96,7 +96,7 @@ public class WalletController : ControllerBase
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
-    public async Task<ActionResult<ResultList<WalletRecord>>> GetWallets(
+    public async Task<ActionResult<ResultList<WalletRecord, PageInfo>>> GetWallets(
         [FromServices] IUnitOfWork unitOfWork
     )
     {
@@ -112,7 +112,7 @@ public class WalletController : ControllerBase
                 PublicKey = wallet.PrivateKey.Neuter(),
             });
 
-        return Ok(new ResultList<WalletRecord>
+        return Ok(new ResultList<WalletRecord, PageInfo>
         {
             Result = list,
             Metadata = new PageInfo

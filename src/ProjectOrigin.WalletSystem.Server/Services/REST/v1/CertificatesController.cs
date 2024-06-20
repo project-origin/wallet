@@ -27,7 +27,37 @@ public class CertificatesController : ControllerBase
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
-    public async Task<ActionResult<ResultList<GranularCertificate>>> GetCertificates(
+    public async Task<ActionResult<ResultList<GranularCertificate, PageInfoCursor>>> GetCertificates(
+        [FromServices] IUnitOfWork unitOfWork,
+        [FromQuery] GetCertificatesCursorQueryParameters param)
+    {
+        if (!User.TryGetSubject(out var subject)) return Unauthorized();
+
+        var certificates = await unitOfWork.CertificateRepository.QueryAvailableCertificates(new QueryCertificatesFilterCursor
+        {
+            Owner = subject,
+            Start = param.Start != null ? DateTimeOffset.FromUnixTimeSeconds(param.Start.Value) : null,
+            End = param.End != null ? DateTimeOffset.FromUnixTimeSeconds(param.End.Value) : null,
+            Type = param.Type != null ? (GranularCertificateType)param.Type.Value : null,
+            FOOBARUPDATEDAT = param.UpdatedAt,
+            Limit = param.Limit ?? int.MaxValue,
+        });
+
+        return certificates.ToResultList(c => c.MapToV1());
+    }
+
+    /// <summary>
+    /// Gets all certificates in the wallet that are <b>available</b> for use.
+    /// </summary>
+    /// <response code="200">Returns the aggregated claims.</response>
+    /// <response code="401">If the user is not authenticated.</response>
+    [HttpGet]
+    [Route("v1/certificates")]
+    [RequiredScope("po:certificates:read")]
+    [Produces("application/json")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<ResultList<GranularCertificate, PageInfo>>> GetCertificates(
         [FromServices] IUnitOfWork unitOfWork,
         [FromQuery] GetCertificatesQueryParameters param)
     {
@@ -59,7 +89,7 @@ public class CertificatesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
-    public async Task<ActionResult<ResultList<AggregatedCertificates>>> AggregateCertificates(
+    public async Task<ActionResult<ResultList<AggregatedCertificates, PageInfo>>> AggregateCertificates(
         [FromServices] IUnitOfWork unitOfWork,
         [FromQuery] AggregateCertificatesQueryParameters param)
     {
@@ -116,6 +146,34 @@ public record GetCertificatesQueryParameters
     /// </summary>
     [DefaultValue(0)]
     public int Skip { get; init; }
+}
+
+public record GetCertificatesCursorQueryParameters
+{
+    /// <summary>
+    /// The start of the time range in Unix time in seconds.
+    /// </summary>
+    public long? Start { get; init; }
+
+    /// <summary>
+    /// The end of the time range in Unix time in seconds.
+    /// </summary>
+    public long? End { get; init; }
+
+    /// <summary>
+    /// Filter the type of certificates to return.
+    /// </summary>
+    public CertificateType? Type { get; init; }
+
+    /// <summary>
+    /// The number of items to return.
+    /// </summary>
+    public int? Limit { get; init; }
+
+    /// <summary>
+    /// The number of items to skip.
+    /// </summary>
+    public DateTimeOffset UpdatedAt { get; init; }
 }
 
 public record AggregateCertificatesQueryParameters

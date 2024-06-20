@@ -28,7 +28,7 @@ public class TransfersController : ControllerBase
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
-    public async Task<ActionResult<ResultList<Transfer>>> GetTransfers(
+    public async Task<ActionResult<ResultList<Transfer, PageInfo>>> GetTransfers(
         [FromServices] IUnitOfWork unitOfWork,
         [FromQuery] GetTransfersQueryParameters param)
     {
@@ -71,7 +71,7 @@ public class TransfersController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
-    public async Task<ActionResult<ResultList<AggregatedTransfers>>> AggregateTransfers(
+    public async Task<ActionResult<ResultList<AggregatedTransfers, PageInfo>>> AggregateTransfers(
         [FromServices] IUnitOfWork unitOfWork,
         [FromQuery] AggregateTransfersQueryParameters param)
     {
