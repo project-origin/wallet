@@ -22,7 +22,7 @@ public class CertificatesController : ControllerBase
     /// <response code="200">Returns the aggregated claims.</response>
     /// <response code="401">If the user is not authenticated.</response>
     [HttpGet]
-    [Route("v1/certificates")]
+    [Route("v1/certificates/VERYNICECURSOR")]
     [RequiredScope("po:certificates:read")]
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status200OK)]

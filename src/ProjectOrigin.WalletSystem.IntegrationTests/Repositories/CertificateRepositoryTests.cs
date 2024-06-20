@@ -94,14 +94,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
 
         // Assert
         var insertedSlice = await _connection.QueryFirstOrDefaultAsync<WalletSlice>("SELECT * FROM wallet_slices WHERE id = @id", new { slice.Id });
-        insertedSlice!.Id.Should().Be(slice.Id);
-        insertedSlice.WalletEndpointId.Should().Be(slice.WalletEndpointId);
-        insertedSlice.WalletEndpointPosition.Should().Be(slice.WalletEndpointPosition);
-        insertedSlice.RegistryName.Should().Be(slice.RegistryName);
-        insertedSlice.CertificateId.Should().Be(slice.CertificateId);
-        insertedSlice.Quantity.Should().Be(slice.Quantity);
-        insertedSlice.RandomR.Should().BeEquivalentTo(slice.RandomR);
-        insertedSlice.State.Should().Be(slice.State);
+        insertedSlice!.Should().BeEquivalentTo(slice, options => options.Excluding(x => x.UpdatedAt));
         insertedSlice.UpdatedAt.Hour.Should().Be(DateTimeOffset.UtcNow.Hour);
         insertedSlice.UpdatedAt.Day.Should().Be(DateTimeOffset.UtcNow.Day);
         insertedSlice.UpdatedAt.Year.Should().Be(DateTimeOffset.UtcNow.Year);
@@ -121,8 +114,8 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
 
         var owner1 = _fixture.Create<string>();
         var wallet1 = await CreateWallet(owner1);
-        var endpoint1 = await CreateWalletEndpoint(wallet1);
-        var endpoint2 = await CreateWalletEndpoint(wallet1);
+        var owner1Endpoint1 = await CreateWalletEndpoint(wallet1);
+        var owner1Endpoint2 = await CreateWalletEndpoint(wallet1);
 
         var owner2 = _fixture.Create<string>();
         var wallet2 = await CreateWallet(owner2);
@@ -131,7 +124,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         var slice1 = new WalletSlice
         {
             Id = Guid.NewGuid(),
-            WalletEndpointId = endpoint1.Id,
+            WalletEndpointId = owner1Endpoint1.Id,
             WalletEndpointPosition = endpointPosition,
             RegistryName = registry,
             CertificateId = certificate1.Id,
@@ -142,7 +135,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         var slice2 = new WalletSlice
         {
             Id = Guid.NewGuid(),
-            WalletEndpointId = endpoint1.Id,
+            WalletEndpointId = owner1Endpoint1.Id,
             WalletEndpointPosition = endpointPosition + 1,
             RegistryName = registry,
             CertificateId = certificate1.Id,
@@ -154,7 +147,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         var slice3 = new WalletSlice
         {
             Id = Guid.NewGuid(),
-            WalletEndpointId = endpoint2.Id,
+            WalletEndpointId = owner1Endpoint2.Id,
             WalletEndpointPosition = endpointPosition,
             RegistryName = registry,
             CertificateId = certificate2.Id,
@@ -437,7 +430,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         var sliceDb = await _certRepository.GetOwnersAvailableSlices(registry, slice.CertificateId, wallet1.Owner);
 
         sliceDb.Should().HaveCount(1);
-        sliceDb.Should().ContainEquivalentOf(slice);
+        sliceDb.Should().ContainEquivalentOf(slice, options => options.Excluding(x => x.UpdatedAt));
     }
 
     [Fact]

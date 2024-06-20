@@ -179,7 +179,7 @@ public class CertificateRepository : ICertificateRepository
 
         using (var gridReader = await _connection.QueryMultipleAsync(sql, filter))
         {
-            var totalCouunt = gridReader.ReadSingle<int>();
+            var totalCount = gridReader.ReadSingle<int>();
             var certificates = gridReader.Read<CertificateViewModel>();
             var attributes = gridReader.Read<AttributeViewModel>();
 
@@ -193,7 +193,7 @@ public class CertificateRepository : ICertificateRepository
             return new PageResult<CertificateViewModel>()
             {
                 Items = certificates,
-                TotalCount = totalCouunt,
+                TotalCount = totalCount,
                 Count = certificates.Count(),
                 Offset = filter.Skip,
                 Limit = filter.Limit
