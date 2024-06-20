@@ -42,8 +42,8 @@ SELECT c.id as certificate_id,
        c.end_date,
        w.id as wallet_id,
        w.owner,
-       max(ws.updated_at),
-       sum(CASE WHEN ws.state = 1 THEN ws.quantity ELSE 0 END)
+       sum(ws.quantity) as quantity,
+       max(ws.updated_at)
 FROM wallets w
          INNER JOIN wallet_endpoints we
                     ON w.id = we.wallet_id
@@ -51,6 +51,7 @@ FROM wallets w
                     ON we.Id = ws.wallet_endpoint_id
          INNER JOIN certificates c
                     ON ws.certificate_id = c.id
+WHERE ws.state = 1
 GROUP BY c.id,
          c.registry_name,
          c.certificate_type,
@@ -66,7 +67,6 @@ ORDER BY ws.updated_at ASC,
 
 CREATE OR REPLACE VIEW claims_query_model AS
 SELECT claims.Id                 as claim_id,
-       claims.updated_at         as updated_at,
        slice_cons.quantity       AS quantity,
        wallet_cons.id            as wallet_id,
        wallet_cons.owner         as owner,
@@ -81,8 +81,8 @@ SELECT claims.Id                 as claim_id,
        slice_cons.certificate_id AS consumption_certificate_id,
        cert_cons.start_date      AS consumption_start,
        cert_cons.end_date        AS consumption_end,
-       cert_cons.grid_area       AS consumption_grid_area
-
+       cert_cons.grid_area       AS consumption_grid_area,
+       claims.updated_at         AS updated_at
 FROM claims
          INNER JOIN wallet_slices slice_prod
                     ON claims.production_slice_id = slice_prod.id

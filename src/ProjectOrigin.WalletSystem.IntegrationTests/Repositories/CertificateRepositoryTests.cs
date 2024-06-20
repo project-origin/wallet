@@ -94,7 +94,19 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
 
         // Assert
         var insertedSlice = await _connection.QueryFirstOrDefaultAsync<WalletSlice>("SELECT * FROM wallet_slices WHERE id = @id", new { slice.Id });
-        insertedSlice.Should().BeEquivalentTo(slice);
+        insertedSlice!.Id.Should().Be(slice.Id);
+        insertedSlice.WalletEndpointId.Should().Be(slice.WalletEndpointId);
+        insertedSlice.WalletEndpointPosition.Should().Be(slice.WalletEndpointPosition);
+        insertedSlice.RegistryName.Should().Be(slice.RegistryName);
+        insertedSlice.CertificateId.Should().Be(slice.CertificateId);
+        insertedSlice.Quantity.Should().Be(slice.Quantity);
+        insertedSlice.RandomR.Should().BeEquivalentTo(slice.RandomR);
+        insertedSlice.State.Should().Be(slice.State);
+        insertedSlice.UpdatedAt.Hour.Should().Be(DateTimeOffset.UtcNow.Hour);
+        insertedSlice.UpdatedAt.Day.Should().Be(DateTimeOffset.UtcNow.Day);
+        insertedSlice.UpdatedAt.Year.Should().Be(DateTimeOffset.UtcNow.Year);
+        insertedSlice.UpdatedAt.Month.Should().Be(DateTimeOffset.UtcNow.Month);
+
     }
 
     [Fact]
@@ -106,10 +118,12 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         var certificate1 = await CreateCertificate(registry);
         var certificate2 = await CreateCertificate(registry, GranularCertificateType.Consumption);
         var certificate3 = await CreateCertificate(registry);
+
         var owner1 = _fixture.Create<string>();
         var wallet1 = await CreateWallet(owner1);
         var endpoint1 = await CreateWalletEndpoint(wallet1);
         var endpoint2 = await CreateWalletEndpoint(wallet1);
+
         var owner2 = _fixture.Create<string>();
         var wallet2 = await CreateWallet(owner2);
         var endpoint3 = await CreateWalletEndpoint(wallet2);
