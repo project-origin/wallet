@@ -514,7 +514,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         var reservedSlices = await _certRepository.ReserveQuantity(owner, slice.RegistryName, slice.CertificateId, 100);
 
         // Assert
-        reservedSlices.Should().ContainEquivalentOf(slice);
+        reservedSlices.Should().ContainEquivalentOf(slice, options => options.Excluding(x => x.UpdatedAt));
     }
 
     [Fact]

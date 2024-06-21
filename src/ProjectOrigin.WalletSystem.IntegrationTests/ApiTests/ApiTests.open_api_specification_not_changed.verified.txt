@@ -5,6 +5,75 @@
     "version": "1.0"
   },
   "paths": {
+    "/v1/certificates/VERYNICECURSOR": {
+      "get": {
+        "tags": [
+          "Certificates"
+        ],
+        "summary": "Gets all certificates in the wallet that are <b>available</b> for use.",
+        "parameters": [
+          {
+            "name": "Start",
+            "in": "query",
+            "description": "The start of the time range in Unix time in seconds.",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "End",
+            "in": "query",
+            "description": "The end of the time range in Unix time in seconds.",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "Type",
+            "in": "query",
+            "description": "Filter the type of certificates to return.",
+            "schema": {
+              "$ref": "#/components/schemas/CertificateType"
+            }
+          },
+          {
+            "name": "Limit",
+            "in": "query",
+            "description": "The number of items to return.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "UpdatedAt",
+            "in": "query",
+            "description": "The number of items to skip.",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns the aggregated claims.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GranularCertificatePageInfoCursorResultList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "If the user is not authenticated."
+          }
+        }
+      }
+    },
     "/v1/certificates": {
       "get": {
         "tags": [
@@ -64,7 +133,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/GranularCertificateResultList"
+                  "$ref": "#/components/schemas/GranularCertificatePageInfoResultList"
                 }
               }
             }
@@ -334,7 +403,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AggregatedClaimsResultList"
+                  "$ref": "#/components/schemas/AggregatedClaimsPageInfoResultList"
                 }
               }
             }
@@ -453,7 +522,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TransferResultList"
+                  "$ref": "#/components/schemas/TransferPageInfoResultList"
                 }
               }
             }
@@ -572,7 +641,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AggregatedTransfersResultList"
+                  "$ref": "#/components/schemas/AggregatedTransfersPageInfoResultList"
                 }
               }
             }
@@ -650,7 +719,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/WalletRecordResultList"
+                  "$ref": "#/components/schemas/WalletRecordPageInfoResultList"
                 }
               }
             }

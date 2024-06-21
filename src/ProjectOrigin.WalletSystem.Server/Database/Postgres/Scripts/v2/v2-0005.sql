@@ -42,8 +42,8 @@ SELECT c.id as certificate_id,
        c.end_date,
        w.id as wallet_id,
        w.owner,
-       sum(ws.quantity) as quantity,
-       max(ws.updated_at)
+       sum(CASE WHEN ws.state = 1 THEN ws.quantity ELSE 0 END) as quantity,
+       max(ws.updated_at) as updated_at
 FROM wallets w
          INNER JOIN wallet_endpoints we
                     ON w.id = we.wallet_id
@@ -51,7 +51,6 @@ FROM wallets w
                     ON we.Id = ws.wallet_endpoint_id
          INNER JOIN certificates c
                     ON ws.certificate_id = c.id
-WHERE ws.state = 1
 GROUP BY c.id,
          c.registry_name,
          c.certificate_type,
@@ -59,9 +58,8 @@ GROUP BY c.id,
          c.start_date,
          c.end_date,
          w.id,
-         w.owner,
-         ws.updated_at
-ORDER BY ws.updated_at ASC,
+         w.owner
+ORDER BY updated_at ASC,
          c.start_date ASC,
          c.id ASC;
 

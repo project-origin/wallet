@@ -10,7 +10,7 @@ public interface ICertificateRepository
 {
     Task InsertCertificate(Certificate certificate);
     Task<Certificate?> GetCertificate(string registryName, Guid certificateId);
-    Task<PageResultCursor<CertificateViewModel>> QueryAvailableCertificates(QueryCertificatesFilterCursor filter);
+    Task<PageResultCursor<CertificateViewModel>> QueryCertificates(QueryCertificatesFilterCursor filter);
 
     Task<PageResult<CertificateViewModel>> QueryAvailableCertificates(QueryCertificatesFilter filter);
     Task<PageResult<AggregatedCertificatesViewModel>> QueryAggregatedAvailableCertificates(QueryAggregatedCertificatesFilter filter);

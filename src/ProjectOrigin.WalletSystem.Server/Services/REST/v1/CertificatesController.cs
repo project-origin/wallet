@@ -33,7 +33,7 @@ public class CertificatesController : ControllerBase
     {
         if (!User.TryGetSubject(out var subject)) return Unauthorized();
 
-        var certificates = await unitOfWork.CertificateRepository.QueryAvailableCertificates(new QueryCertificatesFilterCursor
+        var certificates = await unitOfWork.CertificateRepository.QueryCertificates(new QueryCertificatesFilterCursor
         {
             Owner = subject,
             Start = param.Start != null ? DateTimeOffset.FromUnixTimeSeconds(param.Start.Value) : null,

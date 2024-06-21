@@ -93,7 +93,7 @@ public class CertificateRepository : ICertificateRepository
         return certsDictionary.Values.FirstOrDefault();
     }
 
-    public async Task<PageResultCursor<CertificateViewModel>> QueryAvailableCertificates(QueryCertificatesFilterCursor filter)
+    public async Task<PageResultCursor<CertificateViewModel>> QueryCertificates(QueryCertificatesFilterCursor filter)
     {
         string sql = @"
             CREATE TEMPORARY TABLE certificates_work_table ON COMMIT DROP AS (
@@ -160,13 +160,15 @@ public class CertificateRepository : ICertificateRepository
                     start_date,
                     end_date,
                     quantity,
-                    wallet_id
+                    wallet_id,
+                    updated_at
                 FROM
                     certificates_query_model
                 WHERE
                     owner = @owner
                     AND (@start IS NULL OR start_date >= @start)
                     AND (@end IS NULL OR end_date <= @end)
+                    AND quantity != 0
                     AND (@type IS NULL OR certificate_type = @type)
             );
             SELECT count(*) FROM certificates_work_table;
