@@ -135,6 +135,24 @@ public class TransfersController : ControllerBase
             TransferRequestId = command.TransferRequestId,
         });
     }
+
+    [HttpGet]
+    [Route("v1/transfers/{transferRequestId}")]
+    [RequiredScope("po:transfers:read")]
+    public async Task<ActionResult> GetTransfer(
+        [FromServices] IUnitOfWork unitOfWork,
+        [FromRoute] Guid transferRequestId)
+    {
+        if (!User.TryGetSubject(out var subject)) return Unauthorized();
+
+        var transfer = await unitOfWork.TransferRepository.GetTransfer(transferRequestId);
+
+        if (transfer == null) return NotFound();
+
+        //if (transfer.Owner != subject) return Unauthorized();
+
+        return Ok();
+    }
 }
 
 #region Records
