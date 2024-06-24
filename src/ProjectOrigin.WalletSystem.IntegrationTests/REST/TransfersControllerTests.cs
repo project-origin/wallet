@@ -256,7 +256,7 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
     }
 
     [Fact]
-    public async void TransferCertificate_PublishesCommand()
+    public async void TransferCertificate_SavesStatusAndPublishesCommand()
     {
 
         // Arrange
@@ -296,6 +296,12 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
         sentCommand.CertificateId.Should().Be(request.CertificateId.StreamId);
         sentCommand.Quantity.Should().Be(request.Quantity);
         sentCommand.Receiver.Should().Be(request.ReceiverId);
+
+        var statusResult = await controller.GetTransferStatus(_unitOfWork, response.TransferRequestId);
+
+        var statusResponse = (statusResult.Result as OkObjectResult)?.Value as TransferStatusResponse;
+        statusResponse.Should().NotBeNull();
+        statusResponse.Status.Should().Be(TransferStatus.Pending);
     }
 
     private static ControllerContext CreateContextWithUser(string subject)
