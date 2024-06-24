@@ -16,8 +16,8 @@ using ProjectOrigin.WalletSystem.Server.Database;
 using ProjectOrigin.WalletSystem.Server.Models;
 using ProjectOrigin.WalletSystem.Server.Services.REST.v1;
 using Xunit;
+using RequestStatus = ProjectOrigin.WalletSystem.Server.Services.REST.v1.RequestStatus;
 using TimeAggregate = ProjectOrigin.WalletSystem.Server.Services.REST.v1.TimeAggregate;
-using TransferStatus = ProjectOrigin.WalletSystem.Server.Services.REST.v1.TransferStatus;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests;
 
@@ -252,7 +252,7 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
 
         var response = (result.Result as OkObjectResult)?.Value as TransferStatusResponse;
         response.Should().NotBeNull();
-        response.Status.Should().Be(TransferStatus.Completed);
+        response.Status.Should().Be(RequestStatus.Completed);
     }
 
     [Fact]
@@ -301,7 +301,7 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
 
         var statusResponse = (statusResult.Result as OkObjectResult)?.Value as TransferStatusResponse;
         statusResponse.Should().NotBeNull();
-        statusResponse.Status.Should().Be(TransferStatus.Pending);
+        statusResponse.Status.Should().Be(RequestStatus.Pending);
     }
 
     private static ControllerContext CreateContextWithUser(string subject)

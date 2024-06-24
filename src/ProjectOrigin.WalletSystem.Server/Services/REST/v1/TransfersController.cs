@@ -130,7 +130,7 @@ public class TransfersController : ControllerBase
             HashedAttributes = request.HashedAttributes,
         };
 
-        await unitOfWork.RequestStatusRepository.InsertRequestStatus(new RequestStatus
+        await unitOfWork.RequestStatusRepository.InsertRequestStatus(new Models.RequestStatus
         {
             RequestId = command.TransferRequestId,
             Status = RequestStatusState.Pending
