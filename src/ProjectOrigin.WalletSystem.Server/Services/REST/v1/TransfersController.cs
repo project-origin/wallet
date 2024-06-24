@@ -138,6 +138,8 @@ public class TransfersController : ControllerBase
 
         await bus.Publish(command);
 
+        unitOfWork.Commit();
+
         return Accepted(new TransferResponse()
         {
             TransferRequestId = command.TransferRequestId,

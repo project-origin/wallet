@@ -586,6 +586,57 @@
         }
       }
     },
+    "/v1/transfers/{transferRequestId}": {
+      "get": {
+        "tags": [
+          "Transfers"
+        ],
+        "summary": "Gets status of specific transfer.",
+        "parameters": [
+          {
+            "name": "transferRequestId",
+            "in": "path",
+            "description": "The ID of the transfer request.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransferStatusResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransferStatusResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransferStatusResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "If the user is not authenticated."
+          },
+          "404": {
+            "description": "If the transfer specified is not found for the user."
+          },
+          "200": {
+            "description": "The transfer status was found."
+          }
+        }
+      }
+    },
     "/v1/wallets": {
       "post": {
         "tags": [
