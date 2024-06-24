@@ -10,7 +10,7 @@ public interface IRequestStatusRepository
 {
     Task InsertRequestStatus(RequestStatus status);
     Task<RequestStatus?> GetRequestStatus(Guid requestId);
-    Task SetRequestStatus(Guid requestId, StatusState status);
+    Task SetRequestStatus(Guid requestId, RequestStatusState requestStatus, string? failedReason = null);
 }
 
 public class RequestStatusRepository : IRequestStatusRepository
@@ -22,12 +22,13 @@ public class RequestStatusRepository : IRequestStatusRepository
     public async Task InsertRequestStatus(RequestStatus status)
     {
         await _connection.ExecuteAsync(
-            @"INSERT INTO request_statuses(request_id, status)
-              VALUES (@requestId, @status)",
+            @"INSERT INTO request_statuses(request_id, status, failed_reason)
+              VALUES (@requestId, @status, @failedReason)",
             new
             {
                 status.RequestId,
-                status.Status
+                status.Status,
+                status.FailedReason
             });
     }
 
@@ -43,16 +44,18 @@ public class RequestStatusRepository : IRequestStatusRepository
             });
     }
 
-    public async Task SetRequestStatus(Guid requestId, StatusState status)
+    public async Task SetRequestStatus(Guid requestId, RequestStatusState status, string? failedReason = null)
     {
         var rowsChanged = await _connection.ExecuteAsync(
             @"UPDATE request_statuses
-              SET status = @status
+              SET status = @status,
+                  failed_reason = @failedReason
               WHERE request_id = @requestId",
             new
             {
                 requestId,
-                status
+                status,
+                failedReason
             });
 
         if (rowsChanged != 1)

@@ -23,7 +23,8 @@ public class RequestStatusRepositoryTests : AbstractRepositoryTests
         var status = new RequestStatus
         {
             RequestId = Guid.NewGuid(),
-            Status = StatusState.Pending
+            Status = RequestStatusState.Pending,
+            FailedReason = "Test failed message"
         };
 
         await _requestStatusRepository.InsertRequestStatus(status);
@@ -39,15 +40,15 @@ public class RequestStatusRepositoryTests : AbstractRepositoryTests
         var status = new RequestStatus
         {
             RequestId = Guid.NewGuid(),
-            Status = StatusState.Pending
+            Status = RequestStatusState.Pending
         };
 
         await _requestStatusRepository.InsertRequestStatus(status);
 
-        await _requestStatusRepository.SetRequestStatus(status.RequestId, StatusState.Completed);
+        await _requestStatusRepository.SetRequestStatus(status.RequestId, RequestStatusState.Failed, "Test failed message");
 
         var queriedStatus = await _requestStatusRepository.GetRequestStatus(status.RequestId);
 
-        queriedStatus.Should().BeEquivalentTo(status with { Status = StatusState.Completed });
+        queriedStatus.Should().BeEquivalentTo(status with { Status = RequestStatusState.Failed, FailedReason = "Test failed message" });
     }
 }

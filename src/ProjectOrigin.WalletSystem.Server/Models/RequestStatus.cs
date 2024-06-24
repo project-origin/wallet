@@ -2,7 +2,7 @@ using System;
 
 namespace ProjectOrigin.WalletSystem.Server.Models;
 
-public enum StatusState
+public enum RequestStatusState
 {
     Pending = 1,
     Completed = 5,
@@ -12,5 +12,6 @@ public enum StatusState
 public record RequestStatus
 {
     public required Guid RequestId { get; init; }
-    public required StatusState Status { get; init; }
+    public required RequestStatusState Status { get; init; }
+    public string? FailedReason { get; init; }
 }

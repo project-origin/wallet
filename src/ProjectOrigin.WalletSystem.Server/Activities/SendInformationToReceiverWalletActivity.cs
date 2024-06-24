@@ -126,7 +126,7 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
         {
             await _unitOfWork.CertificateRepository.InsertWalletAttribute(walletEndpoint.WalletId, walletAttribute);
         }
-        await _unitOfWork.RequestStatusRepository.SetRequestStatus(context.Arguments.RequestId, StatusState.Completed);
+        await _unitOfWork.RequestStatusRepository.SetRequestStatus(context.Arguments.RequestId, RequestStatusState.Completed);
 
         _unitOfWork.Commit();
 

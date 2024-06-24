@@ -243,7 +243,7 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
         var status = new Server.Models.RequestStatus
         {
             RequestId = transferRequestId,
-            Status = StatusState.Completed
+            Status = RequestStatusState.Completed
         };
 
         await _dbFixture.CreateTransferStatus(status);

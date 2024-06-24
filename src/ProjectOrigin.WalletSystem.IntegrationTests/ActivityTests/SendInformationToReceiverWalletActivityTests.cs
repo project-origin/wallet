@@ -200,7 +200,7 @@ public class SendInformationToReceiverWalletActivityTests
 
         // Assert
         await act.Should().ThrowAsync<System.Net.Http.HttpRequestException>()
-            .WithMessage($"Response status code does not indicate success: 404 (Not Found).");
+            .WithMessage($"Response requestStatus code does not indicate success: 404 (Not Found).");
 
         await _transferRepository.Received(0).SetTransferredSliceState(Arg.Any<Guid>(), TransferredSliceState.Transferred);
     }

@@ -1,4 +1,5 @@
 CREATE TABLE request_statuses (
     request_id uuid NOT NULL PRIMARY KEY,
-    status integer NOT NULL
+    status integer NOT NULL,
+    failed_reason VARCHAR(512) NULL
 );

@@ -133,7 +133,7 @@ public class TransfersController : ControllerBase
         await unitOfWork.RequestStatusRepository.InsertRequestStatus(new RequestStatus
         {
             RequestId = command.TransferRequestId,
-            Status = StatusState.Pending
+            Status = RequestStatusState.Pending
         });
 
         await bus.Publish(command);
@@ -147,11 +147,11 @@ public class TransfersController : ControllerBase
     }
 
     /// <summary>
-    /// Gets status of specific transfer.
+    /// Gets requestStatus of specific transfer.
     /// </summary>
     /// <param name="unitOfWork"></param>
     /// <param name="transferRequestId">The ID of the transfer request.</param>
-    /// <response code="200">The transfer status was found.</response>
+    /// <response code="200">The transfer requestStatus was found.</response>
     /// <response code="401">If the user is not authenticated.</response>
     /// <response code="404">If the transfer specified is not found for the user.</response>
     [HttpGet]
