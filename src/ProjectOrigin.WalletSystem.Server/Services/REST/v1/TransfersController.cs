@@ -306,11 +306,16 @@ public record AggregatedTransfers()
     public required long Quantity { get; init; }
 }
 
-public enum TransferStatus { Pending, Completed, Failed }
 
+/// <summary>
+/// Transfer status response.
+/// </summary>
 public record TransferStatusResponse()
 {
-    public required TransferStatus Status { get; init; }
+    /// <summary>
+    /// The status of the transfer request.
+    /// </summary>
+    public required RequestStatus Status { get; init; }
 }
 
 #endregion

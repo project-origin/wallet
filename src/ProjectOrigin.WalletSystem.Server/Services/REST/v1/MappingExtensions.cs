@@ -68,12 +68,12 @@ public static class MappingExtensions
             }
         };
 
-    public static TransferStatus MapToV1(this RequestStatusState requestStatus) =>
+    public static RequestStatus MapToV1(this RequestStatusState requestStatus) =>
         requestStatus switch
         {
-            RequestStatusState.Pending => TransferStatus.Pending,
-            RequestStatusState.Completed => TransferStatus.Completed,
-            RequestStatusState.Failed => TransferStatus.Failed,
+            RequestStatusState.Pending => RequestStatus.Pending,
+            RequestStatusState.Completed => RequestStatus.Completed,
+            RequestStatusState.Failed => RequestStatus.Failed,
             _ => throw new ArgumentOutOfRangeException(nameof(requestStatus), requestStatus, null)
         };
 }
