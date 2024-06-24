@@ -1395,6 +1395,23 @@
         },
         "additionalProperties": false
       },
+      "TransferStatus": {
+        "enum": [
+          "pending",
+          "completed",
+          "failed"
+        ],
+        "type": "string"
+      },
+      "TransferStatusResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "$ref": "#/components/schemas/TransferStatus"
+          }
+        },
+        "additionalProperties": false
+      },
       "WalletEndpointReference": {
         "type": "object",
         "properties": {
