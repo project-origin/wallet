@@ -179,38 +179,4 @@ public class TransferRepositoryTests : AbstractRepositoryTests
         result.Count.Should().Be(numberOfResults);
         result.TotalCount.Should().Be(total);
     }
-
-    [Fact]
-    public async Task CreateAndGetTransferStatus()
-    {
-        var status = new TransferStatus
-        {
-            TransferRequestId = Guid.NewGuid(),
-            Status = TransferStatusState.Pending
-        };
-
-        await _transferRepository.InsertTransferStatus(status);
-
-        var queriedStatus = await _transferRepository.GetTransferStatus(status.TransferRequestId);
-
-        queriedStatus.Should().BeEquivalentTo(status);
-    }
-
-    [Fact]
-    public async Task SetTransferStatus()
-    {
-        var status = new TransferStatus
-        {
-            TransferRequestId = Guid.NewGuid(),
-            Status = TransferStatusState.Pending
-        };
-
-        await _transferRepository.InsertTransferStatus(status);
-
-        await _transferRepository.SetTransferStatus(status.TransferRequestId, TransferStatusState.Completed);
-
-        var queriedStatus = await _transferRepository.GetTransferStatus(status.TransferRequestId);
-
-        queriedStatus.Should().BeEquivalentTo(status with { Status = TransferStatusState.Completed });
-    }
 }

@@ -240,10 +240,10 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
             .BuildServiceProvider(true);
 
         var transferRequestId = Guid.NewGuid();
-        var status = new Server.Models.TransferStatus
+        var status = new Server.Models.RequestStatus
         {
-            TransferRequestId = transferRequestId,
-            Status = TransferStatusState.Completed
+            RequestId = transferRequestId,
+            Status = StatusState.Completed
         };
 
         await _dbFixture.CreateTransferStatus(status);

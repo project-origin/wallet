@@ -114,7 +114,7 @@ public class SendInformationToReceiverWalletActivityTests
                 attribute1,
                 attribute2
             ],
-            TransferRequestId = Guid.NewGuid()
+            RequestId = Guid.NewGuid()
         });
 
         // Act
@@ -192,7 +192,7 @@ public class SendInformationToReceiverWalletActivityTests
             ExternalEndpointId = endpoint.Id,
             SliceId = transferredSlice.Id,
             WalletAttributes = [],
-            TransferRequestId = Guid.NewGuid()
+            RequestId = Guid.NewGuid()
         });
 
         // Act
@@ -271,7 +271,7 @@ public class SendInformationToReceiverWalletActivityTests
                 attribute1,
                 attribute2
             ],
-            TransferRequestId = Guid.NewGuid()
+            RequestId = Guid.NewGuid()
         });
 
         // Act
@@ -331,7 +331,7 @@ public class SendInformationToReceiverWalletActivityTests
             ExternalEndpointId = externalEndpoint.Id,
             SliceId = transferredSlice.Id,
             WalletAttributes = [],
-            TransferRequestId = Guid.NewGuid()
+            RequestId = Guid.NewGuid()
         });
 
         var fault = Substitute.For<MassTransit.ExecutionResult>();

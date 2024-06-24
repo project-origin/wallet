@@ -151,44 +151,4 @@ public class TransferRepository : ITransferRepository
             };
         }
     }
-
-    public async Task InsertTransferStatus(TransferStatus status)
-    {
-        await _connection.ExecuteAsync(
-            @"INSERT INTO transfer_statuses(transfer_request_id, status)
-              VALUES (@transferRequestId, @status)",
-            new
-            {
-                status.TransferRequestId,
-                status.Status
-            });
-    }
-
-    public Task<TransferStatus?> GetTransferStatus(Guid transferRequestId)
-    {
-        return _connection.QueryFirstOrDefaultAsync<TransferStatus>(
-            @"SELECT s.*
-              FROM transfer_statuses s
-              WHERE s.transfer_request_id = @transferRequestId",
-            new
-            {
-                transferRequestId
-            });
-    }
-
-    public async Task SetTransferStatus(Guid transferRequestId, TransferStatusState status)
-    {
-        var rowsChanged = await _connection.ExecuteAsync(
-            @"UPDATE transfer_statuses
-              SET status = @status
-              WHERE transfer_request_id = @transferRequestId",
-            new
-            {
-                transferRequestId,
-                status
-            });
-
-        if (rowsChanged != 1)
-            throw new InvalidOperationException($"Transfer request with id {transferRequestId} could not be found");
-    }
 }

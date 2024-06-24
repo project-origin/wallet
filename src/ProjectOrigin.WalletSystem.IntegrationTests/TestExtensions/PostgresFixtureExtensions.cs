@@ -148,7 +148,6 @@ public static class PostgresFixtureExtensions
         using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
         {
             var claimRepository = new ClaimRepository(connection);
-            var walletRepository = new WalletRepository(connection);
             var claim = new Claim
             {
                 Id = Guid.NewGuid(),
@@ -189,13 +188,13 @@ public static class PostgresFixtureExtensions
         }
     }
 
-    public static async Task CreateTransferStatus(this PostgresDatabaseFixture _dbFixture, TransferStatus status)
+    public static async Task CreateTransferStatus(this PostgresDatabaseFixture _dbFixture, RequestStatus status)
     {
         using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
         {
-            var transferRepository = new TransferRepository(connection);
+            var statusRepository = new RequestStatusRepository(connection);
 
-            await transferRepository.InsertTransferStatus(status);
+            await statusRepository.InsertRequestStatus(status);
         }
     }
 

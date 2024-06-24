@@ -18,7 +18,7 @@ public record SendInformationToReceiverWalletArgument
     public required Guid ExternalEndpointId { get; init; }
     public required Guid SliceId { get; init; }
     public required WalletAttribute[] WalletAttributes { get; init; }
-    public required Guid TransferRequestId { get; init; }
+    public required Guid RequestId { get; init; }
 }
 
 public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInformationToReceiverWalletArgument>
@@ -122,11 +122,11 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
         };
         await _unitOfWork.CertificateRepository.InsertWalletSlice(slice);
         await _unitOfWork.TransferRepository.SetTransferredSliceState(newSlice.Id, TransferredSliceState.Transferred);
-        //await _unitOfWork.TransferRepository.SetTransferStatus(context.Arguments.)
         foreach (var walletAttribute in context.Arguments.WalletAttributes)
         {
             await _unitOfWork.CertificateRepository.InsertWalletAttribute(walletEndpoint.WalletId, walletAttribute);
         }
+        await _unitOfWork.RequestStatusRepository.SetRequestStatus(context.Arguments.RequestId, StatusState.Completed);
 
         _unitOfWork.Commit();
 

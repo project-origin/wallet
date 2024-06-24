@@ -130,10 +130,10 @@ public class TransfersController : ControllerBase
             HashedAttributes = request.HashedAttributes,
         };
 
-        await unitOfWork.TransferRepository.InsertTransferStatus(new Models.TransferStatus
+        await unitOfWork.RequestStatusRepository.InsertRequestStatus(new RequestStatus
         {
-            TransferRequestId = command.TransferRequestId,
-            Status = TransferStatusState.Pending
+            RequestId = command.TransferRequestId,
+            Status = StatusState.Pending
         });
 
         await bus.Publish(command);
@@ -166,7 +166,7 @@ public class TransfersController : ControllerBase
     {
         if (!User.TryGetSubject(out var subject)) return Unauthorized();
 
-        var transfer = await unitOfWork.TransferRepository.GetTransferStatus(transferRequestId);
+        var transfer = await unitOfWork.RequestStatusRepository.GetRequestStatus(transferRequestId);
 
         if (transfer == null) return NotFound();
 
