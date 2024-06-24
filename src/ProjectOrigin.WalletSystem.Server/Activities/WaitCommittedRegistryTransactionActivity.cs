@@ -57,7 +57,7 @@ public class WaitCommittedRegistryTransactionActivity : IExecuteActivity<WaitCom
             else if (status.Status == TransactionState.Failed)
             {
                 _logger.LogCritical("Transaction failed on registry. Message: {message}", status.Message);
-                await _unitOfWork.RequestStatusRepository.SetRequestStatus(context.Arguments.RequestId, RequestStatusState.Failed, failedReason: "Transaction failed on registry");
+                await _unitOfWork.RequestStatusRepository.SetRequestStatus(context.Arguments.RequestId, RequestStatusState.Failed, failedReason: "Transaction failed on registry.");
                 _unitOfWork.Commit();
                 return context.Faulted(new InvalidRegistryTransactionException($"Transaction failed on registry. Message: {status.Message}"));
             }
