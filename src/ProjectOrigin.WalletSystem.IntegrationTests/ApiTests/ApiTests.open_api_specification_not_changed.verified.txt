@@ -219,7 +219,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AggregatedCertificatesResultList"
+                  "$ref": "#/components/schemas/AggregatedCertificatesPageInfoResultList"
                 }
               }
             }
@@ -284,7 +284,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ClaimResultList"
+                  "$ref": "#/components/schemas/ClaimPageInfoResultList"
                 }
               }
             }
@@ -887,7 +887,7 @@
         "additionalProperties": false,
         "description": "A result of aggregated certificates that is available to use in the wallet."
       },
-      "AggregatedCertificatesResultList": {
+      "AggregatedCertificatesPageInfoResultList": {
         "type": "object",
         "properties": {
           "result": {
@@ -924,7 +924,7 @@
         "additionalProperties": false,
         "description": "A result of aggregated claims."
       },
-      "AggregatedClaimsResultList": {
+      "AggregatedClaimsPageInfoResultList": {
         "type": "object",
         "properties": {
           "result": {
@@ -961,7 +961,7 @@
         "additionalProperties": false,
         "description": "A result of aggregated transfers."
       },
-      "AggregatedTransfersResultList": {
+      "AggregatedTransfersPageInfoResultList": {
         "type": "object",
         "properties": {
           "result": {
@@ -1004,6 +1004,21 @@
         "additionalProperties": false,
         "description": "A claim record representing a claim of a production and consumption certificate."
       },
+      "ClaimPageInfoResultList": {
+        "type": "object",
+        "properties": {
+          "result": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Claim"
+            }
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/PageInfo"
+          }
+        },
+        "additionalProperties": false
+      },
       "ClaimRequest": {
         "type": "object",
         "properties": {
@@ -1033,21 +1048,6 @@
         },
         "additionalProperties": false,
         "description": "A response to a claim request."
-      },
-      "ClaimResultList": {
-        "type": "object",
-        "properties": {
-          "result": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Claim"
-            }
-          },
-          "metadata": {
-            "$ref": "#/components/schemas/PageInfo"
-          }
-        },
-        "additionalProperties": false
       },
       "ClaimedCertificate": {
         "type": "object",
@@ -1193,7 +1193,22 @@
         "additionalProperties": false,
         "description": "A certificate that is available to use in the wallet."
       },
-      "GranularCertificateResultList": {
+      "GranularCertificatePageInfoCursorResultList": {
+        "type": "object",
+        "properties": {
+          "result": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GranularCertificate"
+            }
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/PageInfoCursor"
+          }
+        },
+        "additionalProperties": false
+      },
+      "GranularCertificatePageInfoResultList": {
         "type": "object",
         "properties": {
           "result": {
@@ -1242,6 +1257,28 @@
           "offset": {
             "type": "integer",
             "format": "int32"
+          },
+          "limit": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "total": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "PageInfoCursor": {
+        "type": "object",
+        "properties": {
+          "count": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "datetimeOffset": {
+            "type": "string",
+            "format": "date-time"
           },
           "limit": {
             "type": "integer",
@@ -1359,6 +1396,21 @@
         "additionalProperties": false,
         "description": "A transfer record of a transfer of a part of a certificate to another wallet."
       },
+      "TransferPageInfoResultList": {
+        "type": "object",
+        "properties": {
+          "result": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Transfer"
+            }
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/PageInfo"
+          }
+        },
+        "additionalProperties": false
+      },
       "TransferRequest": {
         "type": "object",
         "properties": {
@@ -1398,21 +1450,6 @@
         "additionalProperties": false,
         "description": "A response to a transfer request."
       },
-      "TransferResultList": {
-        "type": "object",
-        "properties": {
-          "result": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Transfer"
-            }
-          },
-          "metadata": {
-            "$ref": "#/components/schemas/PageInfo"
-          }
-        },
-        "additionalProperties": false
-      },
       "WalletEndpointReference": {
         "type": "object",
         "properties": {
@@ -1446,7 +1483,7 @@
         "additionalProperties": false,
         "description": "A wallet record"
       },
-      "WalletRecordResultList": {
+      "WalletRecordPageInfoResultList": {
         "type": "object",
         "properties": {
           "result": {
