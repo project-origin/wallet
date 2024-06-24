@@ -189,6 +189,16 @@ public static class PostgresFixtureExtensions
         }
     }
 
+    public static async Task CreateTransferStatus(this PostgresDatabaseFixture _dbFixture, TransferStatus status)
+    {
+        using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
+        {
+            var transferRepository = new TransferRepository(connection);
+
+            await transferRepository.InsertTransferStatus(status);
+        }
+    }
+
     public static async Task InsertSlice(this PostgresDatabaseFixture _dbFixture, WalletEndpoint endpoint, int position, Electricity.V1.IssuedEvent issuedEvent, SecretCommitmentInfo commitment)
     {
         using var connection = new NpgsqlConnection(_dbFixture.ConnectionString);

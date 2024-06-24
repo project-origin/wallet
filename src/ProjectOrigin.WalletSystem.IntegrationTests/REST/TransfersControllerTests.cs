@@ -13,8 +13,11 @@ using ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures;
 using ProjectOrigin.WalletSystem.IntegrationTests.TestExtensions;
 using ProjectOrigin.WalletSystem.Server.CommandHandlers;
 using ProjectOrigin.WalletSystem.Server.Database;
+using ProjectOrigin.WalletSystem.Server.Models;
 using ProjectOrigin.WalletSystem.Server.Services.REST.v1;
 using Xunit;
+using TimeAggregate = ProjectOrigin.WalletSystem.Server.Services.REST.v1.TimeAggregate;
+using TransferStatus = ProjectOrigin.WalletSystem.Server.Services.REST.v1.TransferStatus;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests;
 
@@ -178,10 +181,78 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
         // Act
         var result = await controller.TransferCertificate(
             provider.GetRequiredService<ITestHarness>().Bus,
+            _unitOfWork,
             _fixture.Create<TransferRequest>());
 
         // Assert
         result.Result.Should().BeOfType<UnauthorizedResult>();
+    }
+
+    [Fact]
+    public async Task GetTransferStatus_Unauthorized()
+    {
+        var controller = new TransfersController();
+
+        await using var provider = new ServiceCollection()
+            .AddMassTransitTestHarness(x =>
+            {
+            })
+            .BuildServiceProvider(true);
+
+        var result = await controller.GetTransferStatus(_unitOfWork, Guid.NewGuid());
+
+        result.Result.Should().BeOfType<UnauthorizedResult>();
+    }
+
+    [Fact]
+    public async Task GetTransferStatus_NotFound()
+    {
+        var subject = _fixture.Create<string>();
+        var controller = new TransfersController
+        {
+            ControllerContext = CreateContextWithUser(subject)
+        };
+
+        await using var provider = new ServiceCollection()
+            .AddMassTransitTestHarness(x =>
+            {
+            })
+            .BuildServiceProvider(true);
+
+        var result = await controller.GetTransferStatus(_unitOfWork, Guid.NewGuid());
+
+        result.Result.Should().BeOfType<NotFoundResult>();
+    }
+
+    [Fact]
+    public async Task GetTransferStatus()
+    {
+        var subject = _fixture.Create<string>();
+        var controller = new TransfersController
+        {
+            ControllerContext = CreateContextWithUser(subject)
+        };
+
+        await using var provider = new ServiceCollection()
+            .AddMassTransitTestHarness(x =>
+            {
+            })
+            .BuildServiceProvider(true);
+
+        var transferRequestId = Guid.NewGuid();
+        var status = new Server.Models.TransferStatus
+        {
+            TransferRequestId = transferRequestId,
+            Status = TransferStatusState.Completed
+        };
+
+        await _dbFixture.CreateTransferStatus(status);
+
+        var result = await controller.GetTransferStatus(_unitOfWork, transferRequestId);
+
+        var response = (result.Result as OkObjectResult)?.Value as TransferStatusResponse;
+        response.Should().NotBeNull();
+        response.Status.Should().Be(TransferStatus.Completed);
     }
 
     [Fact]
@@ -209,6 +280,7 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
         // Act
         var result = await controller.TransferCertificate(
             harness.Bus,
+            _unitOfWork,
             request);
 
         // Assert

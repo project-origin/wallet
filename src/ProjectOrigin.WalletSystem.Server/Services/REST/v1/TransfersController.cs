@@ -101,6 +101,7 @@ public class TransfersController : ControllerBase
     /// Queues a request to transfer a certificate to another wallet for the authenticated user.
     /// </summary>
     /// <param name="bus"></param>
+    /// <param name="unitOfWork"></param>
     /// <param name="request"></param>
     /// <response code="202">Transfer request has been queued for processing.</response>
     /// <response code="401">If the user is not authenticated.</response>
@@ -112,6 +113,7 @@ public class TransfersController : ControllerBase
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<TransferResponse>> TransferCertificate(
         [FromServices] IBus bus,
+        [FromServices] IUnitOfWork unitOfWork,
         [FromBody] TransferRequest request
     )
     {
@@ -128,6 +130,12 @@ public class TransfersController : ControllerBase
             HashedAttributes = request.HashedAttributes,
         };
 
+        await unitOfWork.TransferRepository.InsertTransferStatus(new Models.TransferStatus
+        {
+            TransferRequestId = command.TransferRequestId,
+            Status = TransferStatusState.Pending
+        });
+
         await bus.Publish(command);
 
         return Accepted(new TransferResponse()
@@ -136,22 +144,31 @@ public class TransfersController : ControllerBase
         });
     }
 
+    /// <summary>
+    /// Gets status of specific transfer.
+    /// </summary>
+    /// <param name="unitOfWork"></param>
+    /// <param name="transferRequestId">The ID of the transfer request.</param>
+    /// <response code="200">The transfer status was found.</response>
+    /// <response code="401">If the user is not authenticated.</response>
+    /// <response code="404">If the transfer specified is not found for the user.</response>
     [HttpGet]
     [Route("v1/transfers/{transferRequestId}")]
     [RequiredScope("po:transfers:read")]
-    public async Task<ActionResult> GetTransfer(
+    [ProducesResponseType(typeof(TransferStatusResponse), StatusCodes.Status202Accepted)]
+    [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<TransferStatusResponse>> GetTransferStatus(
         [FromServices] IUnitOfWork unitOfWork,
         [FromRoute] Guid transferRequestId)
     {
         if (!User.TryGetSubject(out var subject)) return Unauthorized();
 
-        var transfer = await unitOfWork.TransferRepository.GetTransfer(transferRequestId);
+        var transfer = await unitOfWork.TransferRepository.GetTransferStatus(transferRequestId);
 
         if (transfer == null) return NotFound();
 
-        //if (transfer.Owner != subject) return Unauthorized();
-
-        return Ok();
+        return Ok(new TransferStatusResponse { Status = transfer.Status.MapToV1() });
     }
 }
 
@@ -285,6 +302,13 @@ public record AggregatedTransfers()
     /// The quantity of the aggregated transfers.
     /// </summary>
     public required long Quantity { get; init; }
+}
+
+public enum TransferStatus { Pending, Completed, Failed }
+
+public record TransferStatusResponse()
+{
+    public required TransferStatus Status { get; init; }
 }
 
 #endregion

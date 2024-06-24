@@ -20,6 +20,7 @@ public record TransferFullSliceArguments
     public required Guid SourceSliceId { get; init; }
     public required Guid ExternalEndpointId { get; init; }
     public required string[] HashedAttributes { get; init; }
+    public required Guid TransferRequestId { get; init; }
 }
 
 public class TransferFullSliceActivity : IExecuteActivity<TransferFullSliceArguments>
@@ -87,7 +88,7 @@ public class TransferFullSliceActivity : IExecuteActivity<TransferFullSliceArgum
         }
     }
 
-    private ExecutionResult AddTransferRequiredActivities(ExecuteContext context, ExternalEndpoint externalEndpoint, AbstractSlice transferredSlice, Transaction transaction, Dictionary<Guid, WalletSliceState> states, IEnumerable<WalletAttribute> walletAttributes)
+    private ExecutionResult AddTransferRequiredActivities(ExecuteContext<TransferFullSliceArguments> context, ExternalEndpoint externalEndpoint, AbstractSlice transferredSlice, Transaction transaction, Dictionary<Guid, WalletSliceState> states, IEnumerable<WalletAttribute> walletAttributes)
     {
         return context.ReviseItinerary(builder =>
         {
@@ -116,6 +117,7 @@ public class TransferFullSliceActivity : IExecuteActivity<TransferFullSliceArgum
                     ExternalEndpointId = externalEndpoint.Id,
                     SliceId = transferredSlice.Id,
                     WalletAttributes = walletAttributes.ToArray(),
+                    TransferRequestId = context.Arguments.TransferRequestId
                 });
 
             builder.AddActivitiesFromSourceItinerary();
