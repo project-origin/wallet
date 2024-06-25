@@ -591,7 +591,7 @@
         "tags": [
           "Transfers"
         ],
-        "summary": "Gets status of specific transfer.",
+        "summary": "Gets requestStatus of specific transfer.",
         "parameters": [
           {
             "name": "transferRequestId",
@@ -632,7 +632,7 @@
             "description": "If the transfer specified is not found for the user."
           },
           "200": {
-            "description": "The transfer status was found."
+            "description": "The transfer requestStatus was found."
           }
         }
       }
@@ -1300,6 +1300,14 @@
         "additionalProperties": false,
         "description": "Request to receive a certificate-slice from another wallet."
       },
+      "RequestStatus": {
+        "enum": [
+          "pending",
+          "completed",
+          "failed"
+        ],
+        "type": "string"
+      },
       "TimeAggregate": {
         "enum": [
           "actual",
@@ -1395,22 +1403,15 @@
         },
         "additionalProperties": false
       },
-      "TransferStatus": {
-        "enum": [
-          "pending",
-          "completed",
-          "failed"
-        ],
-        "type": "string"
-      },
       "TransferStatusResponse": {
         "type": "object",
         "properties": {
           "status": {
-            "$ref": "#/components/schemas/TransferStatus"
+            "$ref": "#/components/schemas/RequestStatus"
           }
         },
-        "additionalProperties": false
+        "additionalProperties": false,
+        "description": "Transfer status response."
       },
       "WalletEndpointReference": {
         "type": "object",
