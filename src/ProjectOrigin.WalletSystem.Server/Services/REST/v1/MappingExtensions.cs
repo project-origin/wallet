@@ -42,6 +42,7 @@ public static class MappingExtensions
         {
             ClaimId = vm.ClaimId,
             Quantity = vm.Quantity,
+            UpdatedAt = vm.UpdatedAt.ToUnixTimeSeconds(),
             ProductionCertificate = new ClaimedCertificate
             {
                 FederatedStreamId = new FederatedStreamId

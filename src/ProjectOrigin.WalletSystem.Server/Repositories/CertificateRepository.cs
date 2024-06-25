@@ -142,7 +142,7 @@ public class CertificateRepository : ICertificateRepository
                 Items = certificates,
                 TotalCount = totalCouunt,
                 Count = certificates.Count(),
-                UpdatedSince = filter.UpdatedSince,
+                UpdatedSince = filter.UpdatedSince?.ToUnixTimeSeconds(),
                 Limit = filter.Limit
             };
         }

@@ -112,7 +112,7 @@ public class CertificatesControllerTests : IClassFixture<PostgresDatabaseFixture
                 Limit = 10,
                 Start = queryStartDate.ToUnixTimeSeconds(),
                 End = queryEndDate.ToUnixTimeSeconds(),
-                UpdatedSince = DateTimeOffset.UtcNow.AddHours(-1)
+                UpdatedSince = DateTimeOffset.UtcNow.AddHours(-1).ToUnixTimeSeconds()
             });
         result.Value.Should().NotBeNull();
         var resultList = result.Value!.Result;

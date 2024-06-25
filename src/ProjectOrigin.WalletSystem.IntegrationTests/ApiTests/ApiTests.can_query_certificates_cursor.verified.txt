@@ -1,0 +1,40 @@
+﻿{
+  Result: [
+    {
+      FederatedStreamId: {
+        Registry: Guid_1,
+        StreamId: Guid_2
+      },
+      Quantity: 85,
+      Start: {Scrubbed},
+      End: {Scrubbed},
+      GridArea: DK1,
+      CertificateType: Production,
+      Attributes: {
+        fuelCode: F00000000,
+        techCode: T070000
+      }
+    },
+    {
+      FederatedStreamId: {
+        Registry: Guid_1,
+        StreamId: Guid_3
+      },
+      Quantity: 44,
+      Start: {Scrubbed},
+      End: {Scrubbed},
+      GridArea: DK1,
+      CertificateType: Production,
+      Attributes: {
+        fuelCode: F00000000,
+        techCode: T070000
+      }
+    }
+  ],
+  Metadata: {
+    Count: 2,
+    UpdatedSince: {Scrubbed},
+    Limit: 2147483647,
+    Total: 2
+  }
+}

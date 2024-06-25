@@ -14,7 +14,7 @@ public record QueryClaimsFilter
 public record QueryClaimsFilterCursor
 {
     public required string Owner { get; init; }
-    public DateTimeOffset UpdatedSince { get; init; }
+    public DateTimeOffset? UpdatedSince { get; init; }
     public int Limit { get; init; } = int.MaxValue;
     public DateTimeOffset? Start { get; init; }
     public DateTimeOffset? End { get; init; }

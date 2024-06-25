@@ -69,7 +69,7 @@ public class ClaimsController : ControllerBase
             Owner = subject,
             Start = param.Start != null ? DateTimeOffset.FromUnixTimeSeconds(param.Start.Value) : null,
             End = param.End != null ? DateTimeOffset.FromUnixTimeSeconds(param.End.Value) : null,
-            UpdatedSince = param.UpdatedSince,
+            UpdatedSince = param.UpdatedSince != null ? DateTimeOffset.FromUnixTimeSeconds(param.UpdatedSince.Value) : null,
             Limit = param.Limit ?? int.MaxValue,
         });
 
@@ -182,7 +182,7 @@ public record GetClaimsCursorQueryParameters
     /// <summary>
     /// The number of items to skip.
     /// </summary>
-    public DateTimeOffset UpdatedSince { get; init; }
+    public long? UpdatedSince { get; init; }
 }
 
 
@@ -253,6 +253,7 @@ public record Claim()
     public required uint Quantity { get; init; }
     public required ClaimedCertificate ProductionCertificate { get; init; }
     public required ClaimedCertificate ConsumptionCertificate { get; init; }
+    public required long UpdatedAt { get; init; }
 }
 
 

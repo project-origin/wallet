@@ -13,8 +13,10 @@ using ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures;
 using ProjectOrigin.WalletSystem.IntegrationTests.TestExtensions;
 using ProjectOrigin.WalletSystem.Server.CommandHandlers;
 using ProjectOrigin.WalletSystem.Server.Database;
+using ProjectOrigin.WalletSystem.Server.Models;
 using ProjectOrigin.WalletSystem.Server.Services.REST.v1;
 using Xunit;
+using TimeAggregate = ProjectOrigin.WalletSystem.Server.Services.REST.v1.TimeAggregate;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests;
 
@@ -46,6 +48,39 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
         result.Result.Should().BeOfType<UnauthorizedResult>();
     }
 
+    [Fact]
+    public async Task Test_CursorClaims()
+    {
+        // Arrange
+        var issuestartDate = new DateTimeOffset(2020, 6, 1, 12, 0, 0, TimeSpan.Zero);
+        var issueEndDate = new DateTimeOffset(2020, 6, 1, 23, 0, 0, TimeSpan.Zero);
+
+        var subject = _fixture.Create<string>();
+        var controller = new ClaimsController
+        {
+            ControllerContext = CreateContextWithUser(subject)
+        };
+
+        var wallet = await _dbFixture.CreateWallet(subject);
+        var endpoint = await _dbFixture.CreateWalletEndpoint(wallet);
+
+        await CreateClaims(issuestartDate, issueEndDate, endpoint, 100);
+        var queryUpdatedSince = DateTimeOffset.UtcNow.AddMicroseconds(-2000).ToUnixTimeSeconds();
+        // Act
+        var result = await controller.GetClaimsCursor(
+            _unitOfWork,   new GetClaimsCursorQueryParameters()
+                { UpdatedSince = queryUpdatedSince }
+        );
+
+        // Assert
+        result.Value.Should().NotBeNull();
+        var resultList = result.Value!.Result;
+
+        resultList.Should().BeInAscendingOrder(x => x.UpdatedAt);
+        var updatedAt = DateTimeOffset.FromUnixTimeSeconds(resultList.Last().UpdatedAt);
+        updatedAt.Should().BeOnOrAfter(DateTimeOffset.FromUnixTimeSeconds(queryUpdatedSince));
+    }
+
     [Theory]
     [InlineData("Europe/Copenhagen", new long[] { 1000, 2400, 1400 })]
     [InlineData("Europe/London", new long[] { 1100, 2400, 1300 })]
@@ -67,26 +102,7 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
         var wallet = await _dbFixture.CreateWallet(subject);
         var endpoint = await _dbFixture.CreateWalletEndpoint(wallet);
 
-        for (DateTimeOffset i = issuestartDate; i < issueEndDate; i = i.AddHours(1))
-        {
-            var prodCert = await _dbFixture.CreateCertificate(
-                Guid.NewGuid(),
-                _fixture.Create<string>(),
-                Server.Models.GranularCertificateType.Production,
-                start: i,
-                end: i.AddHours(1));
-            var prodSlice = await _dbFixture.CreateSlice(endpoint, prodCert, new PedersenCommitment.SecretCommitmentInfo(100));
-
-            var consCert = await _dbFixture.CreateCertificate(
-                Guid.NewGuid(),
-                _fixture.Create<string>(),
-                Server.Models.GranularCertificateType.Consumption,
-                start: i,
-                end: i.AddHours(1));
-            var consSlice = await _dbFixture.CreateSlice(endpoint, consCert, new PedersenCommitment.SecretCommitmentInfo(100));
-
-            await _dbFixture.CreateClaim(prodSlice, consSlice, Server.Models.ClaimState.Claimed);
-        }
+        await CreateClaims(issuestartDate, issueEndDate, endpoint);
 
         // Act
         var result = await controller.AggregateClaims(
@@ -105,6 +121,33 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
 
         resultList.Should().HaveCount(3);
         resultList.Select(x => x.Quantity).Should().ContainInOrder(values);
+    }
+
+    private async Task CreateClaims(DateTimeOffset issuestartDate, DateTimeOffset issueEndDate, WalletEndpoint endpoint, int delay = 0)
+    {
+        for (DateTimeOffset i = issuestartDate; i < issueEndDate; i = i.AddHours(1))
+        {
+            var prodCert = await _dbFixture.CreateCertificate(
+                Guid.NewGuid(),
+                _fixture.Create<string>(),
+                Server.Models.GranularCertificateType.Production,
+                start: i,
+                end: i.AddHours(1));
+            var prodSlice =
+                await _dbFixture.CreateSlice(endpoint, prodCert, new PedersenCommitment.SecretCommitmentInfo(100));
+
+            var consCert = await _dbFixture.CreateCertificate(
+                Guid.NewGuid(),
+                _fixture.Create<string>(),
+                Server.Models.GranularCertificateType.Consumption,
+                start: i,
+                end: i.AddHours(1));
+            var consSlice =
+                await _dbFixture.CreateSlice(endpoint, consCert, new PedersenCommitment.SecretCommitmentInfo(100));
+
+            await _dbFixture.CreateClaim(prodSlice, consSlice, Server.Models.ClaimState.Claimed);
+            await Task.Delay(delay);
+        }
     }
 
     [Fact]
@@ -137,9 +180,7 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
         var controller = new ClaimsController();
 
         await using var provider = new ServiceCollection()
-            .AddMassTransitTestHarness(x =>
-            {
-            })
+            .AddMassTransitTestHarness(x => { })
             .BuildServiceProvider(true);
 
         // Act
@@ -159,9 +200,7 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
         var request = _fixture.Create<ClaimRequest>();
 
         await using var provider = new ServiceCollection()
-            .AddMassTransitTestHarness(x =>
-            {
-            })
+            .AddMassTransitTestHarness(x => { })
             .BuildServiceProvider(true);
 
         var harness = provider.GetRequiredService<ITestHarness>();
@@ -201,7 +240,7 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
             {
                 User = new ClaimsPrincipal(new ClaimsIdentity(new System.Security.Claims.Claim[]
                 {
-                     new(ClaimTypes.NameIdentifier, subject),
+                    new(ClaimTypes.NameIdentifier, subject),
                 })),
             }
         };

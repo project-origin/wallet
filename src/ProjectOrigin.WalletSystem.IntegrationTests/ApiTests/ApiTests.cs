@@ -11,6 +11,8 @@ using System;
 using System.Collections.Generic;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
+using VerifyTests;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
@@ -27,12 +29,12 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
         JwtTokenIssuerFixture jwtTokenIssuerFixture,
         ITestOutputHelper outputHelper)
         : base(
-              serverFixture,
-              dbFixture,
-              inMemoryFixture,
-              jwtTokenIssuerFixture,
-              outputHelper,
-              null)
+            serverFixture,
+            dbFixture,
+            inMemoryFixture,
+            jwtTokenIssuerFixture,
+            outputHelper,
+            null)
     {
     }
 
@@ -94,7 +96,29 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
         var res = await httpClient.GetStringAsync("v1/certificates");
 
         //Assert
-        await Verifier.VerifyJson(res);
+        var settings = new VerifySettings();
+        settings.ScrubMembersWithType(typeof(long));
+        await Verifier.VerifyJson(res, settings);
+    }
+
+    [Fact]
+    public async Task can_query_certificates_cursor()
+    {
+        //Arrange
+        var owner = _fixture.Create<string>();
+        var someOwnerName = _fixture.Create<string>();
+        var httpClient = CreateAuthenticatedHttpClient(owner, someOwnerName);
+        await AddCertificatesToOwner(owner);
+        var updatedSince = DateTimeOffset.UtcNow.AddMilliseconds(-500).ToUnixTimeSeconds();
+
+        //Act
+        // var res = await httpClient.GetFromJsonAsync<ResultList<GranularCertificate, PageInfoCursor>>($"v1/certificates/VERYNICECURSOR?UpdatedSince={updatedSince}");
+        var res = await httpClient.GetAsync($"v1/certificates/VERYNICECURSOR?UpdatedSince={updatedSince}");
+        var content = JsonConvert.DeserializeObject<ResultList<GranularCertificate, PageInfoCursor>>(await res.Content.ReadAsStringAsync());
+        //Assert
+        var settings = new VerifySettings();
+        settings.ScrubMembersWithType(typeof(long));
+        await Verifier.Verify(content, settings);
     }
 
     [Fact]
@@ -107,10 +131,13 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
         await AddCertificatesToOwner(owner);
 
         //Act
-        var res = await httpClient.GetStringAsync("v1/aggregate-certificates?timeAggregate=hour&timeZone=Europe/Copenhagen");
-
+        var res = await httpClient.GetAsync(
+            "v1/aggregate-certificates?timeAggregate=hour&timeZone=Europe/Copenhagen");
+        var content = JsonConvert.DeserializeObject<ResultList<GranularCertificate, PageInfoCursor>>(await res.Content.ReadAsStringAsync());
         //Assert
-        await Verifier.VerifyJson(res);
+        var settings = new VerifySettings();
+        settings.ScrubMembersWithType(typeof(long));
+        await Verifier.Verify(content, settings);
     }
 
     [Fact]
@@ -151,9 +178,9 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
                 CertificateType = GranularCertificateType.Production,
                 Attributes = new List<CertificateAttribute>
                 {
-                    new() { Key="AssetId", Value="571234567890123456", Type=CertificateAttributeType.ClearText },
-                    new() { Key="TechCode", Value="T070000", Type=CertificateAttributeType.ClearText},
-                    new() { Key="FuelCode", Value="F00000000", Type=CertificateAttributeType.ClearText},
+                    new() { Key = "AssetId", Value = "571234567890123456", Type = CertificateAttributeType.ClearText },
+                    new() { Key = "TechCode", Value = "T070000", Type = CertificateAttributeType.ClearText },
+                    new() { Key = "FuelCode", Value = "F00000000", Type = CertificateAttributeType.ClearText },
                 }
             };
             var consumptionCertificate = new Certificate
@@ -166,7 +193,7 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
                 CertificateType = GranularCertificateType.Consumption,
                 Attributes = new List<CertificateAttribute>
                 {
-                    new() { Key="AssetId", Value="571234567891234567", Type=CertificateAttributeType.ClearText },
+                    new() { Key = "AssetId", Value = "571234567891234567", Type = CertificateAttributeType.ClearText },
                 }
             };
             await certificateRepository.InsertCertificate(productionCertificate);
@@ -212,18 +239,32 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
         var filterEnd = endDate.ToUnixTimeSeconds();
 
         //Act
-        var resultWithoutFilters = await httpClient.GetStringAsync("v1/claims");
+        var resultWithoutFilters = await httpClient.GetAsync("v1/claims");
         var resultWithFilterStart = await httpClient.GetStringAsync($"v1/claims?start={filterStart}");
         var resultWithFilterEnd = await httpClient.GetStringAsync($"v1/claims?end={filterEnd}");
-        var resultWithFilterStartAndEnd = await httpClient.GetStringAsync($"v1/claims?start={filterStart}&end={filterEnd}");
-        var resultWithFilterOutsideAnyClaims1 = await httpClient.GetFromJsonAsync<ResultList<Server.Services.REST.v1.Claim, PageInfo>>($"v1/claims?start={filterEnd}");
-        var resultWithFilterOutsideAnyClaims2 = await httpClient.GetFromJsonAsync<ResultList<Server.Services.REST.v1.Claim, PageInfo>>($"v1/claims?end={filterStart}");
+        var resultWithFilterStartAndEnd =
+            await httpClient.GetStringAsync($"v1/claims?start={filterStart}&end={filterEnd}");
+        var resultWithFilterOutsideAnyClaims1 =
+            await httpClient.GetFromJsonAsync<ResultList<Server.Services.REST.v1.Claim, PageInfo>>(
+                $"v1/claims?start={filterEnd}");
+        var resultWithFilterOutsideAnyClaims2 =
+            await httpClient.GetFromJsonAsync<ResultList<Server.Services.REST.v1.Claim, PageInfo>>(
+                $"v1/claims?end={filterStart}");
+        var resultWithUpdatedSince =
+            await httpClient.GetFromJsonAsync<ResultList<Server.Services.REST.v1.Claim, PageInfoCursor>>(
+                $"v1/claims/Cursor?UpdatedSince={filterStart}");
 
+        var resultWithoutFiltersJson = await resultWithoutFilters.Content.ReadAsStringAsync();
+        var resultWithoutFiltersContent = JsonConvert.DeserializeObject<ResultList<Server.Services.REST.v1.Claim, PageInfo>>(resultWithoutFiltersJson);
         //Assert
-        await Verifier.VerifyJson(resultWithoutFilters);
-        resultWithoutFilters.Should().Be(resultWithFilterStart);
-        resultWithoutFilters.Should().Be(resultWithFilterEnd);
-        resultWithoutFilters.Should().Be(resultWithFilterStartAndEnd);
+        var settings = new VerifySettings();
+        settings.ScrubMembersWithType(typeof(long));
+        await Verifier.Verify(resultWithoutFiltersContent, settings);
+        resultWithUpdatedSince.Result.Should().NotBeEmpty();
+        resultWithUpdatedSince.Result.Should().BeInAscendingOrder(x => x.UpdatedAt);
+        resultWithoutFiltersJson.Should().Be(resultWithFilterStart);
+        resultWithoutFiltersJson.Should().Be(resultWithFilterEnd);
+        resultWithoutFiltersJson.Should().Be(resultWithFilterStartAndEnd);
         resultWithFilterOutsideAnyClaims1!.Result.Should().BeEmpty();
         resultWithFilterOutsideAnyClaims2!.Result.Should().BeEmpty();
     }
@@ -247,10 +288,10 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
             var certificateRepository = new CertificateRepository(connection);
 
             var attributes = new List<CertificateAttribute>
-                {
-                    new(){ Key="TechCode", Value="T070000", Type=CertificateAttributeType.ClearText},
-                    new(){ Key="FuelCode", Value="F00000000", Type=CertificateAttributeType.ClearText},
-                };
+            {
+                new() { Key = "TechCode", Value = "T070000", Type = CertificateAttributeType.ClearText },
+                new() { Key = "FuelCode", Value = "F00000000", Type = CertificateAttributeType.ClearText },
+            };
 
             var certificate1 = new Certificate
             {

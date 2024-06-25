@@ -52,8 +52,8 @@
             "in": "query",
             "description": "The number of items to skip.",
             "schema": {
-              "type": "string",
-              "format": "date-time"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -383,8 +383,8 @@
             "in": "query",
             "description": "The number of items to skip.",
             "schema": {
-              "type": "string",
-              "format": "date-time"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -1068,6 +1068,10 @@
           },
           "consumptionCertificate": {
             "$ref": "#/components/schemas/ClaimedCertificate"
+          },
+          "updatedAt": {
+            "type": "integer",
+            "format": "int64"
           }
         },
         "additionalProperties": false,
@@ -1360,9 +1364,10 @@
             "type": "integer",
             "format": "int32"
           },
-          "datetimeOffset": {
-            "type": "string",
-            "format": "date-time"
+          "updatedSince": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
           },
           "limit": {
             "type": "integer",

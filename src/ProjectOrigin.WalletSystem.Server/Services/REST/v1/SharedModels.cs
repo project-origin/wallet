@@ -21,7 +21,7 @@ public record PageInfo()
 public record PageInfoCursor()
 {
     public required int Count { get; init; }
-    public required DateTimeOffset DatetimeOffset { get; init; }
+    public required long? UpdatedSince { get; init; }
     public required int Limit { get; init; }
     public required int Total { get; init; }
 }
