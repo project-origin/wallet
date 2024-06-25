@@ -348,6 +348,57 @@
         }
       }
     },
+    "/v1/claims/{claimRequestId}": {
+      "get": {
+        "tags": [
+          "Claims"
+        ],
+        "summary": "Gets status of specific claim.",
+        "parameters": [
+          {
+            "name": "claimRequestId",
+            "in": "path",
+            "description": "The ID of the claim request.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClaimStatusResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClaimStatusResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClaimStatusResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "If the user is not authenticated."
+          },
+          "404": {
+            "description": "If the claim specified is not found for the user."
+          },
+          "200": {
+            "description": "The claim request status was found."
+          }
+        }
+      }
+    },
     "/v1/slices": {
       "post": {
         "tags": [
@@ -591,7 +642,7 @@
         "tags": [
           "Transfers"
         ],
-        "summary": "Gets requestStatus of specific transfer.",
+        "summary": "Gets status of specific transfer.",
         "parameters": [
           {
             "name": "transferRequestId",
@@ -632,7 +683,7 @@
             "description": "If the transfer specified is not found for the user."
           },
           "200": {
-            "description": "The transfer requestStatus was found."
+            "description": "The transfer status was found."
           }
         }
       }
@@ -1030,6 +1081,16 @@
           }
         },
         "additionalProperties": false
+      },
+      "ClaimStatusResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "$ref": "#/components/schemas/RequestStatus"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Claim status response."
       },
       "ClaimedCertificate": {
         "type": "object",

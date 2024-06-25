@@ -147,11 +147,11 @@ public class TransfersController : ControllerBase
     }
 
     /// <summary>
-    /// Gets requestStatus of specific transfer.
+    /// Gets status of specific transfer.
     /// </summary>
     /// <param name="unitOfWork"></param>
     /// <param name="transferRequestId">The ID of the transfer request.</param>
-    /// <response code="200">The transfer requestStatus was found.</response>
+    /// <response code="200">The transfer status was found.</response>
     /// <response code="401">If the user is not authenticated.</response>
     /// <response code="404">If the transfer specified is not found for the user.</response>
     [HttpGet]
@@ -305,7 +305,6 @@ public record AggregatedTransfers()
     /// </summary>
     public required long Quantity { get; init; }
 }
-
 
 /// <summary>
 /// Transfer status response.

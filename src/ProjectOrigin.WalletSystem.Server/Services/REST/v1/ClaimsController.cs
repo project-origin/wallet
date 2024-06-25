@@ -90,6 +90,7 @@ public class ClaimsController : ControllerBase
     /// Queues a request to claim two certificate for a given quantity.
     /// </summary>
     /// <param name="bus">The masstransit bus to queue the request to</param>
+    /// <param name="unitOfWork"></param>
     /// <param name="request">The claim request</param>
     /// <response code="202">Claim request has been queued for processing.</response>
     /// <response code="401">If the user is not authenticated.</response>
@@ -101,6 +102,7 @@ public class ClaimsController : ControllerBase
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ClaimResponse>> ClaimCertificate(
         [FromServices] IBus bus,
+        [FromServices] IUnitOfWork unitOfWork,
         [FromBody] ClaimRequest request
     )
     {
@@ -117,12 +119,47 @@ public class ClaimsController : ControllerBase
             Quantity = request.Quantity,
         };
 
+        await unitOfWork.RequestStatusRepository.InsertRequestStatus(new Models.RequestStatus
+        {
+            RequestId = command.ClaimId,
+            Status = RequestStatusState.Pending
+        });
+
         await bus.Publish(command);
+
+        unitOfWork.Commit();
 
         return Accepted(new ClaimResponse()
         {
             ClaimRequestId = command.ClaimId,
         });
+    }
+
+    /// <summary>
+    /// Gets status of specific claim.
+    /// </summary>
+    /// <param name="unitOfWork"></param>
+    /// <param name="claimRequestId">The ID of the claim request.</param>
+    /// <response code="200">The claim request status was found.</response>
+    /// <response code="401">If the user is not authenticated.</response>
+    /// <response code="404">If the claim specified is not found for the user.</response>
+    [HttpGet]
+    [Route("v1/claims/{claimRequestId}")]
+    [RequiredScope("po:claims:read")]
+    [ProducesResponseType(typeof(ClaimStatusResponse), StatusCodes.Status202Accepted)]
+    [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ClaimStatusResponse>> GetClaimStatus(
+        [FromServices] IUnitOfWork unitOfWork,
+        [FromRoute] Guid claimRequestId)
+    {
+        if (!User.TryGetSubject(out var subject)) return Unauthorized();
+
+        var requestStatus = await unitOfWork.RequestStatusRepository.GetRequestStatus(claimRequestId);
+
+        if (requestStatus == null) return NotFound();
+
+        return Ok(new ClaimStatusResponse { Status = requestStatus.Status.MapToV1() });
     }
 }
 
@@ -282,5 +319,15 @@ public record AggregatedClaims()
     public required long Quantity { get; init; }
 }
 
+/// <summary>
+/// Claim status response.
+/// </summary>
+public record ClaimStatusResponse()
+{
+    /// <summary>
+    /// The status of the claim request.
+    /// </summary>
+    public required RequestStatus Status { get; init; }
+}
 
 #endregion

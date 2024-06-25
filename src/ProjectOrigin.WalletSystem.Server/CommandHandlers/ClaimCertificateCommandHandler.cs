@@ -50,7 +50,7 @@ public class ClaimCertificateCommandHandler : IConsumer<ClaimCertificateCommand>
 
             var processBuilder = _processBuilderFactory.Create(msg.ClaimId, _unitOfWork);
 
-            var routingSlip = await BuildClaimRoutingSlip(processBuilder, msg.Quantity, reservedConsumptionSlices, reservedProductionSlices);
+            var routingSlip = await BuildClaimRoutingSlip(processBuilder, msg.Quantity, reservedConsumptionSlices, reservedProductionSlices, context.Message.ClaimId);
 
             await context.Execute(routingSlip);
             _unitOfWork.Commit();
@@ -78,7 +78,7 @@ public class ClaimCertificateCommandHandler : IConsumer<ClaimCertificateCommand>
     /// <param name="reservedConsumptionSlices">List of slices on consumption certificates</param>
     /// <param name="reservedProductionSlices">List of slices on production certificates</param>
     /// <returns></returns>
-    private static async Task<RoutingSlip> BuildClaimRoutingSlip(IRegistryProcessBuilder processBuilder, long quantity, IList<WalletSlice> reservedConsumptionSlices, IList<WalletSlice> reservedProductionSlices)
+    private static async Task<RoutingSlip> BuildClaimRoutingSlip(IRegistryProcessBuilder processBuilder, long quantity, IList<WalletSlice> reservedConsumptionSlices, IList<WalletSlice> reservedProductionSlices, Guid claimId)
     {
         var remainderToClaim = quantity;
         WalletSlice? productionRemainderSlice = null;
@@ -103,7 +103,7 @@ public class ClaimCertificateCommandHandler : IConsumer<ClaimCertificateCommand>
                 if (productionRemainderSlice.Quantity < consumptionRemainderSlice.Quantity)
                 {
                     var (quantitySlice, remainderSlice) = await processBuilder.SplitSlice(consumptionRemainderSlice, productionRemainderSlice.Quantity);
-                    await processBuilder.Claim(productionRemainderSlice, quantitySlice);
+                    await processBuilder.Claim(productionRemainderSlice, quantitySlice, claimId);
 
                     remainderToClaim -= quantitySlice.Quantity;
                     productionRemainderSlice = null; // production slice is fully claimed
@@ -112,7 +112,7 @@ public class ClaimCertificateCommandHandler : IConsumer<ClaimCertificateCommand>
                 else if (productionRemainderSlice.Quantity > consumptionRemainderSlice.Quantity)
                 {
                     var (quantitySlice, remainderSlice) = await processBuilder.SplitSlice(productionRemainderSlice, consumptionRemainderSlice.Quantity);
-                    await processBuilder.Claim(quantitySlice, consumptionRemainderSlice);
+                    await processBuilder.Claim(quantitySlice, consumptionRemainderSlice, claimId);
 
                     remainderToClaim -= consumptionRemainderSlice.Quantity;
                     productionRemainderSlice = remainderSlice;
@@ -120,7 +120,7 @@ public class ClaimCertificateCommandHandler : IConsumer<ClaimCertificateCommand>
                 }
                 else // productionRemainderSlice.Quantity == consumptionRemainderSlice.Quantity
                 {
-                    await processBuilder.Claim(productionRemainderSlice, consumptionRemainderSlice);
+                    await processBuilder.Claim(productionRemainderSlice, consumptionRemainderSlice, claimId);
 
                     remainderToClaim -= consumptionRemainderSlice.Quantity;
                     productionRemainderSlice = null; // production slice is fully claimed
