@@ -56,7 +56,7 @@ public static class IServiceCollectionExtensions
                 services.AddAuthentication()
                     .AddScheme<HeaderAuthenticationHandlerOptions, HeaderAuthenticationHandler>("HeaderScheme", opts =>
                     {
-                        opts.HeaderName = authOptions.Header!.HeaderName;
+                        opts.HeaderName = authOptions.Header!.Name;
                     });
                 break;
 

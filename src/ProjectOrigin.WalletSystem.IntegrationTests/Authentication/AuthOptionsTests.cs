@@ -41,13 +41,13 @@ public class AuthOptionsTests
             Type = AuthType.Header,
             Header = new HeaderOptions()
             {
-                HeaderName = ""
+                Name = ""
             }
         };
 
         var results = options.Validate(new ValidationContext(options));
         results.Should().ContainSingle()
-            .Which.ErrorMessage.Should().Be("The HeaderName field is required.");
+            .Which.ErrorMessage.Should().Be("The Name field is required.");
     }
 
 
@@ -59,7 +59,7 @@ public class AuthOptionsTests
             Type = AuthType.Header,
             Header = new HeaderOptions
             {
-                HeaderName = "MyName"
+                Name = "MyName"
             }
         };
 

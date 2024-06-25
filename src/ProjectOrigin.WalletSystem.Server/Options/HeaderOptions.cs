@@ -6,13 +6,13 @@ namespace ProjectOrigin.WalletSystem.Server.Options;
 public record HeaderOptions : IValidatableObject
 {
     [Required(AllowEmptyStrings = false)]
-    public required string HeaderName { get; set; }
+    public required string Name { get; set; }
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
-        if (string.IsNullOrWhiteSpace(HeaderName))
+        if (string.IsNullOrWhiteSpace(Name))
         {
-            yield return new ValidationResult("HeaderName is required");
+            yield return new ValidationResult("Name is required");
         }
     }
 }

@@ -13,12 +13,12 @@ public class HeaderOptionsTests
     {
         var options = new HeaderOptions
         {
-            HeaderName = ""
+            Name = ""
         };
 
         var results = options.Validate(new ValidationContext(options));
         results.Should().ContainSingle()
-            .Which.ErrorMessage.Should().Be("HeaderName is required");
+            .Which.ErrorMessage.Should().Be("Name is required");
     }
 
 }
