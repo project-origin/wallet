@@ -9,8 +9,10 @@ using Microsoft.AspNetCore.Mvc;
 using ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures;
 using ProjectOrigin.WalletSystem.IntegrationTests.TestExtensions;
 using ProjectOrigin.WalletSystem.Server.Database;
+using ProjectOrigin.WalletSystem.Server.Models;
 using ProjectOrigin.WalletSystem.Server.Services.REST.v1;
 using Xunit;
+using TimeAggregate = ProjectOrigin.WalletSystem.Server.Services.REST.v1.TimeAggregate;
 
 namespace ProjectOrigin.WalletSystem.IntegrationTests;
 
@@ -61,24 +63,8 @@ public class CertificatesControllerTests : IClassFixture<PostgresDatabaseFixture
         var wallet = await _dbFixture.CreateWallet(subject);
         var endpoint = await _dbFixture.CreateWalletEndpoint(wallet);
 
-        for (DateTimeOffset i = issuestartDate; i < issueEndDate; i = i.AddHours(1))
-        {
-            var prodCert = await _dbFixture.CreateCertificate(
-                Guid.NewGuid(),
-                _fixture.Create<string>(),
-                Server.Models.GranularCertificateType.Production,
-                start: i,
-                end: i.AddHours(1));
-            var prodSlice = await _dbFixture.CreateSlice(endpoint, prodCert, new PedersenCommitment.SecretCommitmentInfo(100));
+        await CreateCertificates(issuestartDate, issueEndDate, endpoint);
 
-            var consCert = await _dbFixture.CreateCertificate(
-                Guid.NewGuid(),
-                _fixture.Create<string>(),
-                Server.Models.GranularCertificateType.Consumption,
-                start: i,
-                end: i.AddHours(1));
-            var consSlice = await _dbFixture.CreateSlice(endpoint, consCert, new PedersenCommitment.SecretCommitmentInfo(10));
-        }
 
         // Act
         var result = await controller.AggregateCertificates(
@@ -98,6 +84,63 @@ public class CertificatesControllerTests : IClassFixture<PostgresDatabaseFixture
 
         resultList.Should().HaveCount(3);
         resultList.Select(x => x.Quantity).Should().ContainInOrder(values);
+    }
+
+    [Fact]
+    public async Task Certificates_Cursor()
+    {
+        var issuestartDate = new DateTimeOffset(2020, 6, 1, 12, 0, 0, TimeSpan.Zero);
+        var issueEndDate = new DateTimeOffset(2020, 6, 30, 12, 0, 0, TimeSpan.Zero);
+        var queryStartDate = new DateTimeOffset(2020, 6, 8, 12, 0, 0, TimeSpan.Zero);
+        var queryEndDate = new DateTimeOffset(2020, 6, 10, 12, 0, 0, TimeSpan.Zero);
+
+        var subject = _fixture.Create<string>();
+        var controller = new CertificatesController
+        {
+            ControllerContext = CreateContextWithUser(subject)
+        };
+
+        var wallet = await _dbFixture.CreateWallet(subject);
+        var endpoint = await _dbFixture.CreateWalletEndpoint(wallet);
+
+        await CreateCertificates(issuestartDate, issueEndDate, endpoint);
+
+        var result = await controller.GetCertificates(
+            _unitOfWork,
+            new GetCertificatesCursorQueryParameters
+            {
+                Limit = 10,
+                Start = queryStartDate.ToUnixTimeSeconds(),
+                End = queryEndDate.ToUnixTimeSeconds(),
+                UpdatedSince = DateTimeOffset.UtcNow.AddHours(-1)
+            });
+        result.Value.Should().NotBeNull();
+        var resultList = result.Value!.Result;
+
+        resultList.Should().HaveCount(10);
+    }
+
+    private async Task CreateCertificates(DateTimeOffset issuestartDate, DateTimeOffset issueEndDate,
+        WalletEndpoint endpoint)
+    {
+        for (DateTimeOffset i = issuestartDate; i < issueEndDate; i = i.AddHours(1))
+        {
+            var prodCert = await _dbFixture.CreateCertificate(
+                Guid.NewGuid(),
+                _fixture.Create<string>(),
+                Server.Models.GranularCertificateType.Production,
+                start: i,
+                end: i.AddHours(1));
+            await _dbFixture.CreateSlice(endpoint, prodCert, new PedersenCommitment.SecretCommitmentInfo(100));
+
+            var consCert = await _dbFixture.CreateCertificate(
+                Guid.NewGuid(),
+                _fixture.Create<string>(),
+                Server.Models.GranularCertificateType.Consumption,
+                start: i,
+                end: i.AddHours(1));
+            await _dbFixture.CreateSlice(endpoint, consCert, new PedersenCommitment.SecretCommitmentInfo(10));
+        }
     }
 
     [Fact]

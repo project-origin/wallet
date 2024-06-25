@@ -39,7 +39,7 @@ public class CertificatesController : ControllerBase
             Start = param.Start != null ? DateTimeOffset.FromUnixTimeSeconds(param.Start.Value) : null,
             End = param.End != null ? DateTimeOffset.FromUnixTimeSeconds(param.End.Value) : null,
             Type = param.Type != null ? (GranularCertificateType)param.Type.Value : null,
-            FOOBARUPDATEDAT = param.UpdatedAt,
+            UpdatedSince = param.UpdatedSince,
             Limit = param.Limit ?? int.MaxValue,
         });
 
@@ -173,7 +173,7 @@ public record GetCertificatesCursorQueryParameters
     /// <summary>
     /// The number of items to skip.
     /// </summary>
-    public DateTimeOffset UpdatedAt { get; init; }
+    public DateTimeOffset UpdatedSince { get; init; }
 }
 
 public record AggregateCertificatesQueryParameters

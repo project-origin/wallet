@@ -48,7 +48,7 @@
             }
           },
           {
-            "name": "UpdatedAt",
+            "name": "UpdatedSince",
             "in": "query",
             "description": "The number of items to skip.",
             "schema": {
@@ -326,6 +326,75 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ClaimResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "If the user is not authenticated."
+          }
+        }
+      }
+    },
+    "/v1/claims/Cursor": {
+      "get": {
+        "tags": [
+          "Claims"
+        ],
+        "summary": "Gets all claims in the wallet",
+        "parameters": [
+          {
+            "name": "Start",
+            "in": "query",
+            "description": "The start of the time range in Unix time in seconds.",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "End",
+            "in": "query",
+            "description": "The end of the time range in Unix time in seconds.",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "Type",
+            "in": "query",
+            "description": "Filter the type of certificates to return.",
+            "schema": {
+              "$ref": "#/components/schemas/CertificateType"
+            }
+          },
+          {
+            "name": "Limit",
+            "in": "query",
+            "description": "The number of items to return.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "UpdatedSince",
+            "in": "query",
+            "description": "The number of items to skip.",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns all the indiviual claims.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClaimPageInfoCursorResultList"
                 }
               }
             }
@@ -1003,6 +1072,21 @@
         },
         "additionalProperties": false,
         "description": "A claim record representing a claim of a production and consumption certificate."
+      },
+      "ClaimPageInfoCursorResultList": {
+        "type": "object",
+        "properties": {
+          "result": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Claim"
+            }
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/PageInfoCursor"
+          }
+        },
+        "additionalProperties": false
       },
       "ClaimPageInfoResultList": {
         "type": "object",

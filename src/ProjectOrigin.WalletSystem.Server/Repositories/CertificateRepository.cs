@@ -116,7 +116,7 @@ public class CertificateRepository : ICertificateRepository
                     AND (@type IS NULL OR certificate_type = @type)
             );
             SELECT count(*) FROM certificates_work_table;
-            SELECT * FROM certificates_work_table WHERE updated_at > @FOOBARUPDATEDAT LIMIT @limit;
+            SELECT * FROM certificates_work_table WHERE updated_at > @UpdatedSince LIMIT @limit;
             SELECT attributes.registry_name, attributes.certificate_id, attributes.attribute_key as key, attributes.attribute_value as value, attributes.attribute_type as type
             FROM attributes_view attributes
             WHERE (wallet_id IS NULL AND (registry_name, certificate_id) IN (SELECT registry_name, certificate_id FROM certificates_work_table))
@@ -134,7 +134,7 @@ public class CertificateRepository : ICertificateRepository
             {
                 certificate.Attributes.AddRange(attributes
                     .Where(attr => attr.RegistryName == certificate.RegistryName
-                            && attr.CertificateId == certificate.CertificateId));
+                                   && attr.CertificateId == certificate.CertificateId));
             }
 
             return new PageResultCursor<CertificateViewModel>()
@@ -142,7 +142,7 @@ public class CertificateRepository : ICertificateRepository
                 Items = certificates,
                 TotalCount = totalCouunt,
                 Count = certificates.Count(),
-                DatetimeOffset = filter.FOOBARUPDATEDAT,
+                UpdatedSince = filter.UpdatedSince,
                 Limit = filter.Limit
             };
         }
@@ -189,7 +189,7 @@ public class CertificateRepository : ICertificateRepository
             {
                 certificate.Attributes.AddRange(attributes
                     .Where(attr => attr.RegistryName == certificate.RegistryName
-                            && attr.CertificateId == certificate.CertificateId));
+                                   && attr.CertificateId == certificate.CertificateId));
             }
 
             return new PageResult<CertificateViewModel>()
@@ -203,7 +203,8 @@ public class CertificateRepository : ICertificateRepository
         }
     }
 
-    public async Task<PageResult<AggregatedCertificatesViewModel>> QueryAggregatedAvailableCertificates(QueryAggregatedCertificatesFilter filter)
+    public async Task<PageResult<AggregatedCertificatesViewModel>> QueryAggregatedAvailableCertificates(
+        QueryAggregatedCertificatesFilter filter)
     {
         string sql = @"
             CREATE TEMPORARY TABLE certificates_work_table ON COMMIT DROP AS (
@@ -239,16 +240,16 @@ public class CertificateRepository : ICertificateRepository
             ";
 
         using (var gridReader = await _connection.QueryMultipleAsync(sql, new
-        {
-            filter.Owner,
-            filter.Start,
-            filter.End,
-            filter.Type,
-            filter.Skip,
-            filter.Limit,
-            timeAggregate = filter.TimeAggregate.ToString().ToLower(),
-            filter.TimeZone
-        }))
+               {
+                   filter.Owner,
+                   filter.Start,
+                   filter.End,
+                   filter.Type,
+                   filter.Skip,
+                   filter.Limit,
+                   timeAggregate = filter.TimeAggregate.ToString().ToLower(),
+                   filter.TimeZone
+               }))
         {
             var totalCount = gridReader.ReadSingle<int>();
             var certificates = gridReader.Read<AggregatedCertificatesViewModel>();
@@ -264,7 +265,8 @@ public class CertificateRepository : ICertificateRepository
         }
     }
 
-    public Task<IEnumerable<WalletSlice>> GetOwnersAvailableSlices(string registryName, Guid certificateId, string owner)
+    public Task<IEnumerable<WalletSlice>> GetOwnersAvailableSlices(string registryName, Guid certificateId,
+        string owner)
     {
         return _connection.QueryAsync<WalletSlice>(
             @"SELECT s.*
@@ -352,7 +354,8 @@ public class CertificateRepository : ICertificateRepository
     /// <returns></returns>
     /// <exception cref="InvalidOperationException">Thrown when the owner does not have enough to reserve the requested amount</exception>
     /// <exception cref="TransientException">Thrown when the owner currently does not have enogth available, but will have later</exception>
-    public async Task<IList<WalletSlice>> ReserveQuantity(string owner, string registryName, Guid certificateId, uint reserveQuantity)
+    public async Task<IList<WalletSlice>> ReserveQuantity(string owner, string registryName, Guid certificateId,
+        uint reserveQuantity)
     {
         var availableSlices = await GetOwnersAvailableSlices(registryName, certificateId, owner);
         if (availableSlices.IsEmpty())
@@ -360,7 +363,8 @@ public class CertificateRepository : ICertificateRepository
 
         if (availableSlices.Sum(slice => slice.Quantity) < reserveQuantity)
         {
-            var registeringAvailableQuantity = await GetRegisteringAndAvailableQuantity(registryName, certificateId, owner);
+            var registeringAvailableQuantity =
+                await GetRegisteringAndAvailableQuantity(registryName, certificateId, owner);
             if (registeringAvailableQuantity >= reserveQuantity)
                 throw new TransientException($"Owner has enough quantity, but it is not yet available to reserve");
             else
@@ -370,7 +374,12 @@ public class CertificateRepository : ICertificateRepository
         var sumSlicesTaken = 0L;
         var takenSlices = availableSlices
             .OrderBy(slice => slice.Quantity)
-            .TakeWhile(slice => { var needsMore = sumSlicesTaken < reserveQuantity; sumSlicesTaken += slice.Quantity; return needsMore; })
+            .TakeWhile(slice =>
+            {
+                var needsMore = sumSlicesTaken < reserveQuantity;
+                sumSlicesTaken += slice.Quantity;
+                return needsMore;
+            })
             .ToList();
 
         foreach (var slice in takenSlices)
@@ -384,21 +393,22 @@ public class CertificateRepository : ICertificateRepository
     public async Task InsertWalletAttribute(Guid walletId, WalletAttribute walletAttribute)
     {
         await _connection.ExecuteAsync(
-               @"INSERT INTO wallet_attributes(id, wallet_id, certificate_id, registry_name, attribute_key, attribute_value, salt)
+            @"INSERT INTO wallet_attributes(id, wallet_id, certificate_id, registry_name, attribute_key, attribute_value, salt)
                   VALUES (@id, @walletId, @certificateId, @registryName, @attributeKey, @attributeValue, @salt)",
-               new
-               {
-                   id = Guid.NewGuid(),
-                   walletId,
-                   walletAttribute.CertificateId,
-                   walletAttribute.RegistryName,
-                   attributeKey = walletAttribute.Key,
-                   attributeValue = walletAttribute.Value,
-                   walletAttribute.Salt
-               });
+            new
+            {
+                id = Guid.NewGuid(),
+                walletId,
+                walletAttribute.CertificateId,
+                walletAttribute.RegistryName,
+                attributeKey = walletAttribute.Key,
+                attributeValue = walletAttribute.Value,
+                walletAttribute.Salt
+            });
     }
 
-    public async Task<IEnumerable<WalletAttribute>> GetWalletAttributes(Guid walletId, Guid certificateId, string registryName, IEnumerable<string> keys)
+    public async Task<IEnumerable<WalletAttribute>> GetWalletAttributes(Guid walletId, Guid certificateId,
+        string registryName, IEnumerable<string> keys)
     {
         return (await _connection.QueryAsync<WalletAttribute>(
             @"SELECT wallet_id, certificate_id, registry_name, attribute_key as key, attribute_value as value, salt

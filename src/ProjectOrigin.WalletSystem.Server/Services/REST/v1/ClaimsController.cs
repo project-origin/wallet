@@ -48,6 +48,35 @@ public class ClaimsController : ControllerBase
     }
 
     /// <summary>
+    /// Gets all claims in the wallet
+    /// </summary>
+    /// <response code="200">Returns all the indiviual claims.</response>
+    /// <response code="401">If the user is not authenticated.</response>
+    [HttpGet]
+    [Route("v1/claims/Cursor")]
+    [RequiredScope("po:claims:read")]
+    [Produces("application/json")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<ResultList<Claim, PageInfoCursor>>> GetClaimsCursor(
+        [FromServices] IUnitOfWork unitOfWork,
+        [FromQuery] GetClaimsCursorQueryParameters param)
+    {
+        if (!User.TryGetSubject(out var subject)) return Unauthorized();
+
+        var claims = await unitOfWork.ClaimRepository.QueryClaimsCursor(new QueryClaimsFilterCursor
+        {
+            Owner = subject,
+            Start = param.Start != null ? DateTimeOffset.FromUnixTimeSeconds(param.Start.Value) : null,
+            End = param.End != null ? DateTimeOffset.FromUnixTimeSeconds(param.End.Value) : null,
+            UpdatedSince = param.UpdatedSince,
+            Limit = param.Limit ?? int.MaxValue,
+        });
+
+        return claims.ToResultList(c => c.MapToV1());
+    }
+
+    /// <summary>
     /// Returns a list of aggregates claims for the authenticated user based on the specified time zone and time range.
     /// </summary>
     /// <response code="200">Returns the aggregated claims.</response>
@@ -127,6 +156,35 @@ public class ClaimsController : ControllerBase
 }
 
 #region Records
+
+public record GetClaimsCursorQueryParameters
+{
+    /// <summary>
+    /// The start of the time range in Unix time in seconds.
+    /// </summary>
+    public long? Start { get; init; }
+
+    /// <summary>
+    /// The end of the time range in Unix time in seconds.
+    /// </summary>
+    public long? End { get; init; }
+
+    /// <summary>
+    /// Filter the type of certificates to return.
+    /// </summary>
+    public CertificateType? Type { get; init; }
+
+    /// <summary>
+    /// The number of items to return.
+    /// </summary>
+    public int? Limit { get; init; }
+
+    /// <summary>
+    /// The number of items to skip.
+    /// </summary>
+    public DateTimeOffset UpdatedSince { get; init; }
+}
+
 
 public record GetClaimsQueryParameters
 {
