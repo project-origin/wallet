@@ -33,7 +33,7 @@ config:
 
     # disables the jwt authentication, and sets the subject of the call from a header. This requires authentication and authorization to be done by another system.
     header:
-      headerName:
+      headerName: ""
 
     # jwt defines the configuration for the authentication of jwt tokens
     jwt:
