@@ -115,8 +115,8 @@ spec:
             - name: auth__type
               value: {{ .Values.config.auth.type }}
           {{- if eq .Values.config.auth.type "header" }}
-            - name: auth__header__name
-              value: {{ .Values.config.auth.header.name }}
+            - name: auth__header__headerName
+              value: {{ .Values.config.auth.header.headerName }}
           {{- else if eq .Values.config.auth.type "jwt" }}
             - name: auth__jwt__audience
               value: {{ .Values.config.auth.jwt.audience }}
