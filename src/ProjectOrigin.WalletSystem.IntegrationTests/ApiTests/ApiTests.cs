@@ -112,8 +112,7 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
         var updatedSince = DateTimeOffset.UtcNow.AddMilliseconds(-500).ToUnixTimeSeconds();
 
         //Act
-        // var res = await httpClient.GetFromJsonAsync<ResultList<GranularCertificate, PageInfoCursor>>($"v1/certificates/VERYNICECURSOR?UpdatedSince={updatedSince}");
-        var res = await httpClient.GetAsync($"v1/certificates/VERYNICECURSOR?UpdatedSince={updatedSince}");
+        var res = await httpClient.GetAsync($"v2/certificates?UpdatedSince={updatedSince}");
         var content = JsonConvert.DeserializeObject<ResultList<GranularCertificate, PageInfoCursor>>(await res.Content.ReadAsStringAsync());
         //Assert
         var settings = new VerifySettings();
@@ -133,7 +132,7 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
         //Act
         var res = await httpClient.GetAsync(
             "v1/aggregate-certificates?timeAggregate=hour&timeZone=Europe/Copenhagen");
-        var content = JsonConvert.DeserializeObject<ResultList<GranularCertificate, PageInfoCursor>>(await res.Content.ReadAsStringAsync());
+        var content = JsonConvert.DeserializeObject<ResultList<GranularCertificate, PageInfo>>(await res.Content.ReadAsStringAsync());
         //Assert
         var settings = new VerifySettings();
         settings.ScrubMembersWithType(typeof(long));
@@ -252,7 +251,7 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
                 $"v1/claims?end={filterStart}");
         var resultWithUpdatedSince =
             await httpClient.GetFromJsonAsync<ResultList<Server.Services.REST.v1.Claim, PageInfoCursor>>(
-                $"v1/claims/Cursor?UpdatedSince={filterStart}");
+                $"v2/claims?UpdatedSince={filterStart}");
 
         var resultWithoutFiltersJson = await resultWithoutFilters.Content.ReadAsStringAsync();
         var resultWithoutFiltersContent = JsonConvert.DeserializeObject<ResultList<Server.Services.REST.v1.Claim, PageInfo>>(resultWithoutFiltersJson);

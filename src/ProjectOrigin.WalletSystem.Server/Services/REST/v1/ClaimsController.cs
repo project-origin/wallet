@@ -53,7 +53,7 @@ public class ClaimsController : ControllerBase
     /// <response code="200">Returns all the indiviual claims.</response>
     /// <response code="401">If the user is not authenticated.</response>
     [HttpGet]
-    [Route("v1/claims/Cursor")]
+    [Route("v2/claims")]
     [RequiredScope("po:claims:read")]
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status200OK)]

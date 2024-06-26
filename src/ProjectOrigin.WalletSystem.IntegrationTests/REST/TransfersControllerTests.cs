@@ -47,6 +47,51 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
     }
 
     [Fact]
+    public async Task GetTransfersCursor()
+    {
+        // Arrange
+        var issuestartDate = new DateTimeOffset(2020, 6, 1, 12, 0, 0, TimeSpan.Zero);
+        var issueEndDate = new DateTimeOffset(2020, 6, 30, 12, 0, 0, TimeSpan.Zero);
+        var queryStartDate = new DateTimeOffset(2020, 6, 8, 12, 0, 0, TimeSpan.Zero);
+        var queryEndDate = new DateTimeOffset(2020, 6, 10, 12, 0, 0, TimeSpan.Zero);
+
+        var subject = _fixture.Create<string>();
+        var controller = new TransfersController
+        {
+            ControllerContext = CreateContextWithUser(subject)
+        };
+
+        var externalEndpoint = await _dbFixture.CreateExternalEndpoint(subject);
+
+        for (DateTimeOffset i = issuestartDate; i < issueEndDate; i = i.AddHours(1))
+        {
+            var certificate = await _dbFixture.CreateCertificate(
+                Guid.NewGuid(),
+                _fixture.Create<string>(),
+                Server.Models.GranularCertificateType.Production,
+                start: i,
+                end: i.AddHours(1));
+            await _dbFixture.CreateTransferredSlice(externalEndpoint, certificate, new PedersenCommitment.SecretCommitmentInfo(100));
+        }
+
+        // Act
+        var result = await controller.GetTransfers(
+            _unitOfWork,
+            new GetTransfersCursorQueryParameters()
+            {
+                Start = queryStartDate.ToUnixTimeSeconds(),
+                End = queryEndDate.ToUnixTimeSeconds(),
+                UpdatedSince = DateTimeOffset.UtcNow.AddSeconds(-100).ToUnixTimeSeconds()
+            });
+
+        // Assert
+        result.Value.Should().NotBeNull();
+        var resultList = result.Value!.Result;
+
+        resultList.Should().HaveCount(48);
+    }
+
+    [Fact]
     public async Task GetTransfers()
     {
         // Arrange

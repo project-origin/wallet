@@ -49,7 +49,7 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
     }
 
     [Fact]
-    public async Task Test_CursorClaims()
+    public async Task Test_ClaimsCursor()
     {
         // Arrange
         var issuestartDate = new DateTimeOffset(2020, 6, 1, 12, 0, 0, TimeSpan.Zero);
