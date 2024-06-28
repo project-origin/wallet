@@ -68,4 +68,13 @@ public static class MappingExtensions
                 Attributes = vm.ConsumptionAttributes.MapToV1()
             }
         };
+
+    public static RequestStatus MapToV1(this RequestStatusState requestStatus) =>
+        requestStatus switch
+        {
+            RequestStatusState.Pending => RequestStatus.Pending,
+            RequestStatusState.Completed => RequestStatus.Completed,
+            RequestStatusState.Failed => RequestStatus.Failed,
+            _ => throw new ArgumentOutOfRangeException(nameof(requestStatus), requestStatus, null)
+        };
 }

@@ -18,6 +18,8 @@ public record SendInformationToReceiverWalletArgument
     public required Guid ExternalEndpointId { get; init; }
     public required Guid SliceId { get; init; }
     public required WalletAttribute[] WalletAttributes { get; init; }
+    public required Guid RequestId { get; init; }
+    public required string Owner { get; init; }
 }
 
 public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInformationToReceiverWalletArgument>
@@ -125,6 +127,7 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
         {
             await _unitOfWork.CertificateRepository.InsertWalletAttribute(walletEndpoint.WalletId, walletAttribute);
         }
+        await _unitOfWork.RequestStatusRepository.SetRequestStatus(context.Arguments.RequestId, context.Arguments.Owner, RequestStatusState.Completed);
 
         _unitOfWork.Commit();
 

@@ -34,7 +34,8 @@ public class ClaimTests : IClassFixture<PostgresDatabaseFixture>
         _processBuilder = new RegistryProcessBuilder(
             _unitOfWork,
             Substitute.For<IEndpointNameFormatter>(),
-            Guid.NewGuid()
+            Guid.NewGuid(),
+            _fixture.Create<string>()
         );
     }
 

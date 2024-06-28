@@ -486,6 +486,54 @@
         }
       }
     },
+    "/v1/request-status/{requestId}": {
+      "get": {
+        "tags": [
+          "RequestStatus"
+        ],
+        "summary": "Gets status of specific request.",
+        "parameters": [
+          {
+            "name": "requestId",
+            "in": "path",
+            "description": "The ID of the request.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The request status was found.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestStatusResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestStatusResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestStatusResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "If the user is not authenticated."
+          },
+          "404": {
+            "description": "If the request specified is not found for the user."
+          }
+        }
+      }
+    },
     "/v1/slices": {
       "post": {
         "tags": [
@@ -1504,6 +1552,24 @@
         },
         "additionalProperties": false,
         "description": "Request to receive a certificate-slice from another wallet."
+      },
+      "RequestStatus": {
+        "enum": [
+          "pending",
+          "completed",
+          "failed"
+        ],
+        "type": "string"
+      },
+      "RequestStatusResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "$ref": "#/components/schemas/RequestStatus"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Request status response."
       },
       "TimeAggregate": {
         "enum": [

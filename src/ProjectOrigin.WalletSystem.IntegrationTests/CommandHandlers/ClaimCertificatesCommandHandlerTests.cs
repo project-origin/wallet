@@ -33,7 +33,7 @@ public class ClaimCertificatesCommandHandlerTests
 
         _processBuilder = Substitute.For<IRegistryProcessBuilder>();
         var _processBuilderFactory = Substitute.For<IRegistryProcessBuilderFactory>();
-        _processBuilderFactory.Create(Arg.Any<Guid>(), Arg.Any<IUnitOfWork>()).Returns(_processBuilder);
+        _processBuilderFactory.Create(Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<IUnitOfWork>()).Returns(_processBuilder);
 
         _unitOfWork = Substitute.For<IUnitOfWork>();
 

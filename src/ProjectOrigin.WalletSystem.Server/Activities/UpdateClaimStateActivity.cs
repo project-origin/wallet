@@ -11,6 +11,8 @@ public record UpdateClaimStateArguments()
 {
     public required Guid Id { get; init; }
     public required ClaimState State { get; init; }
+    public required Guid RequestId { get; init; }
+    public required string Owner { get; init; }
 }
 
 public class UpdateClaimStateActivity : IExecuteActivity<UpdateClaimStateArguments>
@@ -31,6 +33,7 @@ public class UpdateClaimStateActivity : IExecuteActivity<UpdateClaimStateArgumen
         try
         {
             await _unitOfWork.ClaimRepository.SetClaimState(context.Arguments.Id, context.Arguments.State);
+            await _unitOfWork.RequestStatusRepository.SetRequestStatus(context.Arguments.RequestId, context.Arguments.Owner, RequestStatusState.Completed);
             _unitOfWork.Commit();
             return context.Completed();
         }
