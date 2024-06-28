@@ -9,10 +9,12 @@ using MassTransit.Testing;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures;
 using ProjectOrigin.WalletSystem.IntegrationTests.TestExtensions;
 using ProjectOrigin.WalletSystem.Server.CommandHandlers;
 using ProjectOrigin.WalletSystem.Server.Database;
+using ProjectOrigin.WalletSystem.Server.Options;
 using ProjectOrigin.WalletSystem.Server.Services.REST.v1;
 using Xunit;
 
@@ -23,12 +25,19 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
     private readonly Fixture _fixture;
     private readonly PostgresDatabaseFixture _dbFixture;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IOptions<ServiceOptions> _options;
 
     public TransfersControllerTests(PostgresDatabaseFixture postgresDatabaseFixture)
     {
         _fixture = new Fixture();
         _dbFixture = postgresDatabaseFixture;
         _unitOfWork = _dbFixture.CreateUnitOfWork();
+
+        _options = Options.Create(new ServiceOptions
+        {
+            EndpointAddress = new Uri("https://example.com"),
+            PathBase = new PathString("/foo-bar-baz"),
+        });
     }
 
     [Fact]
@@ -178,6 +187,8 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
         // Act
         var result = await controller.TransferCertificate(
             provider.GetRequiredService<ITestHarness>().Bus,
+            _unitOfWork,
+            _options,
             _fixture.Create<TransferRequest>());
 
         // Assert
@@ -209,11 +220,18 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
         // Act
         var result = await controller.TransferCertificate(
             harness.Bus,
+            _unitOfWork,
+            _options,
             request);
 
         // Assert
         result.Result.Should().BeOfType<AcceptedResult>();
-        var response = (result.Result as AcceptedResult)?.Value as TransferResponse;
+
+        var acceptedResult = result.Result as AcceptedResult;
+        acceptedResult.Should().NotBeNull();
+        acceptedResult!.Location.Should().Contain(_options.Value.PathBase + "/v1/request-status/");
+
+        var response = acceptedResult.Value as TransferResponse;
         response.Should().NotBeNull();
         var sentMessage = harness.Published.Select<TransferCertificateCommand>().Should().ContainSingle();
         var sentCommand = sentMessage.Which.Context.Message;

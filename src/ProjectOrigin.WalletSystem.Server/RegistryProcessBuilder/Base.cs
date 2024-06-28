@@ -14,12 +14,16 @@ public partial class RegistryProcessBuilder : IRegistryProcessBuilder
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IEndpointNameFormatter _formatter;
+    private readonly Guid _routingSlipId;
+    private readonly string _owner;
     private readonly IRoutingSlipBuilder _slipBuilder;
 
-    public RegistryProcessBuilder(IUnitOfWork unitOfWork, IEndpointNameFormatter formatter, Guid routingSlipId)
+    public RegistryProcessBuilder(IUnitOfWork unitOfWork, IEndpointNameFormatter formatter, Guid routingSlipId, string owner)
     {
         _unitOfWork = unitOfWork;
         _formatter = formatter;
+        _routingSlipId = routingSlipId;
+        _owner = owner;
         _slipBuilder = new RoutingSlipBuilder(routingSlipId);
     }
 
@@ -47,7 +51,9 @@ public partial class RegistryProcessBuilder : IRegistryProcessBuilder
         AddActivity<WaitCommittedRegistryTransactionActivity, WaitCommittedTransactionArguments>(new WaitCommittedTransactionArguments()
         {
             RegistryName = transaction.Header.FederatedStreamId.Registry,
-            TransactionId = transaction.ToShaId()
+            TransactionId = transaction.ToShaId(),
+            RequestId = _routingSlipId,
+            Owner = _owner
         });
     }
 

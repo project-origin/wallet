@@ -6,7 +6,7 @@ namespace ProjectOrigin.WalletSystem.Server;
 
 public interface IRegistryProcessBuilderFactory
 {
-    IRegistryProcessBuilder Create(Guid routingSlipId, IUnitOfWork unitOfWork);
+    IRegistryProcessBuilder Create(Guid routingSlipId, string owner, IUnitOfWork unitOfWork);
 }
 
 public class RegistryProcessBuilderFactory : IRegistryProcessBuilderFactory
@@ -18,8 +18,8 @@ public class RegistryProcessBuilderFactory : IRegistryProcessBuilderFactory
         _endpointNameFormatter = endpointNameFormatter;
     }
 
-    public IRegistryProcessBuilder Create(Guid routingSlipId, IUnitOfWork unitOfWork)
+    public IRegistryProcessBuilder Create(Guid routingSlipId, string owner, IUnitOfWork unitOfWork)
     {
-        return new RegistryProcessBuilder(unitOfWork, _endpointNameFormatter, routingSlipId);
+        return new RegistryProcessBuilder(unitOfWork, _endpointNameFormatter, routingSlipId, owner);
     }
 }

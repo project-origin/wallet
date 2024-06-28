@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Dapper;
 using ProjectOrigin.WalletSystem.Server.Models;
 using ProjectOrigin.WalletSystem.Server.ViewModels;
+using static ProjectOrigin.Electricity.V1.SlicedEvent.Types;
 
 namespace ProjectOrigin.WalletSystem.Server.Repositories;
 
@@ -150,5 +151,4 @@ public class TransferRepository : ITransferRepository
             };
         }
     }
-
 }

@@ -11,4 +11,5 @@ public interface IUnitOfWork
     ICertificateRepository CertificateRepository { get; }
     ITransferRepository TransferRepository { get; }
     IClaimRepository ClaimRepository { get; }
+    IRequestStatusRepository RequestStatusRepository { get; }
 }

@@ -23,6 +23,7 @@ public enum CertificateType
     Consumption = 1,
     Production = 2
 }
+public enum RequestStatus { Pending, Completed, Failed }
 
 public record FederatedStreamId()
 {

@@ -1,16 +1,19 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.IO;
 using System.Threading.Tasks;
 using MassTransit;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using Microsoft.Identity.Web.Resource;
 using ProjectOrigin.WalletSystem.Server.CommandHandlers;
 using ProjectOrigin.WalletSystem.Server.Database;
 using ProjectOrigin.WalletSystem.Server.Extensions;
 using ProjectOrigin.WalletSystem.Server.Models;
+using ProjectOrigin.WalletSystem.Server.Options;
 
 namespace ProjectOrigin.WalletSystem.Server.Services.REST.v1;
 
@@ -90,6 +93,8 @@ public class ClaimsController : ControllerBase
     /// Queues a request to claim two certificate for a given quantity.
     /// </summary>
     /// <param name="bus">The masstransit bus to queue the request to</param>
+    /// <param name="unitOfWork"></param>
+    /// <param name="serviceOptions"></param>
     /// <param name="request">The claim request</param>
     /// <response code="202">Claim request has been queued for processing.</response>
     /// <response code="401">If the user is not authenticated.</response>
@@ -101,6 +106,8 @@ public class ClaimsController : ControllerBase
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ClaimResponse>> ClaimCertificate(
         [FromServices] IBus bus,
+        [FromServices] IUnitOfWork unitOfWork,
+        [FromServices] IOptions<ServiceOptions> serviceOptions,
         [FromBody] ClaimRequest request
     )
     {
@@ -117,9 +124,18 @@ public class ClaimsController : ControllerBase
             Quantity = request.Quantity,
         };
 
+        await unitOfWork.RequestStatusRepository.InsertRequestStatus(new Models.RequestStatus
+        {
+            RequestId = command.ClaimId,
+            Owner = subject,
+            Status = RequestStatusState.Pending
+        });
+
         await bus.Publish(command);
 
-        return Accepted(new ClaimResponse()
+        unitOfWork.Commit();
+
+        return Accepted(serviceOptions.Value.PathBase + "/v1/request-status/" + command.ClaimId, new ClaimResponse()
         {
             ClaimRequestId = command.ClaimId,
         });
@@ -281,6 +297,5 @@ public record AggregatedClaims()
     /// </summary>
     public required long Quantity { get; init; }
 }
-
 
 #endregion

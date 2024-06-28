@@ -64,12 +64,13 @@ public class SendInformationToReceiverWalletActivityTests
         var options = new JsonSerializerOptions(JsonSerializerDefaults.Web);
         options.Converters.Add(new IHDPublicKeyConverter(hdAlgorithm));
 
+        var owner = _fixture.Create<string>();
         var endpoint = new ExternalEndpoint
         {
             Id = Guid.NewGuid(),
             Endpoint = $"{wireMockServer.Urls[0]}/v1/slices",
             PublicKey = hdAlgorithm.GenerateNewPrivateKey().Neuter(),
-            Owner = _fixture.Create<string>(),
+            Owner = owner,
             ReferenceText = _fixture.Create<string>(),
         };
         _walletRepository.GetExternalEndpoint(Arg.Any<Guid>()).Returns(endpoint);
@@ -113,7 +114,9 @@ public class SendInformationToReceiverWalletActivityTests
             WalletAttributes = [
                 attribute1,
                 attribute2
-            ]
+            ],
+            RequestId = Guid.NewGuid(),
+            Owner = owner
         });
 
         // Act
@@ -164,12 +167,13 @@ public class SendInformationToReceiverWalletActivityTests
         var options = new JsonSerializerOptions(JsonSerializerDefaults.Web);
         options.Converters.Add(new IHDPublicKeyConverter(hdAlgorithm));
 
+        var owner = _fixture.Create<string>();
         var endpoint = new ExternalEndpoint
         {
             Id = Guid.NewGuid(),
             Endpoint = $"{nonExistingEndpoint}/v1/slices",
             PublicKey = hdAlgorithm.GenerateNewPrivateKey().Neuter(),
-            Owner = _fixture.Create<string>(),
+            Owner = owner,
             ReferenceText = _fixture.Create<string>(),
         };
         _walletRepository.GetExternalEndpoint(Arg.Any<Guid>()).Returns(endpoint);
@@ -190,7 +194,9 @@ public class SendInformationToReceiverWalletActivityTests
         {
             ExternalEndpointId = endpoint.Id,
             SliceId = transferredSlice.Id,
-            WalletAttributes = []
+            WalletAttributes = [],
+            RequestId = Guid.NewGuid(),
+            Owner = owner
         });
 
         // Act
@@ -212,12 +218,13 @@ public class SendInformationToReceiverWalletActivityTests
         var options = new JsonSerializerOptions(JsonSerializerDefaults.Web);
         options.Converters.Add(new IHDPublicKeyConverter(hdAlgorithm));
 
+        var owner = _fixture.Create<string>();
         var externalEndpoint = new ExternalEndpoint
         {
             Id = Guid.NewGuid(),
             Endpoint = $"{_endpoint}/v1/slices",
             PublicKey = hdAlgorithm.GenerateNewPrivateKey().Neuter(),
-            Owner = _fixture.Create<string>(),
+            Owner = owner,
             ReferenceText = _fixture.Create<string>(),
         };
         _walletRepository.GetExternalEndpoint(externalEndpoint.Id).Returns(externalEndpoint);
@@ -268,7 +275,9 @@ public class SendInformationToReceiverWalletActivityTests
             WalletAttributes = [
                 attribute1,
                 attribute2
-            ]
+            ],
+            RequestId = Guid.NewGuid(),
+            Owner = owner
         });
 
         // Act
@@ -298,12 +307,13 @@ public class SendInformationToReceiverWalletActivityTests
         var options = new JsonSerializerOptions(JsonSerializerDefaults.Web);
         options.Converters.Add(new IHDPublicKeyConverter(hdAlgorithm));
 
+        var owner = _fixture.Create<string>();
         var externalEndpoint = new ExternalEndpoint
         {
             Id = Guid.NewGuid(),
             Endpoint = $"{_endpoint}/v1/slices",
             PublicKey = hdAlgorithm.GenerateNewPrivateKey().Neuter(),
-            Owner = _fixture.Create<string>(),
+            Owner = owner,
             ReferenceText = _fixture.Create<string>(),
         };
         _walletRepository.GetExternalEndpoint(externalEndpoint.Id).Returns(externalEndpoint);
@@ -327,7 +337,9 @@ public class SendInformationToReceiverWalletActivityTests
         {
             ExternalEndpointId = externalEndpoint.Id,
             SliceId = transferredSlice.Id,
-            WalletAttributes = []
+            WalletAttributes = [],
+            RequestId = Guid.NewGuid(),
+            Owner = owner
         });
 
         var fault = Substitute.For<MassTransit.ExecutionResult>();

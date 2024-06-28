@@ -7,6 +7,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ProjectOrigin.Registry.V1;
 using ProjectOrigin.WalletSystem.Server.Activities.Exceptions;
+using ProjectOrigin.WalletSystem.Server.Database;
+using ProjectOrigin.WalletSystem.Server.Models;
 using ProjectOrigin.WalletSystem.Server.Options;
 
 namespace ProjectOrigin.WalletSystem.Server.Activities;
@@ -15,17 +17,21 @@ public record WaitCommittedTransactionArguments
 {
     public required string RegistryName { get; set; }
     public required string TransactionId { get; set; }
+    public required Guid RequestId { get; set; }
+    public required string Owner { get; set; }
 }
 
 public class WaitCommittedRegistryTransactionActivity : IExecuteActivity<WaitCommittedTransactionArguments>
 {
     private readonly IOptions<RegistryOptions> _registryOptions;
     private readonly ILogger<WaitCommittedRegistryTransactionActivity> _logger;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public WaitCommittedRegistryTransactionActivity(IOptions<RegistryOptions> registryOptions, ILogger<WaitCommittedRegistryTransactionActivity> logger)
+    public WaitCommittedRegistryTransactionActivity(IOptions<RegistryOptions> registryOptions, ILogger<WaitCommittedRegistryTransactionActivity> logger, IUnitOfWork unitOfWork)
     {
         _registryOptions = registryOptions;
         _logger = logger;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<ExecutionResult> Execute(ExecuteContext<WaitCommittedTransactionArguments> context)
@@ -52,6 +58,8 @@ public class WaitCommittedRegistryTransactionActivity : IExecuteActivity<WaitCom
             else if (status.Status == TransactionState.Failed)
             {
                 _logger.LogCritical("Transaction failed on registry. Message: {message}", status.Message);
+                await _unitOfWork.RequestStatusRepository.SetRequestStatus(context.Arguments.RequestId, context.Arguments.Owner, RequestStatusState.Failed, failedReason: "Transaction failed on registry.");
+                _unitOfWork.Commit();
                 return context.Faulted(new InvalidRegistryTransactionException($"Transaction failed on registry. Message: {status.Message}"));
             }
             else
@@ -67,7 +75,9 @@ public class WaitCommittedRegistryTransactionActivity : IExecuteActivity<WaitCom
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to get status from registry.");
+            _logger.LogError(ex, "Failed to get requestStatus from registry.");
+            await _unitOfWork.RequestStatusRepository.SetRequestStatus(context.Arguments.RequestId, context.Arguments.Owner, RequestStatusState.Failed, failedReason: "General error. Failed to get requestStatus from registry.");
+            _unitOfWork.Commit();
             return context.Faulted(ex);
         }
     }

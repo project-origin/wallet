@@ -57,6 +57,8 @@ public partial class RegistryProcessBuilder
         {
             Id = allocationId,
             State = ClaimState.Claimed,
+            RequestId = _routingSlipId,
+            Owner = _owner
         });
     }
 
