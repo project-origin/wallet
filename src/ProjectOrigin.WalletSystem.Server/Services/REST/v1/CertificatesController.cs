@@ -41,7 +41,7 @@ public class CertificatesController : ControllerBase
             Start = param.Start != null ? DateTimeOffset.FromUnixTimeSeconds(param.Start.Value) : null,
             End = param.End != null ? DateTimeOffset.FromUnixTimeSeconds(param.End.Value) : null,
             Type = param.Type != null ? (GranularCertificateType)param.Type.Value : null,
-            UpdatedSince = param.UpdatedSince != null ?  DateTimeOffset.FromUnixTimeSeconds(param.UpdatedSince.Value) : null,
+            UpdatedSince = param.UpdatedSince != null ? DateTimeOffset.FromUnixTimeSeconds(param.UpdatedSince.Value) : null,
             Limit = param.Limit ?? int.MaxValue,
         });
 

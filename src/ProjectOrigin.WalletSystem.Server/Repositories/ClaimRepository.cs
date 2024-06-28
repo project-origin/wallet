@@ -193,15 +193,15 @@ public class ClaimRepository : IClaimRepository
             ";
 
         using (var gridReader = await _connection.QueryMultipleAsync(sql, new
-               {
-                   filter.Owner,
-                   filter.Start,
-                   filter.End,
-                   filter.Skip,
-                   filter.Limit,
-                   timeAggregate = filter.TimeAggregate.ToString().ToLower(),
-                   filter.TimeZone
-               }))
+        {
+            filter.Owner,
+            filter.Start,
+            filter.End,
+            filter.Skip,
+            filter.Limit,
+            timeAggregate = filter.TimeAggregate.ToString().ToLower(),
+            filter.TimeZone
+        }))
         {
             var totalCount = gridReader.ReadSingle<int>();
             var claims = gridReader.Read<AggregatedClaimViewModel>();

@@ -20,7 +20,7 @@ public class TransferRepositoryTests : AbstractRepositoryTests
         _transferRepository = new TransferRepository(_connection);
     }
 
-        [Fact]
+    [Fact]
     public async Task GetTransfersCursor()
     {
         // Arrange
