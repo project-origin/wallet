@@ -68,7 +68,7 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
         var queryUpdatedSince = DateTimeOffset.UtcNow.AddMicroseconds(-2000).ToUnixTimeSeconds();
         // Act
         var result = await controller.GetClaimsCursor(
-            _unitOfWork,   new GetClaimsCursorQueryParameters()
+            _unitOfWork,   new GetClaimsQueryParametersCursor()
                 { UpdatedSince = queryUpdatedSince }
         );
 

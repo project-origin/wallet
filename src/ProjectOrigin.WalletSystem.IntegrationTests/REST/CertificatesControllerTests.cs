@@ -107,7 +107,7 @@ public class CertificatesControllerTests : IClassFixture<PostgresDatabaseFixture
 
         var result = await controller.GetCertificates(
             _unitOfWork,
-            new GetCertificatesCursorQueryParameters
+            new GetCertificatesQueryParametersCursor
             {
                 Limit = 10,
                 Start = queryStartDate.ToUnixTimeSeconds(),

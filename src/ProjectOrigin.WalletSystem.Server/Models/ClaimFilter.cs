@@ -20,12 +20,6 @@ public record QueryClaimsFilterCursor
     public DateTimeOffset? End { get; init; }
 }
 
-public record QueryAggregatedClaimsFilterCursor : QueryClaimsFilterCursor
-{
-    public required TimeAggregate TimeAggregate { get; init; }
-    public required string TimeZone { get; init; }
-}
-
 public record QueryAggregatedClaimsFilter : QueryClaimsFilter
 {
     public required TimeAggregate TimeAggregate { get; init; }

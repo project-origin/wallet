@@ -11,9 +11,3 @@ public record QueryCertificatesFilterCursor
     public DateTimeOffset? End { get; init; }
     public GranularCertificateType? Type { get; init; }
 }
-
-public record QueryAggregatedCertificatesFilterCursor : QueryCertificatesFilterCursor
-{
-    public required TimeAggregate TimeAggregate { get; init; }
-    public required string TimeZone { get; init; }
-}

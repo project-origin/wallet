@@ -15,9 +15,6 @@ public interface ICertificateRepository
     Task<PageResult<CertificateViewModel>> QueryAvailableCertificates(QueryCertificatesFilter filter);
     Task<PageResult<AggregatedCertificatesViewModel>> QueryAggregatedAvailableCertificates(QueryAggregatedCertificatesFilter filter);
 
-    Task<PageResultCursor<AggregatedCertificatesViewModel>> QueryAggregatedAvailableCertificates(
-        QueryAggregatedCertificatesFilterCursor filter);
-
     Task InsertWalletSlice(WalletSlice newSlice);
     Task<WalletSlice> GetWalletSlice(Guid sliceId);
     Task<IEnumerable<WalletSlice>> GetOwnersAvailableSlices(string registryName, Guid certificateId, string owner);

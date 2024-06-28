@@ -30,7 +30,7 @@ public class TransfersController : ControllerBase
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ResultList<Transfer, PageInfoCursor>>> GetTransfers(
         [FromServices] IUnitOfWork unitOfWork,
-        [FromQuery] GetTransfersCursorQueryParameters param)
+        [FromQuery] GetTransfersQueryParametersCursor param)
     {
         if (!User.TryGetSubject(out var subject)) return Unauthorized();
 
@@ -181,7 +181,7 @@ public class TransfersController : ControllerBase
 
 #region Records
 
-public record GetTransfersCursorQueryParameters
+public record GetTransfersQueryParametersCursor
 {
     /// <summary>
     /// The start of the time range in Unix time in seconds.
@@ -199,7 +199,7 @@ public record GetTransfersCursorQueryParameters
     public int? Limit { get; init; }
 
     /// <summary>
-    /// Transfers Updated since this time in Unix time in seconds.
+    /// The time of the last update in Unix time in seconds.
     /// </summary>
     public long? UpdatedSince { get; init; }
 }

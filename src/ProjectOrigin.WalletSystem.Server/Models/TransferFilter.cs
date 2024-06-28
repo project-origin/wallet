@@ -25,10 +25,3 @@ public record QueryAggregatedTransfersFilter : QueryTransfersFilter
     public required TimeAggregate TimeAggregate { get; init; }
     public required string TimeZone { get; init; }
 }
-
-
-public record QueryAggregatedTransfersFilterCursor : QueryTransfersFilterCursor
-{
-    public required TimeAggregate TimeAggregate { get; init; }
-    public required string TimeZone { get; init; }
-}

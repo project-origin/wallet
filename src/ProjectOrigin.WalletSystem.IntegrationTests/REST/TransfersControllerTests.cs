@@ -77,7 +77,7 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
         // Act
         var result = await controller.GetTransfers(
             _unitOfWork,
-            new GetTransfersCursorQueryParameters()
+            new GetTransfersQueryParametersCursor()
             {
                 Start = queryStartDate.ToUnixTimeSeconds(),
                 End = queryEndDate.ToUnixTimeSeconds(),

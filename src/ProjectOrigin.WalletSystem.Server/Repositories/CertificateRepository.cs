@@ -266,67 +266,6 @@ public class CertificateRepository : ICertificateRepository
         }
     }
 
-    public async Task<PageResultCursor<AggregatedCertificatesViewModel>> QueryAggregatedAvailableCertificates(
-        QueryAggregatedCertificatesFilterCursor filter)
-    {
-        string sql = @"
-            CREATE TEMPORARY TABLE certificates_work_table ON COMMIT DROP AS (
-                SELECT *
-                FROM (
-                    SELECT
-                        certificate_type as type,
-                        min(start_date) as start,
-                        max(end_date) as end,
-                        sum(quantity) as quantity,
-                        updated_at
-                    FROM
-                        certificates_query_model
-                    WHERE
-                        owner = @owner
-                        AND (@start IS NULL OR start_date >= @start)
-                        AND (@end IS NULL OR end_date <= @end)
-                        AND (@type IS NULL OR certificate_type = @type)
-                    GROUP BY
-                        CASE
-                            WHEN @timeAggregate = 'total' THEN NULL
-                            WHEN @timeAggregate = 'quarterhour' THEN date_trunc('hour', start_date AT TIME ZONE @timeZone) + INTERVAL '15 min' * ROUND(EXTRACT(MINUTE FROM start_date AT TIME ZONE @timeZone) / 15.0)
-                            WHEN @timeAggregate = 'actual' THEN start_date AT TIME ZONE @timeZone
-                            ELSE date_trunc(@timeAggregate, start_date AT TIME ZONE @timeZone)
-                        END,
-                        type
-                    ) as aggregates
-                ORDER BY
-                    start,
-                    type
-            );
-            SELECT count(*) FROM certificates_work_table;
-            SELECT * FROM certificates_work_table where updated_at > @UpdatedSince LIMIT @limit;
-            ";
-
-        using (var gridReader = await _connection.QueryMultipleAsync(sql, new
-               {
-                   filter.Owner,
-                   filter.Start,
-                   filter.End,
-                   filter.Type,
-                   filter.Limit,
-                   timeAggregate = filter.TimeAggregate.ToString().ToLower(),
-                   filter.TimeZone
-               }))
-        {
-            var totalCount = gridReader.ReadSingle<int>();
-            var certificates = gridReader.Read<AggregatedCertificatesViewModel>();
-
-            return new PageResultCursor<AggregatedCertificatesViewModel>()
-            {
-                Items = certificates,
-                TotalCount = totalCount,
-                Count = certificates.Count(),
-                UpdatedSince = filter.UpdatedSince?.ToUnixTimeSeconds(),
-                Limit = filter.Limit
-            };
-        }
-    }
     public Task<IEnumerable<WalletSlice>> GetOwnersAvailableSlices(string registryName, Guid certificateId,
         string owner)
     {

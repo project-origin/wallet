@@ -31,7 +31,7 @@ public class CertificatesController : ControllerBase
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ResultList<GranularCertificate, PageInfoCursor>>> GetCertificates(
         [FromServices] IUnitOfWork unitOfWork,
-        [FromQuery] GetCertificatesCursorQueryParameters param)
+        [FromQuery] GetCertificatesQueryParametersCursor param)
     {
         if (!User.TryGetSubject(out var subject)) return Unauthorized();
 
@@ -77,50 +77,6 @@ public class CertificatesController : ControllerBase
 
         return certificates.ToResultList(c => c.MapToV1());
     }
-
-
-    /// <summary>
-    /// Returns aggregates certificates that are <b>available</b> to use, based on the specified time zone and time range.
-    /// </summary>
-    /// <response code="200">Returns the aggregated claims.</response>
-    /// <response code="400">If the time zone is invalid.</response>
-    /// <response code="401">If the user is not authenticated.</response>
-    [HttpGet]
-    [Route("v2/aggregate-certificates")]
-    [RequiredScope("po:certificates:read")]
-    [Produces("application/json")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
-    public async Task<ActionResult<ResultList<AggregatedCertificates, PageInfoCursor>>> AggregateCertificates(
-        [FromServices] IUnitOfWork unitOfWork,
-        [FromQuery] AggregateCertificatesCursorQueryParameters param)
-    {
-        if (!User.TryGetSubject(out var subject)) return Unauthorized();
-        if (!param.TimeZone.TryParseTimeZone(out var timeZoneInfo)) return BadRequest("Invalid time zone");
-
-        var certificates = await unitOfWork.CertificateRepository.QueryAggregatedAvailableCertificates(new QueryAggregatedCertificatesFilterCursor
-        {
-            Owner = subject,
-            Start = param.Start != null ? DateTimeOffset.FromUnixTimeSeconds(param.Start.Value) : null,
-            End = param.End != null ? DateTimeOffset.FromUnixTimeSeconds(param.End.Value) : null,
-            Type = param.Type != null ? (GranularCertificateType)param.Type.Value : null,
-            UpdatedSince = param.UpdatedSince != null ? DateTimeOffset.FromUnixTimeSeconds(param.UpdatedSince.Value) : null,
-            Limit = param.Limit ?? int.MaxValue,
-            TimeAggregate = (Models.TimeAggregate)param.TimeAggregate,
-            TimeZone = param.TimeZone
-        });
-
-        return certificates.ToResultList(c => new AggregatedCertificates
-        {
-            Start = c.Start.ToUnixTimeSeconds(),
-            End = c.End.ToUnixTimeSeconds(),
-            Quantity = c.Quantity,
-            Type = (CertificateType)c.Type
-        });
-    }
-}
-
 
     /// <summary>
     /// Returns aggregates certificates that are <b>available</b> to use, based on the specified time zone and time range.
@@ -194,7 +150,7 @@ public record GetCertificatesQueryParameters
     public int Skip { get; init; }
 }
 
-public record GetCertificatesCursorQueryParameters
+public record GetCertificatesQueryParametersCursor
 {
     /// <summary>
     /// The start of the time range in Unix time in seconds.

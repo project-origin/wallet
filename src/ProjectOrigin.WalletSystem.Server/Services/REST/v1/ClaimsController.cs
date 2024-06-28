@@ -60,7 +60,7 @@ public class ClaimsController : ControllerBase
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ResultList<Claim, PageInfoCursor>>> GetClaimsCursor(
         [FromServices] IUnitOfWork unitOfWork,
-        [FromQuery] GetClaimsCursorQueryParameters param)
+        [FromQuery] GetClaimsQueryParametersCursor param)
     {
         if (!User.TryGetSubject(out var subject)) return Unauthorized();
 
@@ -157,7 +157,7 @@ public class ClaimsController : ControllerBase
 
 #region Records
 
-public record GetClaimsCursorQueryParameters
+public record GetClaimsQueryParametersCursor
 {
     /// <summary>
     /// The start of the time range in Unix time in seconds.
@@ -180,7 +180,7 @@ public record GetClaimsCursorQueryParameters
     public int? Limit { get; init; }
 
     /// <summary>
-    /// The number of items to skip.
+    /// The time of the last update in Unix time in seconds.
     /// </summary>
     public long? UpdatedSince { get; init; }
 }

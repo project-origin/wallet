@@ -50,7 +50,7 @@
           {
             "name": "UpdatedSince",
             "in": "query",
-            "description": "The number of items to skip.",
+            "description": "The time of the last update in Unix time in seconds.",
             "schema": {
               "type": "integer",
               "format": "int64"
@@ -381,7 +381,7 @@
           {
             "name": "UpdatedSince",
             "in": "query",
-            "description": "The number of items to skip.",
+            "description": "The time of the last update in Unix time in seconds.",
             "schema": {
               "type": "integer",
               "format": "int64"
@@ -577,7 +577,7 @@
           {
             "name": "UpdatedSince",
             "in": "query",
-            "description": "Transfers Updated since this time in Unix time in seconds.",
+            "description": "The time of the last update in Unix time in seconds.",
             "schema": {
               "type": "integer",
               "format": "int64"
