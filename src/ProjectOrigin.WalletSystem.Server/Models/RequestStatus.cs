@@ -12,6 +12,7 @@ public enum RequestStatusState
 public record RequestStatus
 {
     public required Guid RequestId { get; init; }
+    public required string Owner { get; init; }
     public required RequestStatusState Status { get; init; }
     public string? FailedReason { get; init; }
 }

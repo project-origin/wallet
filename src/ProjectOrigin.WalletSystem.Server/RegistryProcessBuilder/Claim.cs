@@ -13,7 +13,7 @@ namespace ProjectOrigin.WalletSystem.Server;
 
 public partial class RegistryProcessBuilder
 {
-    public async Task Claim(WalletSlice productionSlice, WalletSlice consumptionSlice, Guid requestId)
+    public async Task Claim(WalletSlice productionSlice, WalletSlice consumptionSlice)
     {
         if (productionSlice.Quantity != consumptionSlice.Quantity)
             throw new InvalidOperationException("Production and consumption slices must have the same quantity");
@@ -57,7 +57,8 @@ public partial class RegistryProcessBuilder
         {
             Id = allocationId,
             State = ClaimState.Claimed,
-            RequestId = requestId
+            RequestId = _routingSlipId,
+            Owner = _owner
         });
     }
 

@@ -21,6 +21,7 @@ public record TransferFullSliceArguments
     public required Guid ExternalEndpointId { get; init; }
     public required string[] HashedAttributes { get; init; }
     public required Guid RequestId { get; init; }
+    public required string Owner { get; init; }
 }
 
 public class TransferFullSliceActivity : IExecuteActivity<TransferFullSliceArguments>
@@ -103,7 +104,8 @@ public class TransferFullSliceActivity : IExecuteActivity<TransferFullSliceArgum
                 {
                     RegistryName = transaction.Header.FederatedStreamId.Registry,
                     TransactionId = transaction.ToShaId(),
-                    RequestId = context.Arguments.RequestId
+                    RequestId = context.Arguments.RequestId,
+                    Owner = context.Arguments.Owner
                 });
 
             builder.AddActivity<UpdateSliceStateActivity, UpdateSliceStateArguments>(_formatter,
@@ -118,7 +120,8 @@ public class TransferFullSliceActivity : IExecuteActivity<TransferFullSliceArgum
                     ExternalEndpointId = externalEndpoint.Id,
                     SliceId = transferredSlice.Id,
                     WalletAttributes = walletAttributes.ToArray(),
-                    RequestId = context.Arguments.RequestId
+                    RequestId = context.Arguments.RequestId,
+                    Owner = context.Arguments.Owner
                 });
 
             builder.AddActivitiesFromSourceItinerary();

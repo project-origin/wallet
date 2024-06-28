@@ -23,13 +23,14 @@ public class RequestStatusRepositoryTests : AbstractRepositoryTests
         var status = new RequestStatus
         {
             RequestId = Guid.NewGuid(),
+            Owner = Guid.NewGuid().ToString(),
             Status = RequestStatusState.Pending,
             FailedReason = "Test failed message"
         };
 
         await _requestStatusRepository.InsertRequestStatus(status);
 
-        var queriedStatus = await _requestStatusRepository.GetRequestStatus(status.RequestId);
+        var queriedStatus = await _requestStatusRepository.GetRequestStatus(status.RequestId, status.Owner);
 
         queriedStatus.Should().BeEquivalentTo(status);
     }
@@ -40,14 +41,15 @@ public class RequestStatusRepositoryTests : AbstractRepositoryTests
         var status = new RequestStatus
         {
             RequestId = Guid.NewGuid(),
+            Owner = Guid.NewGuid().ToString(),
             Status = RequestStatusState.Pending
         };
 
         await _requestStatusRepository.InsertRequestStatus(status);
 
-        await _requestStatusRepository.SetRequestStatus(status.RequestId, RequestStatusState.Failed, "Test failed message");
+        await _requestStatusRepository.SetRequestStatus(status.RequestId, status.Owner, RequestStatusState.Failed, "Test failed message");
 
-        var queriedStatus = await _requestStatusRepository.GetRequestStatus(status.RequestId);
+        var queriedStatus = await _requestStatusRepository.GetRequestStatus(status.RequestId, status.Owner);
 
         queriedStatus.Should().BeEquivalentTo(status with { Status = RequestStatusState.Failed, FailedReason = "Test failed message" });
     }

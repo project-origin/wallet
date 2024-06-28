@@ -134,61 +134,6 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
     }
 
     [Fact]
-    public async Task GetClaimStatus_Unauthorized()
-    {
-        var controller = new ClaimsController();
-
-        var result = await controller.GetClaimStatus(
-            _unitOfWork,
-            Guid.NewGuid());
-
-        result.Result.Should().BeOfType<UnauthorizedResult>();
-    }
-
-    [Fact]
-    public async Task GetClaimStatus_NotFound()
-    {
-        var subject = _fixture.Create<string>();
-        var controller = new ClaimsController
-        {
-            ControllerContext = CreateContextWithUser(subject)
-        };
-
-        var result = await controller.GetClaimStatus(
-            _unitOfWork,
-            Guid.NewGuid());
-
-        result.Result.Should().BeOfType<NotFoundResult>();
-    }
-
-    [Fact]
-    public async Task GetClaimStatus()
-    {
-        var subject = _fixture.Create<string>();
-        var controller = new ClaimsController
-        {
-            ControllerContext = CreateContextWithUser(subject)
-        };
-
-        var claimRequestId = Guid.NewGuid();
-        var status = new Server.Models.RequestStatus
-        {
-            RequestId = claimRequestId,
-            Status = RequestStatusState.Completed
-        };
-        await _dbFixture.CreateTransferStatus(status);
-
-        var result = await controller.GetClaimStatus(
-            _unitOfWork,
-            claimRequestId);
-
-
-        var response = (result.Result as OkObjectResult)?.Value as ClaimStatusResponse;
-        response.Should().NotBeNull();
-        response.Status.Should().Be(RequestStatus.Completed);
-    }
-
-    [Fact]
     public async Task ClaimCertificate_Unauthorized()
     {
         // Arrange
@@ -211,7 +156,7 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
     }
 
     [Fact]
-    public async void ClaimCertificate_SavesStatusPublishesCommand()
+    public async void ClaimCertificate_PublishesCommand()
     {
         // Arrange
         var subject = _fixture.Create<string>();
@@ -251,12 +196,6 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
         sentCommand.ProductionRegistry.Should().Be(request.ProductionCertificateId.Registry);
         sentCommand.ProductionCertificateId.Should().Be(request.ProductionCertificateId.StreamId);
         sentCommand.Quantity.Should().Be(request.Quantity);
-
-        var statusResult = await controller.GetClaimStatus(_unitOfWork, response.ClaimRequestId);
-
-        var statusResponse = (statusResult.Result as OkObjectResult)?.Value as ClaimStatusResponse;
-        statusResponse.Should().NotBeNull();
-        statusResponse.Status.Should().Be(RequestStatus.Pending);
     }
 
     private static ControllerContext CreateContextWithUser(string subject)

@@ -133,6 +133,7 @@ public class TransfersController : ControllerBase
         await unitOfWork.RequestStatusRepository.InsertRequestStatus(new Models.RequestStatus
         {
             RequestId = command.TransferRequestId,
+            Owner = subject,
             Status = RequestStatusState.Pending
         });
 
@@ -144,33 +145,6 @@ public class TransfersController : ControllerBase
         {
             TransferRequestId = command.TransferRequestId,
         });
-    }
-
-    /// <summary>
-    /// Gets status of specific transfer.
-    /// </summary>
-    /// <param name="unitOfWork"></param>
-    /// <param name="transferRequestId">The ID of the transfer request.</param>
-    /// <response code="200">The transfer status was found.</response>
-    /// <response code="401">If the user is not authenticated.</response>
-    /// <response code="404">If the transfer specified is not found for the user.</response>
-    [HttpGet]
-    [Route("v1/transfers/{transferRequestId}")]
-    [RequiredScope("po:transfers:read")]
-    [ProducesResponseType(typeof(TransferStatusResponse), StatusCodes.Status202Accepted)]
-    [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<TransferStatusResponse>> GetTransferStatus(
-        [FromServices] IUnitOfWork unitOfWork,
-        [FromRoute] Guid transferRequestId)
-    {
-        if (!User.TryGetSubject(out var subject)) return Unauthorized();
-
-        var transfer = await unitOfWork.RequestStatusRepository.GetRequestStatus(transferRequestId);
-
-        if (transfer == null) return NotFound();
-
-        return Ok(new TransferStatusResponse { Status = transfer.Status.MapToV1() });
     }
 }
 
@@ -304,17 +278,6 @@ public record AggregatedTransfers()
     /// The quantity of the aggregated transfers.
     /// </summary>
     public required long Quantity { get; init; }
-}
-
-/// <summary>
-/// Transfer status response.
-/// </summary>
-public record TransferStatusResponse()
-{
-    /// <summary>
-    /// The status of the transfer request.
-    /// </summary>
-    public required RequestStatus Status { get; init; }
 }
 
 #endregion

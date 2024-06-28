@@ -189,74 +189,7 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
     }
 
     [Fact]
-    public async Task GetTransferStatus_Unauthorized()
-    {
-        var controller = new TransfersController();
-
-        await using var provider = new ServiceCollection()
-            .AddMassTransitTestHarness(x =>
-            {
-            })
-            .BuildServiceProvider(true);
-
-        var result = await controller.GetTransferStatus(_unitOfWork, Guid.NewGuid());
-
-        result.Result.Should().BeOfType<UnauthorizedResult>();
-    }
-
-    [Fact]
-    public async Task GetTransferStatus_NotFound()
-    {
-        var subject = _fixture.Create<string>();
-        var controller = new TransfersController
-        {
-            ControllerContext = CreateContextWithUser(subject)
-        };
-
-        await using var provider = new ServiceCollection()
-            .AddMassTransitTestHarness(x =>
-            {
-            })
-            .BuildServiceProvider(true);
-
-        var result = await controller.GetTransferStatus(_unitOfWork, Guid.NewGuid());
-
-        result.Result.Should().BeOfType<NotFoundResult>();
-    }
-
-    [Fact]
-    public async Task GetTransferStatus()
-    {
-        var subject = _fixture.Create<string>();
-        var controller = new TransfersController
-        {
-            ControllerContext = CreateContextWithUser(subject)
-        };
-
-        await using var provider = new ServiceCollection()
-            .AddMassTransitTestHarness(x =>
-            {
-            })
-            .BuildServiceProvider(true);
-
-        var transferRequestId = Guid.NewGuid();
-        var status = new Server.Models.RequestStatus
-        {
-            RequestId = transferRequestId,
-            Status = RequestStatusState.Completed
-        };
-
-        await _dbFixture.CreateTransferStatus(status);
-
-        var result = await controller.GetTransferStatus(_unitOfWork, transferRequestId);
-
-        var response = (result.Result as OkObjectResult)?.Value as TransferStatusResponse;
-        response.Should().NotBeNull();
-        response.Status.Should().Be(RequestStatus.Completed);
-    }
-
-    [Fact]
-    public async void TransferCertificate_SavesStatusAndPublishesCommand()
+    public async void TransferCertificate_PublishesCommand()
     {
 
         // Arrange
@@ -296,12 +229,6 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
         sentCommand.CertificateId.Should().Be(request.CertificateId.StreamId);
         sentCommand.Quantity.Should().Be(request.Quantity);
         sentCommand.Receiver.Should().Be(request.ReceiverId);
-
-        var statusResult = await controller.GetTransferStatus(_unitOfWork, response.TransferRequestId);
-
-        var statusResponse = (statusResult.Result as OkObjectResult)?.Value as TransferStatusResponse;
-        statusResponse.Should().NotBeNull();
-        statusResponse.Status.Should().Be(RequestStatus.Pending);
     }
 
     private static ControllerContext CreateContextWithUser(string subject)

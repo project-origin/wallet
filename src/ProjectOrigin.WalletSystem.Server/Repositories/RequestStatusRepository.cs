@@ -9,8 +9,8 @@ namespace ProjectOrigin.WalletSystem.Server.Repositories;
 public interface IRequestStatusRepository
 {
     Task InsertRequestStatus(RequestStatus status);
-    Task<RequestStatus?> GetRequestStatus(Guid requestId);
-    Task SetRequestStatus(Guid requestId, RequestStatusState requestStatus, string? failedReason = null);
+    Task<RequestStatus?> GetRequestStatus(Guid requestId, string owner);
+    Task SetRequestStatus(Guid requestId, string owner, RequestStatusState requestStatus, string? failedReason = null);
 }
 
 public class RequestStatusRepository : IRequestStatusRepository
@@ -22,38 +22,43 @@ public class RequestStatusRepository : IRequestStatusRepository
     public async Task InsertRequestStatus(RequestStatus status)
     {
         await _connection.ExecuteAsync(
-            @"INSERT INTO request_statuses(request_id, status, failed_reason)
-              VALUES (@requestId, @status, @failedReason)",
+            @"INSERT INTO request_statuses(request_id, owner, status, failed_reason)
+              VALUES (@requestId, @owner, @status, @failedReason)",
             new
             {
                 status.RequestId,
+                status.Owner,
                 status.Status,
                 status.FailedReason
             });
     }
 
-    public Task<RequestStatus?> GetRequestStatus(Guid requestId)
+    public Task<RequestStatus?> GetRequestStatus(Guid requestId, string owner)
     {
         return _connection.QueryFirstOrDefaultAsync<RequestStatus>(
             @"SELECT s.*
               FROM request_statuses s
-              WHERE s.request_id = @requestId",
+              WHERE s.request_id = @requestId
+                AND s.owner = @owner",
             new
             {
-                requestId
+                requestId,
+                owner
             });
     }
 
-    public async Task SetRequestStatus(Guid requestId, RequestStatusState status, string? failedReason = null)
+    public async Task SetRequestStatus(Guid requestId, string owner, RequestStatusState status, string? failedReason = null)
     {
         var rowsChanged = await _connection.ExecuteAsync(
             @"UPDATE request_statuses
               SET status = @status,
                   failed_reason = @failedReason
-              WHERE request_id = @requestId",
+              WHERE request_id = @requestId
+                AND owner = @owner",
             new
             {
                 requestId,
+                owner,
                 status,
                 failedReason
             });

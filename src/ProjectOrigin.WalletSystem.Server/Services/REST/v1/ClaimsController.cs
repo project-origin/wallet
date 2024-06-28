@@ -122,6 +122,7 @@ public class ClaimsController : ControllerBase
         await unitOfWork.RequestStatusRepository.InsertRequestStatus(new Models.RequestStatus
         {
             RequestId = command.ClaimId,
+            Owner = subject,
             Status = RequestStatusState.Pending
         });
 
@@ -133,33 +134,6 @@ public class ClaimsController : ControllerBase
         {
             ClaimRequestId = command.ClaimId,
         });
-    }
-
-    /// <summary>
-    /// Gets status of specific claim.
-    /// </summary>
-    /// <param name="unitOfWork"></param>
-    /// <param name="claimRequestId">The ID of the claim request.</param>
-    /// <response code="200">The claim request status was found.</response>
-    /// <response code="401">If the user is not authenticated.</response>
-    /// <response code="404">If the claim specified is not found for the user.</response>
-    [HttpGet]
-    [Route("v1/claims/{claimRequestId}")]
-    [RequiredScope("po:claims:read")]
-    [ProducesResponseType(typeof(ClaimStatusResponse), StatusCodes.Status202Accepted)]
-    [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<ClaimStatusResponse>> GetClaimStatus(
-        [FromServices] IUnitOfWork unitOfWork,
-        [FromRoute] Guid claimRequestId)
-    {
-        if (!User.TryGetSubject(out var subject)) return Unauthorized();
-
-        var requestStatus = await unitOfWork.RequestStatusRepository.GetRequestStatus(claimRequestId);
-
-        if (requestStatus == null) return NotFound();
-
-        return Ok(new ClaimStatusResponse { Status = requestStatus.Status.MapToV1() });
     }
 }
 
@@ -317,17 +291,6 @@ public record AggregatedClaims()
     /// The quantity of the aggregated claims.
     /// </summary>
     public required long Quantity { get; init; }
-}
-
-/// <summary>
-/// Claim status response.
-/// </summary>
-public record ClaimStatusResponse()
-{
-    /// <summary>
-    /// The status of the claim request.
-    /// </summary>
-    public required RequestStatus Status { get; init; }
 }
 
 #endregion

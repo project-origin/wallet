@@ -188,7 +188,7 @@ public static class PostgresFixtureExtensions
         }
     }
 
-    public static async Task CreateTransferStatus(this PostgresDatabaseFixture _dbFixture, RequestStatus status)
+    public static async Task CreateRequestStatus(this PostgresDatabaseFixture _dbFixture, RequestStatus status)
     {
         using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
         {

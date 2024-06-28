@@ -34,7 +34,8 @@ public class ClaimTests : IClassFixture<PostgresDatabaseFixture>
         _processBuilder = new RegistryProcessBuilder(
             _unitOfWork,
             Substitute.For<IEndpointNameFormatter>(),
-            Guid.NewGuid()
+            Guid.NewGuid(),
+            _fixture.Create<string>()
         );
     }
 
@@ -55,7 +56,7 @@ public class ClaimTests : IClassFixture<PostgresDatabaseFixture>
         var consPublicKey = endpoint.PublicKey.Derive(consSlice.WalletEndpointPosition);
 
         // Act
-        await _processBuilder.Claim(prodSlice, consSlice, Guid.NewGuid());
+        await _processBuilder.Claim(prodSlice, consSlice);
         var slip = _processBuilder.Build();
 
         // Assert
@@ -147,7 +148,7 @@ public class ClaimTests : IClassFixture<PostgresDatabaseFixture>
         var consSlice = await _dbFixture.CreateSlice(endpoint, consCert, consSecret);
 
         // Act
-        var method = () => _processBuilder.Claim(prodSlice, consSlice, Guid.NewGuid());
+        var method = () => _processBuilder.Claim(prodSlice, consSlice);
 
         // Assert
         await method.Should().ThrowAsync<InvalidOperationException>()

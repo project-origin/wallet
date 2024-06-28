@@ -348,17 +348,17 @@
         }
       }
     },
-    "/v1/claims/{claimRequestId}": {
+    "/v1/request-status/{requestId}": {
       "get": {
         "tags": [
-          "Claims"
+          "RequestStatus"
         ],
-        "summary": "Gets status of specific claim.",
+        "summary": "Gets status of specific request.",
         "parameters": [
           {
-            "name": "claimRequestId",
+            "name": "requestId",
             "in": "path",
-            "description": "The ID of the claim request.",
+            "description": "The ID of the request.",
             "required": true,
             "schema": {
               "type": "string",
@@ -372,17 +372,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/ClaimStatusResponse"
+                  "$ref": "#/components/schemas/RequestStatusResponse"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ClaimStatusResponse"
+                  "$ref": "#/components/schemas/RequestStatusResponse"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ClaimStatusResponse"
+                  "$ref": "#/components/schemas/RequestStatusResponse"
                 }
               }
             }
@@ -391,10 +391,10 @@
             "description": "If the user is not authenticated."
           },
           "404": {
-            "description": "If the claim specified is not found for the user."
+            "description": "If the request specified is not found for the user."
           },
           "200": {
-            "description": "The claim request status was found."
+            "description": "The request status was found."
           }
         }
       }
@@ -633,57 +633,6 @@
           },
           "401": {
             "description": "If the user is not authenticated."
-          }
-        }
-      }
-    },
-    "/v1/transfers/{transferRequestId}": {
-      "get": {
-        "tags": [
-          "Transfers"
-        ],
-        "summary": "Gets status of specific transfer.",
-        "parameters": [
-          {
-            "name": "transferRequestId",
-            "in": "path",
-            "description": "The ID of the transfer request.",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "202": {
-            "description": "Accepted",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "$ref": "#/components/schemas/TransferStatusResponse"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TransferStatusResponse"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TransferStatusResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "If the user is not authenticated."
-          },
-          "404": {
-            "description": "If the transfer specified is not found for the user."
-          },
-          "200": {
-            "description": "The transfer status was found."
           }
         }
       }
@@ -1082,16 +1031,6 @@
         },
         "additionalProperties": false
       },
-      "ClaimStatusResponse": {
-        "type": "object",
-        "properties": {
-          "status": {
-            "$ref": "#/components/schemas/RequestStatus"
-          }
-        },
-        "additionalProperties": false,
-        "description": "Claim status response."
-      },
       "ClaimedCertificate": {
         "type": "object",
         "properties": {
@@ -1369,6 +1308,16 @@
         ],
         "type": "string"
       },
+      "RequestStatusResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "$ref": "#/components/schemas/RequestStatus"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Request status response."
+      },
       "TimeAggregate": {
         "enum": [
           "actual",
@@ -1463,16 +1412,6 @@
           }
         },
         "additionalProperties": false
-      },
-      "TransferStatusResponse": {
-        "type": "object",
-        "properties": {
-          "status": {
-            "$ref": "#/components/schemas/RequestStatus"
-          }
-        },
-        "additionalProperties": false,
-        "description": "Transfer status response."
       },
       "WalletEndpointReference": {
         "type": "object",

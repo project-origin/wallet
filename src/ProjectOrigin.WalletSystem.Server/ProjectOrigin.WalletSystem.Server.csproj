@@ -13,8 +13,8 @@
     <PackageReference Include="Grpc.AspNetCore" Version="2.62.0" />
     <PackageReference Include="MassTransit" Version="8.2.1" />
     <PackageReference Include="MassTransit.RabbitMQ" Version="8.2.1" />
-    <PackageReference Include="Npgsql" Version="8.0.2" />
-    <PackageReference Include="Npgsql.OpenTelemetry" Version="8.0.2" />
+    <PackageReference Include="Npgsql" Version="8.0.3" />
+    <PackageReference Include="Npgsql.OpenTelemetry" Version="8.0.3" />
     <PackageReference Include="NSec.Cryptography" Version="24.4.0" />
     <PackageReference Include="Microsoft.Identity.Web" Version="2.18.1" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.4" />
