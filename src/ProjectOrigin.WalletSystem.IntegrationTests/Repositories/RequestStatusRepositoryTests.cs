@@ -18,7 +18,7 @@ public class RequestStatusRepositoryTests : AbstractRepositoryTests
     }
 
     [Fact]
-    public async Task CreateAndGetTransferStatus()
+    public async Task CreateAndGetRequestStatus()
     {
         var status = new RequestStatus
         {
@@ -36,7 +36,7 @@ public class RequestStatusRepositoryTests : AbstractRepositoryTests
     }
 
     [Fact]
-    public async Task SetTransferStatus()
+    public async Task SetRequestStatus()
     {
         var status = new RequestStatus
         {

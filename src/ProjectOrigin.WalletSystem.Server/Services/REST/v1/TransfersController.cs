@@ -10,6 +10,9 @@ using ProjectOrigin.WalletSystem.Server.CommandHandlers;
 using ProjectOrigin.WalletSystem.Server.Database;
 using ProjectOrigin.WalletSystem.Server.Extensions;
 using ProjectOrigin.WalletSystem.Server.Models;
+using System.IO;
+using Microsoft.Extensions.Options;
+using ProjectOrigin.WalletSystem.Server.Options;
 
 namespace ProjectOrigin.WalletSystem.Server.Services.REST.v1;
 
@@ -102,6 +105,7 @@ public class TransfersController : ControllerBase
     /// </summary>
     /// <param name="bus"></param>
     /// <param name="unitOfWork"></param>
+    /// <param name="serviceOptions"></param>
     /// <param name="request"></param>
     /// <response code="202">Transfer request has been queued for processing.</response>
     /// <response code="401">If the user is not authenticated.</response>
@@ -114,6 +118,7 @@ public class TransfersController : ControllerBase
     public async Task<ActionResult<TransferResponse>> TransferCertificate(
         [FromServices] IBus bus,
         [FromServices] IUnitOfWork unitOfWork,
+        [FromServices] IOptions<ServiceOptions> serviceOptions,
         [FromBody] TransferRequest request
     )
     {
@@ -141,7 +146,7 @@ public class TransfersController : ControllerBase
 
         unitOfWork.Commit();
 
-        return Accepted(new TransferResponse()
+        return Accepted(serviceOptions.Value.PathBase + "/v1/request-status/" + command.TransferRequestId, new TransferResponse()
         {
             TransferRequestId = command.TransferRequestId,
         });

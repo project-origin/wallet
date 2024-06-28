@@ -29,7 +29,7 @@ public class RequestStatusControllerTests : IClassFixture<PostgresDatabaseFixtur
     }
 
     [Fact]
-    public async Task GetRequestStatus_Unauthorized()
+    public async Task GetRequestStatus_NoContext_Unauthorized()
     {
         var controller = new RequestStatusController();
 
