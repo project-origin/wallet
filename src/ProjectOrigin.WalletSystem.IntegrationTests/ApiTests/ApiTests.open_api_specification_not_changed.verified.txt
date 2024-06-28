@@ -367,8 +367,8 @@
           }
         ],
         "responses": {
-          "202": {
-            "description": "Accepted",
+          "200": {
+            "description": "The request status was found.",
             "content": {
               "text/plain": {
                 "schema": {
@@ -392,9 +392,6 @@
           },
           "404": {
             "description": "If the request specified is not found for the user."
-          },
-          "200": {
-            "description": "The request status was found."
           }
         }
       }

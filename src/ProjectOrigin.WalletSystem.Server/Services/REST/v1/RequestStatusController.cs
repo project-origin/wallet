@@ -24,7 +24,7 @@ public class RequestStatusController : ControllerBase
     [HttpGet]
     [Route("v1/request-status/{requestId}")]
     [RequiredScope("po:requestStatus:read")]
-    [ProducesResponseType(typeof(RequestStatusResponse), StatusCodes.Status202Accepted)]
+    [ProducesResponseType(typeof(RequestStatusResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<RequestStatusResponse>> GetRequestStatus(
