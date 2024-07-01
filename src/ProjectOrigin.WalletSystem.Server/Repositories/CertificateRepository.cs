@@ -116,7 +116,7 @@ public class CertificateRepository : ICertificateRepository
                     AND (@type IS NULL OR certificate_type = @type)
             );
             SELECT count(*) FROM certificates_work_table;
-            SELECT * FROM certificates_work_table WHERE updated_at > @UpdatedSince LIMIT @limit;
+            SELECT * FROM certificates_work_table WHERE (@UpdatedSince IS NULL OR updated_at > @UpdatedSince) LIMIT @limit;
             SELECT attributes.registry_name, attributes.certificate_id, attributes.attribute_key as key, attributes.attribute_value as value, attributes.attribute_type as type
             FROM attributes_view attributes
             WHERE (wallet_id IS NULL AND (registry_name, certificate_id) IN (SELECT registry_name, certificate_id FROM certificates_work_table))
@@ -142,7 +142,7 @@ public class CertificateRepository : ICertificateRepository
                 Items = certificates,
                 TotalCount = totalCouunt,
                 Count = certificates.Count(),
-                UpdatedSince = filter.UpdatedSince?.ToUnixTimeSeconds(),
+                updatedAt = filter.UpdatedSince?.ToUnixTimeSeconds(),
                 Limit = filter.Limit
             };
         }

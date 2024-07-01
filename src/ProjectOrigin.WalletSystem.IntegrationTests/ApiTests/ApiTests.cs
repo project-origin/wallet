@@ -97,7 +97,7 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
 
         //Assert
         var settings = new VerifySettings();
-        settings.ScrubMembersWithType(typeof(long));
+        settings.ScrubMember("UpdatedAt");
         await Verifier.VerifyJson(res, settings);
     }
 
@@ -112,11 +112,11 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
         var updatedSince = DateTimeOffset.UtcNow.AddMilliseconds(-500).ToUnixTimeSeconds();
 
         //Act
-        var res = await httpClient.GetAsync($"v2/certificates?UpdatedSince={updatedSince}");
+        var res = await httpClient.GetAsync($"v1/certificates/cursor?UpdatedSince={updatedSince}");
         var content = JsonConvert.DeserializeObject<ResultList<GranularCertificate, PageInfoCursor>>(await res.Content.ReadAsStringAsync());
         //Assert
         var settings = new VerifySettings();
-        settings.ScrubMembersWithType(typeof(long));
+        settings.ScrubMember("UpdatedAt");
         await Verifier.Verify(content, settings);
     }
 
@@ -135,7 +135,7 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
         var content = JsonConvert.DeserializeObject<ResultList<GranularCertificate, PageInfo>>(await res.Content.ReadAsStringAsync());
         //Assert
         var settings = new VerifySettings();
-        settings.ScrubMembersWithType(typeof(long));
+        settings.ScrubMember("UpdatedAt");
         await Verifier.Verify(content, settings);
     }
 
@@ -251,13 +251,13 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
                 $"v1/claims?end={filterStart}");
         var resultWithUpdatedSince =
             await httpClient.GetFromJsonAsync<ResultList<Server.Services.REST.v1.Claim, PageInfoCursor>>(
-                $"v2/claims?UpdatedSince={filterStart}");
+                $"v1/claims/cursor?UpdatedSince={filterStart}");
 
         var resultWithoutFiltersJson = await resultWithoutFilters.Content.ReadAsStringAsync();
         var resultWithoutFiltersContent = JsonConvert.DeserializeObject<ResultList<Server.Services.REST.v1.Claim, PageInfo>>(resultWithoutFiltersJson);
         //Assert
         var settings = new VerifySettings();
-        settings.ScrubMembersWithType(typeof(long));
+        settings.ScrubMember("UpdatedAt");
         await Verifier.Verify(resultWithoutFiltersContent, settings);
         resultWithUpdatedSince.Result.Should().NotBeEmpty();
         resultWithUpdatedSince.Result.Should().BeInAscendingOrder(x => x.UpdatedAt);

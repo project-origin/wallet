@@ -21,6 +21,40 @@ public class TransferRepositoryTests : AbstractRepositoryTests
     }
 
     [Fact]
+    public async Task GetTransfersCursor_UpdatedSinceNull()
+    {
+        // Arrange
+        var issuestartDate = new DateTimeOffset(2020, 6, 1, 12, 0, 0, TimeSpan.Zero);
+        var queryStartDate = new DateTimeOffset(2020, 6, 8, 12, 0, 0, TimeSpan.Zero);
+        var queryEndDate = new DateTimeOffset(2020, 6, 10, 12, 0, 0, TimeSpan.Zero);
+
+        string subject = _fixture.Create<string>();
+        var externalEndpoint = await _dbFixture.CreateExternalEndpoint(subject);
+
+        var certificate = await _dbFixture.CreateCertificate(
+            Guid.NewGuid(),
+            _fixture.Create<string>(),
+            GranularCertificateType.Production,
+            start: issuestartDate,
+            end: issuestartDate.AddHours(1));
+
+        await _dbFixture.CreateTransferredSlice(externalEndpoint, certificate,
+            new PedersenCommitment.SecretCommitmentInfo(100));
+
+        // Act
+        var updatedSince = DateTimeOffset.UtcNow.AddSeconds(-500);
+        var result = await _transferRepository.QueryTransfers(new QueryTransfersFilterCursor()
+        {
+            Owner = subject,
+        });
+
+        //assert
+        result.Items.Should().HaveCount(1);
+        result.Items.Last().UpdatedAt.Should().BeOnOrAfter(updatedSince);
+        result.Items.Should().BeInAscendingOrder(x => x.UpdatedAt);
+    }
+
+    [Fact]
     public async Task GetTransfersCursor()
     {
         // Arrange
@@ -47,7 +81,8 @@ public class TransferRepositoryTests : AbstractRepositoryTests
                         GranularCertificateType.Production,
                         start: i,
                         end: i.AddHours(1));
-                    await _dbFixture.CreateTransferredSlice(externalEndpoint, certificate, new PedersenCommitment.SecretCommitmentInfo(100));
+                    await _dbFixture.CreateTransferredSlice(externalEndpoint, certificate,
+                        new PedersenCommitment.SecretCommitmentInfo(100));
                 }
             }
         }
@@ -101,7 +136,8 @@ public class TransferRepositoryTests : AbstractRepositoryTests
                         GranularCertificateType.Production,
                         start: i,
                         end: i.AddHours(1));
-                    await _dbFixture.CreateTransferredSlice(externalEndpoint, certificate, new PedersenCommitment.SecretCommitmentInfo(100));
+                    await _dbFixture.CreateTransferredSlice(externalEndpoint, certificate,
+                        new PedersenCommitment.SecretCommitmentInfo(100));
                 }
             }
         }
@@ -128,7 +164,8 @@ public class TransferRepositoryTests : AbstractRepositoryTests
     [InlineData("2020-06-08T12:00:00Z", "2020-06-10T12:00:00Z", 10, 0, 10, 96)]
     [InlineData("2020-06-08T12:00:00Z", "2020-06-10T12:00:00Z", 10, 20, 10, 96)]
     [InlineData("2020-06-08T12:00:00Z", "2020-06-10T12:00:00Z", 10, 90, 6, 96)]
-    public async Task QueryTransfers_Pagination(string from, string to, int take, int skip, int numberOfResults, int total)
+    public async Task QueryTransfers_Pagination(string from, string to, int take, int skip, int numberOfResults,
+        int total)
     {
         // Arrange
         var issuestartDate = new DateTimeOffset(2020, 6, 1, 12, 0, 0, TimeSpan.Zero);
@@ -154,7 +191,8 @@ public class TransferRepositoryTests : AbstractRepositoryTests
                         GranularCertificateType.Production,
                         start: i,
                         end: i.AddHours(1));
-                    await _dbFixture.CreateTransferredSlice(externalEndpoint, certificate, new PedersenCommitment.SecretCommitmentInfo(100));
+                    await _dbFixture.CreateTransferredSlice(externalEndpoint, certificate,
+                        new PedersenCommitment.SecretCommitmentInfo(100));
                 }
             }
         }
@@ -183,7 +221,8 @@ public class TransferRepositoryTests : AbstractRepositoryTests
     [InlineData("2020-06-08T12:00:00Z", "2020-06-12T12:00:00Z", TimeAggregate.Day, "Europe/Copenhagen", 2, 4, 1, 5)]
     [InlineData("2020-06-02T00:00:00Z", "2020-06-04T12:00:00Z", TimeAggregate.Day, "Europe/Copenhagen", 2, 0, 2, 3)]
     [InlineData("2020-06-02T00:00:00Z", "2020-06-04T12:00:00Z", TimeAggregate.Day, "America/Toronto", 2, 0, 2, 4)]
-    public async Task QueryAggregatedTransfers_Pagination(string from, string to, TimeAggregate aggregate, string timeZone, int take, int skip, int numberOfResults, int total)
+    public async Task QueryAggregatedTransfers_Pagination(string from, string to, TimeAggregate aggregate,
+        string timeZone, int take, int skip, int numberOfResults, int total)
     {
         // Arrange
         var issuestartDate = new DateTimeOffset(2020, 6, 1, 12, 0, 0, TimeSpan.Zero);
@@ -209,7 +248,8 @@ public class TransferRepositoryTests : AbstractRepositoryTests
                         GranularCertificateType.Production,
                         start: i,
                         end: i.AddHours(1));
-                    await _dbFixture.CreateTransferredSlice(externalEndpoint, certificate, new PedersenCommitment.SecretCommitmentInfo(100));
+                    await _dbFixture.CreateTransferredSlice(externalEndpoint, certificate,
+                        new PedersenCommitment.SecretCommitmentInfo(100));
                 }
             }
         }

@@ -65,7 +65,7 @@ public class TransferRepository : ITransferRepository
                 AND (@end IS NULL OR end_date <= @end)
         );
         SELECT count(*) FROM transfer_work_table;
-        SELECT * FROM transfer_work_table WHERE updated_at > @UpdatedSince LIMIT @limit;
+        SELECT * FROM transfer_work_table WHERE (@UpdatedSince IS NULL OR updated_at > @UpdatedSince) LIMIT @limit;
         SELECT attributes.registry_name, attributes.certificate_id, attributes.attribute_key as key, attributes.attribute_value as value, attributes.attribute_type as type
         FROM attributes_view attributes
             WHERE (wallet_id IS NULL AND (registry_name, certificate_id) IN (SELECT registry_name, certificate_id FROM transfer_work_table))
@@ -90,7 +90,7 @@ public class TransferRepository : ITransferRepository
                 Items = transfers,
                 TotalCount = totalCount,
                 Count = transfers.Count(),
-                UpdatedSince = filter.UpdatedSince?.ToUnixTimeSeconds(),
+                updatedAt = filter.UpdatedSince?.ToUnixTimeSeconds(),
                 Limit = filter.Limit
             };
         }

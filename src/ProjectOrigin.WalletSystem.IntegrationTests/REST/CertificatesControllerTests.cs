@@ -105,7 +105,7 @@ public class CertificatesControllerTests : IClassFixture<PostgresDatabaseFixture
 
         await CreateCertificates(issuestartDate, issueEndDate, endpoint);
 
-        var result = await controller.GetCertificates(
+        var result = await controller.GetCertificatesCursor(
             _unitOfWork,
             new GetCertificatesQueryParametersCursor
             {

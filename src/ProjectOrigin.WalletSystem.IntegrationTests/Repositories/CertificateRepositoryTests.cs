@@ -666,6 +666,35 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
     }
 
     [Fact]
+    public async Task QueryCertificates_UpdatedSinceNull()
+    {
+        // Arrange
+        var owner = _fixture.Create<string>();
+
+        var wallet = await CreateWallet(owner);
+        var startDate = new DateTimeOffset(2020, 6, 1, 0, 0, 0, TimeSpan.Zero);
+        await CreateCertificatesAndSlices(wallet, 1, startDate);
+
+        // Act
+        var result = await _certRepository.QueryCertificates(new QueryCertificatesFilterCursor
+        {
+            Owner = owner,
+            Start = startDate,
+            End = DateTimeOffset.Parse("2020-06-10T11:00:00Z"),
+            Limit = 10,
+            UpdatedSince = DateTimeOffset.UtcNow.AddHours(-1)
+        });
+
+        // Assert
+
+        result.Items.Should().HaveCount(1);
+        result.Limit.Should().Be(10);
+        result.Count.Should().Be(1);
+        result.TotalCount.Should().Be(1);
+        result.Items.Should().BeInAscendingOrder(x => x.UpdatedAt);
+    }
+
+    [Fact]
     public async Task QueryCertificates_cursor()
     {
         // Arrange

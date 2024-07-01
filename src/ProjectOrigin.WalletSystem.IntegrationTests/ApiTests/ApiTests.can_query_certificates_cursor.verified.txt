@@ -6,8 +6,8 @@
         StreamId: Guid_2
       },
       Quantity: 85,
-      Start: {Scrubbed},
-      End: {Scrubbed},
+      Start: 1672574400,
+      End: 1672578000,
       GridArea: DK1,
       CertificateType: Production,
       Attributes: {
@@ -21,8 +21,8 @@
         StreamId: Guid_3
       },
       Quantity: 44,
-      Start: {Scrubbed},
-      End: {Scrubbed},
+      Start: 1672578000,
+      End: 1672581600,
       GridArea: DK1,
       CertificateType: Production,
       Attributes: {
@@ -33,7 +33,7 @@
   ],
   Metadata: {
     Count: 2,
-    UpdatedSince: {Scrubbed},
+    UpdatedAt: {Scrubbed},
     Limit: 2147483647,
     Total: 2
   }

@@ -8,8 +8,8 @@
           Registry: Guid_2,
           StreamId: Guid_3
         },
-        Start: {Scrubbed},
-        End: {Scrubbed},
+        Start: 1672574400,
+        End: 1672578000,
         GridArea: DK1,
         Attributes: {
           assetId: 571234567890123456,
@@ -22,8 +22,8 @@
           Registry: Guid_2,
           StreamId: Guid_4
         },
-        Start: {Scrubbed},
-        End: {Scrubbed},
+        Start: 1672574400,
+        End: 1672578000,
         GridArea: DK1,
         Attributes: {
           assetId: 571234567891234567

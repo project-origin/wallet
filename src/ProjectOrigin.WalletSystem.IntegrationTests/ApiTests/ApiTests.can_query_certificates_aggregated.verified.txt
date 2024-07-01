@@ -2,13 +2,13 @@
   Result: [
     {
       Quantity: 85,
-      Start: {Scrubbed},
-      End: {Scrubbed}
+      Start: 1672574400,
+      End: 1672578000
     },
     {
       Quantity: 44,
-      Start: {Scrubbed},
-      End: {Scrubbed}
+      Start: 1672578000,
+      End: 1672581600
     }
   ],
   Metadata: {

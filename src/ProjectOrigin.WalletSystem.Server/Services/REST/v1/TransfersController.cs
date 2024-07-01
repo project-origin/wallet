@@ -26,12 +26,12 @@ public class TransfersController : ControllerBase
     /// <response code="200">Returns the individual transferes within the filter.</response>
     /// <response code="401">If the user is not authenticated.</response>
     [HttpGet]
-    [Route("v2/transfers")]
+    [Route("v1/transfers/cursor")]
     [RequiredScope("po:transfers:read")]
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
-    public async Task<ActionResult<ResultList<Transfer, PageInfoCursor>>> GetTransfers(
+    public async Task<ActionResult<ResultList<Transfer, PageInfoCursor>>> GetTransfersCursor(
         [FromServices] IUnitOfWork unitOfWork,
         [FromQuery] GetTransfersQueryParametersCursor param)
     {

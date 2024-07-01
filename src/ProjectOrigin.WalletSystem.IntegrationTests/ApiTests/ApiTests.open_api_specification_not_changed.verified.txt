@@ -5,7 +5,7 @@
     "version": "1.0"
   },
   "paths": {
-    "/v2/certificates": {
+    "/v1/certificates/cursor": {
       "get": {
         "tags": [
           "Certificates"
@@ -336,7 +336,7 @@
         }
       }
     },
-    "/v2/claims": {
+    "/v1/claims/cursor": {
       "get": {
         "tags": [
           "Claims"
@@ -588,7 +588,7 @@
         }
       }
     },
-    "/v2/transfers": {
+    "/v1/transfers/cursor": {
       "get": {
         "tags": [
           "Transfers"
@@ -1473,7 +1473,7 @@
             "type": "integer",
             "format": "int32"
           },
-          "updatedSince": {
+          "updatedAt": {
             "type": "integer",
             "format": "int64",
             "nullable": true

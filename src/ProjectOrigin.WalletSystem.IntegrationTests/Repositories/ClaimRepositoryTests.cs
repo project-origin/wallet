@@ -192,6 +192,31 @@ public class ClaimRepositoryTests : AbstractRepositoryTests
     }
 
     [Fact]
+    public async Task QueryClaims_UpdateSinceNull()
+    {
+        // Arrange
+        var owner = _fixture.Create<string>();
+        var startDate = new DateTimeOffset(2020, 6, 1, 0, 0, 0, TimeSpan.Zero);
+        await CreateClaimsAndCerts(owner, 1, startDate);
+
+        // Act
+        var result = await _claimRepository.QueryClaimsCursor(new QueryClaimsFilterCursor()
+        {
+            Owner = owner,
+            Start = startDate,
+            End = startDate.AddHours(4),
+            Limit = 3,
+        });
+
+        // Assert
+        result.Items.Should().HaveCount(1);
+        result.Limit.Should().Be(3);
+        result.Count.Should().Be(1);
+        result.TotalCount.Should().Be(1);
+        result.Items.Should().BeInAscendingOrder(x => x.UpdatedAt);
+    }
+
+    [Fact]
     public async Task QueryClaims_Cursor()
     {
         // Arrange

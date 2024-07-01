@@ -84,7 +84,7 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
         }
 
         // Act
-        var result = await controller.GetTransfers(
+        var result = await controller.GetTransfersCursor(
             _unitOfWork,
             new GetTransfersQueryParametersCursor()
             {
