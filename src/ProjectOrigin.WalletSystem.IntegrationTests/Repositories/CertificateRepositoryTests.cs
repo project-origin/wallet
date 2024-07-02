@@ -702,7 +702,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
 
         var wallet = await CreateWallet(owner);
         var startDate = new DateTimeOffset(2020, 6, 1, 0, 0, 0, TimeSpan.Zero);
-        await CreateCertificatesAndSlices(wallet, 50, startDate);
+        await CreateCertificatesAndSlices(wallet, 50, startDate, 10);
 
         // Act
         var result = await _certRepository.QueryCertificates(new QueryCertificatesFilterCursor
@@ -721,6 +721,19 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         result.Count.Should().Be(10);
         result.TotalCount.Should().Be(50);
         result.Items.Should().BeInAscendingOrder(x => x.UpdatedAt);
+
+        var cursor = result.Items.Last().UpdatedAt;
+        var result2 = await _certRepository.QueryCertificates(new QueryCertificatesFilterCursor
+        {
+            Owner = owner,
+            Start = startDate,
+            End = DateTimeOffset.Parse("2020-06-10T11:00:00Z"),
+            Limit = 10,
+            UpdatedSince = cursor
+        });
+
+        // test result2 is the next page
+        result2.Items.First().UpdatedAt.Should().BeAfter(cursor);
     }
 
     [Theory]
@@ -758,7 +771,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         result.TotalCount.Should().Be(total);
     }
 
-    private async Task CreateCertificatesAndSlices(Wallet wallet, int numberOfCertificates, DateTimeOffset startDate)
+    private async Task CreateCertificatesAndSlices(Wallet wallet, int numberOfCertificates, DateTimeOffset startDate, int delay = 0)
     {
         var registry = _fixture.Create<string>();
         var endpoint = await CreateWalletEndpoint(wallet);
@@ -780,6 +793,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
             };
 
             await _certRepository.InsertWalletSlice(slice);
+            await Task.Delay(delay);
         }
     }
 

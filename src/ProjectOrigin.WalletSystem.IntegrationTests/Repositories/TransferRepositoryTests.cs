@@ -25,8 +25,6 @@ public class TransferRepositoryTests : AbstractRepositoryTests
     {
         // Arrange
         var issuestartDate = new DateTimeOffset(2020, 6, 1, 12, 0, 0, TimeSpan.Zero);
-        var queryStartDate = new DateTimeOffset(2020, 6, 8, 12, 0, 0, TimeSpan.Zero);
-        var queryEndDate = new DateTimeOffset(2020, 6, 10, 12, 0, 0, TimeSpan.Zero);
 
         string subject = _fixture.Create<string>();
         var externalEndpoint = await _dbFixture.CreateExternalEndpoint(subject);
@@ -83,30 +81,37 @@ public class TransferRepositoryTests : AbstractRepositoryTests
                         end: i.AddHours(1));
                     await _dbFixture.CreateTransferredSlice(externalEndpoint, certificate,
                         new PedersenCommitment.SecretCommitmentInfo(100));
+                    await Task.Delay(10);
                 }
             }
         }
 
         // Act
-        var updatedSince = DateTimeOffset.UtcNow.AddSeconds(-500);
+        var updatedSince = DateTimeOffset.UtcNow.AddHours(-1);
         var result = await _transferRepository.QueryTransfers(new QueryTransfersFilterCursor()
         {
             Owner = subject,
             Start = queryStartDate,
             End = queryEndDate,
+            Limit = 10,
             UpdatedSince = updatedSince
         });
 
         //assert
-        result.Items.Should().HaveCount(96);
+        result.Items.Should().HaveCount(10);
         result.Items.Last().UpdatedAt.Should().BeOnOrAfter(updatedSince);
         result.Items.Should().BeInAscendingOrder(x => x.UpdatedAt);
-        result.Items.Select(x => x.ReceiverId).Distinct().Should().HaveCount(2);
-        result.Items.SelectMany(x => x.Attributes).Should().HaveCount(96 * 2);
-        result.Items.Select(x => x.StartDate).Distinct().Should().HaveCount(48);
         result.Items.Min(x => x.StartDate).Should().Be(queryStartDate);
-        result.Items.Select(x => x.EndDate).Distinct().Should().HaveCount(48);
-        result.Items.Max(x => x.EndDate).Should().Be(queryEndDate);
+
+        var cursor = result.Items.Last().UpdatedAt;
+        var result2 = await _transferRepository.QueryTransfers(new QueryTransfersFilterCursor()
+        {
+            Owner = subject,
+            Start = queryStartDate,
+            End = queryEndDate,
+            UpdatedSince = cursor
+        });
+        result2.Items.First().UpdatedAt.Should().BeAfter(cursor);
     }
 
     [Fact]

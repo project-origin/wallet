@@ -223,14 +223,12 @@ public class ClaimRepositoryTests : AbstractRepositoryTests
         var owner = _fixture.Create<string>();
         var numberOfClaims = 31 * 24;
         var startDate = new DateTimeOffset(2020, 6, 1, 0, 0, 0, TimeSpan.Zero);
-        await CreateClaimsAndCerts(owner, numberOfClaims, startDate);
+        await CreateClaimsAndCerts(owner, numberOfClaims, startDate, 10);
 
         // Act
         var result = await _claimRepository.QueryClaimsCursor(new QueryClaimsFilterCursor()
         {
             Owner = owner,
-            Start = startDate,
-            End = startDate.AddHours(4),
             UpdatedSince = startDate,
             Limit = 3,
         });
@@ -239,8 +237,17 @@ public class ClaimRepositoryTests : AbstractRepositoryTests
         result.Items.Should().HaveCount(3);
         result.Limit.Should().Be(3);
         result.Count.Should().Be(3);
-        result.TotalCount.Should().Be(4);
+        result.TotalCount.Should().Be(numberOfClaims);
         result.Items.Should().BeInAscendingOrder(x => x.UpdatedAt);
+
+        var cursor = result.Items.Last().UpdatedAt;
+        var result2 = await _claimRepository.QueryClaimsCursor(new QueryClaimsFilterCursor()
+        {
+            Owner = owner,
+            UpdatedSince = cursor,
+            Limit = 3,
+        });
+        result2.Items.First().UpdatedAt.Should().BeAfter(cursor);
     }
 
     [Theory]
@@ -276,7 +283,7 @@ public class ClaimRepositoryTests : AbstractRepositoryTests
         result.TotalCount.Should().Be(total);
     }
 
-    private async Task CreateClaimsAndCerts(string owner, int numberOfClaims, DateTimeOffset startDate)
+    private async Task CreateClaimsAndCerts(string owner, int numberOfClaims, DateTimeOffset startDate, int delay = 0)
     {
         var certRepository = new CertificateRepository(_connection);
 
@@ -323,6 +330,7 @@ public class ClaimRepositoryTests : AbstractRepositoryTests
                 State = ClaimState.Claimed
             };
             await _claimRepository.InsertClaim(claim);
+            await Task.Delay(delay);
         }
     }
 }
