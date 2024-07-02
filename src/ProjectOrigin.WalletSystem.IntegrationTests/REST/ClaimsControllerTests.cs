@@ -73,8 +73,8 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
         var wallet = await _dbFixture.CreateWallet(subject);
         var endpoint = await _dbFixture.CreateWalletEndpoint(wallet);
 
-        await CreateClaims(issuestartDate, issueEndDate, endpoint, 100);
-        var queryUpdatedSince = DateTimeOffset.UtcNow.AddMicroseconds(-2000).ToUnixTimeSeconds();
+        await CreateClaims(issuestartDate, issueEndDate, endpoint, 10);
+        var queryUpdatedSince = DateTimeOffset.UtcNow.AddHours(-1).ToUnixTimeSeconds();
         // Act
         var result = await controller.GetClaimsCursor(
             _unitOfWork, new GetClaimsQueryParametersCursor()
