@@ -27,8 +27,8 @@ public static class HttpClientExtensions
         return client.PostAsJsonAsync($"v1/external-endpoints", request, options).ParseJson<CreateExternalEndpointResponse>();
     }
 
-    public static Task<ResultList<GranularCertificate>> GetCertificates(this HttpClient client) =>
-        client.GetAsync($"v1/certificates").ParseJson<ResultList<GranularCertificate>>();
+    public static Task<ResultList<GranularCertificate, PageInfo>> GetCertificates(this HttpClient client) =>
+        client.GetAsync($"v1/certificates").ParseJson<ResultList<GranularCertificate, PageInfo>>();
 
     public static Task<IEnumerable<GranularCertificate>> GetCertificatesWithTimeout(this HttpClient client, int count, TimeSpan timeout) =>
         Timeout(async () =>

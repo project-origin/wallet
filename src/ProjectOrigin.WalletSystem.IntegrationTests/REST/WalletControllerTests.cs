@@ -194,7 +194,7 @@ public class WalletControllerTests : IClassFixture<PostgresDatabaseFixture>
 
         // Assert
         getResult.Result.Should().BeOfType<OkObjectResult>()
-            .Which.Value.Should().BeOfType<ResultList<WalletRecord>>()
+            .Which.Value.Should().BeOfType<ResultList<WalletRecord, PageInfo>>()
             .Which.Result.Should().ContainSingle()
             .Which.Id.Should().Be(response!.WalletId);
     }
@@ -214,7 +214,7 @@ public class WalletControllerTests : IClassFixture<PostgresDatabaseFixture>
 
         // Assert
         getResult.Result.Should().BeOfType<OkObjectResult>()
-          .Which.Value.Should().BeOfType<ResultList<WalletRecord>>()
+          .Which.Value.Should().BeOfType<ResultList<WalletRecord, PageInfo>>()
           .Which.Result.Should().BeEmpty();
     }
 

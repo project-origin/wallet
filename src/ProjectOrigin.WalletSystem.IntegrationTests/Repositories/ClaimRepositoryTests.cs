@@ -191,6 +191,65 @@ public class ClaimRepositoryTests : AbstractRepositoryTests
         result.TotalCount.Should().Be(total);
     }
 
+    [Fact]
+    public async Task QueryClaims_UpdateSinceNull()
+    {
+        // Arrange
+        var owner = _fixture.Create<string>();
+        var startDate = new DateTimeOffset(2020, 6, 1, 0, 0, 0, TimeSpan.Zero);
+        await CreateClaimsAndCerts(owner, 1, startDate);
+
+        // Act
+        var result = await _claimRepository.QueryClaimsCursor(new QueryClaimsFilterCursor()
+        {
+            Owner = owner,
+            Start = startDate,
+            End = startDate.AddHours(4),
+            Limit = 3,
+        });
+
+        // Assert
+        result.Items.Should().HaveCount(1);
+        result.Limit.Should().Be(3);
+        result.Count.Should().Be(1);
+        result.TotalCount.Should().Be(1);
+        result.Items.Should().BeInAscendingOrder(x => x.UpdatedAt);
+    }
+
+    [Fact]
+    public async Task QueryClaims_Cursor()
+    {
+        // Arrange
+        var owner = _fixture.Create<string>();
+        var numberOfClaims = 31 * 24;
+        var startDate = new DateTimeOffset(2020, 6, 1, 0, 0, 0, TimeSpan.Zero);
+        await CreateClaimsAndCerts(owner, numberOfClaims, startDate, 10);
+
+        // Act
+        var result = await _claimRepository.QueryClaimsCursor(new QueryClaimsFilterCursor()
+        {
+            Owner = owner,
+            UpdatedSince = startDate,
+            Limit = 3,
+        });
+
+        // Assert
+        result.Items.Should().HaveCount(3);
+        result.Limit.Should().Be(3);
+        result.Count.Should().Be(3);
+        result.TotalCount.Should().Be(numberOfClaims);
+        result.Items.Should().BeInAscendingOrder(x => x.UpdatedAt);
+
+        var cursor = result.Items.Last().UpdatedAt;
+        var result2 = await _claimRepository.QueryClaimsCursor(new QueryClaimsFilterCursor()
+        {
+            Owner = owner,
+            UpdatedSince = cursor,
+            Limit = 3,
+        });
+        result2.Items.First().UpdatedAt.Should().BeAfter(cursor);
+    }
+
     [Theory]
     [InlineData("2020-06-08T12:00:00Z", "2020-06-12T12:00:00Z", TimeAggregate.Total, "Europe/Copenhagen", 2, 0, 1, 1)]
     [InlineData("2020-06-08T12:00:00Z", "2020-06-12T12:00:00Z", TimeAggregate.Day, "Europe/Copenhagen", 2, 2, 2, 5)]
@@ -224,7 +283,7 @@ public class ClaimRepositoryTests : AbstractRepositoryTests
         result.TotalCount.Should().Be(total);
     }
 
-    private async Task CreateClaimsAndCerts(string owner, int numberOfClaims, DateTimeOffset startDate)
+    private async Task CreateClaimsAndCerts(string owner, int numberOfClaims, DateTimeOffset startDate, int delay = 0)
     {
         var certRepository = new CertificateRepository(_connection);
 
@@ -271,6 +330,7 @@ public class ClaimRepositoryTests : AbstractRepositoryTests
                 State = ClaimState.Claimed
             };
             await _claimRepository.InsertClaim(claim);
+            await Task.Delay(delay);
         }
     }
 }

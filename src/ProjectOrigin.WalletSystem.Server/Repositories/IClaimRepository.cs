@@ -12,5 +12,6 @@ public interface IClaimRepository
     Task SetClaimState(Guid claimId, ClaimState state);
 
     Task<PageResult<ClaimViewModel>> QueryClaims(QueryClaimsFilter filter);
+    Task<PageResultCursor<ClaimViewModel>> QueryClaimsCursor(QueryClaimsFilterCursor filter);
     Task<PageResult<AggregatedClaimViewModel>> QueryAggregatedClaims(QueryAggregatedClaimsFilter filter);
 }

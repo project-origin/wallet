@@ -9,6 +9,8 @@ using Microsoft.Identity.Web.Resource;
 using ProjectOrigin.WalletSystem.Server.Database;
 using ProjectOrigin.WalletSystem.Server.Extensions;
 using ProjectOrigin.WalletSystem.Server.Models;
+using ProjectOrigin.WalletSystem.Server.Services.REST.v1;
+using TimeAggregate = ProjectOrigin.WalletSystem.Server.Models.TimeAggregate;
 
 namespace ProjectOrigin.WalletSystem.Server.Services.REST.v1;
 
@@ -22,12 +24,42 @@ public class CertificatesController : ControllerBase
     /// <response code="200">Returns the aggregated claims.</response>
     /// <response code="401">If the user is not authenticated.</response>
     [HttpGet]
+    [Route("v1/certificates/cursor")]
+    [RequiredScope("po:certificates:read")]
+    [Produces("application/json")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<ResultList<GranularCertificate, PageInfoCursor>>> GetCertificatesCursor(
+        [FromServices] IUnitOfWork unitOfWork,
+        [FromQuery] GetCertificatesQueryParametersCursor param)
+    {
+        if (!User.TryGetSubject(out var subject)) return Unauthorized();
+
+        var certificates = await unitOfWork.CertificateRepository.QueryCertificates(new QueryCertificatesFilterCursor
+        {
+            Owner = subject,
+            Start = param.Start != null ? DateTimeOffset.FromUnixTimeSeconds(param.Start.Value) : null,
+            End = param.End != null ? DateTimeOffset.FromUnixTimeSeconds(param.End.Value) : null,
+            Type = param.Type != null ? (GranularCertificateType)param.Type.Value : null,
+            UpdatedSince = param.UpdatedSince != null ? DateTimeOffset.FromUnixTimeSeconds(param.UpdatedSince.Value) : null,
+            Limit = param.Limit ?? int.MaxValue,
+        });
+
+        return certificates.ToResultList(c => c.MapToV1());
+    }
+
+    /// <summary>
+    /// Gets all certificates in the wallet that are <b>available</b> for use.
+    /// </summary>
+    /// <response code="200">Returns the aggregated claims.</response>
+    /// <response code="401">If the user is not authenticated.</response>
+    [HttpGet]
     [Route("v1/certificates")]
     [RequiredScope("po:certificates:read")]
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
-    public async Task<ActionResult<ResultList<GranularCertificate>>> GetCertificates(
+    public async Task<ActionResult<ResultList<GranularCertificate, PageInfo>>> GetCertificates(
         [FromServices] IUnitOfWork unitOfWork,
         [FromQuery] GetCertificatesQueryParameters param)
     {
@@ -59,7 +91,7 @@ public class CertificatesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
-    public async Task<ActionResult<ResultList<AggregatedCertificates>>> AggregateCertificates(
+    public async Task<ActionResult<ResultList<AggregatedCertificates, PageInfo>>> AggregateCertificates(
         [FromServices] IUnitOfWork unitOfWork,
         [FromQuery] AggregateCertificatesQueryParameters param)
     {
@@ -118,6 +150,34 @@ public record GetCertificatesQueryParameters
     public int Skip { get; init; }
 }
 
+public record GetCertificatesQueryParametersCursor
+{
+    /// <summary>
+    /// The start of the time range in Unix time in seconds.
+    /// </summary>
+    public long? Start { get; init; }
+
+    /// <summary>
+    /// The end of the time range in Unix time in seconds.
+    /// </summary>
+    public long? End { get; init; }
+
+    /// <summary>
+    /// Filter the type of certificates to return.
+    /// </summary>
+    public CertificateType? Type { get; init; }
+
+    /// <summary>
+    /// The number of items to return.
+    /// </summary>
+    public int? Limit { get; init; }
+
+    /// <summary>
+    /// The time of the last update in Unix time in seconds.
+    /// </summary>
+    public long? UpdatedSince { get; init; }
+}
+
 public record AggregateCertificatesQueryParameters
 {
     /// <summary>
@@ -155,6 +215,44 @@ public record AggregateCertificatesQueryParameters
     /// </summary>
     [DefaultValue(0)]
     public int Skip { get; init; }
+}
+
+public record AggregateCertificatesCursorQueryParameters
+{
+    /// <summary>
+    /// The size of each bucket in the aggregation.
+    /// </summary>
+    public required TimeAggregate TimeAggregate { get; init; }
+
+    /// <summary>
+    /// The time zone. See https://en.wikipedia.org/wiki/List_of_tz_database_time_zones for a list of valid time zones.
+    /// </summary>
+    public required string TimeZone { get; init; }
+
+    /// <summary>
+    ///The start of the time range in Unix time in seconds.
+    /// </summary>
+    public long? Start { get; init; }
+
+    /// <summary>
+    /// The end of the time range in Unix time in seconds.
+    /// </summary>
+    public long? End { get; init; }
+
+    /// <summary>
+    /// Filter the type of certificates to return.
+    /// </summary>
+    public CertificateType? Type { get; init; }
+
+    /// <summary>
+    /// The number of items to return.
+    /// </summary>
+    public int? Limit { get; init; }
+
+    /// <summary>
+    /// The time of the last update in Unix time in seconds.
+    /// </summary>
+    public long? UpdatedSince { get; init; }
 }
 
 /// <summary>

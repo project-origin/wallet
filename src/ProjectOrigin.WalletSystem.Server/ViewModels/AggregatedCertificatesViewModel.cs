@@ -11,5 +11,7 @@ public record AggregatedCertificatesViewModel
 
     public required long Quantity { get; init; }
 
+    public required DateTimeOffset UpdatedAt { get; init; }
+
     public required GranularCertificateType Type { get; init; }
 }

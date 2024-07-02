@@ -26,12 +26,54 @@ public class TransfersController : ControllerBase
     /// <response code="200">Returns the individual transferes within the filter.</response>
     /// <response code="401">If the user is not authenticated.</response>
     [HttpGet]
+    [Route("v1/transfers/cursor")]
+    [RequiredScope("po:transfers:read")]
+    [Produces("application/json")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<ResultList<Transfer, PageInfoCursor>>> GetTransfersCursor(
+        [FromServices] IUnitOfWork unitOfWork,
+        [FromQuery] GetTransfersQueryParametersCursor param)
+    {
+        if (!User.TryGetSubject(out var subject)) return Unauthorized();
+
+        var transfers = await unitOfWork.TransferRepository.QueryTransfers(new QueryTransfersFilterCursor()
+        {
+            Owner = subject,
+            Start = param.Start != null ? DateTimeOffset.FromUnixTimeSeconds(param.Start.Value) : null,
+            End = param.End != null ? DateTimeOffset.FromUnixTimeSeconds(param.End.Value) : null,
+            UpdatedSince = param.UpdatedSince != null ? DateTimeOffset.FromUnixTimeSeconds(param.UpdatedSince.Value) : null,
+            Limit = param.Limit ?? int.MaxValue,
+        });
+
+        return transfers.ToResultList(t => new Transfer()
+        {
+            FederatedStreamId = new FederatedStreamId
+            {
+                Registry = t.RegistryName,
+                StreamId = t.CertificateId
+            },
+            ReceiverId = t.ReceiverId.ToString(),
+            Start = t.StartDate.ToUnixTimeSeconds(),
+            End = t.EndDate.ToUnixTimeSeconds(),
+            Quantity = t.Quantity,
+            GridArea = t.GridArea,
+        });
+    }
+
+
+    /// <summary>
+    /// Gets detailed list of all of the transfers that have been made to other wallets.
+    /// </summary>
+    /// <response code="200">Returns the individual transferes within the filter.</response>
+    /// <response code="401">If the user is not authenticated.</response>
+    [HttpGet]
     [Route("v1/transfers")]
     [RequiredScope("po:transfers:read")]
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
-    public async Task<ActionResult<ResultList<Transfer>>> GetTransfers(
+    public async Task<ActionResult<ResultList<Transfer, PageInfo>>> GetTransfers(
         [FromServices] IUnitOfWork unitOfWork,
         [FromQuery] GetTransfersQueryParameters param)
     {
@@ -74,7 +116,7 @@ public class TransfersController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
-    public async Task<ActionResult<ResultList<AggregatedTransfers>>> AggregateTransfers(
+    public async Task<ActionResult<ResultList<AggregatedTransfers, PageInfo>>> AggregateTransfers(
         [FromServices] IUnitOfWork unitOfWork,
         [FromQuery] AggregateTransfersQueryParameters param)
     {
@@ -155,6 +197,28 @@ public class TransfersController : ControllerBase
 
 #region Records
 
+public record GetTransfersQueryParametersCursor
+{
+    /// <summary>
+    /// The start of the time range in Unix time in seconds.
+    /// </summary>
+    public long? Start { get; init; }
+
+    /// <summary>
+    /// The end of the time range in Unix time in seconds.
+    /// </summary>
+    public long? End { get; init; }
+
+    /// <summary>
+    /// The number of items to return.
+    /// </summary>
+    public int? Limit { get; init; }
+
+    /// <summary>
+    /// The time of the last update in Unix time in seconds.
+    /// </summary>
+    public long? UpdatedSince { get; init; }
+}
 
 public record GetTransfersQueryParameters
 {

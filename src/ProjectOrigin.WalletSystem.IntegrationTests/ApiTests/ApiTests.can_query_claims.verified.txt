@@ -1,40 +1,40 @@
 ﻿{
-  result: [
+  Result: [
     {
-      claimId: Guid_1,
-      quantity: 42,
-      productionCertificate: {
-        federatedStreamId: {
-          registry: Guid_2,
-          streamId: Guid_3
+      ClaimId: Guid_1,
+      Quantity: 42,
+      ProductionCertificate: {
+        FederatedStreamId: {
+          Registry: Guid_2,
+          StreamId: Guid_3
         },
-        start: 1672574400,
-        end: 1672578000,
-        gridArea: DK1,
-        attributes: {
+        Start: 1672574400,
+        End: 1672578000,
+        GridArea: DK1,
+        Attributes: {
           assetId: 571234567890123456,
           fuelCode: F00000000,
           techCode: T070000
         }
       },
-      consumptionCertificate: {
-        federatedStreamId: {
-          registry: Guid_2,
-          streamId: Guid_4
+      ConsumptionCertificate: {
+        FederatedStreamId: {
+          Registry: Guid_2,
+          StreamId: Guid_4
         },
-        start: 1672574400,
-        end: 1672578000,
-        gridArea: DK1,
-        attributes: {
+        Start: 1672574400,
+        End: 1672578000,
+        GridArea: DK1,
+        Attributes: {
           assetId: 571234567891234567
         }
-      }
+      },
+      UpdatedAt: {Scrubbed}
     }
   ],
-  metadata: {
-    count: 1,
-    offset: 0,
-    limit: 2147483647,
-    total: 1
+  Metadata: {
+    Count: 1,
+    Limit: 2147483647,
+    Total: 1
   }
 }

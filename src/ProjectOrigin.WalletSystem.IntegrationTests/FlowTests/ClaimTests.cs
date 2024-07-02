@@ -57,7 +57,7 @@ public class ClaimTests : AbstractFlowTests
         //Assert
         var queryClaims = await Timeout(async () =>
         {
-            var queryClaims = await client.GetAsync("v1/claims").ParseJson<ResultList<Claim>>();
+            var queryClaims = await client.GetAsync("v1/claims").ParseJson<ResultList<Claim, PageInfo>>();
             queryClaims.Result.Should().NotBeEmpty();
             return queryClaims;
         }, TimeSpan.FromMinutes(3));

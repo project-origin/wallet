@@ -32,7 +32,7 @@ public class ClaimsController : ControllerBase
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
-    public async Task<ActionResult<ResultList<Claim>>> GetClaims(
+    public async Task<ActionResult<ResultList<Claim, PageInfo>>> GetClaims(
         [FromServices] IUnitOfWork unitOfWork,
         [FromQuery] GetClaimsQueryParameters param)
     {
@@ -44,6 +44,35 @@ public class ClaimsController : ControllerBase
             Start = param.Start != null ? DateTimeOffset.FromUnixTimeSeconds(param.Start.Value) : null,
             End = param.End != null ? DateTimeOffset.FromUnixTimeSeconds(param.End.Value) : null,
             Skip = param.Skip,
+            Limit = param.Limit ?? int.MaxValue,
+        });
+
+        return claims.ToResultList(c => c.MapToV1());
+    }
+
+    /// <summary>
+    /// Gets all claims in the wallet
+    /// </summary>
+    /// <response code="200">Returns all the indiviual claims.</response>
+    /// <response code="401">If the user is not authenticated.</response>
+    [HttpGet]
+    [Route("v1/claims/cursor")]
+    [RequiredScope("po:claims:read")]
+    [Produces("application/json")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<ResultList<Claim, PageInfoCursor>>> GetClaimsCursor(
+        [FromServices] IUnitOfWork unitOfWork,
+        [FromQuery] GetClaimsQueryParametersCursor param)
+    {
+        if (!User.TryGetSubject(out var subject)) return Unauthorized();
+
+        var claims = await unitOfWork.ClaimRepository.QueryClaimsCursor(new QueryClaimsFilterCursor
+        {
+            Owner = subject,
+            Start = param.Start != null ? DateTimeOffset.FromUnixTimeSeconds(param.Start.Value) : null,
+            End = param.End != null ? DateTimeOffset.FromUnixTimeSeconds(param.End.Value) : null,
+            UpdatedSince = param.UpdatedSince != null ? DateTimeOffset.FromUnixTimeSeconds(param.UpdatedSince.Value) : null,
             Limit = param.Limit ?? int.MaxValue,
         });
 
@@ -63,7 +92,7 @@ public class ClaimsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
-    public async Task<ActionResult<ResultList<AggregatedClaims>>> AggregateClaims(
+    public async Task<ActionResult<ResultList<AggregatedClaims, PageInfo>>> AggregateClaims(
         [FromServices] IUnitOfWork unitOfWork,
         [FromQuery] AggregateClaimsQueryParameters param)
     {
@@ -144,6 +173,35 @@ public class ClaimsController : ControllerBase
 
 #region Records
 
+public record GetClaimsQueryParametersCursor
+{
+    /// <summary>
+    /// The start of the time range in Unix time in seconds.
+    /// </summary>
+    public long? Start { get; init; }
+
+    /// <summary>
+    /// The end of the time range in Unix time in seconds.
+    /// </summary>
+    public long? End { get; init; }
+
+    /// <summary>
+    /// Filter the type of certificates to return.
+    /// </summary>
+    public CertificateType? Type { get; init; }
+
+    /// <summary>
+    /// The number of items to return.
+    /// </summary>
+    public int? Limit { get; init; }
+
+    /// <summary>
+    /// The time of the last update in Unix time in seconds.
+    /// </summary>
+    public long? UpdatedSince { get; init; }
+}
+
+
 public record GetClaimsQueryParameters
 {
     /// <summary>
@@ -211,6 +269,7 @@ public record Claim()
     public required uint Quantity { get; init; }
     public required ClaimedCertificate ProductionCertificate { get; init; }
     public required ClaimedCertificate ConsumptionCertificate { get; init; }
+    public required long UpdatedAt { get; init; }
 }
 
 

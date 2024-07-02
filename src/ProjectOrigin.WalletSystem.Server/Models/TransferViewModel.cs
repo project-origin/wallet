@@ -12,5 +12,6 @@ public record TransferViewModel
     public required long Quantity { get; init; }
     public required DateTimeOffset StartDate { get; init; }
     public required DateTimeOffset EndDate { get; init; }
+    public required DateTimeOffset UpdatedAt { get; init; }
     public List<CertificateAttribute> Attributes { get; } = new();
 }

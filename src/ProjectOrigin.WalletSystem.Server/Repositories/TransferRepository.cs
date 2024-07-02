@@ -51,6 +51,51 @@ public class TransferRepository : ITransferRepository
             });
     }
 
+    public async Task<PageResultCursor<TransferViewModel>> QueryTransfers(QueryTransfersFilterCursor filter)
+    {
+        string sql = @"
+        CREATE TEMPORARY TABLE transfer_work_table ON COMMIT DROP AS (
+            SELECT
+                *
+            FROM
+                transfers_query_model
+            WHERE
+                owner = @owner
+                AND (@start IS NULL OR start_date >= @start)
+                AND (@end IS NULL OR end_date <= @end)
+        );
+        SELECT count(*) FROM transfer_work_table;
+        SELECT * FROM transfer_work_table WHERE (@UpdatedSince IS NULL OR updated_at > @UpdatedSince) LIMIT @limit;
+        SELECT attributes.registry_name, attributes.certificate_id, attributes.attribute_key as key, attributes.attribute_value as value, attributes.attribute_type as type
+        FROM attributes_view attributes
+            WHERE (wallet_id IS NULL AND (registry_name, certificate_id) IN (SELECT registry_name, certificate_id FROM transfer_work_table))
+                OR (wallet_id, registry_name, certificate_id) IN (SELECT wallet_id, registry_name, certificate_id FROM transfer_work_table)
+        ";
+
+        using (var gridReader = await _connection.QueryMultipleAsync(sql, filter))
+        {
+            var totalCount = gridReader.ReadSingle<int>();
+            var transfers = gridReader.Read<TransferViewModel>();
+            var attributes = gridReader.Read<AttributeViewModel>();
+
+            foreach (var transfer in transfers)
+            {
+                transfer.Attributes.AddRange(attributes
+                    .Where(attr => attr.RegistryName == transfer.RegistryName
+                                   && attr.CertificateId == transfer.CertificateId));
+            }
+
+            return new PageResultCursor<TransferViewModel>
+            {
+                Items = transfers,
+                TotalCount = totalCount,
+                Count = transfers.Count(),
+                updatedAt = filter.UpdatedSince?.ToUnixTimeSeconds(),
+                Limit = filter.Limit
+            };
+        }
+    }
+
     public async Task<PageResult<TransferViewModel>> QueryTransfers(QueryTransfersFilter filter)
     {
         string sql = @"

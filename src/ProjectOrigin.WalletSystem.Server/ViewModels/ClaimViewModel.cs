@@ -8,6 +8,7 @@ public record ClaimViewModel
 {
     public required Guid ClaimId { get; init; }
     public required uint Quantity { get; init; }
+    public required DateTimeOffset UpdatedAt { get; init; }
 
     public required string ProductionRegistryName { get; init; }
     public required Guid ProductionCertificateId { get; init; }

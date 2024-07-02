@@ -11,5 +11,6 @@ public interface ITransferRepository
     Task<TransferredSlice> GetTransferredSlice(Guid sliceId);
     Task SetTransferredSliceState(Guid sliceId, TransferredSliceState state);
     Task<PageResult<TransferViewModel>> QueryTransfers(QueryTransfersFilter filter);
+    Task<PageResultCursor<TransferViewModel>> QueryTransfers(QueryTransfersFilterCursor filter);
     Task<PageResult<AggregatedTransferViewModel>> QueryAggregatedTransfers(QueryAggregatedTransfersFilter filter);
 }

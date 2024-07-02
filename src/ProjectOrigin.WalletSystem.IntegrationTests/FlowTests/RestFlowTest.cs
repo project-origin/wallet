@@ -73,7 +73,7 @@ public class RestFlowTest : AbstractFlowTests
         // Assert
         var certificates = await Timeout(async () =>
         {
-            var response = await client.GetAsync("v1/certificates").ParseJson<ResultList<GranularCertificate>>();
+            var response = await client.GetAsync("v1/certificates").ParseJson<ResultList<GranularCertificate, PageInfo>>();
             response.Result.Should().HaveCount(1);
             return response.Result;
         }, TimeSpan.FromMinutes(1));

@@ -11,6 +11,15 @@ public record QueryClaimsFilter
     public DateTimeOffset? End { get; init; }
 }
 
+public record QueryClaimsFilterCursor
+{
+    public required string Owner { get; init; }
+    public DateTimeOffset? UpdatedSince { get; init; }
+    public int Limit { get; init; } = int.MaxValue;
+    public DateTimeOffset? Start { get; init; }
+    public DateTimeOffset? End { get; init; }
+}
+
 public record QueryAggregatedClaimsFilter : QueryClaimsFilter
 {
     public required TimeAggregate TimeAggregate { get; init; }
