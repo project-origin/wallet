@@ -15,6 +15,7 @@ trap 'rm -fr $temp_folder; kind delete cluster -n ${cluster_name} >/dev/null 2>&
 # define variables
 temp_folder=$(mktemp -d)
 values_filename=${temp_folder}/values.yaml
+operated_filename=${temp_folder}/operated.yaml
 
 # create kind cluster
 kind delete cluster -n ${cluster_name}
@@ -47,7 +48,41 @@ messageBroker:
   type: rabbitmqOperator
 EOF
 
+# setup operated
+cat << EOF > "$operated_filename"
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: wallet
+---
+apiVersion: rabbitmq.com/v1beta1
+kind: RabbitmqCluster
+metadata:
+  name: wallet-rabbitmq
+  namespace: wallet
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: cnpg-wallet-db
+  namespace: wallet
+spec:
+  instances: 3
+  storage:
+    size: 10Gi
+  bootstrap:
+    initdb:
+      database: wallet-database
+      owner: app
+  monitoring:
+    enablePodMonitor: true
+EOF
+
+kubectl apply -f "$operated_filename"
+
 # install wallet chart
 helm install wallet charts/project-origin-wallet --values ${values_filename} --namespace wallet --create-namespace --wait
+
+kubectl wait --for=condition=ready --timeout=300s pod -n wallet -l app=po-wallet
 
 echo "Test completed"

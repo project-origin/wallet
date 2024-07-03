@@ -56,22 +56,22 @@ spec:
             - name: MessageBroker__RabbitMQ__Host
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Release.Name }}-rabbitmq-default-user
+                  name: {{ .Values.messageBroker.rabbitmqOperator.name }}-default-user
                   key: host
             - name: MessageBroker__RabbitMQ__Port
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Release.Name }}-rabbitmq-default-user
+                  name: {{ .Values.messageBroker.rabbitmqOperator.name }}-default-user
                   key: port
             - name: MessageBroker__RabbitMQ__Username
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Release.Name }}-rabbitmq-default-user
+                  name: {{ .Values.messageBroker.rabbitmqOperator.name }}-default-user
                   key: username
             - name: MessageBroker__RabbitMQ__Password
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Release.Name }}-rabbitmq-default-user
+                  name: {{ .Values.messageBroker.rabbitmqOperator.name }}-default-user
                   key: password
           {{- else}}
             {{- fail "messageBroker type must be one of (inMemory | rabbitmq | rabbitmqOperator)" }}
