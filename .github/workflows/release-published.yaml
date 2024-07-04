@@ -6,12 +6,12 @@ on:
 
 jobs:
   define-version:
-    uses: project-origin/.github/.github/workflows/reusable-tag-version.yaml@c1e411bd412e1dca8aef08548b1dcdfb967dac38
+    uses: project-origin/.github/.github/workflows/reusable-tag-version.yaml@6b2c4ee9e8fc1f5ab523c138a3ac12e5fa9da75e
 
   publish-container:
     needs:
       - define-version
-    uses: project-origin/.github/.github/workflows/reusable-build-push-container-ghcr.yaml@c1e411bd412e1dca8aef08548b1dcdfb967dac38
+    uses: project-origin/.github/.github/workflows/reusable-build-push-container-ghcr.yaml@6b2c4ee9e8fc1f5ab523c138a3ac12e5fa9da75e
     with:
       imagename: ghcr.io/project-origin/wallet-server
       version: ${{ needs.define-version.outputs.version }}
@@ -23,7 +23,7 @@ jobs:
     needs:
       - define-version
       - publish-container
-    uses: project-origin/.github/.github/workflows/reusable-publish-chart.yaml@c1e411bd412e1dca8aef08548b1dcdfb967dac38
+    uses: project-origin/.github/.github/workflows/reusable-publish-chart.yaml@6b2c4ee9e8fc1f5ab523c138a3ac12e5fa9da75e
     with:
       version: ${{ needs.define-version.outputs.version }}
       chart_folder: charts/project-origin-wallet
