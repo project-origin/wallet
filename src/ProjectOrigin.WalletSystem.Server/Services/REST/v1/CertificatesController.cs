@@ -9,8 +9,6 @@ using Microsoft.Identity.Web.Resource;
 using ProjectOrigin.WalletSystem.Server.Database;
 using ProjectOrigin.WalletSystem.Server.Extensions;
 using ProjectOrigin.WalletSystem.Server.Models;
-using ProjectOrigin.WalletSystem.Server.Services.REST.v1;
-using TimeAggregate = ProjectOrigin.WalletSystem.Server.Models.TimeAggregate;
 
 namespace ProjectOrigin.WalletSystem.Server.Services.REST.v1;
 
@@ -18,6 +16,28 @@ namespace ProjectOrigin.WalletSystem.Server.Services.REST.v1;
 [ApiController]
 public class CertificatesController : ControllerBase
 {
+
+    /// <summary>
+    /// Gets a single certificate
+    /// </summary>
+    /// <response code="200">Returns a certificate.</response>
+    /// <response code="401">If the user is not authenticated.</response>
+    [HttpGet]
+    [Route("v1/certificates/{registry}/{streamId}")]
+    [RequiredScope("po:certificates:read")]
+    [Produces("application/json")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<GranularCertificate>> GetCertificate(
+        [FromServices] IUnitOfWork unitOfWork,
+        [FromRoute] string registry, Guid streamId)
+    {
+        if (!User.TryGetSubject(out var subject)) return Unauthorized();
+        var certificate = await unitOfWork.CertificateRepository.QueryCertificate(subject, registry, streamId);
+
+        return certificate != null ? certificate.MapToV1() : NotFound();
+    }
+
     /// <summary>
     /// Gets all certificates in the wallet that are <b>available</b> for use.
     /// </summary>
