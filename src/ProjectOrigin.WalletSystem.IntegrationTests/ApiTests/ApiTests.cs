@@ -138,9 +138,8 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
 
         //Act
         var res = await httpClient.GetAsync($"v1/certificates/cursor?UpdatedSince={updatedSince}");
-        var content =
-            JsonConvert.DeserializeObject<ResultList<GranularCertificate, PageInfoCursor>>(
-                await res.Content.ReadAsStringAsync());
+        var content =JsonConvert.DeserializeObject<ResultList<GranularCertificate, PageInfoCursor>>(await res.Content.ReadAsStringAsync());
+
         //Assert
         var settings = new VerifySettings();
         settings.ScrubMember("UpdatedAt");
@@ -159,9 +158,7 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
         //Act
         var res = await httpClient.GetAsync(
             "v1/aggregate-certificates?timeAggregate=hour&timeZone=Europe/Copenhagen");
-        var content =
-            JsonConvert.DeserializeObject<ResultList<GranularCertificate, PageInfo>>(
-                await res.Content.ReadAsStringAsync());
+        var content = JsonConvert.DeserializeObject<ResultList<GranularCertificate, PageInfo>>(await res.Content.ReadAsStringAsync());
         //Assert
         var settings = new VerifySettings();
         settings.ScrubMember("UpdatedAt");

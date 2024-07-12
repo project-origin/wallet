@@ -27,6 +27,7 @@ public class CertificatesController : ControllerBase
     [RequiredScope("po:certificates:read")]
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<GranularCertificate>> GetCertificate(
         [FromServices] IUnitOfWork unitOfWork,
