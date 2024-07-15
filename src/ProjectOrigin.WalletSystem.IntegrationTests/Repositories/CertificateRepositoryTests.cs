@@ -666,6 +666,26 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
     }
 
     [Fact]
+    public async Task QuerySingleCertificate()
+    {
+        var owner = _fixture.Create<string>();
+        var registry = _fixture.Create<string>();
+        var wallet = await CreateWallet(owner);
+
+        var startDate = DateTimeOffset.UtcNow.AddHours(-1);
+        var cert = await CreateCertificate(registry, GranularCertificateType.Consumption, startDate, endDate: startDate.AddHours(1));
+        var slice = await CreateAndInsertCertificateWithSlice(registry, await CreateWalletEndpoint(wallet), 1, 100, cert);
+
+
+        var result = await _certRepository.QueryCertificate(owner, registry, cert.Id);
+
+        result!.RegistryName.Should().Be(registry);
+        result.CertificateId.Should().Be(cert.Id);
+        result.Quantity.Should().Be((uint)slice.Quantity);
+        result.Attributes.Should().BeEquivalentTo(cert.Attributes);
+    }
+
+    [Fact]
     public async Task QueryCertificates_UpdatedSinceNull()
     {
         // Arrange
@@ -801,11 +821,11 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         string registry,
         WalletEndpoint endpoint,
         int endpointPosition,
-        int? quantity = null)
+        int? quantity = null, Certificate? cert = null)
     {
         quantity = quantity ?? _fixture.Create<int>();
 
-        var certificate = await CreateCertificate(registry);
+        var certificate = cert ?? await CreateCertificate(registry);
         var slice = new WalletSlice
         {
             Id = Guid.NewGuid(),

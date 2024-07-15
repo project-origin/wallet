@@ -9,6 +9,7 @@ using ProjectOrigin.WalletSystem.Server.Repositories;
 using ProjectOrigin.WalletSystem.Server.Services.REST.v1;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
@@ -102,6 +103,30 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
     }
 
     [Fact]
+    public async Task can_query_single_certificate()
+    {
+        //Arrange
+        var owner = _fixture.Create<string>();
+        var someOwnerName = _fixture.Create<string>();
+        var httpClient = CreateAuthenticatedHttpClient(owner, someOwnerName);
+        await AddCertificatesToOwner(owner);
+
+        //Act
+        var res = await httpClient.GetAsync("v1/certificates");
+
+        var content =
+            JsonConvert.DeserializeObject<ResultList<GranularCertificate, PageInfoCursor>>(
+                await res.Content.ReadAsStringAsync());
+        var response = await httpClient.GetStringAsync("v1/certificates/"
+                                                 + content!.Result.First().FederatedStreamId.Registry + "/"
+                                                 + content.Result.First().FederatedStreamId.StreamId);
+        //Assert
+        var settings = new VerifySettings();
+        settings.ScrubMember("UpdatedAt");
+        await Verifier.VerifyJson(response, settings);
+    }
+
+    [Fact]
     public async Task can_query_certificates_cursor()
     {
         //Arrange
@@ -114,6 +139,7 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
         //Act
         var res = await httpClient.GetAsync($"v1/certificates/cursor?UpdatedSince={updatedSince}");
         var content = JsonConvert.DeserializeObject<ResultList<GranularCertificate, PageInfoCursor>>(await res.Content.ReadAsStringAsync());
+
         //Assert
         var settings = new VerifySettings();
         settings.ScrubMember("UpdatedAt");
@@ -254,7 +280,9 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
                 $"v1/claims/cursor?UpdatedSince={filterStart}");
 
         var resultWithoutFiltersJson = await resultWithoutFilters.Content.ReadAsStringAsync();
-        var resultWithoutFiltersContent = JsonConvert.DeserializeObject<ResultList<Server.Services.REST.v1.Claim, PageInfo>>(resultWithoutFiltersJson);
+        var resultWithoutFiltersContent =
+            JsonConvert.DeserializeObject<ResultList<Server.Services.REST.v1.Claim, PageInfo>>(
+                resultWithoutFiltersJson);
         //Assert
         var settings = new VerifySettings();
         settings.ScrubMember("UpdatedAt");

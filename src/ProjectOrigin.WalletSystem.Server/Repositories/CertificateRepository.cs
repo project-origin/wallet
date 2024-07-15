@@ -4,6 +4,7 @@ using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using Dapper;
+using ProjectOrigin.Common.V1;
 using ProjectOrigin.WalletSystem.Server.Activities.Exceptions;
 using ProjectOrigin.WalletSystem.Server.Extensions;
 using ProjectOrigin.WalletSystem.Server.Models;
@@ -92,6 +93,50 @@ public class CertificateRepository : ICertificateRepository
 
         return certsDictionary.Values.FirstOrDefault();
     }
+
+    public async Task<CertificateViewModel?> QueryCertificate(string owner, string registry, Guid certificateId)
+    {
+        string sql = @"
+            CREATE TEMPORARY TABLE certificates_work_table ON COMMIT DROP AS (
+                SELECT
+                    certificate_id,
+                    registry_name,
+                    certificate_type,
+                    grid_area,
+                    start_date,
+                    end_date,
+                    quantity,
+                    wallet_id,
+                    updated_at
+                FROM
+                    certificates_query_model
+                WHERE
+                    owner = @owner
+                    AND registry_name = @registry
+                    AND certificate_id = @certificateId
+            );
+            SELECT * FROM certificates_work_table;
+            SELECT attributes.registry_name, attributes.certificate_id, attributes.attribute_key as key, attributes.attribute_value as value, attributes.attribute_type as type
+            FROM attributes_view attributes
+            WHERE (wallet_id IS NULL AND (registry_name, certificate_id) IN (SELECT registry_name, certificate_id FROM certificates_work_table))
+                OR (wallet_id, registry_name, certificate_id) IN (SELECT wallet_id, registry_name, certificate_id FROM certificates_work_table)
+
+            ";
+
+        using (var gridReader = await _connection.QueryMultipleAsync(sql, new { owner, registry, certificateId }))
+        {
+            var certificates = gridReader.Read<CertificateViewModel>();
+            var attributes = gridReader.Read<AttributeViewModel>();
+
+            var certificate = certificates.FirstOrDefault();
+            certificate?.Attributes.AddRange(attributes
+                .Where(attr => attr.RegistryName == certificate.RegistryName
+                               && attr.CertificateId == certificate.CertificateId));
+
+            return certificate;
+        }
+    }
+
 
     public async Task<PageResultCursor<CertificateViewModel>> QueryCertificates(QueryCertificatesFilterCursor filter)
     {
