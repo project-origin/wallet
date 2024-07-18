@@ -14,19 +14,6 @@ public record QueryCertificatesFilter
     public GranularCertificateType? Type { get; init; }
 }
 
-public enum SortBy
-{
-    End,
-    Quantity,
-    Type
-}
-
-public enum SortOrder
-{
-    ASC,
-    DESC
-}
-
 public record QueryAggregatedCertificatesFilter : QueryCertificatesFilter
 {
     public required TimeAggregate TimeAggregate { get; init; }
