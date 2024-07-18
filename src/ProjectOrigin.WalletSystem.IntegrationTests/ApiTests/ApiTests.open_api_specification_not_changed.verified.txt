@@ -181,7 +181,7 @@
             "in": "query",
             "description": "The order to sort by",
             "schema": {
-              "$ref": "#/components/schemas/CertificateSort"
+              "$ref": "#/components/schemas/AscOrDesc"
             }
           },
           {
@@ -1222,7 +1222,7 @@
         },
         "additionalProperties": false
       },
-      "CertificateSort": {
+      "AscOrDesc": {
         "enum": [
           "asc",
           "desc"

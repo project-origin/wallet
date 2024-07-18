@@ -176,7 +176,7 @@ public record GetCertificatesQueryParameters
     /// <summary>
     /// The order to sort by
     /// </summary>
-    public CertificateSort Sort { get; init; }
+    public AscOrDesc Sort { get; init; }
 
     /// <summary>
     /// The number of items to skip.
@@ -191,13 +191,6 @@ public enum CertificateSortBy
     End,
     Quantity,
     Type
-}
-
-[JsonConverter(typeof(StringEnumConverter))]
-public enum CertificateSort
-{
-    ASC,
-    DESC
 }
 
 public record GetCertificatesQueryParametersCursor
