@@ -7,10 +7,6 @@ A wallet is uniquely identified by a WalletId and is associated with a specific 
 The wallet also holds the private key of the wallet.
 The private key is used for cryptographic operations related to ownership verification and transaction signing.
 
-All calls to the system are done with a JWT (Json Web Token) and enables the system to identify the current user.
-
-An owner will be able to have multiple wallets, and authorize other users to access their wallets on a per-wallet basis.
-
 ## Wallet Endpoint
 
 Wallet endpoints are utilized within the system to enable secure asset transfers and ownership management.

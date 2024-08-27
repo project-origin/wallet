@@ -29,7 +29,6 @@ sequenceDiagram
     else wallet-endpoint not found
         wallet -->>- source: Error
     end
-
 ```
 
 ## Slice verification
