@@ -64,7 +64,7 @@ public partial class RegistryProcessBuilder
         var sliceEvent = CreateSliceEvent(sourceSlice, mappedSlices);
         var transaction = privateKey.SignRegistryTransaction(sliceEvent.CertificateId, sliceEvent);
 
-        AddRegistryTransactionActivity(transaction);
+        AddRegistryTransactionActivity(transaction, sourceSlice.Id);
         AddActivity<UpdateSliceStateActivity, UpdateSliceStateArguments>(new UpdateSliceStateArguments
         {
             SliceStates = newSlices
