@@ -74,6 +74,12 @@ public class Startup
         {
             o.SetKebabCaseEndpointNameFormatter();
 
+            o.AddConfigureEndpointsCallback((name, cfg) =>
+            {
+                if (cfg is IRabbitMqReceiveEndpointConfigurator rmq)
+                    rmq.SetQuorumQueue(3);
+            });
+
             o.AddConsumer<TransferCertificateCommandHandler>(cfg =>
             {
                 cfg.UseMessageRetry(r => r.Interval(100, TimeSpan.FromMinutes(1))
