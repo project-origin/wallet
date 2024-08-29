@@ -215,6 +215,13 @@ public class CertificateRepository : ICertificateRepository
                     AND (@end IS NULL OR end_date <= @end)
                     AND quantity != 0
                     AND (@type IS NULL OR certificate_type = @type)
+                ORDER BY
+                    CASE WHEN @SortBy = 'End' AND @Sort = 'ASC' THEN end_date END ASC,
+                    CASE WHEN @SortBy = 'End' AND @Sort = 'DESC' THEN end_date END DESC,
+                    CASE WHEN @SortBy = 'Quantity' AND @Sort = 'ASC' THEN quantity END ASC,
+                    CASE WHEN @SortBy = 'Quantity' AND @Sort = 'DESC' THEN quantity END DESC,
+                    CASE WHEN @SortBy = 'Type' AND @Sort = 'ASC' THEN certificate_type END ASC,
+                    CASE WHEN @SortBy = 'Type' AND @Sort = 'DESC' THEN certificate_type END DESC
             );
             SELECT count(*) FROM certificates_work_table;
             SELECT * FROM certificates_work_table LIMIT @limit OFFSET @skip;
