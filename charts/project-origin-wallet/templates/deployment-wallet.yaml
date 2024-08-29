@@ -42,7 +42,7 @@ spec:
           {{- else if eq .Values.messageBroker.type "rabbitmq" }}
             - name: MessageBroker__Type
               value: RabbitMq
-          {{ - if eq .Values.messageBroker.quorum "true" }}
+          {{- if eq .Values.messageBroker.quorum "true" }}
             - name: MessageBroker__RabbitMQ__Replicas
               value: {{ .Values.messageBroker.rabbitmq.replicas }}
           {{- end }}
