@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Identity.Web.Resource;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using ProjectOrigin.WalletSystem.Server.Database;
 using ProjectOrigin.WalletSystem.Server.Extensions;
 using ProjectOrigin.WalletSystem.Server.Models;
@@ -92,6 +94,8 @@ public class CertificatesController : ControllerBase
             Start = param.Start != null ? DateTimeOffset.FromUnixTimeSeconds(param.Start.Value) : null,
             End = param.End != null ? DateTimeOffset.FromUnixTimeSeconds(param.End.Value) : null,
             Type = param.Type != null ? (GranularCertificateType)param.Type.Value : null,
+            Sort = param.Sort.ToString(),
+            SortBy = param.SortBy.ToString(),
             Skip = param.Skip,
             Limit = param.Limit ?? int.MaxValue,
         });
@@ -165,10 +169,28 @@ public record GetCertificatesQueryParameters
     public int? Limit { get; init; }
 
     /// <summary>
+    /// Which type to sort by
+    /// </summary>
+    public CertificateSortBy SortBy { get; init; }
+
+    /// <summary>
+    /// The order to sort by
+    /// </summary>
+    public AscOrDesc Sort { get; init; }
+
+    /// <summary>
     /// The number of items to skip.
     /// </summary>
     [DefaultValue(0)]
     public int Skip { get; init; }
+}
+
+[JsonConverter(typeof(StringEnumConverter))]
+public enum CertificateSortBy
+{
+    End,
+    Quantity,
+    Type
 }
 
 public record GetCertificatesQueryParametersCursor

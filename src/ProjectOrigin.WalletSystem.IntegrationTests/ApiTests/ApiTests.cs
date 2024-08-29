@@ -10,6 +10,7 @@ using ProjectOrigin.WalletSystem.Server.Services.REST.v1;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
@@ -94,12 +95,27 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
         await AddCertificatesToOwner(owner);
 
         //Act
-        var res = await httpClient.GetStringAsync("v1/certificates");
+        var res = await httpClient.GetStringAsync("v1/certificates?sortBy=End&sort=asc");
+        var content =
+            JsonConvert.DeserializeObject<ResultList<GranularCertificate, PageInfoCursor>>(
+                 res);
+
+        content!.Result.Should().BeInAscendingOrder(x => x.End);
 
         //Assert
         var settings = new VerifySettings();
         settings.ScrubMember("UpdatedAt");
         await Verifier.VerifyJson(res, settings);
+    }
+
+    [Fact]
+    public async Task query_certificates_sortby_unknown_return_bad_request()
+    {
+        var owner = _fixture.Create<string>();
+        var someOwnerName = _fixture.Create<string>();
+        var httpClient = CreateAuthenticatedHttpClient(owner, someOwnerName);
+        var res = await httpClient.GetAsync("v1/certificates?sortBy=BADVALUE&sort=asc");
+        res.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [Fact]
