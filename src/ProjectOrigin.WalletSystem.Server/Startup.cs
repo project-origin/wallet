@@ -66,6 +66,11 @@ public class Startup
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
+        services.AddOptions<RabbitMqOptions>()
+            .BindConfiguration(RabbitMqOptions.RabbitMq)
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
         services.ConfigurePersistance(_configuration);
         services.ConfigureAuthentication(_configuration.GetValidSection<AuthOptions>(AuthOptions.Prefix));
         services.ConfigureOtlp(_configuration.GetValidSection<OtlpOptions>(OtlpOptions.Prefix));
@@ -73,12 +78,15 @@ public class Startup
         services.AddMassTransit(o =>
         {
             o.SetKebabCaseEndpointNameFormatter();
-
-            o.AddConfigureEndpointsCallback((name, cfg) =>
+            var options = _configuration.GetSection(RabbitMqOptions.RabbitMq).Get<RabbitMqOptions>();
+            if (options.Quorum)
             {
-                if (cfg is IRabbitMqReceiveEndpointConfigurator rmq)
-                    rmq.SetQuorumQueue(3);
-            });
+                o.AddConfigureEndpointsCallback((name, cfg) =>
+                {
+                    if (cfg is IRabbitMqReceiveEndpointConfigurator rmq)
+                        rmq.SetQuorumQueue(options.Replicas);
+                });
+            }
 
             o.AddConsumer<TransferCertificateCommandHandler>(cfg =>
             {

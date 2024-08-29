@@ -105,6 +105,8 @@ public class ConfigurationTests
                 [$"{SectionName}:{nameof(MessageBrokerOptions.RabbitMq)}:{nameof(RabbitMqOptions.Port)}"] = port.ToString(),
                 [$"{SectionName}:{nameof(MessageBrokerOptions.RabbitMq)}:{nameof(RabbitMqOptions.Username)}"] = username,
                 [$"{SectionName}:{nameof(MessageBrokerOptions.RabbitMq)}:{nameof(RabbitMqOptions.Password)}"] = password,
+                [$"{SectionName}:{nameof(MessageBrokerOptions.RabbitMq)}:{nameof(RabbitMqOptions.Quorum)}"] = "true",
+                [$"{SectionName}:{nameof(MessageBrokerOptions.RabbitMq)}:{nameof(RabbitMqOptions.Replicas)}"] = "2",
             })
             .Build();
 
@@ -119,6 +121,8 @@ public class ConfigurationTests
         options.RabbitMq!.Port.Should().Be(port);
         options.RabbitMq!.Username.Should().Be(username);
         options.RabbitMq!.Password.Should().Be(password);
+        options.RabbitMq!.Quorum.Should().Be(true);
+        options.RabbitMq!.Replicas.Should().Be(2);
     }
 
     [Fact]
