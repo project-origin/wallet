@@ -4,8 +4,6 @@ namespace ProjectOrigin.WalletSystem.Server.Options;
 
 public class RabbitMqOptions
 {
-    public const string RabbitMq = "RabbitMq";
-
     [Required]
     public string Host { get; set; } = string.Empty;
 

@@ -66,11 +66,6 @@ public class Startup
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
-        services.AddOptions<RabbitMqOptions>()
-            .BindConfiguration(RabbitMqOptions.RabbitMq)
-            .ValidateDataAnnotations()
-            .ValidateOnStart();
-
         services.ConfigurePersistance(_configuration);
         services.ConfigureAuthentication(_configuration.GetValidSection<AuthOptions>(AuthOptions.Prefix));
         services.ConfigureOtlp(_configuration.GetValidSection<OtlpOptions>(OtlpOptions.Prefix));
@@ -78,13 +73,13 @@ public class Startup
         services.AddMassTransit(o =>
         {
             o.SetKebabCaseEndpointNameFormatter();
-            var options = _configuration.GetSection(RabbitMqOptions.RabbitMq).Get<RabbitMqOptions>();
-            if (options.Quorum)
+            var options = _configuration.GetSection("MessageBroker").GetValid<MessageBrokerOptions>();
+            if (options.RabbitMq != null && options.RabbitMq.Quorum)
             {
                 o.AddConfigureEndpointsCallback((name, cfg) =>
                 {
                     if (cfg is IRabbitMqReceiveEndpointConfigurator rmq)
-                        rmq.SetQuorumQueue(options.Replicas);
+                        rmq.SetQuorumQueue(options.RabbitMq.Replicas);
                 });
             }
 
@@ -113,7 +108,7 @@ public class Startup
                     .Handle<RegistryTransactionStillProcessingException>());
             });
 
-            o.ConfigureMassTransitTransport(_configuration.GetSection("MessageBroker").GetValid<MessageBrokerOptions>());
+            o.ConfigureMassTransitTransport(options);
         });
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
