@@ -169,6 +169,22 @@
             }
           },
           {
+            "name": "SortBy",
+            "in": "query",
+            "description": "Which type to sort by",
+            "schema": {
+              "$ref": "#/components/schemas/CertificateSortBy"
+            }
+          },
+          {
+            "name": "Sort",
+            "in": "query",
+            "description": "The order to sort by",
+            "schema": {
+              "$ref": "#/components/schemas/AscOrDesc"
+            }
+          },
+          {
             "name": "Skip",
             "in": "query",
             "description": "The number of items to skip.",
@@ -1205,6 +1221,21 @@
           }
         },
         "additionalProperties": false
+      },
+      "AscOrDesc": {
+        "enum": [
+          "asc",
+          "desc"
+        ],
+        "type": "string"
+      },
+      "CertificateSortBy": {
+        "enum": [
+          "end",
+          "quantity",
+          "type"
+        ],
+        "type": "string"
       },
       "CertificateType": {
         "enum": [

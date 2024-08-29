@@ -655,10 +655,13 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
             End = DateTimeOffset.Parse(to),
             Limit = take,
             Skip = skip,
+            SortBy = "End",
+            Sort = "ASC"
         });
 
         // Assert
         result.Items.Should().HaveCount(numberOfResults);
+        result.Items.Should().BeInAscendingOrder(x => x.EndDate);
         result.Offset.Should().Be(skip);
         result.Limit.Should().Be(take);
         result.Count.Should().Be(numberOfResults);

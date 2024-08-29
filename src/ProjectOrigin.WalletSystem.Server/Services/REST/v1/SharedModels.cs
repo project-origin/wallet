@@ -51,3 +51,11 @@ public enum TimeAggregate
     Hour = 6,
     QuarterHour = 7,
 }
+
+[JsonConverter(typeof(JsonStringEnumConverter))]
+public enum AscOrDesc
+{
+    ASC,
+    DESC
+}
+
