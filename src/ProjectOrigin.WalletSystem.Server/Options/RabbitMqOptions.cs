@@ -15,4 +15,8 @@ public class RabbitMqOptions
 
     [Required]
     public string Password { get; set; } = string.Empty;
+
+    public ushort Replicas { get; set; } = 3;
+
+    public bool Quorum { get; set; } = false;
 }

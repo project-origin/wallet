@@ -42,6 +42,12 @@ spec:
           {{- else if eq .Values.messageBroker.type "rabbitmq" }}
             - name: MessageBroker__Type
               value: RabbitMq
+          {{- if eq .Values.messageBroker.quorum "true" }}
+            - name: MessageBroker__RabbitMQ__Replicas
+              value: {{ .Values.messageBroker.rabbitmq.replicas }}
+          {{- end }}
+            - name: MessageBroker__RabbitMQ__Quorum
+              value: {{ .Values.messageBroker.rabbitmq.quorum }}
             - name: MessageBroker__RabbitMQ__Host
               value: {{ required "A valid messageBroker rabbitmq host is required!" .Values.messageBroker.rabbitmq.host }}
             - name: MessageBroker__RabbitMQ__Port

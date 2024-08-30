@@ -82,6 +82,10 @@ messageBroker:
     username:
     # password defines the password to use to connect to the rabbitmq server
     password:
+    # quorum defines if quorum queues should be used, defaults to false
+    quorum: false
+    # if quorum is set to true, define how many replicas the quorum should have
+    replicas:
 
 # wallet defines the deployment configuration for the wallet server
 wallet:

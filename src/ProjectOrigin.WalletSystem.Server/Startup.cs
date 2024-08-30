@@ -73,6 +73,15 @@ public class Startup
         services.AddMassTransit(o =>
         {
             o.SetKebabCaseEndpointNameFormatter();
+            var options = _configuration.GetSection("MessageBroker").GetValid<MessageBrokerOptions>();
+            if (options.RabbitMq != null && options.RabbitMq.Quorum)
+            {
+                o.AddConfigureEndpointsCallback((name, cfg) =>
+                {
+                    if (cfg is IRabbitMqReceiveEndpointConfigurator rmq)
+                        rmq.SetQuorumQueue(options.RabbitMq.Replicas);
+                });
+            }
 
             o.AddConsumer<TransferCertificateCommandHandler>(cfg =>
             {
@@ -99,7 +108,7 @@ public class Startup
                     .Handle<RegistryTransactionStillProcessingException>());
             });
 
-            o.ConfigureMassTransitTransport(_configuration.GetSection("MessageBroker").GetValid<MessageBrokerOptions>());
+            o.ConfigureMassTransitTransport(options);
         });
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
