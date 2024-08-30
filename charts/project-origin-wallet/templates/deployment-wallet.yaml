@@ -47,7 +47,7 @@ spec:
               value: {{ .Values.messageBroker.rabbitmq.replicas }}
           {{- end }}
             - name: MessageBroker__RabbitMQ__Quorum
-              value: {{ .Values.messageBroker.rabbitmq.quorum }}
+              value: {{ .Values.messageBroker.rabbitmq.quorum | quote}}
             - name: MessageBroker__RabbitMQ__Host
               value: {{ required "A valid messageBroker rabbitmq host is required!" .Values.messageBroker.rabbitmq.host }}
             - name: MessageBroker__RabbitMQ__Port
