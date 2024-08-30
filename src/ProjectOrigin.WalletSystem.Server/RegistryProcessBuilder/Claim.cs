@@ -27,8 +27,8 @@ public partial class RegistryProcessBuilder
         var consumptionId = consumptionSlice.GetFederatedStreamId();
 
         var allocatedEvent = CreateAllocatedEvent(allocationId, consumptionSlice, productionSlice);
-        AddRegistryTransactionActivity(productionKey.SignRegistryTransaction(productionId, allocatedEvent));
-        AddRegistryTransactionActivity(consumptionKey.SignRegistryTransaction(consumptionId, allocatedEvent));
+        AddRegistryTransactionActivity(productionKey.SignRegistryTransaction(productionId, allocatedEvent), productionSlice.Id);
+        AddRegistryTransactionActivity(consumptionKey.SignRegistryTransaction(consumptionId, allocatedEvent), consumptionSlice.Id);
 
         var newClaim = new Claim
         {
@@ -40,10 +40,10 @@ public partial class RegistryProcessBuilder
         await _unitOfWork.ClaimRepository.InsertClaim(newClaim);
 
         var prodClaimedEvent = CreateClaimedEvent(allocationId, productionId);
-        AddRegistryTransactionActivity(productionKey.SignRegistryTransaction(productionId, prodClaimedEvent));
+        AddRegistryTransactionActivity(productionKey.SignRegistryTransaction(productionId, prodClaimedEvent), productionSlice.Id);
 
         var consClaimedEvent = CreateClaimedEvent(allocationId, consumptionId);
-        AddRegistryTransactionActivity(consumptionKey.SignRegistryTransaction(consumptionId, consClaimedEvent));
+        AddRegistryTransactionActivity(consumptionKey.SignRegistryTransaction(consumptionId, consClaimedEvent), consumptionSlice.Id);
 
         AddActivity<UpdateSliceStateActivity, UpdateSliceStateArguments>(new UpdateSliceStateArguments
         {
