@@ -62,7 +62,7 @@ public class WaitCommittedRegistryTransactionActivity : IExecuteActivity<WaitCom
                 _logger.LogCritical("Transaction failed on registry. Certificate id {certificateId}, slice id: {sliceId}. Message: {message}", context.Arguments.CertificateId, context.Arguments.SliceId, status.Message);
                 await _unitOfWork.RequestStatusRepository.SetRequestStatus(context.Arguments.RequestId, context.Arguments.Owner, RequestStatusState.Failed, failedReason: "Transaction failed on registry.");
                 _unitOfWork.Commit();
-                return context.Faulted(new InvalidRegistryTransactionException($"Transaction failed on registry. Message: {status.Message}"));
+                return context.Faulted(new InvalidRegistryTransactionException($"Transaction failed on registry. Certificate id {context.Arguments.CertificateId}, slice id: {context.Arguments.SliceId}. Message: {status.Message}"));
             }
             else
             {
