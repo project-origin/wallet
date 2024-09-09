@@ -333,7 +333,8 @@ public class CertificateRepository : ICertificateRepository
               WHERE s.registry_name = @registryName
                 AND s.certificate_id = @certificateId
                 AND w.owner = @owner
-                AND s.state = @state",
+                AND s.state = @state
+              FOR UPDATE OF s",
             new
             {
                 registryName,
@@ -357,7 +358,8 @@ public class CertificateRepository : ICertificateRepository
               WHERE s.registry_name = @registryName
                 AND s.certificate_id = @certificateId
                 AND w.owner = @owner
-                AND (s.state = @availableState OR s.state = @registeringState)",
+                AND (s.state = @availableState OR s.state = @registeringState)
+              FOR UPDATE OF s",
             new
             {
                 registryName,
