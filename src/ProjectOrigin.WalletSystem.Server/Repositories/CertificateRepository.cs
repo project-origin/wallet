@@ -439,7 +439,20 @@ public class CertificateRepository : ICertificateRepository
 
         foreach (var slice in takenSlices)
         {
-            await SetWalletSliceState(slice.Id, WalletSliceState.Reserved);
+            var rowsChanged = await _connection.ExecuteAsync(
+                @"UPDATE wallet_slices
+                SET state = @state
+                WHERE id = @sliceId
+                    AND state = @expected",
+                new
+                {
+                    sliceid = slice.Id,
+                    state = WalletSliceState.Reserved,
+                    expected = WalletSliceState.Available
+                });
+
+            if (rowsChanged != 1)
+                throw new InvalidOperationException($"Slice with id {slice.Id} could not be found or was no longer available");
         }
 
         return takenSlices;
