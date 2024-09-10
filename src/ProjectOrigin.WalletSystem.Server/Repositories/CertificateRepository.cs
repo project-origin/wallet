@@ -322,9 +322,17 @@ public class CertificateRepository : ICertificateRepository
         string owner)
     {
         return _connection.QueryAsync<WalletSlice>(
-            @"SELECT s.*
+            @"WITH slice_data AS (
+                    SELECT *
+                    FROM wallet_slices ws
+                    WHERE ws.certificate_id = @certificateId
+                      AND ws.registry_name = @registryName
+                      AND (ws.state = @state)
+                    FOR UPDATE OF ws
+                  )
+              SELECT s.*
               FROM certificates c
-              INNER JOIN wallet_slices s
+              INNER JOIN slice_data s
                 ON c.id = s.certificate_id
               INNER JOIN wallet_endpoints re
                 ON s.wallet_endpoint_id = re.id
@@ -346,18 +354,23 @@ public class CertificateRepository : ICertificateRepository
     public Task<long> GetRegisteringAndAvailableQuantity(string registryName, Guid certificateId, string owner)
     {
         return _connection.QuerySingleAsync<long>(
-            @"SELECT SUM(s.quantity)
-              FROM certificates c
-              INNER JOIN wallet_slices s
-                ON c.id = s.certificate_id
-              INNER JOIN wallet_endpoints re
-                ON s.wallet_endpoint_id = re.Id
-              INNER JOIN wallets w
-                ON re.wallet_id = w.id
-              WHERE s.registry_name = @registryName
-                AND s.certificate_id = @certificateId
-                AND w.owner = @owner
-                AND (s.state = @availableState OR s.state = @registeringState)",
+            @"WITH slice_data AS (
+                    SELECT *
+                    FROM wallet_slices ws
+                    WHERE ws.certificate_id = @certificateId
+                      AND ws.registry_name = @registryName
+                      AND (ws.state = @availableState OR ws.state = @registeringState)
+                    FOR UPDATE OF ws
+                  )
+                  SELECT SUM(s.quantity)
+                  FROM certificates c
+                  INNER JOIN slice_data s on c.id = s.certificate_id
+                  INNER JOIN wallet_endpoints re ON s.wallet_endpoint_id = re.Id
+                  INNER JOIN wallets w ON re.wallet_id = w.id
+                  WHERE s.registry_name = @registryName
+	                AND s.certificate_id = @certificateId
+	                AND w.owner = @owner
+	                AND (s.state = @availableState OR s.state = @registeringState)",
             new
             {
                 registryName,
