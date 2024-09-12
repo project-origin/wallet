@@ -161,7 +161,10 @@ public class SendInformationToReceiverWalletActivityTests
     public async Task SendOverRestToExternalWallet_EndpointNotExisting_404()
     {
         // Arrange
-        var nonExistingEndpoint = "http://example.com";
+        var wireMockServer = WireMockServer.Start();
+        wireMockServer.Given(Request.Create().WithPath("/v1/slices").UsingPost())
+            .RespondWith(Response.Create().WithStatusCode(404));
+
         var hdAlgorithm = new Secp256k1Algorithm();
 
         var options = new JsonSerializerOptions(JsonSerializerDefaults.Web);
@@ -171,7 +174,7 @@ public class SendInformationToReceiverWalletActivityTests
         var endpoint = new ExternalEndpoint
         {
             Id = Guid.NewGuid(),
-            Endpoint = $"{nonExistingEndpoint}/v1/slices",
+            Endpoint = $"{wireMockServer.Urls[0]}/v1/slices",
             PublicKey = hdAlgorithm.GenerateNewPrivateKey().Neuter(),
             Owner = owner,
             ReferenceText = _fixture.Create<string>(),
