@@ -536,7 +536,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage("Owner has no available slices to reserve");
+            .WithMessage("Owner has less to reserve than available");
     }
 
     [Fact]

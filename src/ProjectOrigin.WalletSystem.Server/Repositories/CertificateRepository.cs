@@ -362,7 +362,7 @@ public class CertificateRepository : ICertificateRepository
                       AND (ws.state = @availableState OR ws.state = @registeringState)
                     FOR UPDATE OF ws
                   )
-                  SELECT SUM(s.quantity)
+                  SELECT CASE WHEN SUM(s.quantity) IS NULL THEN 0 ELSE SUM(s.quantity) END AS total_quantity
                   FROM certificates c
                   INNER JOIN slice_data s on c.id = s.certificate_id
                   INNER JOIN wallet_endpoints re ON s.wallet_endpoint_id = re.Id
@@ -423,50 +423,54 @@ public class CertificateRepository : ICertificateRepository
     public async Task<IList<WalletSlice>> ReserveQuantity(string owner, string registryName, Guid certificateId,
         uint reserveQuantity)
     {
-        var availableSlices = await GetOwnersAvailableSlices(registryName, certificateId, owner);
-        if (availableSlices.IsEmpty())
-            throw new InvalidOperationException($"Owner has no available slices to reserve");
+        var slices = await GetOwnersAvailableSlices(registryName, certificateId, owner);
+        var willBeAvailable = await GetRegisteringAndAvailableQuantity(registryName, certificateId, owner);
 
-        if (availableSlices.Sum(slice => slice.Quantity) < reserveQuantity)
+        if (slices.Sum(x => x.Quantity) >= reserveQuantity)
         {
-            var registeringAvailableQuantity =
-                await GetRegisteringAndAvailableQuantity(registryName, certificateId, owner);
-            if (registeringAvailableQuantity >= reserveQuantity)
-                throw new TransientException($"Owner has enough quantity, but it is not yet available to reserve");
-            else
-                throw new InvalidOperationException($"Owner has less to reserve than available");
-        }
-
-        var sumSlicesTaken = 0L;
-        var takenSlices = availableSlices
-            .OrderBy(slice => slice.Quantity)
-            .TakeWhile(slice =>
-            {
-                var needsMore = sumSlicesTaken < reserveQuantity;
-                sumSlicesTaken += slice.Quantity;
-                return needsMore;
-            })
-            .ToList();
-
-        foreach (var slice in takenSlices)
-        {
-            var rowsChanged = await _connection.ExecuteAsync(
-                @"UPDATE wallet_slices
-                SET state = @state
-                WHERE id = @sliceId
-                    AND state = @expected",
-                new
+            var sumSlicesTaken = 0L;
+            var takenSlices = slices.Where(s => s.State == WalletSliceState.Available)
+                .OrderBy(slice => slice.Quantity)
+                .TakeWhile(slice =>
                 {
-                    sliceid = slice.Id,
-                    state = WalletSliceState.Reserved,
-                    expected = WalletSliceState.Available
-                });
+                    var needsMore = sumSlicesTaken < reserveQuantity;
+                    sumSlicesTaken += slice.Quantity;
+                    return needsMore;
+                })
+                .ToList();
 
-            if (rowsChanged != 1)
-                throw new InvalidOperationException($"Slice with id {slice.Id} could not be found or was no longer available");
+            foreach (var slice in takenSlices)
+            {
+                var rowsChanged = await _connection.ExecuteAsync(
+                    @"UPDATE wallet_slices
+                          SET state = @state
+                          WHERE id = @sliceId
+                          AND state = @expected",
+                    new
+                    {
+                        sliceid = slice.Id,
+                        state = WalletSliceState.Reserved,
+                        expected = WalletSliceState.Available
+                    });
+
+                if (rowsChanged != 1)
+                    throw new InvalidOperationException($"Slice with id {slice.Id} could not be found or was no longer available");
+            }
+
+            return takenSlices;
         }
-
-        return takenSlices;
+        else if (willBeAvailable < reserveQuantity)
+        {
+            throw new InvalidOperationException($"Owner has less to reserve than available");
+        }
+        else if (willBeAvailable >= reserveQuantity)
+        {
+            throw new TransientException($"Owner has enough quantity, but it is not yet available to reserve");
+        }
+        else
+        {
+            throw new Exception("Unexpected error");
+        }
     }
 
     public async Task InsertWalletAttribute(Guid walletId, WalletAttribute walletAttribute)
