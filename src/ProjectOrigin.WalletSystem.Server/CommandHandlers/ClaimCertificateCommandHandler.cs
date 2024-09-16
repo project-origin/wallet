@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using MassTransit;
 using MassTransit.Courier.Contracts;
 using Microsoft.Extensions.Logging;
+using ProjectOrigin.WalletSystem.Server.Activities.Exceptions;
 using ProjectOrigin.WalletSystem.Server.Database;
 using ProjectOrigin.WalletSystem.Server.Extensions;
 using ProjectOrigin.WalletSystem.Server.Models;
@@ -61,6 +62,12 @@ public class ClaimCertificateCommandHandler : IConsumer<ClaimCertificateCommand>
         {
             _unitOfWork.Rollback();
             _logger.LogWarning(ex, "Claim is not allowed.");
+        }
+        catch (TransientException ex)
+        {
+            _unitOfWork.Rollback();
+            _logger.LogWarning(ex, "Failed to handle claim at this time. Retrying.");
+            throw;
         }
         catch (Exception ex)
         {
