@@ -66,7 +66,7 @@ public class ClaimCertificateCommandHandler : IConsumer<ClaimCertificateCommand>
         catch (TransientException ex)
         {
             _unitOfWork.Rollback();
-            _logger.LogWarning(ex, "Failed to handle claim at this time. Retrying.");
+            _logger.LogWarning(ex, "Failed to handle claim at this time.");
             throw;
         }
         catch (Exception ex)
