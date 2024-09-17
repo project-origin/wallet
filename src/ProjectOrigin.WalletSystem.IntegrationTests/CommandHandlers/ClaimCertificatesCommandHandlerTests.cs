@@ -83,7 +83,7 @@ public class ClaimCertificatesCommandHandlerTests
             Arg.Any<string>(),
             Arg.Any<Guid>(),
             Arg.Any<uint>())
-            .ThrowsAsync(_ => throw new TransientException("Failed to handle claim at this time. Retrying."));
+            .ThrowsAsync(_ => throw new TransientException("Failed to handle claim at this time."));
 
         // act
         var sut = () => _commandHandler.Consume(_context);
