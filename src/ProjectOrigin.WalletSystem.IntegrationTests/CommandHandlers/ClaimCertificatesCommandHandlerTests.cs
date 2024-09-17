@@ -7,7 +7,10 @@ using FluentAssertions;
 using MassTransit;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
+using NSubstitute.ExceptionExtensions;
+using NSubstitute.ReceivedExtensions;
 using ProjectOrigin.WalletSystem.Server;
+using ProjectOrigin.WalletSystem.Server.Activities.Exceptions;
 using ProjectOrigin.WalletSystem.Server.CommandHandlers;
 using ProjectOrigin.WalletSystem.Server.Database;
 using ProjectOrigin.WalletSystem.Server.Models;
@@ -58,6 +61,35 @@ public class ClaimCertificatesCommandHandlerTests
         await _processBuilder.Received(1).Claim(Arg.Is(prodSlices.Single()), Arg.Is(consSlices.Single()));
         _processBuilder.Received(1).Build();
         _processBuilder.ReceivedCalls().Count().Should().Be(2);
+    }
+
+    [Fact]
+    public async Task ReserveQuantityThrowsTransientException_TransientException()
+    {
+        // arrange
+        var command = new ClaimCertificateCommand
+        {
+            Owner = _owner,
+            ClaimId = Guid.NewGuid(),
+            ConsumptionRegistry = _registryName,
+            ConsumptionCertificateId = Guid.NewGuid(),
+            ProductionRegistry = _registryName,
+            ProductionCertificateId = Guid.NewGuid(),
+            Quantity = 123
+        };
+        _context.Message.Returns(command);
+        _unitOfWork.CertificateRepository.ReserveQuantity(
+            Arg.Any<string>(),
+            Arg.Any<string>(),
+            Arg.Any<Guid>(),
+            Arg.Any<uint>())
+            .ThrowsAsync(_ => throw new TransientException("Failed to handle claim at this time."));
+
+        // act
+        var sut = () => _commandHandler.Consume(_context);
+
+        // assert
+        await sut.Should().ThrowAsync<TransientException>();
     }
 
     [Fact]
