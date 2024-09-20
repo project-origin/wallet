@@ -1,6 +1,6 @@
-# Project Origin - Wallet
+# OriginVault
 
-OpenSource project to create a Wallet to hold Granular Certificates in the registries.
+OpenSource project to create a Vault to holds users wallet which contain their Granular Certificates in the registries.
 
 ## Pat-Let
 
@@ -43,14 +43,14 @@ Similar banks don't create local accounts when money is transferred to an entity
 
 The **wallet concept** could solve this problem.
 
-The wallet will enable the individual GC slice to always remain in one of the different registries, while enabling the user to have a wallet placed in a chosen location.
+The wallet will enable the individual GC slice to always remain in one of the different registries, while enabling the user to have a wallet placed in a chosen vault.
 It will give the users access to view and control their assets.
 
 ## Sketch
 
-Below is a C4 system diagram of an overview of the system landscape the wallet would be a part of.
+Below is a C4 system diagram of an overview of the system landscape the vault would be a part of.
 
-![C4 system diagram of the wallet](./wallet-c4-system.drawio.svg)
+![C4 system diagram of the vault](./vault-c4-system.drawio.svg)
 
 ## Resulting Context
 

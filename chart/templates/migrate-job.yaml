@@ -1,0 +1,27 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "migrate.job-name" . }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  backoffLimit: 0
+  parallelism: 1
+  completions: 1
+  template:
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsUser: 1654
+        runAsNonRoot: true
+      restartPolicy: Never
+      containers:
+        - name: {{ .Release.Name }}-migrate-job
+          image: {{ include "common.image" (dict "root" $ "image" $.Values.image) }}
+          {{- include "common.limits" .resources | nindent 10 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+          args:
+            - "--migrate"
+          env:
+            {{- include "common.database.config" $ | nindent 12 }}
