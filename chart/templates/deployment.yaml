@@ -1,0 +1,132 @@
+---
+{{- $tag := .Values.image.tag | default .Chart.AppVersion -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $.Release.Name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ $.Release.Name }}
+spec:
+  replicas: {{ .Values.vault.replicas }}
+  selector:
+    matchLabels:
+      app: {{ $.Release.Name }}
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: {{ $.Release.Name }}
+    spec:
+      serviceAccountName: {{ $.Release.Name }}-migration-waiter
+      initContainers:
+        - name: wait-for-migration
+          image: {{ include "common.image" (dict "root" $ "image" $.Values.migrationWaiter.image) }}
+          resources:
+            requests:
+              cpu: 0.1
+            limits:
+              memory: 50Mi
+              ephemeral-storage: "1Mi"
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+          command:
+            - /bin/sh
+            - -c
+            - |
+              kubectl wait --for=condition=complete job/${JOB_NAME} --timeout=300s -n {{ $.Release.Namespace }}
+          env:
+            - name: JOB_NAME
+              value: {{ include "migrate.job-name" $ }}
+          volumeMounts:
+            - name: service-account-token
+              mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      containers:
+        - name: vault
+          image: {{ include "common.image" (dict "root" $ "image" $.Values.image) }}
+          {{- include "common.limits" $.resources | nindent 10 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+          args:
+            - "--serve"
+          readinessProbe:
+            tcpSocket:
+              port: 5000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          env:
+            {{- include "common.database.config" $ | nindent 12 }}
+            {{- include "common.otlp.config" $.Values.otlp | nindent 12 }}
+
+            - name: ServiceOptions__EndpointAddress
+              value: {{ required "A valid externalUrl is required!"  .Values.config.externalUrl }}
+            - name: ServiceOptions__PathBase
+              value: {{ .Values.config.pathBase }}
+
+            # rabbitmq
+            - name: MessageBroker__Type
+              value: RabbitMq
+            - name: MessageBroker__RabbitMQ__Host
+              {{- include "common.setValue" (list $.Values.rabbitmq.host ".rabbitmq.host") | nindent 14 }}
+            - name: MessageBroker__RabbitMQ__Port
+              {{- include "common.setValue" (list $.Values.rabbitmq.port ".rabbitmq.port") | nindent 14 }}
+            - name: MessageBroker__RabbitMQ__Username
+              {{- include "common.setValue" (list $.Values.rabbitmq.username ".rabbitmq.username") | nindent 14 }}
+            - name: MessageBroker__RabbitMQ__Password
+              {{- include "common.setValue" (list $.Values.rabbitmq.password ".rabbitmq.password") | nindent 14 }}
+            - name: MessageBroker__RabbitMQ__Quorum
+              value: {{ $.Values.rabbitmq.quorum | quote}}
+            {{- if $.Values.rabbitmq.quorum }}
+            - name: MessageBroker__RabbitMQ__Replicas
+              value: {{ required "rabbitmq.replicas must be set when quorum enabled" $.Values.rabbitmq.replicas }}
+            {{- end }}
+
+          # Authentication
+            - name: auth__type
+              value: {{ .Values.config.auth.type }}
+          {{- if eq .Values.config.auth.type "header" }}
+            - name: auth__header__headerName
+              value: {{ .Values.config.auth.header.headerName }}
+          {{- else if eq .Values.config.auth.type "jwt" }}
+            - name: auth__jwt__audience
+              value: {{ .Values.config.auth.jwt.audience }}
+            - name: auth__jwt__authority
+              value: {{ .Values.config.auth.jwt.authority | quote }}
+            - name: auth__jwt__allowAnyJwtToken
+              value: {{ .Values.config.auth.jwt.allowAnyJwtToken | quote }}
+            - name: auth__jwt__enableScopeValidation
+              value: {{ .Values.config.auth.jwt.enableScopeValidation | quote }}
+            {{- range  $i, $issuer := .Values.config.auth.jwt.issuers }}
+            - name: auth__jwt__issuers__{{ $i }}__name
+              value: {{ $issuer.name }}
+            - name: auth__jwt__issuers__{{ $i }}__type
+              value: {{ $issuer.type }}
+            - name: auth__jwt__issuers__{{ $i }}__pemFileName
+              value: {{ $issuer.pemFileName }}
+            {{- end }}
+          {{- else}}
+            {{- fail "Unsupported auth type specified. Please specify 'auth.type' as either 'jwt' or 'header'." }}
+          {{- end }}
+
+          volumeMounts:
+          {{- with .Values.vault.volumeMounts }}
+            {{- toYaml . | nindent 10 }}
+          {{- end }}
+
+      volumes:
+        - name: service-account-token
+          projected:
+            sources:
+              - serviceAccountToken:
+                  path: token
+              - configMap:
+                  name: kube-root-ca.crt
+                  items:
+                    - key: ca.crt
+                      path: ca.crt
+      {{- with .Values.vault.volumes }}
+        {{- toYaml .Values.vault.volumes | nindent 6 }}
+      {{- end }}

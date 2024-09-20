@@ -6,27 +6,27 @@ on:
 
 jobs:
   define-version:
-    uses: project-origin/.github/.github/workflows/reusable-tag-version.yaml@b1a1034591b6f491085a0d9d259ae3b486487701
+    uses: project-origin/.github/.github/workflows/reusable-tag-version.yaml@1f4d8907df740e989cb5792ff90ca7e6df80341e
 
   publish-container:
     needs:
       - define-version
-    uses: project-origin/.github/.github/workflows/reusable-build-push-container-ghcr.yaml@b1a1034591b6f491085a0d9d259ae3b486487701
+    uses: project-origin/.github/.github/workflows/reusable-build-push-container-ghcr.yaml@1f4d8907df740e989cb5792ff90ca7e6df80341e
     with:
-      imagename: ghcr.io/project-origin/wallet-server
+      imagename: ghcr.io/project-origin/vault
       version: ${{ needs.define-version.outputs.version }}
-      context: ./src
-      dockerfile: ./src/ProjectOrigin.WalletSystem.Server/Dockerfile
+      context: .
+      dockerfile: ./Vault.Dockerfile
       push: true
 
   publish-chart:
     needs:
       - define-version
       - publish-container
-    uses: project-origin/.github/.github/workflows/reusable-publish-chart.yaml@b1a1034591b6f491085a0d9d259ae3b486487701
+    uses: project-origin/.github/.github/workflows/reusable-publish-chart.yaml@1f4d8907df740e989cb5792ff90ca7e6df80341e
     with:
       version: ${{ needs.define-version.outputs.version }}
-      chart_folder: charts/project-origin-wallet
+      chart_folder: chart
       helm_registry_repository: project-origin/helm-registry
     secrets:
       helm_registry_token: ${{ secrets.HELM_REGISTRY_TOKEN }}
@@ -43,7 +43,7 @@ jobs:
         run: npm i -g swaggerhub-cli
 
       - name: Prepare openapi.json
-        run: jq '.info.version = "${{ needs.define-version.outputs.version }}"' src/ProjectOrigin.WalletSystem.IntegrationTests/ApiTests/ApiTests.open_api_specification_not_changed.verified.txt > openapi.json
+        run: jq '.info.version = "${{ needs.define-version.outputs.version }}"' test/ProjectOrigin.Vault.Tests/ApiTests/ApiTests.open_api_specification_not_changed.verified.txt > openapi.json
 
       - name: Publish to swaggerhub
         env:

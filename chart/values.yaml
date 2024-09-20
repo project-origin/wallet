@@ -1,0 +1,198 @@
+# global values
+global:
+  # imageRegistry is the global docker image registry that will override the image registry for all images in all charts
+  imageRegistry: ""
+
+# image holds the configuration for the image to use for the registry
+image:
+  # registry is the registry to pull the image from
+  registry: ghcr.io
+  # repository is the repository to pull the image from
+  repository: project-origin/vault
+  # tag is the tag to pull defaults to the chart version
+  tag:
+
+# resources holds the configuration for the resource requests and limits
+resources:
+  # requests holds the configuration for the resource requests
+  requests:
+    # cpu defines the cpu request limit for the registry server
+    cpu:
+    # memory defines the memory request limit for the registry server
+    memory:
+
+  # limits holds the configuration for the resource limits
+  limits:
+    # cpu defines the cpu limit for the registry server
+    cpu:
+    # memory defines the memory limit for the registry server
+    memory:
+    # ephemeralStorage defines the ephemeral storage limit for the verifier server
+    ephemeralStorage:
+
+# service holds the configuration for the service
+service:
+  # type is the type of service to create, allowed values are (ClusterIP | NodePort | LoadBalancer)
+  type: ClusterIP
+  # nodePort is the port to expose the service on if type is NodePort
+  nodePort:
+
+# otlp holds the configuration for the opentelemetry collector
+otlp:
+  # enabled determines if the opentelemetry collector is enabled
+  enabled: false
+  # endpoint defines the endpoint of the opentelemetry collector, example "http://otel-collector:4317"
+  endpoint:
+
+# rabbitmq defines the configuration for connecting to the rabbitmq server, each value is required and can be set directly, via a secretRef, or via a configMapRef
+rabbitmq:
+  # host defines the host of the rabbitmq server in url format 'localhost'
+  host:
+    # secretRef:
+    #   name:
+    #   key:
+    # configMapRef:
+    #   name:
+    #   key:
+  # port defines the port of the rabbitmq server
+  port: 5672
+    # secretRef:
+    #   name:
+    #   key:
+    # configMapRef:
+    #   name:
+    #   key:
+  # username defines the username to use to connect to the rabbitmq server
+  username:
+    # secretRef:
+    #   name:
+    #   key:
+    # configMapRef:
+    #   name:
+    #   key:
+  # password defines the password to use to connect to the rabbitmq server
+  password:
+    # secretRef:
+    #   name:
+    #   key:
+    # configMapRef:
+    #   name:
+    #   key:
+  # quorum defines if quorum queues should be used, defaults to false
+  quorum: false
+  # if quorum is set to true, define how many replicas the quorum should have
+  replicas:
+
+# postgresql holds the configuration for the postgresql database, each value is required and can be set directly, via a secretRef, or via a configMapRef
+postgresql:
+  # host defines the host of the postgresql database
+  host:
+    # secretRef:
+    #   name:
+    #   key:
+    # configMapRef:
+    #   name:
+    #   key:
+  # port defines the port of the postgresql database
+  port: 5432
+    # secretRef:
+    #   name:
+    #   key:
+    # configMapRef:
+    #   name:
+    #   key:
+  # database defines the name of the postgresql database
+  database:
+    # secretRef:
+    #   name:
+    #   key:
+    # configMapRef:
+    #   name:
+    #   key:
+  # username defines the username to use to connect to the postgresql database
+  username:
+    # secretRef:
+    #   name:
+    #   key:
+    # configMapRef:
+    #   name:
+    #   key:
+  # password defines the password to use to connect to the postgresql database
+  password:
+    # secretRef:
+    #   name:
+    #   key:
+    # configMapRef:
+    #   name:
+    #   key:
+
+# vault holds the configuration for the vault deployment
+vault:
+  # replicas defines the number of vault server instances to run
+  replicas: 3
+
+  # -- Additional volume mounts to the wallet-server container
+  volumeMounts: []
+  #  - name: jwt-secret
+  #    mountPath: /etc/keyfile.pem
+  #    subPath: keyfile
+
+  # -- Additional volumes to the wallet-server container
+  volumes: []
+  #  - name: jwt-secret
+  #    secret:
+  #      secretName: my-jwt-secret
+
+# config holds general configuration for the vault
+config:
+  # externalUrl defines the external url to use for the wallet server, this should be the publically accessible and resolvable url of the wallet server.
+  # example: http://wallet.example.com/api or https://example.com/wallet/api
+  # This should include the pathBase
+  externalUrl:
+
+  # pathBase defines the base part of all paths in the api of the wallet server, defaults to /api
+  pathBase: /api
+
+  # auth holds the configuration for the authentication of the wallet server
+  auth:
+    # type defines the type of authentication to use, allowed values are (jwt | header)
+    type: jwt
+
+    # disables the jwt authentication, and sets the subject of the call from a header. This requires authentication and authorization to be done by another system.
+    header:
+      headerName: ""
+
+    # jwt defines the configuration for the authentication of jwt tokens
+    jwt:
+      # audience defines the audience to use for the jwt tokens, defaults to empty string, which means the audience is not checked
+      audience: ""
+
+      # authority defines the authority to use for the jwt tokens, defaults to empty string, should be set to a authority
+      # example "https://example.com/auth" where it will pull the "/.well-known/openid-configuration" information from.
+      authority: ""
+
+      # enableScopeValidation determines if scope validation is enabled, defaults to true, if set to true then scope validation is enabled
+      enableScopeValidation: true
+
+      # allowAnyJwtToken determines if any jwt token is allowed, defaults to false, if set to true then any jwt token is allowed, NOT RECOMMENDED FOR PRODUCTION!
+      allowAnyJwtToken: false
+
+      # issuer defines a list of valid issuers for the jwt tokens, disabled if authority url is set
+      issuers: []
+        # example
+        # - # name defines the name of the issuer
+        #   name: test
+        #   # type defines the type of the key used, allowed values are (rsa | ecdsa)
+        #   type: rsa
+        #   # pemFileName defines the name of the file containing the pem encoded key
+        #   pemFileName: /etc/keyfile.pem
+
+# migrationWaiter holds the configuration for the migration waiter
+migrationWaiter:
+  # image holds the configuration for the image to use for the migration waiter
+  image:
+    registry: docker.io
+    # repository is the repository to pull the image from
+    repository: bitnami/kubectl
+    # tag is the tag to pull defaults to the chart version
+    tag: 1.31.1
