@@ -96,8 +96,9 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         var insertedSlice =
             await _connection.QueryFirstOrDefaultAsync<WalletSlice>("SELECT * FROM wallet_slices WHERE id = @id",
                 new { slice.Id });
-        insertedSlice!.Should().BeEquivalentTo(slice, options => options.Excluding(x => x.UpdatedAt));
-        insertedSlice.UpdatedAt.Hour.Should().Be(DateTimeOffset.UtcNow.Hour);
+        insertedSlice.Should().NotBeNull();
+        insertedSlice.Should().BeEquivalentTo(slice, options => options.Excluding(x => x.UpdatedAt));
+        insertedSlice!.UpdatedAt.Hour.Should().Be(DateTimeOffset.UtcNow.Hour);
         insertedSlice.UpdatedAt.Day.Should().Be(DateTimeOffset.UtcNow.Day);
         insertedSlice.UpdatedAt.Year.Should().Be(DateTimeOffset.UtcNow.Year);
         insertedSlice.UpdatedAt.Month.Should().Be(DateTimeOffset.UtcNow.Month);
