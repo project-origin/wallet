@@ -241,9 +241,8 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
     }
 
     [Fact]
-    public async void TransferCertificate_PublishesCommand()
+    public async Task TransferCertificate_PublishesCommand()
     {
-
         // Arrange
         var subject = _fixture.Create<string>();
         var request = _fixture.Create<TransferRequest>();

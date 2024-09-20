@@ -303,7 +303,9 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
         var settings = new VerifySettings();
         settings.ScrubMember("UpdatedAt");
         await Verifier.Verify(resultWithoutFiltersContent, settings);
-        resultWithUpdatedSince.Result.Should().NotBeEmpty();
+
+        resultWithUpdatedSince.Should().NotBeNull();
+        resultWithUpdatedSince!.Result.Should().NotBeEmpty();
         resultWithUpdatedSince.Result.Should().BeInAscendingOrder(x => x.UpdatedAt);
         resultWithoutFiltersJson.Should().Be(resultWithFilterStart);
         resultWithoutFiltersJson.Should().Be(resultWithFilterEnd);
