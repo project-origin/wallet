@@ -204,7 +204,7 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
     }
 
     [Fact]
-    public async void ClaimCertificate_PublishesCommand()
+    public async Task ClaimCertificate_PublishesCommand()
     {
         // Arrange
         var subject = _fixture.Create<string>();

@@ -78,7 +78,7 @@ public class VerifySliceCommandHandlerTests : IAsyncLifetime
     }
 
     [Fact]
-    public async void WhenWalletSliceIsValid_ExpectIsConvertedToSliceAndCertificateIsCreated()
+    public async Task WhenWalletSliceIsValid_ExpectIsConvertedToSliceAndCertificateIsCreated()
     {
         // Arrange
         var certId = Guid.NewGuid();
@@ -137,7 +137,7 @@ public class VerifySliceCommandHandlerTests : IAsyncLifetime
     }
 
     [Fact]
-    public async void WhenCertificateNotFound_CompleteAndWriteWarning()
+    public async Task WhenCertificateNotFound_CompleteAndWriteWarning()
     {
         // Arrange
         var certId = Guid.NewGuid();
@@ -188,7 +188,7 @@ public class VerifySliceCommandHandlerTests : IAsyncLifetime
     }
 
     [Fact]
-    public async void WhenTransientException_FaultedWithTransient()
+    public async Task WhenTransientException_FaultedWithTransient()
     {
         var innerException = new Exception("Could not connect to registry");
 
@@ -242,7 +242,7 @@ public class VerifySliceCommandHandlerTests : IAsyncLifetime
     }
 
     [Fact]
-    public async void WhenFailure_FaultedWithTransient()
+    public async Task WhenFailure_FaultedWithTransient()
     {
         var innerException = new Exception("Could not connect to registry");
 
@@ -296,7 +296,7 @@ public class VerifySliceCommandHandlerTests : IAsyncLifetime
     }
 
     [Fact]
-    public async void WhenSliceNotFound()
+    public async Task WhenSliceNotFound()
     {
         // Arrange
         var certId = Guid.NewGuid();
@@ -351,7 +351,7 @@ public class VerifySliceCommandHandlerTests : IAsyncLifetime
     }
 
     [Fact]
-    public async void WhenInvalidKey()
+    public async Task WhenInvalidKey()
     {
         // Arrange
         var certId = Guid.NewGuid();
