@@ -80,7 +80,7 @@ public class RequestStatusControllerTests : IClassFixture<PostgresDatabaseFixtur
 
         var response = (result.Result as OkObjectResult)?.Value as RequestStatusResponse;
         response.Should().NotBeNull();
-        response.Status.Should().Be(RequestStatus.Completed);
+        response!.Status.Should().Be(RequestStatus.Completed);
     }
 
     private static ControllerContext CreateContextWithUser(string subject)
