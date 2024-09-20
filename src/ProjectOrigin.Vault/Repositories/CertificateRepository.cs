@@ -124,8 +124,8 @@ public class CertificateRepository : ICertificateRepository
 
         using (var gridReader = await _connection.QueryMultipleAsync(sql, new { owner, registry, certificateId }))
         {
-            var certificates = gridReader.Read<CertificateViewModel>();
-            var attributes = gridReader.Read<AttributeViewModel>();
+            var certificates = await gridReader.ReadAsync<CertificateViewModel>();
+            var attributes = await gridReader.ReadAsync<AttributeViewModel>();
 
             var certificate = certificates.FirstOrDefault();
             certificate?.Attributes.AddRange(attributes
@@ -170,9 +170,9 @@ public class CertificateRepository : ICertificateRepository
 
         using (var gridReader = await _connection.QueryMultipleAsync(sql, filter))
         {
-            var totalCouunt = gridReader.ReadSingle<int>();
-            var certificates = gridReader.Read<CertificateViewModel>();
-            var attributes = gridReader.Read<AttributeViewModel>();
+            var totalCouunt = await gridReader.ReadSingleAsync<int>();
+            var certificates = await gridReader.ReadAsync<CertificateViewModel>();
+            var attributes = await gridReader.ReadAsync<AttributeViewModel>();
 
             foreach (var certificate in certificates)
             {
@@ -232,9 +232,9 @@ public class CertificateRepository : ICertificateRepository
 
         using (var gridReader = await _connection.QueryMultipleAsync(sql, filter))
         {
-            var totalCount = gridReader.ReadSingle<int>();
-            var certificates = gridReader.Read<CertificateViewModel>();
-            var attributes = gridReader.Read<AttributeViewModel>();
+            var totalCount = await gridReader.ReadSingleAsync<int>();
+            var certificates = await gridReader.ReadAsync<CertificateViewModel>();
+            var attributes = await gridReader.ReadAsync<AttributeViewModel>();
 
             foreach (var certificate in certificates)
             {
@@ -303,8 +303,8 @@ public class CertificateRepository : ICertificateRepository
             filter.TimeZone
         }))
         {
-            var totalCount = gridReader.ReadSingle<int>();
-            var certificates = gridReader.Read<AggregatedCertificatesViewModel>();
+            var totalCount = await gridReader.ReadSingleAsync<int>();
+            var certificates = await gridReader.ReadAsync<AggregatedCertificatesViewModel>();
 
             return new PageResult<AggregatedCertificatesViewModel>()
             {

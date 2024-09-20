@@ -80,9 +80,9 @@ public class ClaimRepository : IClaimRepository
 
         using (var gridReader = await _connection.QueryMultipleAsync(sql, filter))
         {
-            var totalCount = gridReader.ReadSingle<int>();
-            var claims = gridReader.Read<ClaimViewModel>();
-            var attributes = gridReader.Read<AttributeViewModel>();
+            var totalCount = await gridReader.ReadSingleAsync<int>();
+            var claims = await gridReader.ReadAsync<ClaimViewModel>();
+            var attributes = await gridReader.ReadAsync<AttributeViewModel>();
 
             foreach (var claim in claims)
             {
@@ -133,9 +133,9 @@ public class ClaimRepository : IClaimRepository
 
         using (var gridReader = await _connection.QueryMultipleAsync(sql, filter))
         {
-            var totalCount = gridReader.ReadSingle<int>();
-            var claims = gridReader.Read<ClaimViewModel>();
-            var attributes = gridReader.Read<AttributeViewModel>();
+            var totalCount = await gridReader.ReadSingleAsync<int>();
+            var claims = await gridReader.ReadAsync<ClaimViewModel>();
+            var attributes = await gridReader.ReadAsync<AttributeViewModel>();
 
             foreach (var claim in claims)
             {
@@ -203,8 +203,8 @@ public class ClaimRepository : IClaimRepository
             filter.TimeZone
         }))
         {
-            var totalCount = gridReader.ReadSingle<int>();
-            var claims = gridReader.Read<AggregatedClaimViewModel>();
+            var totalCount = await gridReader.ReadSingleAsync<int>();
+            var claims = await gridReader.ReadAsync<AggregatedClaimViewModel>();
 
             return new PageResult<AggregatedClaimViewModel>
             {

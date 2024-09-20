@@ -73,9 +73,9 @@ public class TransferRepository : ITransferRepository
 
         using (var gridReader = await _connection.QueryMultipleAsync(sql, filter))
         {
-            var totalCount = gridReader.ReadSingle<int>();
-            var transfers = gridReader.Read<TransferViewModel>();
-            var attributes = gridReader.Read<AttributeViewModel>();
+            var totalCount = await gridReader.ReadSingleAsync<int>();
+            var transfers = await gridReader.ReadAsync<TransferViewModel>();
+            var attributes = await gridReader.ReadAsync<AttributeViewModel>();
 
             foreach (var transfer in transfers)
             {
@@ -118,9 +118,9 @@ public class TransferRepository : ITransferRepository
 
         using (var gridReader = await _connection.QueryMultipleAsync(sql, filter))
         {
-            var totalCount = gridReader.ReadSingle<int>();
-            var transfers = gridReader.Read<TransferViewModel>();
-            var attributes = gridReader.Read<AttributeViewModel>();
+            var totalCount = await gridReader.ReadSingleAsync<int>();
+            var transfers = await gridReader.ReadAsync<TransferViewModel>();
+            var attributes = await gridReader.ReadAsync<AttributeViewModel>();
 
             foreach (var transfer in transfers)
             {
@@ -182,8 +182,8 @@ public class TransferRepository : ITransferRepository
             filter.TimeZone,
         }))
         {
-            var totalCount = gridReader.ReadSingle<int>();
-            var transfers = gridReader.Read<AggregatedTransferViewModel>();
+            var totalCount = await gridReader.ReadSingleAsync<int>();
+            var transfers = await gridReader.ReadAsync<AggregatedTransferViewModel>();
 
             return new PageResult<AggregatedTransferViewModel>
             {

@@ -51,7 +51,7 @@ public class ClaimCertificateCommandHandler : IConsumer<ClaimCertificateCommand>
 
             var processBuilder = _processBuilderFactory.Create(msg.ClaimId, msg.Owner, _unitOfWork);
 
-            var routingSlip = await BuildClaimRoutingSlip(processBuilder, msg.Quantity, reservedConsumptionSlices, reservedProductionSlices, msg.ClaimId, msg.Owner);
+            var routingSlip = await BuildClaimRoutingSlip(processBuilder, msg.Quantity, reservedConsumptionSlices, reservedProductionSlices);
 
             await context.Execute(routingSlip);
             _unitOfWork.Commit();
@@ -84,10 +84,8 @@ public class ClaimCertificateCommandHandler : IConsumer<ClaimCertificateCommand>
     /// <param name="quantity">The quantity to claim</param>
     /// <param name="reservedConsumptionSlices">List of slices on consumption certificates</param>
     /// <param name="reservedProductionSlices">List of slices on production certificates</param>
-    /// <param name="claimId">The id of the claim request</param>
-    /// <param name="owner">The owner of the request</param>
     /// <returns></returns>
-    private static async Task<RoutingSlip> BuildClaimRoutingSlip(IRegistryProcessBuilder processBuilder, long quantity, IList<WalletSlice> reservedConsumptionSlices, IList<WalletSlice> reservedProductionSlices, Guid claimId, string owner)
+    private static async Task<RoutingSlip> BuildClaimRoutingSlip(IRegistryProcessBuilder processBuilder, long quantity, IList<WalletSlice> reservedConsumptionSlices, IList<WalletSlice> reservedProductionSlices)
     {
         var remainderToClaim = quantity;
         WalletSlice? productionRemainderSlice = null;
