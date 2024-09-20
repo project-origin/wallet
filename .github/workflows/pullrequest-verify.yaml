@@ -21,8 +21,8 @@ jobs:
   verify-container-build:
     uses: project-origin/.github/.github/workflows/reusable-build-push-container-ghcr.yaml@1f4d8907df740e989cb5792ff90ca7e6df80341e
     with:
-      imagename: ghcr.io/project-origin/wallet-server
+      imagename: ghcr.io/project-origin/vault
       version: test
-      context: ./src
-      dockerfile: ./src/ProjectOrigin.WalletSystem.Server/Dockerfile
+      context: .
+      dockerfile: ./Vault.Dockerfile
       push: false

@@ -1,0 +1,13 @@
+using System;
+using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
+
+namespace ProjectOrigin.Vault.Models;
+
+public record ExternalEndpoint
+{
+    public required Guid Id { get; init; }
+    public required IHDPublicKey PublicKey { get; init; }
+    public required string Owner { get; init; }
+    public required string ReferenceText { get; init; }
+    public required string Endpoint { get; init; }
+}
