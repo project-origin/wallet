@@ -5,6 +5,8 @@ kind: Cluster
 metadata:
   name: {{ .Values.persistence.cloudNativePG.name }}
   namespace: {{ .Release.Namespace }}
+  annotations:
+    "helm.sh/resource-policy": keep
 spec:
   instances: {{ .Values.persistence.cloudNativePG.replicas }}
   storage:
