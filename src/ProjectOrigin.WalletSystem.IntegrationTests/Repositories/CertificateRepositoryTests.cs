@@ -43,7 +43,8 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
             EndDate = DateTimeOffset.Now.AddDays(1).ToUtcTime(),
             GridArea = "DK1",
             CertificateType = GranularCertificateType.Production,
-            Attributes = attributes
+            Attributes = attributes,
+            Withdrawn = false
         };
 
         // Act
@@ -66,6 +67,64 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
 
         // Assert
         result.Should().BeEquivalentTo(certificate);
+    }
+
+    [Fact]
+    public async Task WithdrawCertificate()
+    {
+        var registry = _fixture.Create<string>();
+        var certificate1 = await CreateCertificate(registry);
+        var certificate2 = await CreateCertificate(registry);
+
+        await _certRepository.WithdrawCertificate(registry, certificate1.Id);
+
+        var result1 = await _certRepository.GetCertificate(registry, certificate1.Id);
+        var result2 = await _certRepository.GetCertificate(registry, certificate2.Id);
+
+        result1.Should().NotBeNull();
+        result2.Should().NotBeNull();
+        result1.Withdrawn.Should().BeTrue();
+        result2.Withdrawn.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task GetClaimedSlicesOfCertificate()
+    {
+        var registry = _fixture.Create<string>();
+        var certificate = await CreateCertificate(registry);
+        var owner = _fixture.Create<string>();
+        var wallet = await CreateWallet(owner);
+        var endpoint = await CreateWalletEndpoint(wallet);
+        var slice = new WalletSlice
+        {
+            Id = Guid.NewGuid(),
+            WalletEndpointId = endpoint.Id,
+            WalletEndpointPosition = 1,
+            RegistryName = registry,
+            CertificateId = certificate.Id,
+            Quantity = _fixture.Create<int>(),
+            RandomR = _fixture.Create<byte[]>(),
+            State = WalletSliceState.Available
+        };
+        var claimedSlice = new WalletSlice
+        {
+            Id = Guid.NewGuid(),
+            WalletEndpointId = endpoint.Id,
+            WalletEndpointPosition = 2,
+            RegistryName = registry,
+            CertificateId = certificate.Id,
+            Quantity = _fixture.Create<int>(),
+            RandomR = _fixture.Create<byte[]>(),
+            State = WalletSliceState.Claimed
+        };
+
+        await _certRepository.InsertWalletSlice(slice);
+        await _certRepository.InsertWalletSlice(claimedSlice);
+
+        var claimedSlices = await _certRepository.GetClaimedSlicesOfCertificate(registry, certificate.Id);
+
+        claimedSlices.Should().HaveCount(1);
+        claimedSlices.First().Should().BeEquivalentTo(claimedSlice, options => options.Excluding(x => x.UpdatedAt));
     }
 
     [Fact]
@@ -349,7 +408,8 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
             EndDate = DateTimeOffset.Now.AddDays(1).ToUtcTime(),
             GridArea = "DK1",
             CertificateType = GranularCertificateType.Production,
-            Attributes = attributes
+            Attributes = attributes,
+            Withdrawn = false
         };
 
         var slice = new WalletSlice
@@ -620,7 +680,8 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
             EndDate = DateTimeOffset.Now.AddDays(1).ToUtcTime(),
             GridArea = "DK1",
             CertificateType = GranularCertificateType.Production,
-            Attributes = attributes
+            Attributes = attributes,
+            Withdrawn = false
         };
         await _certRepository.InsertCertificate(certificate);
 

@@ -15,5 +15,6 @@ public record CertificateViewModel
     public required DateTimeOffset StartDate { get; init; }
     public required DateTimeOffset EndDate { get; init; }
     public required uint Quantity { get; init; }
+    public required bool Withdrawn { get; init; }
     public List<CertificateAttribute> Attributes { get; } = new();
 }

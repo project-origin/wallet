@@ -164,6 +164,11 @@ namespace ProjectOrigin.WalletSystem.IntegrationTests.TestClassFixtures
         {
             return new TestServerContext<TStartup>(this, outputHelper);
         }
+
+        public void Start()
+        {
+            EnsureServer();
+        }
     }
 }
 

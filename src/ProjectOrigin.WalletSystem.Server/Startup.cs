@@ -23,6 +23,9 @@ using System.IO;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.IdentityModel.Protocols.Configuration;
+using Quartz;
+using ProjectOrigin.WalletSystem.Server.Jobs;
 
 namespace ProjectOrigin.WalletSystem.Server;
 
@@ -70,6 +73,31 @@ public class Startup
         services.ConfigureAuthentication(_configuration.GetValidSection<AuthOptions>(AuthOptions.Prefix));
         services.ConfigureOtlp(_configuration.GetValidSection<OtlpOptions>(OtlpOptions.Prefix));
 
+        services.AddQuartz(q =>
+        {
+            q.UsePersistentStore(s =>
+            {
+                s.UsePostgres(_configuration.GetConnectionString("Database") ?? throw new InvalidConfigurationException("Configuration does not contain a connection string named 'Database'."));
+                s.UseNewtonsoftJsonSerializer();
+                s.UseClustering(c =>
+                {
+                    c.CheckinInterval = TimeSpan.FromSeconds(20);  // Node health check interval
+                    c.CheckinMisfireThreshold = TimeSpan.FromSeconds(60);  // Time to consider a node as misfired
+                });
+            });
+
+            q.AddJob<PublishCheckForWithdrawnCertificatesCommandJob>(opts => opts.WithIdentity("PublishCheckForWithdrawnCertificatesCommandClusteredJob"));
+
+            q.AddTrigger(opts => opts
+                .ForJob("PublishCheckForWithdrawnCertificatesCommandClusteredJob")
+                .WithIdentity("PublishCheckForWithdrawnCertificatesCommandClusteredJob-trigger")
+                .WithSimpleSchedule(x => x
+                    .WithIntervalInMinutes(60)
+                    .RepeatForever()));
+        });
+
+        services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);
+
         services.AddMassTransit(o =>
         {
             o.SetKebabCaseEndpointNameFormatter();
@@ -100,6 +128,8 @@ public class Startup
                 cfg.UseMessageRetry(r => r.Interval(100, TimeSpan.FromMinutes(1))
                     .Handle<TransientException>());
             });
+
+            o.AddConsumer<CheckForWithdrawnCertificatesCommandHandler>();
 
             o.AddActivitiesFromNamespaceContaining<TransferFullSliceActivity>();
             o.AddExecuteActivity<WaitCommittedRegistryTransactionActivity, WaitCommittedTransactionArguments>(cfg =>
