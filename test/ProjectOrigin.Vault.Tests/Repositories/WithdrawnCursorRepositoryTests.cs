@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using AutoFixture;
 using FluentAssertions;
 using ProjectOrigin.Vault.Extensions;
 using ProjectOrigin.Vault.Models;
@@ -22,9 +23,10 @@ public class WithdrawnCursorRepositoryTests : AbstractRepositoryTests
     [Fact]
     public async Task InsertAndGetWithdrawnCursor()
     {
+        var stampName = _fixture.Create<string>();
         var cursor = new WithdrawnCursor
         {
-            StampName = "Narnia_stamp",
+            StampName = stampName,
             SyncPosition = 1,
             LastSyncDate = DateTimeOffset.UtcNow.ToUtcTime()
         };
@@ -39,9 +41,10 @@ public class WithdrawnCursorRepositoryTests : AbstractRepositoryTests
     [Fact]
     public async Task UpdateWithdrawnCursor()
     {
+        var stampName = _fixture.Create<string>();
         var cursor = new WithdrawnCursor
         {
-            StampName = "Narnia_stamp",
+            StampName = stampName,
             SyncPosition = 1,
             LastSyncDate = DateTimeOffset.UtcNow.ToUtcTime()
         };
@@ -54,18 +57,18 @@ public class WithdrawnCursorRepositoryTests : AbstractRepositoryTests
         cursorToUpdate.LastSyncDate = DateTimeOffset.UtcNow.AddHours(2).ToUtcTime();
 
         await _withdrawnRepository.UpdateWithdrawnCursor(cursorToUpdate);
-        var cursorUpdated = await _withdrawnRepository.GetWithdrawnCursors();
+        var cursorsUpdated = await _withdrawnRepository.GetWithdrawnCursors();
 
-        cursorUpdated.Count().Should().Be(1);
-        cursorUpdated.First().Should().BeEquivalentTo(cursorToUpdate);
+        cursorsUpdated.Should().Contain(cursorToUpdate);
     }
 
     [Fact]
     public async Task UpdateWithdrawnCursor_WhenNotInsertedBeforeUpdate_InvalidOperationException()
     {
+        var stampName = _fixture.Create<string>();
         var cursor = new WithdrawnCursor
         {
-            StampName = "Narnia_stamp",
+            StampName = stampName,
             SyncPosition = 1,
             LastSyncDate = DateTimeOffset.UtcNow.ToUtcTime()
         };
@@ -73,6 +76,6 @@ public class WithdrawnCursorRepositoryTests : AbstractRepositoryTests
         var sut = () => _withdrawnRepository.UpdateWithdrawnCursor(cursor);
 
         await sut.Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage("Withdrawn cursor with stamp name Narnia_stamp could not be found");
+            .WithMessage($"Withdrawn cursor with stamp name {stampName} could not be found");
     }
 }
