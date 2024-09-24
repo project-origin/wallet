@@ -24,7 +24,7 @@ public class WithdrawnCursorRepository : IWithdrawnCursorRepository
     public async Task<IEnumerable<WithdrawnCursor>> GetWithdrawnCursors()
     {
         using var gridReader = await _connection.QueryMultipleAsync("SELECT * FROM withdrawn_cursors");
-        return gridReader.Read<WithdrawnCursor>();
+        return await gridReader.ReadAsync<WithdrawnCursor>();
     }
 
     public async Task InsertWithdrawnCursor(WithdrawnCursor withdrawnCursor)

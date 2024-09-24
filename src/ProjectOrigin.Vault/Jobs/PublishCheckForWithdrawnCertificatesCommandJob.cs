@@ -24,6 +24,6 @@ public class PublishCheckForWithdrawnCertificatesCommandJob : IJob
 
         await _bus.Publish(message);
 
-        _logger.LogInformation($"CheckForWithdrawnCertificatesCommand published at: {DateTime.Now}");
+        _logger.LogInformation("CheckForWithdrawnCertificatesCommand published at: {now}", DateTime.Now);
     }
 }
