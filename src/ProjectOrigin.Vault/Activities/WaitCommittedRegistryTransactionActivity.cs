@@ -25,13 +25,13 @@ public record WaitCommittedTransactionArguments
 
 public class WaitCommittedRegistryTransactionActivity : IExecuteActivity<WaitCommittedTransactionArguments>
 {
-    private readonly IOptions<NetworkOptions> _registryOptions;
+    private readonly IOptions<NetworkOptions> _networkOptions;
     private readonly ILogger<WaitCommittedRegistryTransactionActivity> _logger;
     private readonly IUnitOfWork _unitOfWork;
 
-    public WaitCommittedRegistryTransactionActivity(IOptions<NetworkOptions> registryOptions, ILogger<WaitCommittedRegistryTransactionActivity> logger, IUnitOfWork unitOfWork)
+    public WaitCommittedRegistryTransactionActivity(IOptions<NetworkOptions> networkOptions, ILogger<WaitCommittedRegistryTransactionActivity> logger, IUnitOfWork unitOfWork)
     {
-        _registryOptions = registryOptions;
+        _networkOptions = networkOptions;
         _logger = logger;
         _unitOfWork = unitOfWork;
     }
@@ -48,7 +48,7 @@ public class WaitCommittedRegistryTransactionActivity : IExecuteActivity<WaitCom
             };
 
             var registryName = context.Arguments.RegistryName;
-            if (!_registryOptions.Value.Registries.TryGetValue(registryName, out var registryInfo))
+            if (!_networkOptions.Value.Registries.TryGetValue(registryName, out var registryInfo))
                 throw new ArgumentException($"Registry with name {registryName} not found in configuration.");
 
             using var channel = GrpcChannel.ForAddress(registryInfo.Url);

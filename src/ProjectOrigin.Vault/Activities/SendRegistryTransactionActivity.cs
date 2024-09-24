@@ -16,12 +16,12 @@ public record SendRegistryTransactionArguments
 
 public class SendRegistryTransactionActivity : IExecuteActivity<SendRegistryTransactionArguments>
 {
-    private readonly IOptions<NetworkOptions> _registryOptions;
+    private readonly IOptions<NetworkOptions> _networkOptions;
     private readonly ILogger<SendRegistryTransactionActivity> _logger;
 
-    public SendRegistryTransactionActivity(IOptions<NetworkOptions> registryOptions, ILogger<SendRegistryTransactionActivity> logger)
+    public SendRegistryTransactionActivity(IOptions<NetworkOptions> networkOptions, ILogger<SendRegistryTransactionActivity> logger)
     {
-        _registryOptions = registryOptions;
+        _networkOptions = networkOptions;
         _logger = logger;
     }
 
@@ -37,7 +37,7 @@ public class SendRegistryTransactionActivity : IExecuteActivity<SendRegistryTran
             var request = new SendTransactionsRequest();
             request.Transactions.Add(transaction);
 
-            if (!_registryOptions.Value.Registries.TryGetValue(registryName, out var registryInfo))
+            if (!_networkOptions.Value.Registries.TryGetValue(registryName, out var registryInfo))
                 throw new ArgumentException($"Registry with name {registryName} not found in configuration.");
 
             using var channel = GrpcChannel.ForAddress(registryInfo.Url);
