@@ -187,6 +187,48 @@ config:
         #   # pemFileName defines the name of the file containing the pem encoded key
         #   pemFileName: /etc/keyfile.pem
 
+# networkConfig holds the configuration for the ProjectOrigin network configuration
+networkConfig:
+  # refreshInterval defines how often the network configuration should be refreshed, defaults to 15 minutes
+  refreshInterval: 00:15:00
+
+  # url defines an url to fetch the network configuration from, allowed formats are json or yaml
+  url: # https://example.com/networkConfiguration.json
+
+  # configMap defines an existing configmap to fetch the network configuration from
+  configMap:
+    # name: verifier-network-configuration
+    # key: networkConfiguration.json
+
+  # yaml defines the network configuration as a string in yaml
+  yaml: #|-
+  #   registries:
+  #     narniaReegistry:
+  #       url: "https://registry.narnia.example.com",
+  #   areas:
+  #     DK1:
+  #       issuerKeys:
+  #       - publicKey: "Ay02vkc6FGV8FwtvVsmBO2p7UdbZIcFhvMGFB40D3DKX"
+
+  # json defines the network configuration as a string in json
+  json: #|-
+  #  {
+  #    "registries": {
+  #      "narniaReegistry": {
+  #        "url": "https://registry.narnia.example.com"
+  #      }
+  #    },
+  #    "areas": {
+  #      "DK1": {
+  #        "issuerKeys": [
+  #          {
+  #            "publicKey": "Ay02vkc6FGV8FwtvVsmBO2p7UdbZIcFhvMGFB40D3DKX"
+  #          }
+  #        ]
+  #      }
+  #    }
+  #  }
+
 # migrationWaiter holds the configuration for the migration waiter
 migrationWaiter:
   # image holds the configuration for the image to use for the migration waiter

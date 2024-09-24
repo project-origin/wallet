@@ -9,6 +9,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using FluentAssertions;
+using ProjectOrigin.Vault.Options;
 using ProjectOrigin.Vault.Tests.TestClassFixtures;
 using WireMock.RequestBuilders;
 using WireMock.ResponseBuilders;
@@ -324,6 +325,7 @@ public class JwtTests : IClassFixture<PostgresDatabaseFixture>, IClassFixture<In
             {"ConnectionStrings:Database", _dbFixture.ConnectionString},
             {"ServiceOptions:EndpointAddress", "http://dummy.com/"},
             {"VerifySlicesWorkerOptions:SleepTime", "00:00:02"},
+            {"network:ConfigurationUri", new NetworkOptions().ToTempFileUri() }
         };
 
         config = config.Concat(injectedConfig).Concat(_messageBrokerFixture.Configuration).ToDictionary(kvp => kvp.Key, kvp => kvp.Value);

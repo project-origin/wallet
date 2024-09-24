@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using FluentAssertions;
+using ProjectOrigin.Vault.Options;
 using ProjectOrigin.Vault.Tests.TestClassFixtures;
 using Xunit;
 
@@ -32,6 +33,7 @@ public class TelemetryIntegrationTest :
 
         var combinedConfiguration = new Dictionary<string, string?>(inMemoryFixture.Configuration)
         {
+            {"network:ConfigurationUri", new NetworkOptions().ToTempFileUri() },
             {"Otlp:Enabled", "true"},
             {"Otlp:Endpoint", openTelemetryFixture.OtelUrl},
             {"ConnectionStrings:Database", dbFixture.ConnectionString},
