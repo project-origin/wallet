@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
@@ -14,6 +15,8 @@ using Grpc.Net.Client;
 using ProjectOrigin.HierarchicalDeterministicKeys;
 using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
 using ProjectOrigin.PedersenCommitment;
+using ProjectOrigin.TestCommon;
+using ProjectOrigin.Vault.Tests.TestExtensions;
 using Testcontainers.RabbitMq;
 using Xunit;
 
@@ -22,7 +25,7 @@ namespace ProjectOrigin.Vault.Tests.TestClassFixtures;
 public class RegistryFixture : IAsyncLifetime
 {
     private const string RegistryImage = "ghcr.io/project-origin/registry-server:1.3.1";
-    private const string ElectricityVerifierImage = "ghcr.io/project-origin/electricity-server:1.1.0";
+    private const string ElectricityVerifierImage = "ghcr.io/project-origin/electricity-server:1.2.0";
     private const int RabbitMqHttpPort = 15672;
     private const int GrpcPort = 5000;
     private const string Area = "Narnia";
@@ -46,6 +49,16 @@ public class RegistryFixture : IAsyncLifetime
     {
         IssuerKey = Algorithms.Ed25519.GenerateNewPrivateKey();
 
+        var configFile = TempFile.WriteAllText($"""
+        registries:
+          {RegistryName}:
+            url: http://{RegistryAlias}:5000
+        areas:
+          {Area}:
+            issuerKeys:
+              - publicKey: "{Convert.ToBase64String(Encoding.UTF8.GetBytes(IssuerKey.PublicKey.ExportPkixText()))}"
+        """, ".yaml");
+
         _network = new NetworkBuilder()
             .WithName(Guid.NewGuid().ToString())
             .Build();
@@ -68,12 +81,9 @@ public class RegistryFixture : IAsyncLifetime
                 .WithNetworkAliases(VerifierAlias)
                 .WithPortBinding(GrpcPort, true)
                 .WithCommand("--serve")
-                .WithEnvironment($"Issuers__{IssuerArea}", Convert.ToBase64String(Encoding.UTF8.GetBytes(IssuerKey.PublicKey.ExportPkixText())))
-                .WithEnvironment($"Registries__{RegistryName}__Address", $"http://{RegistryAlias}:{GrpcPort}")
-                .WithWaitStrategy(
-                    Wait.ForUnixContainer()
-                        .UntilPortIsAvailable(GrpcPort)
-                    )
+                .WithResourceMapping(configFile, $"/app/tmp/")
+                .WithEnvironment("Network__ConfigurationUri", $"file:///app/tmp/{Path.GetFileName(configFile)}")
+                .WithWaitStrategy(Wait.ForUnixContainer().UntilGrpcResponds(GrpcPort, o => o.WithTimeout(TimeSpan.FromMinutes(1))))
                 .Build();
 
         _registryContainer = new ContainerBuilder()
@@ -98,10 +108,7 @@ public class RegistryFixture : IAsyncLifetime
                     .WithEnvironment("TransactionProcessor__Servers", "1")
                     .WithEnvironment("TransactionProcessor__Threads", "5")
                     .WithEnvironment("TransactionProcessor__Weight", "10")
-                    .WithWaitStrategy(
-                        Wait.ForUnixContainer()
-                            .UntilPortIsAvailable(GrpcPort)
-                        )
+                    .WithWaitStrategy(Wait.ForUnixContainer().UntilGrpcResponds(GrpcPort, o => o.WithTimeout(TimeSpan.FromMinutes(1))))
                     .Build();
     }
 
@@ -113,13 +120,13 @@ public class RegistryFixture : IAsyncLifetime
         await _network.CreateAsync()
             .ConfigureAwait(false);
 
-        await _rabbitMqContainer.StartAsync()
+        await _rabbitMqContainer.StartWithLoggingAsync()
             .ConfigureAwait(false);
 
-        await _verifierContainer.StartAsync()
+        await _verifierContainer.StartWithLoggingAsync()
             .ConfigureAwait(false);
 
-        await _registryContainer.StartAsync()
+        await _registryContainer.StartWithLoggingAsync()
             .ConfigureAwait(false);
     }
 
