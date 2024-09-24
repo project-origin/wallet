@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using DotNet.Testcontainers.Containers;
+using ProjectOrigin.Vault.Tests.Exceptions;
 
 namespace ProjectOrigin.Vault.Tests.TestExtensions;
 
@@ -15,8 +16,8 @@ public static class IContainerExtensions
         }
         catch (Exception e)
         {
-            var log = await container.GetLogsAsync();
-            throw new Exception($"Container failed to start. Logs: {log}", e);
+            var (stdout, stderr) = await container.GetLogsAsync();
+            throw new ContainerStartFailedException(stdout, stderr, e);
         }
     }
 }

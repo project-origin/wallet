@@ -6,7 +6,7 @@ namespace ProjectOrigin.Vault.Tests.TestExtensions;
 
 public static class IWaitForContainerOSExtensions
 {
-    public static IWaitForContainerOS UntilGrpcResponds(this IWaitForContainerOS waitForContainer, ushort grpcPort, Action<IWaitStrategy> waitStrategyModifier = null)
+    public static IWaitForContainerOS UntilGrpcResponds(this IWaitForContainerOS waitForContainer, ushort grpcPort, Action<IWaitStrategy>? waitStrategyModifier = null)
         => waitForContainer.UntilHttpRequestIsSucceeded(s => s.ForPath("/")
             .ForPort(grpcPort)
             .ForStatusCode(HttpStatusCode.BadRequest)
