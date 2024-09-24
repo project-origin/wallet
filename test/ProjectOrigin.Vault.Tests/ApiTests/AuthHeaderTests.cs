@@ -37,7 +37,7 @@ public class AuthHeaderTests : WalletSystemTestsBase, IClassFixture<InMemoryFixt
     public async Task Verify_Get()
     {
         //Arrange
-        var httpClient = _serverFixture.CreateHttpClient();
+        using var httpClient = _serverFixture.CreateHttpClient();
         httpClient.DefaultRequestHeaders.Add(HeaderName, _fixture.Create<string>());
 
         //Act
@@ -52,7 +52,7 @@ public class AuthHeaderTests : WalletSystemTestsBase, IClassFixture<InMemoryFixt
     public async Task Verify_Get_Forbidden()
     {
         //Arrange
-        var httpClient = _serverFixture.CreateHttpClient();
+        using var httpClient = _serverFixture.CreateHttpClient();
 
         //Act
         var res = await httpClient.GetAsync("v1/wallets");
