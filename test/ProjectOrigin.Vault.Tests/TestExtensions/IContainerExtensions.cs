@@ -6,16 +6,16 @@ namespace ProjectOrigin.Vault.Tests.TestExtensions;
 
 public static class IContainerExtensions
 {
-    public static async Task StartWithLoggingAsync(this IContainer a)
+    public static async Task StartWithLoggingAsync(this IContainer container)
     {
         try
         {
-            await a.StartAsync()
+            await container.StartAsync()
                 .ConfigureAwait(false);
         }
         catch (Exception e)
         {
-            var log = await a.GetLogsAsync();
+            var log = await container.GetLogsAsync();
             throw new Exception($"Container failed to start. Logs: {log}", e);
         }
     }
