@@ -325,7 +325,7 @@ public class JwtTests : IClassFixture<PostgresDatabaseFixture>, IClassFixture<In
             {"ConnectionStrings:Database", _dbFixture.ConnectionString},
             {"ServiceOptions:EndpointAddress", "http://dummy.com/"},
             {"VerifySlicesWorkerOptions:SleepTime", "00:00:02"},
-            {"network:ConfigurationUri", new NetworkOptions().ToTempFileUri() }
+            {"network:ConfigurationUri", new NetworkOptions().ToTempYamlFileUri() }
         };
 
         config = config.Concat(injectedConfig).Concat(_messageBrokerFixture.Configuration).ToDictionary(kvp => kvp.Key, kvp => kvp.Value);

@@ -33,7 +33,7 @@ public class TelemetryIntegrationTest :
 
         var combinedConfiguration = new Dictionary<string, string?>(inMemoryFixture.Configuration)
         {
-            {"network:ConfigurationUri", new NetworkOptions().ToTempFileUri() },
+            {"network:ConfigurationUri", new NetworkOptions().ToTempYamlFileUri() },
             {"Otlp:Enabled", "true"},
             {"Otlp:Endpoint", openTelemetryFixture.OtelUrl},
             {"ConnectionStrings:Database", dbFixture.ConnectionString},

@@ -16,6 +16,7 @@ using ProjectOrigin.HierarchicalDeterministicKeys;
 using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
 using ProjectOrigin.PedersenCommitment;
 using ProjectOrigin.TestCommon;
+using ProjectOrigin.TestCommon.Extensions;
 using ProjectOrigin.Vault.Tests.TestExtensions;
 using Testcontainers.PostgreSql;
 using Testcontainers.RabbitMq;
@@ -96,19 +97,6 @@ public class RegistryFixture : IAsyncLifetime
             .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(5432))
             .Build();
 
-        Dictionary<string, string> source = new Dictionary<string, string>
-        {
-            { "Host", RegistryPostgresAlias },
-            {
-                "Port",
-                ((ushort)5432).ToString()
-            },
-            { "Database", "postgres" },
-            { "Username", "postgres" },
-            { "Password", "postgres" }
-        };
-        var foo = string.Join(";", source.Select((KeyValuePair<string, string> property) => string.Join("=", property.Key, property.Value)));
-
         _registryContainer = new ContainerBuilder()
                     .WithImage(RegistryImage)
                     .WithNetwork(_network)
@@ -120,7 +108,7 @@ public class RegistryFixture : IAsyncLifetime
                     .WithEnvironment("Verifiers__project_origin.electricity.v1", $"http://{VerifierAlias}:{GrpcPort}")
                     .WithEnvironment("ImmutableLog__Type", "log")
                     .WithEnvironment("BlockFinalizer__Interval", "00:00:05")
-                    .WithEnvironment("ConnectionStrings__Database", foo)
+                    .WithEnvironment("ConnectionStrings__Database", CreateNetworkConnectionString(RegistryPostgresAlias))
                     .WithEnvironment("Cache__Type", "InMemory")
                     .WithEnvironment("RabbitMq__Hostname", RabbitMqAlias)
                     .WithEnvironment("RabbitMq__AmqpPort", RabbitMqBuilder.RabbitMqPort.ToString())
@@ -268,5 +256,22 @@ public class RegistryFixture : IAsyncLifetime
         }
 
         return issuedEvent;
+    }
+
+    private static string CreateNetworkConnectionString(
+        string networkAlias,
+        string databaseName = "postgres",
+        string username = "postgres",
+        string password = "postgres")
+    {
+        var properties = new Dictionary<string, string>
+        {
+            { "Host", networkAlias },
+            { "Port", PostgreSqlBuilder.PostgreSqlPort.ToString() },
+            { "Database", databaseName },
+            { "Username", username },
+            { "Password", password }
+        };
+        return string.Join(";", properties.Select(property => string.Join("=", property.Key, property.Value)));
     }
 }

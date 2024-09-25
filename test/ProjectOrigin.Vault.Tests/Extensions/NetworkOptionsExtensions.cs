@@ -6,15 +6,12 @@ namespace ProjectOrigin.Vault.Tests;
 
 public static class NetworkOptionsExtensions
 {
-    public static string ToYaml(this NetworkOptions networkOptions)
+    public static string ToTempYamlFileUri(this NetworkOptions networkOptions)
     {
         var serializer = new SerializerBuilder()
            .WithNamingConvention(YamlDotNet.Serialization.NamingConventions.CamelCaseNamingConvention.Instance)
            .Build();
-        return serializer.Serialize(networkOptions);
+        var yaml = serializer.Serialize(networkOptions);
+        return "file://" + TempFile.WriteAllText(yaml, ".yaml");
     }
-
-    public static string ToTempFileUri(this NetworkOptions networkOptions) =>
-        "file://" + TempFile.WriteAllText(networkOptions.ToYaml(), ".yaml");
-
 }
