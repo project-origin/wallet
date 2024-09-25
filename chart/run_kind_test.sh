@@ -12,7 +12,7 @@ values_filename=${temp_folder}/values.yaml
 # define cleanup function
 cleanup() {
     rm -fr $temp_folder
-    #kind delete cluster --name ${cluster_name} >/dev/null 2>&1
+    kind delete cluster --name ${cluster_name} >/dev/null 2>&1
 }
 
 # define debug function
@@ -46,6 +46,11 @@ kind load -n ${cluster_name} docker-image ghcr.io/project-origin/vault:test
 helm install postgresql oci://registry-1.docker.io/bitnamicharts/postgresql --version 15.5.23 --kube-context kind-${cluster_name}
 helm install rabbitmq oci://registry-1.docker.io/bitnamicharts/rabbitmq --version 14.6.6 --kube-context kind-${cluster_name}
 
+# generate keys
+PrivateKey=$(openssl genpkey -algorithm ED25519)
+PrivateKeyBase64=$(echo "$PrivateKey" | base64 -w 0)
+PublicKeyBase64=$(echo "$PrivateKey" | openssl pkey -pubout | base64 -w 0)
+
 # generate values.yaml file
 cat << EOF > "${values_filename}"
 image:
@@ -73,6 +78,16 @@ rabbitmq:
     secretRef:
       name: rabbitmq
       key: rabbitmq-password
+
+networkConfig:
+  yaml: |-
+    registries:
+      example-registry:
+        url: http://example-registry:5000
+    areas:
+      Narnia:
+        issuerKeys:
+          - publicKey: $PublicKeyBase64
 EOF
 
 # install wallet chart

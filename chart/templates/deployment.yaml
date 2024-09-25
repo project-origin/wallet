@@ -60,6 +60,7 @@ spec:
           env:
             {{- include "common.database.config" $ | nindent 12 }}
             {{- include "common.otlp.config" $.Values.otlp | nindent 12 }}
+            {{- include "common.networkConfig.environmentVariables" .Values.networkConfig | nindent 12}}
 
             - name: ServiceOptions__EndpointAddress
               value: {{ required "A valid externalUrl is required!"  .Values.config.externalUrl }}
@@ -112,11 +113,13 @@ spec:
           {{- end }}
 
           volumeMounts:
+            {{- include "common.networkConfig.volumeMounts" .Values.networkConfig | nindent 12}}
           {{- with .Values.vault.volumeMounts }}
             {{- toYaml . | nindent 10 }}
           {{- end }}
 
       volumes:
+        {{- include "common.networkConfig.volumes" $ | nindent 8}}
         - name: service-account-token
           projected:
             sources:
