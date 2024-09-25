@@ -15,6 +15,8 @@ namespace ProjectOrigin.Vault.Tests.TestExtensions;
 
 public static class PostgresFixtureExtensions
 {
+    public const string Area = "Narnia";
+
     public static IUnitOfWork CreateUnitOfWork(this PostgresDatabaseFixture _dbFixture)
     {
         var options = MsOptions.Options.Create(new PostgresOptions { ConnectionString = _dbFixture.ConnectionString });
@@ -109,7 +111,7 @@ public static class PostgresFixtureExtensions
                 RegistryName = registryName,
                 StartDate = start ?? DateTimeOffset.Now,
                 EndDate = end ?? start?.AddDays(1) ?? DateTimeOffset.Now.AddDays(1),
-                GridArea = "DK1",
+                GridArea = Area,
                 CertificateType = type,
                 Attributes = attributes
             };

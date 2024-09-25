@@ -5,6 +5,7 @@ using FluentAssertions;
 using Google.Protobuf;
 using MassTransit;
 using NSubstitute;
+using MsOptions = Microsoft.Extensions.Options;
 using ProjectOrigin.Electricity.V1;
 using ProjectOrigin.PedersenCommitment;
 using ProjectOrigin.Vault.Tests.TestClassFixtures;
@@ -13,6 +14,9 @@ using ProjectOrigin.Vault.Activities;
 using ProjectOrigin.Vault.Database;
 using ProjectOrigin.Vault.Models;
 using Xunit;
+using ProjectOrigin.Vault.Options;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace ProjectOrigin.Vault.Tests;
 
@@ -22,7 +26,6 @@ public class ClaimTests : IClassFixture<PostgresDatabaseFixture>
     private readonly PostgresDatabaseFixture _dbFixture;
     private readonly string _registryName;
     private readonly IUnitOfWork _unitOfWork;
-    private readonly RegistryProcessBuilder _processBuilder;
 
     public ClaimTests(PostgresDatabaseFixture postgresDatabaseFixture)
     {
@@ -30,18 +33,28 @@ public class ClaimTests : IClassFixture<PostgresDatabaseFixture>
         _dbFixture = postgresDatabaseFixture;
         _registryName = _fixture.Create<string>();
         _unitOfWork = _dbFixture.CreateUnitOfWork();
-        _processBuilder = new RegistryProcessBuilder(
-            _unitOfWork,
-            Substitute.For<IEndpointNameFormatter>(),
-            Guid.NewGuid(),
-            _fixture.Create<string>()
-        );
     }
 
     [Fact]
-    public async Task TestClaimEqualSize()
+    public async Task TestClaimEqualSize_WithoutChronicler()
     {
         // Arrange
+        var _processBuilder = new RegistryProcessBuilder(
+            _unitOfWork,
+            Substitute.For<IEndpointNameFormatter>(),
+            Guid.NewGuid(),
+            MsOptions.Options.Create(new NetworkOptions()
+            {
+                Areas = new Dictionary<string, AreaInfo>(){
+                    {
+                        PostgresFixtureExtensions.Area, new AreaInfo(){
+                            Chronicler = null,
+                            IssuerKeys = new List<KeyInfo>(){}
+                        }
+                    }}
+            }),
+            _fixture.Create<string>());
+
         var endpoint = await _dbFixture.CreateWalletEndpoint(_fixture.Create<string>());
 
         var prodCert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _registryName, Models.GranularCertificateType.Production);
@@ -61,32 +74,158 @@ public class ClaimTests : IClassFixture<PostgresDatabaseFixture>
         // Assert
         slip.Should().NotBeNull();
 
-        var (t1, a1) = slip.Itinerary[0].ShouldBeTransactionWithEvent<AllocatedEvent>(
+        slip.Itinerary[0].ShouldBeActivity<AllocateActivity, AllocateArguments>()
+            .Should().Match<AllocateArguments>(x =>
+                x.AllocationId != Guid.Empty &&
+                x.ProductionSliceId == prodSlice.Id &&
+                x.ConsumptionSliceId == consSlice.Id &&
+                x.ChroniclerRequestId == null &&
+                x.CertificateId.Registry == prodCert.RegistryName &&
+                x.CertificateId.StreamId.Value == prodCert.Id.ToString() &&
+                x.RequestId != Guid.Empty &&
+                x.Owner != string.Empty);
+
+        var allocationId = slip.Itinerary[0].ShouldBeActivity<AllocateActivity, AllocateArguments>().AllocationId.ToString();
+
+        slip.Itinerary[1].ShouldBeActivity<AllocateActivity, AllocateArguments>()
+            .Should().Match<AllocateArguments>(x =>
+                x.AllocationId != Guid.Empty &&
+                x.ProductionSliceId == prodSlice.Id &&
+                x.ConsumptionSliceId == consSlice.Id &&
+                x.ChroniclerRequestId == null &&
+                x.CertificateId.Registry == consCert.RegistryName &&
+                x.CertificateId.StreamId.Value == consCert.Id.ToString() &&
+                x.RequestId != Guid.Empty &&
+                x.Owner != string.Empty);
+
+        var (t3, _) = slip.Itinerary[2].ShouldBeTransactionWithEvent<ClaimedEvent>(
             transaction =>
                 transaction.Header.FederatedStreamId.Registry == _registryName &&
                 transaction.Header.FederatedStreamId.StreamId.Value == prodCert.Id.ToString() &&
                 prodPublicKey.Verify(transaction.Header.ToByteArray(), transaction.HeaderSignature.ToByteArray()),
             payload =>
-                payload.ConsumptionCertificateId.Registry == _registryName &&
-                payload.ConsumptionCertificateId.StreamId.Value == consCert.Id.ToString() &&
-                payload.ProductionCertificateId.Registry == _registryName &&
-                payload.ProductionCertificateId.StreamId.Value == prodCert.Id.ToString()
+                payload.CertificateId.Registry == _registryName &&
+                payload.CertificateId.StreamId.Value == prodCert.Id.ToString() &&
+                payload.AllocationId.Value == allocationId
         );
-        slip.Itinerary[1].ShouldWaitFor(t1);
+        slip.Itinerary[3].ShouldWaitFor(t3);
 
-        var (t2, _) = slip.Itinerary[2].ShouldBeTransactionWithEvent<AllocatedEvent>(
+        var (t4, _) = slip.Itinerary[4].ShouldBeTransactionWithEvent<ClaimedEvent>(
             transaction =>
                 transaction.Header.FederatedStreamId.Registry == _registryName &&
                 transaction.Header.FederatedStreamId.StreamId.Value == consCert.Id.ToString() &&
                 consPublicKey.Verify(transaction.Header.ToByteArray(), transaction.HeaderSignature.ToByteArray()),
             payload =>
-                payload.ConsumptionCertificateId.Registry == _registryName &&
-                payload.ConsumptionCertificateId.StreamId.Value == consCert.Id.ToString() &&
-                payload.ProductionCertificateId.Registry == _registryName &&
-                payload.ProductionCertificateId.StreamId.Value == prodCert.Id.ToString() &&
-                payload.AllocationId.Value == a1.AllocationId.Value
+                payload.CertificateId.Registry == _registryName &&
+                payload.CertificateId.StreamId.Value == consCert.Id.ToString() &&
+                payload.AllocationId.Value == allocationId
         );
-        slip.Itinerary[3].ShouldWaitFor(t2);
+        slip.Itinerary[5].ShouldWaitFor(t4);
+
+        slip.Itinerary[6].ShouldSetStates(new(){
+            { prodSlice.Id, WalletSliceState.Claimed },
+            { consSlice.Id, WalletSliceState.Claimed },
+        });
+
+        slip.Itinerary[7].ShouldBeActivity<UpdateClaimStateActivity, UpdateClaimStateArguments>()
+            .Should().Match<UpdateClaimStateArguments>(x =>
+                x.Id.ToString() == allocationId &&
+                x.State == ClaimState.Claimed);
+
+        slip.Itinerary.Count.Should().Be(8);
+
+        Claim claim = await _unitOfWork.ClaimRepository.GetClaim(Guid.Parse(allocationId));
+        claim.ConsumptionSliceId.Should().Be(consSlice.Id);
+        claim.ProductionSliceId.Should().Be(prodSlice.Id);
+        claim.State.Should().Be(ClaimState.Created);
+    }
+
+
+    [Fact]
+    public async Task TestClaimEqualSize_WithChronicler()
+    {
+        // Arrange
+        var _processBuilder = new RegistryProcessBuilder(
+            _unitOfWork,
+            Substitute.For<IEndpointNameFormatter>(),
+            Guid.NewGuid(),
+            MsOptions.Options.Create(new NetworkOptions()
+            {
+                Areas = new Dictionary<string, AreaInfo>(){
+                    {
+                        PostgresFixtureExtensions.Area, new AreaInfo(){
+                            Chronicler = new ChroniclerInfo()
+                            {
+                                Url = "http://example.com:5000",
+                                SignerKeys = new List<KeyInfo>()
+                            },
+                            IssuerKeys = new List<KeyInfo>()
+                        }
+                    }}
+            }),
+            _fixture.Create<string>());
+
+        var endpoint = await _dbFixture.CreateWalletEndpoint(_fixture.Create<string>());
+
+        var prodCert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _registryName, Models.GranularCertificateType.Production);
+        var prodSecret = new SecretCommitmentInfo(150);
+        var prodSlice = await _dbFixture.CreateSlice(endpoint, prodCert, prodSecret);
+        var prodPublicKey = endpoint.PublicKey.Derive(prodSlice.WalletEndpointPosition);
+
+        var consCert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _registryName, Models.GranularCertificateType.Consumption);
+        var consSecret = new SecretCommitmentInfo(150);
+        var consSlice = await _dbFixture.CreateSlice(endpoint, consCert, consSecret);
+        var consPublicKey = endpoint.PublicKey.Derive(consSlice.WalletEndpointPosition);
+
+        // Act
+        await _processBuilder.Claim(prodSlice, consSlice);
+        var slip = _processBuilder.Build();
+
+        // Assert
+        slip.Should().NotBeNull();
+
+        slip.Itinerary[0].ShouldBeActivity<SendClaimIntentToChroniclerActivity, SendClaimIntentToChroniclerArgument>()
+            .Should().Match<SendClaimIntentToChroniclerArgument>(x =>
+                x.Id != Guid.Empty &&
+                x.ClaimIntentRequest.CertificateId.Registry == prodCert.RegistryName &&
+                x.ClaimIntentRequest.CertificateId.StreamId.Value == prodCert.Id.ToString() &&
+                x.ClaimIntentRequest.Quantity == prodSlice.Quantity &&
+                x.ClaimIntentRequest.RandomR.ToArray().SequenceEqual(prodSlice.RandomR));
+        var chronId = slip.Itinerary[0].ShouldBeActivity<SendClaimIntentToChroniclerActivity, SendClaimIntentToChroniclerArgument>().Id;
+
+        slip.Itinerary[1].ShouldBeActivity<AllocateActivity, AllocateArguments>()
+            .Should().Match<AllocateArguments>(x =>
+                x.AllocationId != Guid.Empty &&
+                x.ProductionSliceId == prodSlice.Id &&
+                x.ConsumptionSliceId == consSlice.Id &&
+                x.ChroniclerRequestId.Equals(chronId) &&
+                x.CertificateId.Registry == prodCert.RegistryName &&
+                x.CertificateId.StreamId.Value == prodCert.Id.ToString() &&
+                x.RequestId != Guid.Empty &&
+                x.Owner != string.Empty);
+
+        var allocationId = slip.Itinerary[1].ShouldBeActivity<AllocateActivity, AllocateArguments>().AllocationId.ToString();
+
+
+        slip.Itinerary[2].ShouldBeActivity<SendClaimIntentToChroniclerActivity, SendClaimIntentToChroniclerArgument>()
+            .Should().Match<SendClaimIntentToChroniclerArgument>(x =>
+                x.Id != Guid.Empty &&
+                x.ClaimIntentRequest.CertificateId.Registry == consCert.RegistryName &&
+                x.ClaimIntentRequest.CertificateId.StreamId.Value == consCert.Id.ToString() &&
+                x.ClaimIntentRequest.Quantity == consSlice.Quantity &&
+                x.ClaimIntentRequest.RandomR.ToArray().SequenceEqual(consSlice.RandomR));
+        var chronId2 = slip.Itinerary[2].ShouldBeActivity<SendClaimIntentToChroniclerActivity, SendClaimIntentToChroniclerArgument>().Id;
+
+        slip.Itinerary[3].ShouldBeActivity<AllocateActivity, AllocateArguments>()
+            .Should().Match<AllocateArguments>(x =>
+                x.AllocationId != Guid.Empty &&
+                x.ProductionSliceId == prodSlice.Id &&
+                x.ConsumptionSliceId == consSlice.Id &&
+                x.ChroniclerRequestId.Equals(chronId2) &&
+                x.CertificateId.Registry == consCert.RegistryName &&
+                x.CertificateId.StreamId.Value == consCert.Id.ToString() &&
+                x.RequestId != Guid.Empty &&
+                x.Owner != string.Empty);
 
         var (t3, _) = slip.Itinerary[4].ShouldBeTransactionWithEvent<ClaimedEvent>(
             transaction =>
@@ -96,7 +235,7 @@ public class ClaimTests : IClassFixture<PostgresDatabaseFixture>
             payload =>
                 payload.CertificateId.Registry == _registryName &&
                 payload.CertificateId.StreamId.Value == prodCert.Id.ToString() &&
-                payload.AllocationId.Value == a1.AllocationId.Value
+                payload.AllocationId.Value == allocationId
         );
         slip.Itinerary[5].ShouldWaitFor(t3);
 
@@ -108,7 +247,7 @@ public class ClaimTests : IClassFixture<PostgresDatabaseFixture>
             payload =>
                 payload.CertificateId.Registry == _registryName &&
                 payload.CertificateId.StreamId.Value == consCert.Id.ToString() &&
-                payload.AllocationId.Value == a1.AllocationId.Value
+                payload.AllocationId.Value == allocationId
         );
         slip.Itinerary[7].ShouldWaitFor(t4);
 
@@ -119,16 +258,17 @@ public class ClaimTests : IClassFixture<PostgresDatabaseFixture>
 
         slip.Itinerary[9].ShouldBeActivity<UpdateClaimStateActivity, UpdateClaimStateArguments>()
             .Should().Match<UpdateClaimStateArguments>(x =>
-                x.Id.ToString() == a1.AllocationId.Value &&
+                x.Id.ToString() == allocationId &&
                 x.State == ClaimState.Claimed);
 
         slip.Itinerary.Count.Should().Be(10);
 
-        Claim claim = await _unitOfWork.ClaimRepository.GetClaim(Guid.Parse(a1.AllocationId.Value));
+        Claim claim = await _unitOfWork.ClaimRepository.GetClaim(Guid.Parse(allocationId));
         claim.ConsumptionSliceId.Should().Be(consSlice.Id);
         claim.ProductionSliceId.Should().Be(prodSlice.Id);
         claim.State.Should().Be(ClaimState.Created);
     }
+
 
     [Theory]
     [InlineData(200, 100)]
@@ -136,6 +276,22 @@ public class ClaimTests : IClassFixture<PostgresDatabaseFixture>
     public async Task TestClaimUnqualSize(uint prodSize, uint consSize)
     {
         // Arrange
+        var _processBuilder = new RegistryProcessBuilder(
+            _unitOfWork,
+            Substitute.For<IEndpointNameFormatter>(),
+            Guid.NewGuid(),
+            MsOptions.Options.Create(new NetworkOptions()
+            {
+                Areas = new Dictionary<string, AreaInfo>(){
+                    {
+                        PostgresFixtureExtensions.Area, new AreaInfo(){
+                            Chronicler = null,
+                            IssuerKeys = new List<KeyInfo>(){}
+                        }
+                    }}
+            }),
+            _fixture.Create<string>());
+
         var endpoint = await _dbFixture.CreateWalletEndpoint(_fixture.Create<string>());
 
         var prodCert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _registryName, Models.GranularCertificateType.Production);

@@ -5,6 +5,7 @@ using FluentAssertions;
 using Google.Protobuf;
 using MassTransit;
 using NSubstitute;
+using MsOptions = Microsoft.Extensions.Options;
 using ProjectOrigin.Electricity.V1;
 using ProjectOrigin.PedersenCommitment;
 using ProjectOrigin.Vault.Tests.TestClassFixtures;
@@ -12,6 +13,8 @@ using ProjectOrigin.Vault.Tests.TestExtensions;
 using ProjectOrigin.Vault.Database;
 using ProjectOrigin.Vault.Models;
 using Xunit;
+using System.Collections.Generic;
+using ProjectOrigin.Vault.Options;
 
 namespace ProjectOrigin.Vault.Tests;
 
@@ -29,10 +32,23 @@ public class SplitTests : IClassFixture<PostgresDatabaseFixture>
         _dbFixture = postgresDatabaseFixture;
         _registryName = _fixture.Create<string>();
         _unitOfWork = _dbFixture.CreateUnitOfWork();
+
+        var networkOptions = new NetworkOptions()
+        {
+            Areas = new Dictionary<string, AreaInfo>(){
+                {
+                    PostgresFixtureExtensions.Area, new AreaInfo(){
+                        Chronicler = null,
+                        IssuerKeys = new List<KeyInfo>(){}
+                    }
+                }}
+        };
+
         _processBuilder = new RegistryProcessBuilder(
             _unitOfWork,
             Substitute.For<IEndpointNameFormatter>(),
             Guid.NewGuid(),
+        MsOptions.Options.Create(networkOptions),
             _fixture.Create<string>()
         );
     }
