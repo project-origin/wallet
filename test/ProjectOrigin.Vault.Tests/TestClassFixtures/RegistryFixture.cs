@@ -17,7 +17,6 @@ using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
 using ProjectOrigin.PedersenCommitment;
 using ProjectOrigin.TestCommon;
 using ProjectOrigin.TestCommon.Extensions;
-using ProjectOrigin.Vault.Tests.TestExtensions;
 using Testcontainers.PostgreSql;
 using Testcontainers.RabbitMq;
 using Xunit;
