@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using ProjectOrigin.HierarchicalDeterministicKeys.Implementations;
 using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
+using ProjectOrigin.ServiceCommon.UriOptionsLoader;
 using ProjectOrigin.Vault.Activities;
 using ProjectOrigin.Vault.Activities.Exceptions;
 using ProjectOrigin.Vault.CommandHandlers;
@@ -56,11 +57,6 @@ public class Startup
 
         services.AddOptions<ServiceOptions>()
             .Bind(_configuration.GetSection("ServiceOptions"))
-            .ValidateDataAnnotations()
-            .ValidateOnStart();
-
-        services.AddOptions<RegistryOptions>()
-            .Bind(_configuration)
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
@@ -155,6 +151,9 @@ public class Startup
             options.DocumentFilter<PathBaseDocumentFilter>();
             options.DocumentFilter<AddWalletTagDocumentFilter>();
         });
+
+        services.AddHttpClient();
+        services.ConfigureUriOptionsLoader<NetworkOptions>("network");
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

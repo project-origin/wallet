@@ -1,12 +1,14 @@
 using AutoFixture;
 using MassTransit;
 using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
+using ProjectOrigin.Vault.Options;
 using ProjectOrigin.Vault.Tests.TestClassFixtures;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Text;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -42,6 +44,23 @@ public abstract class WalletSystemTestsBase : IClassFixture<TestServerFixture<St
 
         _fixture = new Fixture();
 
+        var networkOptions = new NetworkOptions();
+        if (registry is not null)
+        {
+            networkOptions.Registries.Add(registry.Name, new RegistryInfo
+            {
+                Url = registry.RegistryUrl,
+            });
+            networkOptions.Areas.Add(registry.IssuerArea, new AreaInfo
+            {
+                IssuerKeys = new List<KeyInfo>{
+                        new (){
+                            PublicKey = Convert.ToBase64String(Encoding.UTF8.GetBytes(registry.IssuerKey.PublicKey.ExportPkixText()))
+                        }
+                    }
+            });
+        }
+
         var config = new Dictionary<string, string?>()
         {
             {"Otlp:Enabled", "false"},
@@ -52,14 +71,11 @@ public abstract class WalletSystemTestsBase : IClassFixture<TestServerFixture<St
             {"auth:jwt:Audience", jwtTokenIssuerFixture.Audience},
             {"auth:jwt:Issuers:0:IssuerName", jwtTokenIssuerFixture.Issuer},
             {"auth:jwt:Issuers:0:Type", jwtTokenIssuerFixture.KeyType},
-            {"auth:jwt:Issuers:0:PemKeyFile", jwtTokenIssuerFixture.PemFilepath}
+            {"auth:jwt:Issuers:0:PemKeyFile", jwtTokenIssuerFixture.PemFilepath},
+            {"network:ConfigurationUri", networkOptions.ToTempYamlFileUri() }
         };
 
         config = config.Concat(_messageBrokerFixture.Configuration).ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
-
-        if (registry is not null)
-            config.Add($"RegistryUrls:{registry.Name}", registry.RegistryUrl);
-
         serverFixture.ConfigureHostConfiguration(config);
     }
 
