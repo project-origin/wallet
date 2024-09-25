@@ -25,13 +25,13 @@ public record WaitCommittedTransactionArguments
 
 public class WaitCommittedRegistryTransactionActivity : IExecuteActivity<WaitCommittedTransactionArguments>
 {
-    private readonly IOptions<RegistryOptions> _registryOptions;
+    private readonly IOptions<NetworkOptions> _networkOptions;
     private readonly ILogger<WaitCommittedRegistryTransactionActivity> _logger;
     private readonly IUnitOfWork _unitOfWork;
 
-    public WaitCommittedRegistryTransactionActivity(IOptions<RegistryOptions> registryOptions, ILogger<WaitCommittedRegistryTransactionActivity> logger, IUnitOfWork unitOfWork)
+    public WaitCommittedRegistryTransactionActivity(IOptions<NetworkOptions> networkOptions, ILogger<WaitCommittedRegistryTransactionActivity> logger, IUnitOfWork unitOfWork)
     {
-        _registryOptions = registryOptions;
+        _networkOptions = networkOptions;
         _logger = logger;
         _unitOfWork = unitOfWork;
     }
@@ -47,8 +47,11 @@ public class WaitCommittedRegistryTransactionActivity : IExecuteActivity<WaitCom
                 Id = context.Arguments.TransactionId
             };
 
-            var registryUrl = _registryOptions.Value.RegistryUrls[context.Arguments.RegistryName];
-            using var channel = GrpcChannel.ForAddress(registryUrl);
+            var registryName = context.Arguments.RegistryName;
+            if (!_networkOptions.Value.Registries.TryGetValue(registryName, out var registryInfo))
+                throw new ArgumentException($"Registry with name {registryName} not found in configuration.");
+
+            using var channel = GrpcChannel.ForAddress(registryInfo.Url);
 
             var client = new RegistryService.RegistryServiceClient(channel);
             var status = await client.GetTransactionStatusAsync(statusRequest);

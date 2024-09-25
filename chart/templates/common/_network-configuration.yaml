@@ -1,0 +1,84 @@
+{{- define "common.networkConfig.environmentVariables" -}}
+{{- if not (or
+      (and .url (not .yaml) (not .json) (not .configMap))
+      (and (not .url) .yaml (not .json) (not .configMap))
+      (and (not .url) (not .yaml) .json (not .configMap))
+      (and (not .url) (not .yaml) (not .json) .configMap))
+  }}
+{{ fail "Only one of url, yaml, json, or configMap must be set" }}
+{{- end -}}
+- name: network__RefreshInterval
+  value: {{ .refreshInterval }}
+{{- if .url }}
+- name: network__ConfigurationUri
+  value: {{ .url }}
+{{- else if .configMap }}
+- name: network__ConfigurationUri
+  value: file:///etc/config/{{ .configMap.key }}
+{{- else if .yaml }}
+- name: network__ConfigurationUri
+  value: file:///etc/config/networkConfiguration.yaml
+{{- else if .json }}
+- name: network__ConfigurationUri
+  value: file:///etc/config/networkConfiguration.json
+{{- else }}
+  {{ fail "No network configuration provided" }}
+{{- end }}
+{{- end -}}
+
+{{- define "common.networkConfig.volumeMounts" -}}
+{{- if .configMap -}}
+- name: config-volume
+  mountPath: /etc/config/{{ .configMap.key }}
+  subPath: {{ .configMap.key }}
+{{- else if .yaml -}}
+- name: config-volume
+  mountPath: /etc/config/networkConfiguration.yaml
+  subPath: networkConfiguration.yaml
+{{- else if .json -}}
+- name: config-volume
+  mountPath: /etc/config/networkConfiguration.json
+  subPath: networkConfiguration.json
+{{- end }}
+{{- end -}}
+
+{{- define "common.networkConfig.volumes" -}}
+{{- if .Values.networkConfig.configMap }}
+- name: config-volume
+  configMap:
+    name: {{ .Values.networkConfig.configMap.name }}
+    items:
+      - key: {{ .Values.networkConfig.configMap.key }}
+        path: {{ .Values.networkConfig.configMap.key }}
+{{- else if (or .Values.networkConfig.yaml .Values.networkConfig.json) }}
+- name: config-volume
+  configMap:
+    name: {{ $.Release.Name }}-configuration
+    items:
+    {{- if .Values.networkConfig.yaml }}
+      - key: networkConfiguration.yaml
+        path: networkConfiguration.yaml
+    {{- else if .Values.networkConfig.json }}
+      - key: networkConfiguration.json
+        path: networkConfiguration.json
+    {{- end }}
+{{- end }}
+{{- end -}}
+
+{{- define "common.networkConfig.configMap" -}}
+{{- if (or .Values.networkConfig.yaml .Values.networkConfig.json) -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $.Release.Name }}-configuration
+  namespace: {{ $.Release.Namespace }}
+data:
+{{- if .Values.networkConfig.yaml }}
+  networkConfiguration.yaml: |-
+    {{- .Values.networkConfig.yaml | nindent 4 }}
+{{- else if .Values.networkConfig.json }}
+  networkConfiguration.json: |-
+    {{- .Values.networkConfig.json | nindent 4 }}
+{{- end }}
+{{- end }}
+{{- end -}}
