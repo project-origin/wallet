@@ -209,6 +209,9 @@ networkConfig:
   #     DK1:
   #       issuerKeys:
   #       - publicKey: "Ay02vkc6FGV8FwtvVsmBO2p7UdbZIcFhvMGFB40D3DKX"
+  #   stamps:
+  #     Denmark:
+  #       url: "https://stamp.narnia.example.com",
 
   # json defines the network configuration as a string in json
   json: #|-
@@ -225,6 +228,11 @@ networkConfig:
   #            "publicKey": "Ay02vkc6FGV8FwtvVsmBO2p7UdbZIcFhvMGFB40D3DKX"
   #          }
   #        ]
+  #      }
+  #    },
+  #    "stamps": {
+  #      "Denmark": {
+  #        "url": "https://stamp.narnia.example.com"
   #      }
   #    }
   #  }
