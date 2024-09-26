@@ -17,11 +17,6 @@ public record SendClaimIntentToChroniclerArgument
     public required ClaimIntentRequest ClaimIntentRequest { get; init; }
 }
 
-public record SendClaimIntentToChroniclerResult
-{
-    public required byte[] ChroniclerSignature { get; init; }
-}
-
 public class SendClaimIntentToChroniclerActivity : IExecuteActivity<SendClaimIntentToChroniclerArgument>
 {
     private readonly ILogger<SendClaimIntentToChroniclerActivity> _logger;
