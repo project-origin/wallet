@@ -6,6 +6,7 @@ using MassTransit;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ProjectOrigin.Chronicler.V1;
+using ProjectOrigin.Vault.Activities.Exceptions;
 using ProjectOrigin.Vault.Options;
 
 namespace ProjectOrigin.Vault.Activities;
@@ -25,11 +26,27 @@ public class SendClaimIntentToChroniclerActivity : IExecuteActivity<SendClaimInt
 {
     private readonly ILogger<SendClaimIntentToChroniclerActivity> _logger;
     private readonly IOptions<NetworkOptions> _networkOptions;
+    private readonly Func<GrpcChannel, ChroniclerService.ChroniclerServiceClient> _factory;
 
-    public SendClaimIntentToChroniclerActivity(IOptions<NetworkOptions> networkOptions, ILogger<SendClaimIntentToChroniclerActivity> logger)
+    public SendClaimIntentToChroniclerActivity(
+        IOptions<NetworkOptions> networkOptions,
+        ILogger<SendClaimIntentToChroniclerActivity> logger
+        )
     {
         _logger = logger;
         _networkOptions = networkOptions;
+        _factory = channel => new ChroniclerService.ChroniclerServiceClient(channel);
+    }
+
+    public SendClaimIntentToChroniclerActivity(
+        IOptions<NetworkOptions> networkOptions,
+        ILogger<SendClaimIntentToChroniclerActivity> logger,
+        Func<GrpcChannel, ChroniclerService.ChroniclerServiceClient> factory
+        )
+    {
+        _logger = logger;
+        _networkOptions = networkOptions;
+        _factory = factory;
     }
 
     public async Task<ExecutionResult> Execute(ExecuteContext<SendClaimIntentToChroniclerArgument> context)
@@ -46,7 +63,8 @@ public class SendClaimIntentToChroniclerActivity : IExecuteActivity<SendClaimInt
 
             using var channel = GrpcChannel.ForAddress(registryInfo.Url);
 
-            var client = new ChroniclerService.ChroniclerServiceClient(channel);
+            var client = _factory(channel);
+
             var result = await client.RegisterClaimIntentAsync(claimIntentRequest);
 
             _logger.LogDebug("Claim intent registered with Chronicler");
@@ -59,8 +77,7 @@ public class SendClaimIntentToChroniclerActivity : IExecuteActivity<SendClaimInt
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error registering claim intent with Chronicler");
-            return context.Faulted(ex);
+            throw new ChroniclerException("Error registering claim intent with Chronicler", ex);
         }
     }
 }
