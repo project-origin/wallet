@@ -26,7 +26,7 @@ namespace ProjectOrigin.Vault.Tests.TestClassFixtures;
 public class RegistryFixture : IAsyncLifetime
 {
     private const string RegistryImage = "ghcr.io/project-origin/registry-server:2.0.0";
-    private const string ElectricityVerifierImage = "ghcr.io/project-origin/electricity-server:1.3.0";
+    private const string ElectricityVerifierImage = "ghcr.io/project-origin/electricity-server:1.3.2";
     private const int RabbitMqHttpPort = 15672;
     private const int GrpcPort = 5000;
     private const string Area = "Narnia";
