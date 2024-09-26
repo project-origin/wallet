@@ -28,21 +28,17 @@ public record AllocateArguments
 
 public class AllocateActivity : IExecuteActivity<AllocateArguments>
 {
-    private readonly IOptions<NetworkOptions> _networkOptions;
     private readonly ILogger<AllocateActivity> _logger;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IEndpointNameFormatter _formatter;
 
     public AllocateActivity(
-        IOptions<NetworkOptions> networkOptions,
         ILogger<AllocateActivity> logger,
         IUnitOfWork unitOfWork,
-            IEndpointNameFormatter formatter)
+        IEndpointNameFormatter formatter)
     {
-        _networkOptions = networkOptions;
         _logger = logger;
         _unitOfWork = unitOfWork;
-
         _formatter = formatter;
     }
 
@@ -66,8 +62,6 @@ public class AllocateActivity : IExecuteActivity<AllocateArguments>
             var key = await _unitOfWork.WalletRepository.GetPrivateKeyForSlice(slice.Id);
 
             var transaction = key.SignRegistryTransaction(context.Arguments.CertificateId, allocatedEvent);
-
-
 
             _logger.LogDebug("Claim intent registered with Chronicler");
 
