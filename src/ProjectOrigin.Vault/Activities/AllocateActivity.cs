@@ -4,14 +4,12 @@ using System.Threading.Tasks;
 using Google.Protobuf;
 using MassTransit;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using ProjectOrigin.Common.V1;
 using ProjectOrigin.PedersenCommitment;
 using ProjectOrigin.Registry.V1;
 using ProjectOrigin.Vault.Database;
 using ProjectOrigin.Vault.Extensions;
 using ProjectOrigin.Vault.Models;
-using ProjectOrigin.Vault.Options;
 
 namespace ProjectOrigin.Vault.Activities;
 
