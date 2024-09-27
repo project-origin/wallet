@@ -33,7 +33,7 @@ jobs:
 
   publish-openapi:
     name: Publish openapi to swaggerhub
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs:
       - define-version
     steps:
