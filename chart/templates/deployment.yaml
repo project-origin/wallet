@@ -77,7 +77,7 @@ spec:
               value: {{ $.Values.rabbitmq.quorum | quote}}
             {{- if $.Values.rabbitmq.quorum }}
             - name: MessageBroker__RabbitMQ__Replicas
-              value: {{ required "rabbitmq.replicas must be set when quorum enabled" $.Values.rabbitmq.replicas }}
+              value: {{ required "rabbitmq.replicas must be set when quorum enabled" $.Values.rabbitmq.replicas | quote }}
             {{- end }}
 
           # Authentication
