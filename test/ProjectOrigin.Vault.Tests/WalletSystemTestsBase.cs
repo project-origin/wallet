@@ -72,7 +72,10 @@ public abstract class WalletSystemTestsBase : IClassFixture<TestServerFixture<St
             {"auth:jwt:Issuers:0:IssuerName", jwtTokenIssuerFixture.Issuer},
             {"auth:jwt:Issuers:0:Type", jwtTokenIssuerFixture.KeyType},
             {"auth:jwt:Issuers:0:PemKeyFile", jwtTokenIssuerFixture.PemFilepath},
-            {"network:ConfigurationUri", networkOptions.ToTempYamlFileUri() }
+            {"network:ConfigurationUri", networkOptions.ToTempYamlFileUri() },
+            {"Retry:RegistryTransactionStillProcessingRetryCount", "5"},
+            {"Retry:RegistryTransactionStillProcessingInitialIntervalSeconds", "1"},
+            {"Retry:RegistryTransactionStillProcessingIntervalIncrementSeconds", "5"}
         };
 
         config = config.Concat(_messageBrokerFixture.Configuration).ToDictionary(kvp => kvp.Key, kvp => kvp.Value);

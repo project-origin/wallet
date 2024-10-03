@@ -107,6 +107,14 @@ spec:
             {{- fail "Unsupported auth type specified. Please specify 'auth.type' as either 'jwt' or 'header'." }}
           {{- end }}
 
+          # Retry
+           - name: Retry__RegistryTransactionStillProcessingRetryCount
+             value: {{ .Values.retry.registryTransactionStillProcessingRetryCount | quote }}
+           - name: Retry__RegistryTransactionStillProcessingInitialIntervalSeconds
+             value: {{ .Values.retry.registryTransactionStillProcessingInitialIntervalSeconds | quote }}
+           - name: Retry__RegistryTransactionStillProcessingIntervalIncrementSeconds
+             value: {{ .Values.retry.registryTransactionStillProcessingIntervalIncrementSeconds | quote }}
+
           volumeMounts:
             {{- include "common.networkConfig.volumeMounts" .Values.networkConfig | nindent 12}}
           {{- with .Values.vault.volumeMounts }}
