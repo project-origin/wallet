@@ -258,6 +258,9 @@ migrationWaiter:
 
 # retry holds the configuration for retry logic
 retry:
+  # registryTransactionStillProcessingRetryCount defines the number of retries for registry transactions that are still processing
   registryTransactionStillProcessingRetryCount: 5
+  # registryTransactionStillProcessingInitialIntervalSeconds defines the initial interval in seconds for retrying registry transactions that are still processing
   registryTransactionStillProcessingInitialIntervalSeconds: 60
+  # registryTransactionStillProcessingIntervalIncrementSeconds defines the interval increment in seconds for retrying registry transactions that are still processing
   registryTransactionStillProcessingIntervalIncrementSeconds: 60
