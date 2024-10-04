@@ -255,3 +255,9 @@ migrationWaiter:
       memory: 50Mi
       # ephemeralStorage defines the ephemeral storage limit for the verifier server
       ephemeralStorage: 100Mi
+
+# retry holds the configuration for retry logic
+retry:
+  registryTransactionStillProcessingRetryCount: 5
+  registryTransactionStillProcessingInitialIntervalSeconds: 60
+  registryTransactionStillProcessingIntervalIncrementSeconds: 60
