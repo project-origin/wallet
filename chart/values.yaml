@@ -246,3 +246,29 @@ migrationWaiter:
     repository: bitnami/kubectl
     # tag is the tag to pull defaults to the chart version
     tag: 1.31.1
+  # resources holds the configuration for the resource requests and limits
+  resources:
+    # requests holds the configuration for the resource requests
+    requests:
+      # cpu defines the cpu request limit for the registry server
+      cpu: 0.1
+      # memory defines the memory request limit for the registry server
+      memory:
+
+    # limits holds the configuration for the resource limits
+    limits:
+      # cpu defines the cpu limit for the registry server
+      cpu:
+      # memory defines the memory limit for the registry server
+      memory: 50Mi
+      # ephemeralStorage defines the ephemeral storage limit for the verifier server
+      ephemeralStorage: 100Mi
+
+# retry holds the configuration for retry logic
+retry:
+  # registryTransactionStillProcessingRetryCount defines the number of retries for registry transactions that are still processing
+  registryTransactionStillProcessingRetryCount: 5
+  # registryTransactionStillProcessingInitialIntervalSeconds defines the initial interval in seconds for retrying registry transactions that are still processing
+  registryTransactionStillProcessingInitialIntervalSeconds: 60
+  # registryTransactionStillProcessingIntervalIncrementSeconds defines the interval increment in seconds for retrying registry transactions that are still processing
+  registryTransactionStillProcessingIntervalIncrementSeconds: 60

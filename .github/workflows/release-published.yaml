@@ -1,17 +1,18 @@
 name: Build release artifacts
 
 on:
+  workflow_dispatch: {}
   release:
     types: [published]
 
 jobs:
   define-version:
-    uses: project-origin/.github/.github/workflows/reusable-tag-version.yaml@e60d4e84fd4a7ccb2827046672e1bacae91712ae
+    uses: project-origin/.github/.github/workflows/reusable-tag-version.yaml@a2d1d04ee55ebd5dc88a28a66eb54c831d1633e9
 
   publish-container:
     needs:
       - define-version
-    uses: project-origin/.github/.github/workflows/reusable-build-push-container-ghcr.yaml@e60d4e84fd4a7ccb2827046672e1bacae91712ae
+    uses: project-origin/.github/.github/workflows/reusable-build-push-container-ghcr.yaml@a2d1d04ee55ebd5dc88a28a66eb54c831d1633e9
     with:
       imagename: ghcr.io/project-origin/vault
       version: ${{ needs.define-version.outputs.version }}
@@ -23,7 +24,7 @@ jobs:
     needs:
       - define-version
       - publish-container
-    uses: project-origin/.github/.github/workflows/reusable-publish-chart.yaml@e60d4e84fd4a7ccb2827046672e1bacae91712ae
+    uses: project-origin/.github/.github/workflows/reusable-publish-chart.yaml@a2d1d04ee55ebd5dc88a28a66eb54c831d1633e9
     with:
       version: ${{ needs.define-version.outputs.version }}
       chart_folder: chart
@@ -33,7 +34,7 @@ jobs:
 
   publish-openapi:
     name: Publish openapi to swaggerhub
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs:
       - define-version
     steps:
