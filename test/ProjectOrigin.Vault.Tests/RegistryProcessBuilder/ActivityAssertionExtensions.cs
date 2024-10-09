@@ -47,11 +47,13 @@ public static class ActivityAssertionExtensions
         var obj = Activator.CreateInstance<T>();
         foreach (var kvp in dictionary)
         {
+
             string keyUpper = kvp.Key.ToUpperFirstChar();
             var property = typeof(T).GetProperty(kvp.Key) ?? typeof(T).GetProperty(keyUpper);
-            if (property != null && property.CanWrite)
+            if (property != null && property.CanWrite && kvp.Value != null)
             {
-                var value = Convert.ChangeType(kvp.Value, property.PropertyType);
+                var type = Nullable.GetUnderlyingType(property.PropertyType) ?? property.PropertyType;
+                var value = Convert.ChangeType(kvp.Value, type);
                 property.SetValue(obj, value);
             }
         }
