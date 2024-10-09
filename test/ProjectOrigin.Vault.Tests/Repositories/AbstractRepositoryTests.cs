@@ -111,7 +111,8 @@ public abstract class AbstractRepositoryTests : IClassFixture<PostgresDatabaseFi
             EndDate = endDate?.ToUtcTime() ?? DateTimeOffset.Now.AddHours(1).ToUtcTime(),
             GridArea = "DK1",
             CertificateType = type,
-            Attributes = attributes
+            Attributes = attributes,
+            Withdrawn = false
         };
         await certificateRepository.InsertCertificate(certificate);
 

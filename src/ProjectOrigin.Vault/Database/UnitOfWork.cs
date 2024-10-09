@@ -12,6 +12,7 @@ public class UnitOfWork : IUnitOfWork, IDisposable
     public ITransferRepository TransferRepository => GetRepository(connection => new TransferRepository(connection));
     public IClaimRepository ClaimRepository => GetRepository(connection => new ClaimRepository(connection));
     public IRequestStatusRepository RequestStatusRepository => GetRepository(connection => new RequestStatusRepository(connection));
+    public IWithdrawnCursorRepository WithdrawnCursorRepository => GetRepository(connection => new WithdrawnCursorRepository(connection));
 
     private readonly Dictionary<Type, object> _repositories = new Dictionary<Type, object>();
     private readonly Lazy<IDbConnection> _lazyConnection;

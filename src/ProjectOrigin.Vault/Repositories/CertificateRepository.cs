@@ -28,8 +28,8 @@ public class CertificateRepository : ICertificateRepository
     public async Task InsertCertificate(Certificate certificate)
     {
         await _connection.ExecuteAsync(
-            @"INSERT INTO certificates(id, registry_name, start_date, end_date, grid_area, certificate_type)
-              VALUES (@id, @registryName, @startDate, @endDate, @gridArea, @certificateType)",
+            @"INSERT INTO certificates(id, registry_name, start_date, end_date, grid_area, certificate_type, withdrawn)
+              VALUES (@id, @registryName, @startDate, @endDate, @gridArea, @certificateType, @withdrawn)",
             new
             {
                 certificate.Id,
@@ -37,7 +37,8 @@ public class CertificateRepository : ICertificateRepository
                 startDate = certificate.StartDate.ToUtcTime(),
                 endDate = certificate.EndDate.ToUtcTime(),
                 certificate.GridArea,
-                certificate.CertificateType
+                certificate.CertificateType,
+                certificate.Withdrawn
             });
 
         foreach (var atr in certificate.Attributes)
@@ -106,7 +107,8 @@ public class CertificateRepository : ICertificateRepository
                     end_date,
                     quantity,
                     wallet_id,
-                    updated_at
+                    updated_at,
+                    withdrawn
                 FROM
                     certificates_query_model
                 WHERE
@@ -150,7 +152,8 @@ public class CertificateRepository : ICertificateRepository
                     end_date,
                     quantity,
                     wallet_id,
-                    updated_at
+                    updated_at,
+                    withdrawn
                 FROM
                     certificates_query_model
                 WHERE
@@ -205,7 +208,8 @@ public class CertificateRepository : ICertificateRepository
                     end_date,
                     quantity,
                     wallet_id,
-                    updated_at
+                    updated_at,
+                    withdrawn
                 FROM
                     certificates_query_model
                 WHERE
@@ -340,7 +344,8 @@ public class CertificateRepository : ICertificateRepository
               WHERE s.registry_name = @registryName
                 AND s.certificate_id = @certificateId
                 AND w.owner = @owner
-                AND s.state = @state",
+                AND s.state = @state
+                AND c.withdrawn = false",
             new
             {
                 registryName,
@@ -369,6 +374,7 @@ public class CertificateRepository : ICertificateRepository
                   WHERE s.registry_name = @registryName
 	                AND s.certificate_id = @certificateId
 	                AND w.owner = @owner
+                    AND c.withdrawn = false
 	                AND (s.state = @availableState OR s.state = @registeringState)",
             new
             {
@@ -392,6 +398,38 @@ public class CertificateRepository : ICertificateRepository
             });
     }
 
+    public async Task WithdrawCertificate(string registry, Guid certificateId)
+    {
+        var rowsChanged = await _connection.ExecuteAsync(
+            @"UPDATE certificates
+              SET withdrawn = true
+              WHERE registry_name = @registry
+                AND id = @certificateId",
+            new
+            {
+                registry,
+                certificateId
+            });
+
+        if (rowsChanged != 1)
+            throw new InvalidOperationException($"Certificate with registry {registry} and certificateId {certificateId} could not be found");
+    }
+
+    public async Task<IEnumerable<WalletSlice>> GetClaimedSlicesOfCertificate(string registry, Guid certificateId)
+    {
+        return await _connection.QueryAsync<WalletSlice>(
+            @"SELECT *
+                  FROM wallet_slices
+                  WHERE registry_name = @registry
+                  AND certificate_id = @certificateId
+                  AND state = @state",
+            new
+            {
+                registry,
+                certificateId,
+                state = WalletSliceState.Claimed
+            });
+    }
 
     public async Task SetWalletSliceState(Guid sliceId, WalletSliceState state)
     {

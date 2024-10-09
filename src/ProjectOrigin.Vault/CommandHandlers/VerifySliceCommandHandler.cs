@@ -127,7 +127,8 @@ public class VerifySliceCommandHandler : IConsumer<VerifySliceCommand>
                 EndDate = registryCertificateProjection.Period.End.ToDateTimeOffset(),
                 GridArea = registryCertificateProjection.GridArea,
                 CertificateType = (GranularCertificateType)registryCertificateProjection.Type,
-                Attributes = attributes
+                Attributes = attributes,
+                Withdrawn = false
             };
             await _unitOfWork.CertificateRepository.InsertCertificate(certificate);
         }

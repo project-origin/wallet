@@ -44,7 +44,7 @@ public class CertificatesController : ControllerBase
     /// <summary>
     /// Gets all certificates in the wallet that are <b>available</b> for use.
     /// </summary>
-    /// <response code="200">Returns the aggregated claims.</response>
+    /// <response code="200">Returns the aggregated certificates.</response>
     /// <response code="401">If the user is not authenticated.</response>
     [HttpGet]
     [Route("v1/certificates/cursor")]
@@ -74,7 +74,7 @@ public class CertificatesController : ControllerBase
     /// <summary>
     /// Gets all certificates in the wallet that are <b>available</b> for use.
     /// </summary>
-    /// <response code="200">Returns the aggregated claims.</response>
+    /// <response code="200">Returns the aggregated certificates.</response>
     /// <response code="401">If the user is not authenticated.</response>
     [HttpGet]
     [Route("v1/certificates")]
@@ -106,7 +106,7 @@ public class CertificatesController : ControllerBase
     /// <summary>
     /// Returns aggregates certificates that are <b>available</b> to use, based on the specified time zone and time range.
     /// </summary>
-    /// <response code="200">Returns the aggregated claims.</response>
+    /// <response code="200">Returns the aggregated certificates.</response>
     /// <response code="400">If the time zone is invalid.</response>
     /// <response code="401">If the user is not authenticated.</response>
     [HttpGet]

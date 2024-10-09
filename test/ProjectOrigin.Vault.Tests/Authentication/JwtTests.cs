@@ -154,7 +154,7 @@ public class JwtTests : IClassFixture<PostgresDatabaseFixture>, IClassFixture<In
         };
 
         using TestServerFixture<Startup> server = CreateServer(jwtConfiguration);
-        server.GetTestLogger(_outputHelper);
+        using var logger = server.GetTestLogger(_outputHelper);
 
         // Act
         var result = await CreateWallet(jwtTokenIssuerFixture, server);
@@ -176,7 +176,7 @@ public class JwtTests : IClassFixture<PostgresDatabaseFixture>, IClassFixture<In
         };
 
         using TestServerFixture<Startup> server = CreateServer(jwtConfiguration);
-        server.GetTestLogger(_outputHelper);
+        using var logger = server.GetTestLogger(_outputHelper);
 
         // Act
         var testMethod = () => CreateWallet(jwtTokenIssuerFixture, server);
@@ -201,7 +201,7 @@ public class JwtTests : IClassFixture<PostgresDatabaseFixture>, IClassFixture<In
         };
 
         using TestServerFixture<Startup> server = CreateServer(jwtConfiguration);
-        server.GetTestLogger(_outputHelper);
+        using var logger = server.GetTestLogger(_outputHelper);
 
         // Act
         var testMethod = () => CreateWallet(jwtTokenIssuerFixture, server);
@@ -229,7 +229,7 @@ public class JwtTests : IClassFixture<PostgresDatabaseFixture>, IClassFixture<In
         };
 
         using TestServerFixture<Startup> server = CreateServer(jwtConfiguration);
-        server.GetTestLogger(_outputHelper);
+        using var logger = server.GetTestLogger(_outputHelper);
 
         // Act
         var testMethod = () => CreateWallet(jwtTokenIssuerFixture, server);
@@ -263,7 +263,7 @@ public class JwtTests : IClassFixture<PostgresDatabaseFixture>, IClassFixture<In
         };
 
         using TestServerFixture<Startup> server = CreateServer(jwtConfiguration);
-        server.GetTestLogger(_outputHelper);
+        using var logger = server.GetTestLogger(_outputHelper);
 
         // Act
         var result = await CreateWallet(jwtTokenIssuerFixture, server);
@@ -296,7 +296,7 @@ public class JwtTests : IClassFixture<PostgresDatabaseFixture>, IClassFixture<In
         };
 
         using TestServerFixture<Startup> server = CreateServer(jwtConfiguration);
-        server.GetTestLogger(_outputHelper);
+        using var logger = server.GetTestLogger(_outputHelper);
 
         var invalidIssuer = new JwtTokenIssuerFixture();
 

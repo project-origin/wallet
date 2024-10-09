@@ -12,9 +12,9 @@ using System.Net.Http.Json;
 
 namespace ProjectOrigin.Vault.Tests;
 
-public abstract class AbstractFlowTests : WalletSystemTestsBase, IClassFixture<RegistryFixture>, IClassFixture<InMemoryFixture>, IClassFixture<JwtTokenIssuerFixture>
+public abstract class AbstractFlowTests : WalletSystemTestsBase, IClassFixture<StampAndRegistryFixture>, IClassFixture<InMemoryFixture>, IClassFixture<JwtTokenIssuerFixture>
 {
-    private readonly RegistryFixture _registryFixture;
+    private readonly StampAndRegistryFixture _registryFixture;
     protected readonly JwtTokenIssuerFixture _jwtTokenIssuer;
 
     public AbstractFlowTests(
@@ -23,9 +23,9 @@ public abstract class AbstractFlowTests : WalletSystemTestsBase, IClassFixture<R
         IMessageBrokerFixture messageBrokerFixture,
         JwtTokenIssuerFixture jwtTokenIssuerFixture,
         ITestOutputHelper outputHelper,
-        RegistryFixture registryFixture) : base(serverFixture, dbFixture, messageBrokerFixture, jwtTokenIssuerFixture, outputHelper, registryFixture)
+        StampAndRegistryFixture stampAndRegistryFixture) : base(serverFixture, dbFixture, messageBrokerFixture, jwtTokenIssuerFixture, outputHelper, stampAndRegistryFixture)
     {
-        _registryFixture = registryFixture;
+        _registryFixture = stampAndRegistryFixture;
         _jwtTokenIssuer = jwtTokenIssuerFixture;
     }
 
