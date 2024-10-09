@@ -22,7 +22,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="8.0.8" />
+    <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="8.0.10" />
     <PackageReference Include="Grpc.AspNetCore" Version="2.66.0" />
     <PackageReference Include="AutoFixture" Version="4.18.1" />
     <PackageReference Include="NSubstitute" Version="5.1.0" />
