@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
@@ -33,14 +34,44 @@ public class CheckForWithdrawnCertificatesCommandHandler : IConsumer<CheckForWit
 
         foreach (var stamp in stamps)
         {
+            var cursors = await _unitOfWork.WithdrawnCursorRepository.GetWithdrawnCursors();
+            var matchingCursor = cursors.FirstOrDefault(x => x.StampName == stamp.Key) ?? new WithdrawnCursor
+            {
+                StampName = stamp.Key,
+                SyncPosition = 0,
+                LastSyncDate = DateTimeOffset.UtcNow
+            };
+
             var client = _httpClientFactory.CreateClient();
+            var response = (await client.GetFromJsonAsync<WithdrawnCertificatesResponse>(stamp.Value.Url + $"v1/certificates/withdrawn?lastWithdrawnId={matchingCursor.SyncPosition}"))!;
 
-            var response = (await client.GetFromJsonAsync<WithdrawnCertificatesResponse>(stamp.Value.Url))!;
+            if (!response.WithdrawnCertificates.Any()) continue;
+
+            foreach (var withdrawnCertificate in response.WithdrawnCertificates)
+            {
+                await _unitOfWork.CertificateRepository.WithdrawCertificate(withdrawnCertificate.RegistryName, withdrawnCertificate.CertificateId);
+                var claimedSlices = await _unitOfWork.CertificateRepository.GetClaimedSlicesOfCertificate(withdrawnCertificate.RegistryName, withdrawnCertificate.CertificateId);
+                foreach (var claimedSlice in claimedSlices)
+                {
+                    //Unclaim (which is next task)
+                }
+            }
+
+            matchingCursor.SyncPosition = response.WithdrawnCertificates.Max(x => x.Id);
+            matchingCursor.LastSyncDate = DateTimeOffset.UtcNow;
+            await UpdateWithdrawnCursor(matchingCursor);
+            _unitOfWork.Commit();
         }
+    }
 
-        var withdrawnCursor = new WithdrawnCursor { StampName = "Narnia", SyncPosition = 1, LastSyncDate = DateTimeOffset.UtcNow };
-        await _unitOfWork.WithdrawnCursorRepository.InsertWithdrawnCursor(withdrawnCursor);
-        _unitOfWork.Commit();
+    private async Task UpdateWithdrawnCursor(WithdrawnCursor updatedCursor)
+    {
+        var cursors = await _unitOfWork.WithdrawnCursorRepository.GetWithdrawnCursors();
+        var matchingCursor = cursors.FirstOrDefault(x => x.StampName == updatedCursor.StampName);
+        if (matchingCursor == null)
+            await _unitOfWork.WithdrawnCursorRepository.InsertWithdrawnCursor(updatedCursor);
+        else
+            await _unitOfWork.WithdrawnCursorRepository.UpdateWithdrawnCursor(updatedCursor);
     }
 }
 

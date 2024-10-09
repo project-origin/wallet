@@ -83,8 +83,8 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
 
         result1.Should().NotBeNull();
         result2.Should().NotBeNull();
-        result1.Withdrawn.Should().BeTrue();
-        result2.Withdrawn.Should().BeFalse();
+        result1!.Withdrawn.Should().BeTrue();
+        result2!.Withdrawn.Should().BeFalse();
     }
 
     [Fact]

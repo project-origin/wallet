@@ -18,7 +18,7 @@ public class ClaimTests : AbstractFlowTests
             PostgresDatabaseFixture dbFixture,
             InMemoryFixture inMemoryFixture,
             JwtTokenIssuerFixture jwtTokenIssuerFixture,
-            RegistryFixture registryFixture,
+            StampAndRegistryFixture stampAndRegistryFixture,
             ITestOutputHelper outputHelper)
             : base(
                   serverFixture,
@@ -26,7 +26,7 @@ public class ClaimTests : AbstractFlowTests
                   inMemoryFixture,
                   jwtTokenIssuerFixture,
                   outputHelper,
-                  registryFixture)
+                  stampAndRegistryFixture)
     {
     }
 

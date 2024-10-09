@@ -1,5 +1,4 @@
 using AutoFixture;
-using MassTransit;
 using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
 using ProjectOrigin.Vault.Options;
 using ProjectOrigin.Vault.Tests.TestClassFixtures;
@@ -34,7 +33,7 @@ public abstract class WalletSystemTestsBase : IClassFixture<TestServerFixture<St
         IMessageBrokerFixture messageBrokerFixture,
         JwtTokenIssuerFixture jwtTokenIssuerFixture,
         ITestOutputHelper outputHelper,
-        RegistryFixture? registry)
+        StampAndRegistryFixture? stampAndRegistryFixture)
     {
         _messageBrokerFixture = messageBrokerFixture;
         _jwtTokenIssuerFixture = jwtTokenIssuerFixture;
@@ -45,17 +44,17 @@ public abstract class WalletSystemTestsBase : IClassFixture<TestServerFixture<St
         _fixture = new Fixture();
 
         var networkOptions = new NetworkOptions();
-        if (registry is not null)
+        if (stampAndRegistryFixture is not null)
         {
-            networkOptions.Registries.Add(registry.Name, new RegistryInfo
+            networkOptions.Registries.Add(stampAndRegistryFixture.RegistryName, new RegistryInfo
             {
-                Url = registry.RegistryUrl,
+                Url = stampAndRegistryFixture.RegistryUrl,
             });
-            networkOptions.Areas.Add(registry.IssuerArea, new AreaInfo
+            networkOptions.Areas.Add(stampAndRegistryFixture.IssuerArea, new AreaInfo
             {
                 IssuerKeys = new List<KeyInfo>{
                         new (){
-                            PublicKey = Convert.ToBase64String(Encoding.UTF8.GetBytes(registry.IssuerKey.PublicKey.ExportPkixText()))
+                            PublicKey = Convert.ToBase64String(Encoding.UTF8.GetBytes(stampAndRegistryFixture.IssuerKey.PublicKey.ExportPkixText()))
                         }
                     }
             });

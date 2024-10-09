@@ -25,4 +25,6 @@ public interface ICertificateRepository
 
     Task InsertWalletAttribute(Guid walletId, WalletAttribute walletAttribute);
     Task<IEnumerable<WalletAttribute>> GetWalletAttributes(Guid walletId, Guid certificateId, string registryName, IEnumerable<string> keys);
+    Task WithdrawCertificate(string registry, Guid certificateId);
+    Task<IEnumerable<WalletSlice>> GetClaimedSlicesOfCertificate(string registry, Guid certificateId);
 }

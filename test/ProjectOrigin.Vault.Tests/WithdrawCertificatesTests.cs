@@ -9,21 +9,22 @@ using Xunit.Abstractions;
 
 namespace ProjectOrigin.Vault.Tests;
 
-public class WithdrawCertificatesTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
+public class WithdrawCertificatesTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>, IClassFixture<StampAndRegistryFixture>
 {
     public WithdrawCertificatesTests(
         TestServerFixture<Startup> serverFixture,
         PostgresDatabaseFixture dbFixture,
         InMemoryFixture inMemoryFixture,
         JwtTokenIssuerFixture jwtTokenIssuerFixture,
-        ITestOutputHelper outputHelper)
+        ITestOutputHelper outputHelper,
+        StampAndRegistryFixture stampAndRegistryFixture)
         : base(
             serverFixture,
             dbFixture,
             inMemoryFixture,
             jwtTokenIssuerFixture,
             outputHelper,
-            null)
+            stampAndRegistryFixture)
     {
     }
 
