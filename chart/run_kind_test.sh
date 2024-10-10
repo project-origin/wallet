@@ -66,6 +66,7 @@ postgresql:
   host: postgresql
   database: postgres
   username: postgres
+  port: 5432
   password:
     secretRef:
       name: postgresql
@@ -74,6 +75,7 @@ postgresql:
 rabbitmq:
   host: rabbitmq
   username: user
+  port: 5672
   password:
     secretRef:
       name: rabbitmq

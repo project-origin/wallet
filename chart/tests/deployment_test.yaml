@@ -1,0 +1,87 @@
+suite: Test Suite for Wallet Chart
+
+set:
+  networkConfig:
+    url: https://example.com
+  config:
+    externalUrl: https://example.com
+
+templates:
+  - deployment.yaml
+
+tests:
+  - it: should set PostgreSQL ports
+    values:
+      - ../values.yaml
+    set:
+      postgresql:
+        host: localhost
+        port:
+          secretRef:
+            name: secretName
+            key: portKey
+        database: database
+        username: username
+        password: password
+      rabbitmq:
+        host: localhost
+        port: 3000
+        username: username
+        password: password
+    asserts:
+      - isKind:
+          of: Deployment
+      - matchRegex:
+          path: spec.template.spec.containers[0].env[?(@.name=="DB_PORT")].valueFrom.secretKeyRef.name
+          pattern: secretName
+      - matchRegex:
+          path: spec.template.spec.containers[0].env[?(@.name=="DB_PORT")].valueFrom.secretKeyRef.key
+          pattern: portKey
+  - it: should set RabbitMQ ports
+    values:
+      - ../values.yaml
+    set:
+      postgresql:
+        host: localhost
+        port: 3000
+        database: database
+        username: username
+        password: password
+      rabbitmq:
+        host: localhost
+        port:
+          configMapRef:
+            name: configMap
+            key: portKey
+        username: username
+        password: password
+    asserts:
+      - isKind:
+          of: Deployment
+      - matchRegex:
+          path: spec.template.spec.containers[0].env[?(@.name=="MessageBroker__RabbitMQ__Port")].valueFrom.configMapKeyRef.name
+          pattern: configMap
+      - matchRegex:
+          path: spec.template.spec.containers[0].env[?(@.name=="MessageBroker__RabbitMQ__Port")].valueFrom.configMapKeyRef.key
+          pattern: portKey
+  - it: should set default image with tag
+    values:
+      - ../values.yaml
+    set:
+      postgresql:
+        host: localhost
+        port: 3000
+        database: database
+        username: username
+        password: password
+      rabbitmq:
+        host: localhost
+        port: 3000
+        username: username
+        password: password
+    asserts:
+      - isKind:
+          of: Deployment
+      - matchRegex:
+          path: spec.template.spec.containers[0].image
+          pattern: ^ghcr.io/project-origin/vault:[\d]+\.[\d]+\.[\d]+$

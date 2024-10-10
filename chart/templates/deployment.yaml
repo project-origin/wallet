@@ -1,5 +1,4 @@
 ---
-{{- $tag := .Values.image.tag | default .Chart.AppVersion -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -80,7 +79,7 @@ spec:
               value: {{ required "rabbitmq.replicas must be set when quorum enabled" $.Values.rabbitmq.replicas | quote }}
             {{- end }}
 
-          # Authentication
+            # Authentication
             - name: auth__type
               value: {{ .Values.config.auth.type }}
           {{- if eq .Values.config.auth.type "header" }}
@@ -107,13 +106,12 @@ spec:
             {{- fail "Unsupported auth type specified. Please specify 'auth.type' as either 'jwt' or 'header'." }}
           {{- end }}
 
-          # Retry
-           - name: Retry__RegistryTransactionStillProcessingRetryCount
-             value: {{ .Values.retry.registryTransactionStillProcessingRetryCount | quote }}
-           - name: Retry__RegistryTransactionStillProcessingInitialIntervalSeconds
-             value: {{ .Values.retry.registryTransactionStillProcessingInitialIntervalSeconds | quote }}
-           - name: Retry__RegistryTransactionStillProcessingIntervalIncrementSeconds
-             value: {{ .Values.retry.registryTransactionStillProcessingIntervalIncrementSeconds | quote }}
+            - name: Retry__RegistryTransactionStillProcessingRetryCount
+              value: {{ .Values.retry.registryTransactionStillProcessingRetryCount | quote }}
+            - name: Retry__RegistryTransactionStillProcessingInitialIntervalSeconds
+              value: {{ .Values.retry.registryTransactionStillProcessingInitialIntervalSeconds | quote }}
+            - name: Retry__RegistryTransactionStillProcessingIntervalIncrementSeconds
+              value: {{ .Values.retry.registryTransactionStillProcessingIntervalIncrementSeconds | quote }}
 
           volumeMounts:
             {{- include "common.networkConfig.volumeMounts" .Values.networkConfig | nindent 12}}
