@@ -41,12 +41,13 @@ public class RegistryFixture : IAsyncLifetime
     private readonly IContainer _rabbitMqContainer;
     private readonly IFutureDockerImage _rabbitMqImage;
 
-    protected readonly INetwork Network;
+    public readonly INetwork Network;
 
     public string IssuerArea => Area;
     public string RegistryName => "TestRegistry";
     public IPrivateKey IssuerKey { get; init; }
     public string RegistryUrl => $"http://{_registryContainer.Hostname}:{_registryContainer.GetMappedPublicPort(GrpcPort)}";
+    public string RegistryUrlWithinNetwork => $"http://{RegistryAlias}:{GrpcPort}";
 
     public RegistryFixture()
     {

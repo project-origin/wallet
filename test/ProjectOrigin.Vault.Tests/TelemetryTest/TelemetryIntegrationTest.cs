@@ -4,6 +4,7 @@ using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using FluentAssertions;
 using ProjectOrigin.Vault.Options;
+using ProjectOrigin.Vault.Tests.Extensions;
 using ProjectOrigin.Vault.Tests.TestClassFixtures;
 using Xunit;
 

@@ -43,24 +43,31 @@ public class CheckForWithdrawnCertificatesCommandHandler : IConsumer<CheckForWit
             };
 
             var client = _httpClientFactory.CreateClient();
-            var response = (await client.GetFromJsonAsync<WithdrawnCertificatesResponse>(stamp.Value.Url + $"v1/certificates/withdrawn?lastWithdrawnId={matchingCursor.SyncPosition}"))!;
 
-            if (!response.WithdrawnCertificates.Any()) continue;
-
-            foreach (var withdrawnCertificate in response.WithdrawnCertificates)
+            try
             {
-                await _unitOfWork.CertificateRepository.WithdrawCertificate(withdrawnCertificate.RegistryName, withdrawnCertificate.CertificateId);
-                var claimedSlices = await _unitOfWork.CertificateRepository.GetClaimedSlicesOfCertificate(withdrawnCertificate.RegistryName, withdrawnCertificate.CertificateId);
-                foreach (var claimedSlice in claimedSlices)
-                {
-                    //Unclaim (which is next task)
-                }
-            }
+                var response = (await client.GetFromJsonAsync<ResultList<WithdrawnCertificateDto,PageInfo>>(stamp.Value.Url + $"/v1/certificates/withdrawn?lastWithdrawnId={matchingCursor.SyncPosition}"))!;
 
-            matchingCursor.SyncPosition = response.WithdrawnCertificates.Max(x => x.Id);
-            matchingCursor.LastSyncDate = DateTimeOffset.UtcNow;
-            await UpdateWithdrawnCursor(matchingCursor);
-            _unitOfWork.Commit();
+                if (!response.Result.Any()) continue;
+
+                foreach (var withdrawnCertificate in response.Result)
+                {
+                    await _unitOfWork.CertificateRepository.WithdrawCertificate(withdrawnCertificate.RegistryName, withdrawnCertificate.CertificateId);
+                    var claimedSlices = await _unitOfWork.CertificateRepository.GetClaimedSlicesOfCertificate(withdrawnCertificate.RegistryName, withdrawnCertificate.CertificateId);
+                    foreach (var claimedSlice in claimedSlices)
+                    {
+                        //Unclaim (which is next task)
+                    }
+                }
+
+                matchingCursor.SyncPosition = response.Result.Max(x => x.Id);
+                matchingCursor.LastSyncDate = DateTimeOffset.UtcNow;
+                await UpdateWithdrawnCursor(matchingCursor);
+                _unitOfWork.Commit();
+            }
+            catch (Exception e)
+            {
+            }
         }
     }
 
@@ -74,12 +81,18 @@ public class CheckForWithdrawnCertificatesCommandHandler : IConsumer<CheckForWit
             await _unitOfWork.WithdrawnCursorRepository.UpdateWithdrawnCursor(updatedCursor);
     }
 }
-
-public record WithdrawnCertificatesResponse
+public record ResultList<T, TPageInfo>()
 {
-    public required int PageSize { get; init; }
-    public required int PageNumber { get; init; }
-    public required List<WithdrawnCertificateDto> WithdrawnCertificates { get; init; }
+    public required IEnumerable<T> Result { get; init; }
+    public required TPageInfo Metadata { get; init; }
+}
+
+public record PageInfo()
+{
+    public required int Count { get; init; }
+    public required int Offset { get; init; }
+    public required int Limit { get; init; }
+    public required int Total { get; init; }
 }
 
 public record WithdrawnCertificateDto

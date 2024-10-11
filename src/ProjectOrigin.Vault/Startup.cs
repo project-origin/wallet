@@ -70,6 +70,11 @@ public class Startup
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
+        services.AddOptions<JobOptions>()
+            .BindConfiguration(JobOptions.Job)
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
         services.ConfigurePersistance(_configuration);
         services.ConfigureAuthentication(_configuration.GetValidSection<AuthOptions>(AuthOptions.Prefix));
         services.ConfigureOtlp(_configuration.GetValidSection<OtlpOptions>(OtlpOptions.Prefix));
@@ -89,11 +94,12 @@ public class Startup
 
             q.AddJob<PublishCheckForWithdrawnCertificatesCommandJob>(opts => opts.WithIdentity("PublishCheckForWithdrawnCertificatesCommandClusteredJob"));
 
+            var jobOptions = _configuration.GetSection("Job").GetValid<JobOptions>();
             q.AddTrigger(opts => opts
                 .ForJob("PublishCheckForWithdrawnCertificatesCommandClusteredJob")
                 .WithIdentity("PublishCheckForWithdrawnCertificatesCommandClusteredJob-trigger")
                 .WithSimpleSchedule(x => x
-                    .WithIntervalInMinutes(60)
+                    .WithIntervalInSeconds(jobOptions.CheckForWithdrawnCertificatesIntervalInSeconds)
                     .RepeatForever()));
         });
 

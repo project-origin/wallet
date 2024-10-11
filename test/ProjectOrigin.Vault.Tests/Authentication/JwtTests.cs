@@ -10,6 +10,7 @@ using System.Net.Http.Json;
 using System.Threading.Tasks;
 using FluentAssertions;
 using ProjectOrigin.Vault.Options;
+using ProjectOrigin.Vault.Tests.Extensions;
 using ProjectOrigin.Vault.Tests.TestClassFixtures;
 using WireMock.RequestBuilders;
 using WireMock.ResponseBuilders;

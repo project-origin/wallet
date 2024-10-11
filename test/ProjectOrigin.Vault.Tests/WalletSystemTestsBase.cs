@@ -8,6 +8,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
+using ProjectOrigin.Vault.Tests.Extensions;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -26,6 +27,10 @@ public abstract class WalletSystemTestsBase : IClassFixture<TestServerFixture<St
     private bool _disposed = false;
 
     protected IHDAlgorithm Algorithm => _serverFixture.GetRequiredService<IHDAlgorithm>();
+
+    public string StampUrl { get; set; } = "some-stamp-url";
+    public string RegistryName { get; set; } = "some-registry-name";
+    public string IssuerArea { get; set; } = "some-issuer-area";
 
     public WalletSystemTestsBase(
         TestServerFixture<Startup> serverFixture,
@@ -58,6 +63,13 @@ public abstract class WalletSystemTestsBase : IClassFixture<TestServerFixture<St
                         }
                     }
             });
+            networkOptions.Stamps.Add(stampAndRegistryFixture.StampName, new StampInfo
+            {
+                Url = stampAndRegistryFixture.StampUrl
+            });
+            StampUrl = stampAndRegistryFixture.StampUrl;
+            RegistryName = stampAndRegistryFixture.RegistryName;
+            IssuerArea = stampAndRegistryFixture.IssuerArea;
         }
 
         var config = new Dictionary<string, string?>()
@@ -65,7 +77,6 @@ public abstract class WalletSystemTestsBase : IClassFixture<TestServerFixture<St
             {"Otlp:Enabled", "false"},
             {"ConnectionStrings:Database", dbFixture.ConnectionString},
             {"ServiceOptions:EndpointAddress", endpoint},
-            {"VerifySlicesWorkerOptions:SleepTime", "00:00:02"},
             {"auth:type", "jwt"},
             {"auth:jwt:Audience", jwtTokenIssuerFixture.Audience},
             {"auth:jwt:Issuers:0:IssuerName", jwtTokenIssuerFixture.Issuer},
@@ -74,7 +85,8 @@ public abstract class WalletSystemTestsBase : IClassFixture<TestServerFixture<St
             {"network:ConfigurationUri", networkOptions.ToTempYamlFileUri() },
             {"Retry:RegistryTransactionStillProcessingRetryCount", "5"},
             {"Retry:RegistryTransactionStillProcessingInitialIntervalSeconds", "1"},
-            {"Retry:RegistryTransactionStillProcessingIntervalIncrementSeconds", "5"}
+            {"Retry:RegistryTransactionStillProcessingIntervalIncrementSeconds", "5"},
+            {"Job:CheckForWithdrawnCertificatesIntervalInSeconds", "5"}
         };
 
         config = config.Concat(_messageBrokerFixture.Configuration).ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
@@ -109,6 +121,13 @@ public abstract class WalletSystemTestsBase : IClassFixture<TestServerFixture<St
         var client = _serverFixture.CreateHttpClient();
         var token = _jwtTokenIssuerFixture.GenerateToken(subject, name, scopes);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return client;
+    }
+
+    public HttpClient CreateStampClient()
+    {
+        var client = new HttpClient();
+        client.BaseAddress = new Uri(StampUrl);
         return client;
     }
 }

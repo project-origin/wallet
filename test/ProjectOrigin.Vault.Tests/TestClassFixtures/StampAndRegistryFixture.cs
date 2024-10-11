@@ -17,6 +17,8 @@ public class StampAndRegistryFixture : RegistryFixture
     private const int StampHttpPort = 5000;
     private const string StampPathBase = "/stamp-api";
 
+    public string StampName => "narnia-stamp";
+
     public StampAndRegistryFixture()
     {
         _stampPostgresContainer = new PostgreSqlBuilder()
@@ -48,7 +50,7 @@ public class StampAndRegistryFixture : RegistryFixture
                 .WithEnvironment("Retry__RegistryTransactionStillProcessingInitialIntervalSeconds", "1")
                 .WithEnvironment("Retry__RegistryTransactionStillProcessingIntervalIncrementSeconds", "5")
                 .WithEnvironment($"Registries__0__name", RegistryName)
-                .WithEnvironment($"Registries__0__address", RegistryUrl)
+                .WithEnvironment($"Registries__0__address", RegistryUrlWithinNetwork)
                 .WithEnvironment($"IssuerPrivateKeyPems__{IssuerArea}", Convert.ToBase64String(Encoding.UTF8.GetBytes(IssuerKey.ExportPkixText())))
                 .WithEnvironment("ConnectionStrings__Database", connectionString)
                 .WithEnvironment("MessageBroker__Type", "InMemory")
@@ -57,6 +59,9 @@ public class StampAndRegistryFixture : RegistryFixture
                 .Build();
         });
     }
+
+    public string StampUrl =>
+        new UriBuilder("http", _stampContainer.Value.Hostname, _stampContainer.Value.GetMappedPublicPort(StampHttpPort), StampPathBase).Uri.ToString();
 
     public override async Task InitializeAsync()
     {
