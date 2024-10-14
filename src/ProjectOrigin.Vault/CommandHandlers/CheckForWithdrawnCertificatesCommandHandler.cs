@@ -57,7 +57,6 @@ public class CheckForWithdrawnCertificatesCommandHandler : IConsumer<CheckForWit
                 continue;
             }
 
-
             _logger.LogInformation("Found {Count} withdrawn certificates for {StampName}", response.Result.Count(), stamp.Key);
             foreach (var withdrawnCertificate in response.Result)
             {
