@@ -13,4 +13,5 @@ public interface IUnitOfWork
     IClaimRepository ClaimRepository { get; }
     IRequestStatusRepository RequestStatusRepository { get; }
     IWithdrawnCursorRepository WithdrawnCursorRepository { get; }
+    IJobExecutionRepository JobExecutionRepository { get; }
 }

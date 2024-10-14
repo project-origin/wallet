@@ -8,6 +8,10 @@ public class JobOptions : IValidatableObject
 
     [Required]
     public int CheckForWithdrawnCertificatesIntervalInSeconds { get; set; }
+    public int TimeBeforeItIsOkToRunCheckForWithdrawnCertificatesAgain()
+    {
+        return ((CheckForWithdrawnCertificatesIntervalInSeconds * 2) / 3);
+    }
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {

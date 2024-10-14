@@ -24,9 +24,7 @@ using System.IO;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Microsoft.IdentityModel.Protocols.Configuration;
 using ProjectOrigin.Vault.Jobs;
-using Quartz;
 
 namespace ProjectOrigin.Vault;
 
@@ -78,32 +76,6 @@ public class Startup
         services.ConfigurePersistance(_configuration);
         services.ConfigureAuthentication(_configuration.GetValidSection<AuthOptions>(AuthOptions.Prefix));
         services.ConfigureOtlp(_configuration.GetValidSection<OtlpOptions>(OtlpOptions.Prefix));
-
-        services.AddQuartz(q =>
-        {
-            q.UsePersistentStore(s =>
-            {
-                s.UsePostgres(_configuration.GetConnectionString("Database") ?? throw new InvalidConfigurationException("Configuration does not contain a connection string named 'Database'."));
-                s.UseNewtonsoftJsonSerializer();
-                s.UseClustering(c =>
-                {
-                    c.CheckinInterval = TimeSpan.FromSeconds(20);  // Node health check interval
-                    c.CheckinMisfireThreshold = TimeSpan.FromSeconds(60);  // Time to consider a node as misfired
-                });
-            });
-
-            q.AddJob<PublishCheckForWithdrawnCertificatesCommandJob>(opts => opts.WithIdentity("PublishCheckForWithdrawnCertificatesCommandClusteredJob"));
-
-            var jobOptions = _configuration.GetSection("Job").GetValid<JobOptions>();
-            q.AddTrigger(opts => opts
-                .ForJob("PublishCheckForWithdrawnCertificatesCommandClusteredJob")
-                .WithIdentity("PublishCheckForWithdrawnCertificatesCommandClusteredJob-trigger")
-                .WithSimpleSchedule(x => x
-                    .WithIntervalInSeconds(jobOptions.CheckForWithdrawnCertificatesIntervalInSeconds)
-                    .RepeatForever()));
-        });
-
-        services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);
 
         services.AddMassTransit(o =>
         {
@@ -168,6 +140,8 @@ public class Startup
 
         services.AddHttpClient();
         services.ConfigureUriOptionsLoader<NetworkOptions>("network");
+
+        services.AddHostedService<PublishCheckForWithdrawnCertificatesCommandJob>();
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
