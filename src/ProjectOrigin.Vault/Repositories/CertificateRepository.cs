@@ -158,6 +158,7 @@ public class CertificateRepository : ICertificateRepository
                     certificates_query_model
                 WHERE
                     owner = @owner
+                    AND withdrawn = false
                     AND (@start IS NULL OR start_date >= @start)
                     AND (@end IS NULL OR end_date <= @end)
                     AND (@type IS NULL OR certificate_type = @type)
@@ -214,6 +215,7 @@ public class CertificateRepository : ICertificateRepository
                     certificates_query_model
                 WHERE
                     owner = @owner
+                    AND withdrawn = false
                     AND (@start IS NULL OR start_date >= @start)
                     AND (@end IS NULL OR end_date <= @end)
                     AND quantity != 0
@@ -274,6 +276,7 @@ public class CertificateRepository : ICertificateRepository
                         certificates_query_model
                     WHERE
                         owner = @owner
+                        AND withdrawn = false
                         AND (@start IS NULL OR start_date >= @start)
                         AND (@end IS NULL OR end_date <= @end)
                         AND quantity != 0
