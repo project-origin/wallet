@@ -44,6 +44,7 @@ public class TelemetryIntegrationTest :
             {"auth:jwt:Issuers:0:IssuerName", jwtTokenIssuerFixture.Issuer},
             {"auth:jwt:Issuers:0:PemKeyFile", jwtTokenIssuerFixture.PemFilepath},
             {"auth:jwt:Issuers:0:Type", jwtTokenIssuerFixture.KeyType},
+            {"Job:CheckForWithdrawnCertificatesIntervalInSeconds", "5"}
         };
 
         serverFixture.ConfigureHostConfiguration(combinedConfiguration);
