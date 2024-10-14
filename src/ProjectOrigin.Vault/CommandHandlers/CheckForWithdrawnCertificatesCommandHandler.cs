@@ -49,35 +49,30 @@ public class CheckForWithdrawnCertificatesCommandHandler : IConsumer<CheckForWit
             };
 
             var client = _httpClientFactory.CreateClient();
+            var response = (await client.GetFromJsonAsync<ResultList<WithdrawnCertificateDto, PageInfo>>(stamp.Value.Url + $"/v1/certificates/withdrawn?lastWithdrawnId={matchingCursor.SyncPosition}"))!;
 
-            try
+            if (!response.Result.Any())
             {
-                var url = stamp.Value.Url + $"/v1/certificates/withdrawn?lastWithdrawnId={matchingCursor.SyncPosition}";
-                _logger.LogInformation($"Checking for withdrawn certificates at {url}");
-                _logger.LogInformation($"BaseAddress: {client.BaseAddress}");
-                var response = (await client.GetFromJsonAsync<ResultList<WithdrawnCertificateDto,PageInfo>>(stamp.Value.Url + $"/v1/certificates/withdrawn?lastWithdrawnId={matchingCursor.SyncPosition}"))!;
+                _logger.LogInformation("No withdrawn certificates found for {StampName}", stamp.Key);
+                continue;
+            }
 
-                if (!response.Result.Any()) continue;
 
-                foreach (var withdrawnCertificate in response.Result)
+            _logger.LogInformation("Found {Count} withdrawn certificates for {StampName}", response.Result.Count(), stamp.Key);
+            foreach (var withdrawnCertificate in response.Result)
+            {
+                await _unitOfWork.CertificateRepository.WithdrawCertificate(withdrawnCertificate.RegistryName, withdrawnCertificate.CertificateId);
+                var claimedSlices = await _unitOfWork.CertificateRepository.GetClaimedSlicesOfCertificate(withdrawnCertificate.RegistryName, withdrawnCertificate.CertificateId);
+                foreach (var claimedSlice in claimedSlices)
                 {
-                    await _unitOfWork.CertificateRepository.WithdrawCertificate(withdrawnCertificate.RegistryName, withdrawnCertificate.CertificateId);
-                    var claimedSlices = await _unitOfWork.CertificateRepository.GetClaimedSlicesOfCertificate(withdrawnCertificate.RegistryName, withdrawnCertificate.CertificateId);
-                    foreach (var claimedSlice in claimedSlices)
-                    {
-                        //Unclaim (which is next task)
-                    }
+                    //Unclaim (which is next task)
                 }
+            }
 
-                matchingCursor.SyncPosition = response.Result.Max(x => x.Id);
-                matchingCursor.LastSyncDate = DateTimeOffset.UtcNow;
-                await UpdateWithdrawnCursor(matchingCursor);
-                _unitOfWork.Commit();
-            }
-            catch (Exception e)
-            {
-                _logger.LogError(e, "Error while checking for withdrawn certificates");
-            }
+            matchingCursor.SyncPosition = response.Result.Max(x => x.Id);
+            matchingCursor.LastSyncDate = DateTimeOffset.UtcNow;
+            await UpdateWithdrawnCursor(matchingCursor);
+            _unitOfWork.Commit();
         }
     }
 
