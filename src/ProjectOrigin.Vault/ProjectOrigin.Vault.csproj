@@ -13,8 +13,8 @@
     <PackageReference Include="MassTransit" Version="8.2.5" />
     <PackageReference Include="MassTransit.Quartz" Version="8.2.5" />
     <PackageReference Include="MassTransit.RabbitMQ" Version="8.2.5" />
-    <PackageReference Include="Npgsql" Version="8.0.4" />
-    <PackageReference Include="Npgsql.OpenTelemetry" Version="8.0.4" />
+    <PackageReference Include="Npgsql" Version="8.0.5" />
+    <PackageReference Include="Npgsql.OpenTelemetry" Version="8.0.5" />
     <PackageReference Include="NSec.Cryptography" Version="24.4.0" />
     <PackageReference Include="Microsoft.Identity.Web" Version="3.2.2" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.10" />
@@ -50,12 +50,6 @@
   </Target>
 
   <ItemGroup>
-    <None Remove="Database\Postgres\Scripts\v2\v2-0005.sql" />
-    <None Remove="Database\Postgres\Scripts\v2\v2-0008.sql" />
-    <None Remove="Database\Postgres\Scripts\v2\v2-0009.sql" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Protobuf Include="../../protos/common.proto" Link="protos\common.proto">
       <SourceUrl>https://raw.githubusercontent.com/project-origin/registry/v0.3.0/src/Protos/common.proto</SourceUrl>
     </Protobuf>
@@ -65,18 +59,6 @@
     <Protobuf Include="../../protos/electricity.proto" Link="protos\electricity.proto">
       <SourceUrl>https://raw.githubusercontent.com/project-origin/registry/v0.3.0/src/Protos/electricity.proto</SourceUrl>
     </Protobuf>
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Update="Database\Postgres\Scripts\v2\v2-0005.sql">
-      <LogicalName>Scripts.V2.%(Filename)%(Extension)</LogicalName>
-    </EmbeddedResource>
-    <EmbeddedResource Update="Database\Postgres\Scripts\v2\v2-0009.sql">
-      <LogicalName>Scripts.V2.%(Filename)%(Extension)</LogicalName>
-    </EmbeddedResource>
-    <EmbeddedResource Update="Database\Postgres\Scripts\v2\v2-0008.sql">
-      <LogicalName>Scripts.V2.%(Filename)%(Extension)</LogicalName>
-    </EmbeddedResource>
   </ItemGroup>
 
 </Project>
