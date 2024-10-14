@@ -21,61 +21,43 @@ public class WithdrawnCursorRepositoryTests : AbstractRepositoryTests
     }
 
     [Fact]
-    public async Task InsertAndGetWithdrawnCursor()
+    public async Task UpdateLastExecutionTime_WhenCursorDoesNotExist_InsertsNewRecord()
     {
         var stampName = _fixture.Create<string>();
         var cursor = new WithdrawnCursor
         {
             StampName = stampName,
-            SyncPosition = 1,
+            SyncPosition = 0,
             LastSyncDate = DateTimeOffset.UtcNow.ToUtcTime()
         };
-        await _withdrawnRepository.InsertWithdrawnCursor(cursor);
+        await _withdrawnRepository.UpdateWithdrawnCursor(cursor);
 
         var cursors = await _withdrawnRepository.GetWithdrawnCursors();
 
-        cursors.Count().Should().Be(1);
-        cursors.First().Should().BeEquivalentTo(cursor);
+        cursors.First(c => c.StampName == stampName).Should().BeEquivalentTo(cursor);
     }
 
     [Fact]
-    public async Task UpdateWithdrawnCursor()
+    public async Task UpdateWithdrawnCursor_WhenCursorExist_UpdateExistingCursor()
     {
         var stampName = _fixture.Create<string>();
         var cursor = new WithdrawnCursor
         {
             StampName = stampName,
-            SyncPosition = 1,
+            SyncPosition = 0,
             LastSyncDate = DateTimeOffset.UtcNow.ToUtcTime()
         };
-        await _withdrawnRepository.InsertWithdrawnCursor(cursor);
+        await _withdrawnRepository.UpdateWithdrawnCursor(cursor);
 
         var cursors = await _withdrawnRepository.GetWithdrawnCursors();
 
-        var cursorToUpdate = cursors.First();
+        var cursorToUpdate = cursors.First(c => c.StampName == stampName);
         cursorToUpdate.SyncPosition = 2;
         cursorToUpdate.LastSyncDate = DateTimeOffset.UtcNow.AddHours(2).ToUtcTime();
 
         await _withdrawnRepository.UpdateWithdrawnCursor(cursorToUpdate);
         var cursorsUpdated = await _withdrawnRepository.GetWithdrawnCursors();
 
-        cursorsUpdated.Should().Contain(cursorToUpdate);
-    }
-
-    [Fact]
-    public async Task UpdateWithdrawnCursor_WhenNotInsertedBeforeUpdate_InvalidOperationException()
-    {
-        var stampName = _fixture.Create<string>();
-        var cursor = new WithdrawnCursor
-        {
-            StampName = stampName,
-            SyncPosition = 1,
-            LastSyncDate = DateTimeOffset.UtcNow.ToUtcTime()
-        };
-
-        var sut = () => _withdrawnRepository.UpdateWithdrawnCursor(cursor);
-
-        await sut.Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage($"Withdrawn cursor with stamp name {stampName} could not be found");
+        cursorsUpdated.First(c => c.StampName == stampName).Should().BeEquivalentTo(cursorToUpdate);
     }
 }

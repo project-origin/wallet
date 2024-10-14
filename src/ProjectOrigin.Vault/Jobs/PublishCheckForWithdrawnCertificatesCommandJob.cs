@@ -30,15 +30,15 @@ public class PublishCheckForWithdrawnCertificatesCommandJob : BackgroundService
     {
         while (!stoppingToken.IsCancellationRequested)
         {
-            var lastExecutionTime = await _unitOfWork.JobExecutionRepository.GetLastExecutionTimeAsync(nameof(PublishCheckForWithdrawnCertificatesCommandJob));
+            var lastExecutionTime = await _unitOfWork.JobExecutionRepository.GetLastExecutionTime(nameof(PublishCheckForWithdrawnCertificatesCommandJob));
 
             if (lastExecutionTime != null && (DateTimeOffset.UtcNow - lastExecutionTime.Value).TotalSeconds < _options.TimeBeforeItIsOkToRunCheckForWithdrawnCertificatesAgain())
             {
                 _logger.LogInformation("PublishCheckForWithdrawnCertificatesCommandJob was executed at {now} but did not publish.", DateTime.Now);
-                return; 
+                return;
             }
 
-            await _unitOfWork.JobExecutionRepository.UpdateLastExecutionTimeAsync(nameof(PublishCheckForWithdrawnCertificatesCommandJob), DateTimeOffset.UtcNow);
+            await _unitOfWork.JobExecutionRepository.UpdateLastExecutionTime(nameof(PublishCheckForWithdrawnCertificatesCommandJob), DateTimeOffset.UtcNow);
             _unitOfWork.Commit();
 
             var message = new CheckForWithdrawnCertificatesCommand { };

@@ -11,7 +11,6 @@ namespace ProjectOrigin.Vault.Repositories;
 public interface IWithdrawnCursorRepository
 {
     Task<IEnumerable<WithdrawnCursor>> GetWithdrawnCursors();
-    Task InsertWithdrawnCursor(WithdrawnCursor withdrawnCursor);
     Task UpdateWithdrawnCursor(WithdrawnCursor withdrawnCursor);
 }
 
@@ -19,37 +18,26 @@ public class WithdrawnCursorRepository : IWithdrawnCursorRepository
 {
     private readonly IDbConnection _connection;
 
-    public WithdrawnCursorRepository(IDbConnection connection) => this._connection = connection;
+    public WithdrawnCursorRepository(IDbConnection connection) => _connection = connection;
 
     public async Task<IEnumerable<WithdrawnCursor>> GetWithdrawnCursors()
     {
-        using var gridReader = await _connection.QueryMultipleAsync("SELECT * FROM withdrawn_cursors");
-        return await gridReader.ReadAsync<WithdrawnCursor>();
-    }
-
-    public async Task InsertWithdrawnCursor(WithdrawnCursor withdrawnCursor)
-    {
-        await _connection.ExecuteAsync(
-            @"INSERT INTO withdrawn_cursors(stamp_name, sync_position, last_sync_date)
-              VALUES (@stampName, @syncPosition, @lastSyncDate)",
-            new
-            {
-                withdrawnCursor.StampName,
-                withdrawnCursor.SyncPosition,
-                lastSyncDate = withdrawnCursor.LastSyncDate.ToUtcTime()
-            });
+        return await _connection.QueryAsync<WithdrawnCursor>("SELECT * FROM withdrawn_cursors");
     }
 
     public async Task UpdateWithdrawnCursor(WithdrawnCursor withdrawnCursor)
     {
-        var rowsChanged = await _connection.ExecuteAsync(
-            @"UPDATE withdrawn_cursors
-              SET sync_position = @syncPosition, last_sync_date = @lastSyncDate
-              WHERE stamp_name = @stampName",
+        var sql = @"
+            INSERT INTO withdrawn_cursors (stamp_name, sync_position, last_sync_date)
+            VALUES (@stampName, @syncPosition, @lastSyncDate)
+            ON CONFLICT (stamp_name)
+            DO UPDATE SET sync_position = EXCLUDED.sync_position, last_sync_date = EXCLUDED.last_sync_date";
+
+        var rowsChanged = await _connection.ExecuteAsync(sql,
             new
             {
-                withdrawnCursor.StampName,
-                withdrawnCursor.SyncPosition,
+                stampName = withdrawnCursor.StampName,
+                syncPosition = withdrawnCursor.SyncPosition,
                 lastSyncDate = withdrawnCursor.LastSyncDate.ToUtcTime()
             });
 

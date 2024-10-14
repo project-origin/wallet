@@ -21,7 +21,7 @@ public class JobExecutionRepositoryTests : AbstractRepositoryTests
     public async Task GetLastExecutionTimeAsync_WhenJobDoesNotExist_ReturnsNull()
     {
         var jobName = Guid.NewGuid().ToString();
-        var result = await _jobRepository.GetLastExecutionTimeAsync(jobName);
+        var result = await _jobRepository.GetLastExecutionTime(jobName);
         result.Should().BeNull();
     }
 
@@ -31,9 +31,9 @@ public class JobExecutionRepositoryTests : AbstractRepositoryTests
         var jobName = Guid.NewGuid().ToString();
         var executionTime = DateTimeOffset.Now.ToUtcTime();
 
-        await _jobRepository.UpdateLastExecutionTimeAsync(jobName, executionTime);
+        await _jobRepository.UpdateLastExecutionTime(jobName, executionTime);
 
-        var result = await _jobRepository.GetLastExecutionTimeAsync(jobName);
+        var result = await _jobRepository.GetLastExecutionTime(jobName);
 
         result.Should().Be(executionTime);
     }
@@ -44,17 +44,17 @@ public class JobExecutionRepositoryTests : AbstractRepositoryTests
         var jobName = Guid.NewGuid().ToString();
         var executionTime = DateTimeOffset.Now.ToUtcTime();
 
-        await _jobRepository.UpdateLastExecutionTimeAsync(jobName, executionTime);
+        await _jobRepository.UpdateLastExecutionTime(jobName, executionTime);
 
-        var result = await _jobRepository.GetLastExecutionTimeAsync(jobName);
+        var result = await _jobRepository.GetLastExecutionTime(jobName);
 
         result.Should().Be(executionTime);
 
         var newExecutionTime = DateTimeOffset.Now.ToUtcTime().AddMinutes(5);
 
-        await _jobRepository.UpdateLastExecutionTimeAsync(jobName, newExecutionTime);
+        await _jobRepository.UpdateLastExecutionTime(jobName, newExecutionTime);
 
-        result = await _jobRepository.GetLastExecutionTimeAsync(jobName);
+        result = await _jobRepository.GetLastExecutionTime(jobName);
 
         result.Should().Be(newExecutionTime);
     }

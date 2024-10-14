@@ -7,8 +7,8 @@ namespace ProjectOrigin.Vault.Repositories;
 
 public interface IJobExecutionRepository
 {
-    Task<DateTimeOffset?> GetLastExecutionTimeAsync(string jobName);
-    Task UpdateLastExecutionTimeAsync(string jobName, DateTimeOffset executionTime);
+    Task<DateTimeOffset?> GetLastExecutionTime(string jobName);
+    Task UpdateLastExecutionTime(string jobName, DateTimeOffset executionTime);
 }
 
 public class JobExecutionRepository : IJobExecutionRepository
@@ -18,13 +18,13 @@ public class JobExecutionRepository : IJobExecutionRepository
     public JobExecutionRepository(IDbConnection connection) => this._connection = connection;
 
 
-    public async Task<DateTimeOffset?> GetLastExecutionTimeAsync(string jobName)
+    public async Task<DateTimeOffset?> GetLastExecutionTime(string jobName)
     {
         var query = "SELECT last_execution_time FROM job_execution_history WHERE job_name = @jobName";
         return await _connection.QuerySingleOrDefaultAsync<DateTime?>(query, new { jobName = jobName });
     }
 
-    public async Task UpdateLastExecutionTimeAsync(string jobName, DateTimeOffset executionTime)
+    public async Task UpdateLastExecutionTime(string jobName, DateTimeOffset executionTime)
     {
         var query = @"
             INSERT INTO job_execution_history (job_name, last_execution_time)

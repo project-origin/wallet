@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
@@ -10,6 +9,7 @@ using Microsoft.Extensions.Options;
 using ProjectOrigin.Vault.Database;
 using ProjectOrigin.Vault.Models;
 using ProjectOrigin.Vault.Options;
+using ProjectOrigin.Vault.Services.REST.v1;
 
 namespace ProjectOrigin.Vault.CommandHandlers;
 
@@ -57,7 +57,7 @@ public class CheckForWithdrawnCertificatesCommandHandler : IConsumer<CheckForWit
                 continue;
             }
 
-            _logger.LogInformation("Found {Count} withdrawn certificates for {StampName}", response.Result.Count(), stamp.Key);
+            _logger.LogInformation("Found {Count} withdrawn certificates for {StampName}", response.Metadata.Count, stamp.Key);
             foreach (var withdrawnCertificate in response.Result)
             {
                 await _unitOfWork.CertificateRepository.WithdrawCertificate(withdrawnCertificate.RegistryName, withdrawnCertificate.CertificateId);
@@ -70,33 +70,11 @@ public class CheckForWithdrawnCertificatesCommandHandler : IConsumer<CheckForWit
 
             matchingCursor.SyncPosition = response.Result.Max(x => x.Id);
             matchingCursor.LastSyncDate = DateTimeOffset.UtcNow;
-            await UpdateWithdrawnCursor(matchingCursor);
+            await _unitOfWork.WithdrawnCursorRepository.UpdateWithdrawnCursor(matchingCursor);
             _unitOfWork.Commit();
+            client.Dispose();
         }
     }
-
-    private async Task UpdateWithdrawnCursor(WithdrawnCursor updatedCursor)
-    {
-        var cursors = await _unitOfWork.WithdrawnCursorRepository.GetWithdrawnCursors();
-        var matchingCursor = cursors.FirstOrDefault(x => x.StampName == updatedCursor.StampName);
-        if (matchingCursor == null)
-            await _unitOfWork.WithdrawnCursorRepository.InsertWithdrawnCursor(updatedCursor);
-        else
-            await _unitOfWork.WithdrawnCursorRepository.UpdateWithdrawnCursor(updatedCursor);
-    }
-}
-public record ResultList<T, TPageInfo>()
-{
-    public required IEnumerable<T> Result { get; init; }
-    public required TPageInfo Metadata { get; init; }
-}
-
-public record PageInfo()
-{
-    public required int Count { get; init; }
-    public required int Offset { get; init; }
-    public required int Limit { get; init; }
-    public required int Total { get; init; }
 }
 
 public record WithdrawnCertificateDto
