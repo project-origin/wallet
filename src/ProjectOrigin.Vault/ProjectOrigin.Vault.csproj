@@ -16,8 +16,8 @@
     <PackageReference Include="Npgsql" Version="8.0.4" />
     <PackageReference Include="Npgsql.OpenTelemetry" Version="8.0.4" />
     <PackageReference Include="NSec.Cryptography" Version="24.4.0" />
-    <PackageReference Include="Microsoft.Identity.Web" Version="3.2.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.8" />
+    <PackageReference Include="Microsoft.Identity.Web" Version="3.2.2" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.10" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="8.0.0" />
     <PackageReference Include="OpenTelemetry" Version="1.9.0" />
     <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.9.0" />
@@ -29,7 +29,7 @@
     <PackageReference Include="ProjectOrigin.PedersenCommitment" Version="1.1.1" />
     <PackageReference Include="ProjectOrigin.HierarchicalDeterministicKeys" Version="1.1.0" />
     <PackageReference Include="Quartz.Serialization.Json" Version="3.12.0" />
-    <PackageReference Include="Serilog.AspNetCore" Version="8.0.2" />
+    <PackageReference Include="Serilog.AspNetCore" Version="8.0.3" />
     <PackageReference Include="Serilog.Enrichers.Span" Version="3.1.0" />
     <PackageReference Include="Serilog.Expressions" Version="5.0.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.8.1" />
