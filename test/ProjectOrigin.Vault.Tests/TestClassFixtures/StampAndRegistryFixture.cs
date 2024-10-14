@@ -16,6 +16,7 @@ public class StampAndRegistryFixture : RegistryFixture
 
     private const int StampHttpPort = 5000;
     private const string StampPathBase = "/stamp-api";
+    private const string StampAlias = "narnia-stamp";
 
     public string StampName => "narnia-stamp";
 
@@ -41,6 +42,7 @@ public class StampAndRegistryFixture : RegistryFixture
             return new ContainerBuilder()
                 .WithImage("ghcr.io/project-origin/stamp:4.0.0")
                 .WithNetwork(Network)
+                .WithNetworkAliases(StampAlias)
                 .WithPortBinding(hostPort, StampHttpPort)
                 .WithCommand("--serve", "--migrate")
                 .WithEnvironment("RestApiOptions__PathBase", StampPathBase)
@@ -62,6 +64,8 @@ public class StampAndRegistryFixture : RegistryFixture
 
     public string StampUrl =>
         new UriBuilder("http", _stampContainer.Value.Hostname, _stampContainer.Value.GetMappedPublicPort(StampHttpPort), StampPathBase).Uri.ToString();
+    public string StampUrlInNetwork =>
+        new UriBuilder("http", StampAlias, StampHttpPort, StampPathBase).Uri.ToString();
 
     public override async Task InitializeAsync()
     {
@@ -72,6 +76,10 @@ public class StampAndRegistryFixture : RegistryFixture
     public override async Task DisposeAsync()
     {
         await base.DisposeAsync();
+
+        await Task.WhenAll(
+            _stampPostgresContainer.StopAsync(),
+            _stampContainer.Value.StopAsync());
 
         await Task.WhenAll(
             _stampPostgresContainer.DisposeAsync().AsTask(),

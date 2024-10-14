@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using MassTransit;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ProjectOrigin.Vault.Database;
 using ProjectOrigin.Vault.Models;
@@ -20,11 +21,16 @@ public class CheckForWithdrawnCertificatesCommandHandler : IConsumer<CheckForWit
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly ILogger<CheckForWithdrawnCertificatesCommandHandler> _logger;
     private readonly NetworkOptions _networkOptions;
-    public CheckForWithdrawnCertificatesCommandHandler(IUnitOfWork unitOfWork, IOptions<NetworkOptions> networkOptions, IHttpClientFactory httpClientFactory)
+    public CheckForWithdrawnCertificatesCommandHandler(IUnitOfWork unitOfWork,
+        IOptions<NetworkOptions> networkOptions,
+        IHttpClientFactory httpClientFactory,
+        ILogger<CheckForWithdrawnCertificatesCommandHandler> logger)
     {
         _unitOfWork = unitOfWork;
         _httpClientFactory = httpClientFactory;
+        _logger = logger;
         _networkOptions = networkOptions.Value;
     }
 
@@ -46,6 +52,9 @@ public class CheckForWithdrawnCertificatesCommandHandler : IConsumer<CheckForWit
 
             try
             {
+                var url = stamp.Value.Url + $"/v1/certificates/withdrawn?lastWithdrawnId={matchingCursor.SyncPosition}";
+                _logger.LogInformation($"Checking for withdrawn certificates at {url}");
+                _logger.LogInformation($"BaseAddress: {client.BaseAddress}");
                 var response = (await client.GetFromJsonAsync<ResultList<WithdrawnCertificateDto,PageInfo>>(stamp.Value.Url + $"/v1/certificates/withdrawn?lastWithdrawnId={matchingCursor.SyncPosition}"))!;
 
                 if (!response.Result.Any()) continue;
@@ -67,6 +76,7 @@ public class CheckForWithdrawnCertificatesCommandHandler : IConsumer<CheckForWit
             }
             catch (Exception e)
             {
+                _logger.LogError(e, "Error while checking for withdrawn certificates");
             }
         }
     }
