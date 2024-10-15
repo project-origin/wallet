@@ -1,6 +1,8 @@
 using System;
 using System.Threading.Tasks;
+using AutoFixture;
 using FluentAssertions;
+using Npgsql;
 using ProjectOrigin.Vault.Extensions;
 using ProjectOrigin.Vault.Repositories;
 using ProjectOrigin.Vault.Tests.TestClassFixtures;
@@ -57,5 +59,51 @@ public class JobExecutionRepositoryTests : AbstractRepositoryTests
         result = await _jobRepository.GetLastExecutionTime(jobName);
 
         result.Should().Be(newExecutionTime);
+    }
+
+    [Fact]
+    public async Task AcquireAdvisoryLockAsync_WhenLockIsNotAcquired_ReturnsTrue()
+    {
+        var jobKey = _fixture.Create<int>();
+        var result = await _jobRepository.AcquireAdvisoryLock(jobKey);
+        result.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task AcquireAdvisoryLockAsync_WhenLockAcquiredBySameSession_ReturnsTrue()
+    {
+        var jobKey = _fixture.Create<int>();
+        await _jobRepository.AcquireAdvisoryLock(jobKey);
+        var result = await _jobRepository.AcquireAdvisoryLock(jobKey);
+        result.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task AcquireAdvisoryLockAsync_WhenLockIsAcquiredByDifferentSession_ReturnsFalse()
+    {
+        var jobKey = _fixture.Create<int>();
+        await _jobRepository.AcquireAdvisoryLock(jobKey);
+
+        using (var session2 = new NpgsqlConnection(_dbFixture.ConnectionString))
+        {
+            var repo = new JobExecutionRepository(session2);
+            var result = await repo.AcquireAdvisoryLock(jobKey);
+            result.Should().BeFalse();
+        }
+    }
+
+    [Fact]
+    public async Task ReleaseAdvisoryLockAsync_WhenLockIsAcquired_ReleasesLock()
+    {
+        var jobKey = _fixture.Create<int>();
+        await _jobRepository.AcquireAdvisoryLock(jobKey);
+        await _jobRepository.ReleaseAdvisoryLock(jobKey);
+
+        using (var session2 = new NpgsqlConnection(_dbFixture.ConnectionString))
+        {
+            var repo = new JobExecutionRepository(session2);
+            var result = await repo.AcquireAdvisoryLock(jobKey);
+            result.Should().BeTrue();
+        }
     }
 }

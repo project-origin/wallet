@@ -18,6 +18,9 @@ public class PublishCheckForWithdrawnCertificatesCommandJob : BackgroundService
     private readonly ILogger<PublishCheckForWithdrawnCertificatesCommandJob> _logger;
     private readonly JobOptions _options;
 
+    private const int LockKey = (int)JobKeys.PublishCheckForWithdrawnCertificatesCommandJob;
+    private const string JobName = nameof(PublishCheckForWithdrawnCertificatesCommandJob);
+
     public PublishCheckForWithdrawnCertificatesCommandJob(IBus bus, IUnitOfWork unitOfWork, IOptions<JobOptions> options, ILogger<PublishCheckForWithdrawnCertificatesCommandJob> logger)
     {
         _bus = bus;
@@ -28,26 +31,63 @@ public class PublishCheckForWithdrawnCertificatesCommandJob : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        bool acquiredLock = false;
+
         while (!stoppingToken.IsCancellationRequested)
         {
-            var willRunAt = DateTimeOffset.UtcNow.AddSeconds(_options.CheckForWithdrawnCertificatesIntervalInSeconds);
-            var lastExecutionTime = await _unitOfWork.JobExecutionRepository.GetLastExecutionTime(nameof(PublishCheckForWithdrawnCertificatesCommandJob));
-
-            if (lastExecutionTime != null && (DateTimeOffset.UtcNow - lastExecutionTime.Value).TotalSeconds < _options.TimeBeforeItIsOkToRunCheckForWithdrawnCertificatesAgain())
+            if (!acquiredLock)
             {
-                _logger.LogInformation("PublishCheckForWithdrawnCertificatesCommandJob was executed at {now} but did not publish. Will run again at {willRunAt}", DateTime.Now, willRunAt);
-                return;
+                acquiredLock = await _unitOfWork.JobExecutionRepository.AcquireAdvisoryLock(LockKey);
             }
 
-            await _unitOfWork.JobExecutionRepository.UpdateLastExecutionTime(nameof(PublishCheckForWithdrawnCertificatesCommandJob), DateTimeOffset.UtcNow);
-            _unitOfWork.Commit();
+            if (acquiredLock)
+            {
+                try
+                {
+                    if (await HasBeenRunByOtherReplica())
+                    {
+                        var willRunAt = DateTimeOffset.UtcNow.AddSeconds(_options.CheckForWithdrawnCertificatesIntervalInSeconds);
+                        _logger.LogInformation("PublishCheckForWithdrawnCertificatesCommandJob was executed at {now} but did not publish. Will run again at {willRunAt}", DateTime.Now, willRunAt);
+                        await _unitOfWork.JobExecutionRepository.ReleaseAdvisoryLock(LockKey);
+                        continue;
+                    }
 
-            var message = new CheckForWithdrawnCertificatesCommand { };
-            await _bus.Publish(message, stoppingToken);
+                    await PerformPeriodicPublish(stoppingToken);
 
-            _logger.LogInformation("CheckForWithdrawnCertificatesCommand published at: {now}. Will run again at {willRunAt}", DateTime.Now, willRunAt);
+                    await _unitOfWork.JobExecutionRepository.UpdateLastExecutionTime(JobName, DateTimeOffset.UtcNow);
+                    _unitOfWork.Commit();
+
+                    await _unitOfWork.JobExecutionRepository.ReleaseAdvisoryLock(LockKey);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "An error occurred while executing {JobName}", JobName);
+                    _unitOfWork.Rollback();
+                    await _unitOfWork.JobExecutionRepository.ReleaseAdvisoryLock(LockKey);
+                }
+            }
 
             await Task.Delay(TimeSpan.FromSeconds(_options.CheckForWithdrawnCertificatesIntervalInSeconds), stoppingToken);
         }
+
+        if (acquiredLock)
+        {
+            await _unitOfWork.JobExecutionRepository.ReleaseAdvisoryLock(LockKey);
+        }
+    }
+
+    private async Task<bool> HasBeenRunByOtherReplica()
+    {
+        var lastExecutionTime = await _unitOfWork.JobExecutionRepository.GetLastExecutionTime(JobName);
+        return lastExecutionTime != null && (DateTimeOffset.UtcNow - lastExecutionTime.Value).TotalSeconds < _options.TimeBeforeItIsOkToRunCheckForWithdrawnCertificatesAgain();
+    }
+
+    private async Task PerformPeriodicPublish(CancellationToken stoppingToken)
+    {
+        var willRunAt = DateTimeOffset.UtcNow.AddSeconds(_options.CheckForWithdrawnCertificatesIntervalInSeconds);
+        var message = new CheckForWithdrawnCertificatesCommand { };
+        await _bus.Publish(message, stoppingToken);
+
+        _logger.LogInformation("CheckForWithdrawnCertificatesCommand published at: {now}. Will run again at {willRunAt}", DateTime.Now, willRunAt);
     }
 }

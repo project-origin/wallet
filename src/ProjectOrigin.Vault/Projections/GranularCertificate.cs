@@ -65,7 +65,7 @@ public class GranularCertificate
 
     public void Apply(Electricity.V1.UnclaimedEvent e)
     {
-        if(!_allocationSlices.Remove(e.AllocationId))
+        if (!_allocationSlices.Remove(e.AllocationId))
             throw new InvalidOperationException("Invalid state");
         if (!_claimedSlices.Remove(e.AllocationId))
             throw new InvalidOperationException("Invalid state");

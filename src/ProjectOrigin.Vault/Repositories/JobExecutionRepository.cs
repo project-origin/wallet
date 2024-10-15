@@ -9,13 +9,15 @@ public interface IJobExecutionRepository
 {
     Task<DateTimeOffset?> GetLastExecutionTime(string jobName);
     Task UpdateLastExecutionTime(string jobName, DateTimeOffset executionTime);
+    Task<bool> AcquireAdvisoryLock(int jobKey);
+    Task ReleaseAdvisoryLock(int jobKey);
 }
 
 public class JobExecutionRepository : IJobExecutionRepository
 {
     private readonly IDbConnection _connection;
 
-    public JobExecutionRepository(IDbConnection connection) => this._connection = connection;
+    public JobExecutionRepository(IDbConnection connection) => _connection = connection;
 
 
     public async Task<DateTimeOffset?> GetLastExecutionTime(string jobName)
@@ -32,5 +34,15 @@ public class JobExecutionRepository : IJobExecutionRepository
             ON CONFLICT (job_name)
             DO UPDATE SET last_execution_time = EXCLUDED.last_execution_time";
         await _connection.ExecuteAsync(query, new { jobName, executionTime });
+    }
+
+    public async Task<bool> AcquireAdvisoryLock(int jobKey)
+    {
+        return await _connection.ExecuteScalarAsync<bool>("SELECT pg_try_advisory_lock(@lockId)", new { lockId = jobKey });
+    }
+
+    public async Task ReleaseAdvisoryLock(int jobKey)
+    {
+        await _connection.ExecuteAsync("SELECT pg_advisory_unlock(@lockId)", new { lockId = jobKey });
     }
 }
