@@ -18,6 +18,7 @@ public class GranularCertificate
     public Electricity.V1.DateInterval Period => _issued.Period;
     public IEnumerable<Electricity.V1.Attribute> Attributes => _issued.Attributes;
     public string GridArea => _issued.GridArea;
+    public bool Withdrawn { get; private set; } = false;
 
     public GranularCertificate(Electricity.V1.IssuedEvent e)
     {
@@ -55,6 +56,19 @@ public class GranularCertificate
         {
             AddAvailableSlice(newSlice.Quantity, newSlice.NewOwner);
         }
+    }
+
+    public void Apply(Electricity.V1.WithdrawnEvent e)
+    {
+        Withdrawn = true;
+    }
+
+    public void Apply(Electricity.V1.UnclaimedEvent e)
+    {
+        if(!_allocationSlices.Remove(e.AllocationId))
+            throw new InvalidOperationException("Invalid state");
+        if (!_claimedSlices.Remove(e.AllocationId))
+            throw new InvalidOperationException("Invalid state");
     }
 
     public CertificateSlice? GetCertificateSlice(ByteString id) => _availableSlices.GetValueOrDefault(id);

@@ -40,8 +40,5 @@ public class WithdrawnCursorRepository : IWithdrawnCursorRepository
                 syncPosition = withdrawnCursor.SyncPosition,
                 lastSyncDate = withdrawnCursor.LastSyncDate.ToUtcTime()
             });
-
-        if (rowsChanged != 1)
-            throw new InvalidOperationException($"Withdrawn cursor with stamp name {withdrawnCursor.StampName} could not be found");
     }
 }

@@ -30,11 +30,12 @@ public class PublishCheckForWithdrawnCertificatesCommandJob : BackgroundService
     {
         while (!stoppingToken.IsCancellationRequested)
         {
+            var willRunAt = DateTimeOffset.UtcNow.AddSeconds(_options.CheckForWithdrawnCertificatesIntervalInSeconds);
             var lastExecutionTime = await _unitOfWork.JobExecutionRepository.GetLastExecutionTime(nameof(PublishCheckForWithdrawnCertificatesCommandJob));
 
             if (lastExecutionTime != null && (DateTimeOffset.UtcNow - lastExecutionTime.Value).TotalSeconds < _options.TimeBeforeItIsOkToRunCheckForWithdrawnCertificatesAgain())
             {
-                _logger.LogInformation("PublishCheckForWithdrawnCertificatesCommandJob was executed at {now} but did not publish.", DateTime.Now);
+                _logger.LogInformation("PublishCheckForWithdrawnCertificatesCommandJob was executed at {now} but did not publish. Will run again at {willRunAt}", DateTime.Now, willRunAt);
                 return;
             }
 
@@ -44,7 +45,7 @@ public class PublishCheckForWithdrawnCertificatesCommandJob : BackgroundService
             var message = new CheckForWithdrawnCertificatesCommand { };
             await _bus.Publish(message, stoppingToken);
 
-            _logger.LogInformation("CheckForWithdrawnCertificatesCommand published at: {now}", DateTime.Now);
+            _logger.LogInformation("CheckForWithdrawnCertificatesCommand published at: {now}. Will run again at {willRunAt}", DateTime.Now, willRunAt);
 
             await Task.Delay(TimeSpan.FromSeconds(_options.CheckForWithdrawnCertificatesIntervalInSeconds), stoppingToken);
         }

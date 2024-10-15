@@ -128,7 +128,7 @@ public class VerifySliceCommandHandler : IConsumer<VerifySliceCommand>
                 GridArea = registryCertificateProjection.GridArea,
                 CertificateType = (GranularCertificateType)registryCertificateProjection.Type,
                 Attributes = attributes,
-                Withdrawn = false
+                Withdrawn = registryCertificateProjection.Withdrawn
             };
             await _unitOfWork.CertificateRepository.InsertCertificate(certificate);
         }
