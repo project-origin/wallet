@@ -9,6 +9,8 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using FluentAssertions;
+using FluentAssertions.Common;
+using ProjectOrigin.Vault.Jobs;
 using ProjectOrigin.Vault.Options;
 using ProjectOrigin.Vault.Tests.Extensions;
 using ProjectOrigin.Vault.Tests.TestClassFixtures;
@@ -332,6 +334,8 @@ public class JwtTests : IClassFixture<PostgresDatabaseFixture>, IClassFixture<In
 
         config = config.Concat(injectedConfig).Concat(_messageBrokerFixture.Configuration).ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
         server.ConfigureHostConfiguration(config);
+        server.ConfigureTestServices += services => services.Remove(services.First(s => s.ImplementationType == typeof(PublishCheckForWithdrawnCertificatesCommandJob)));
+
         return server;
     }
 }
