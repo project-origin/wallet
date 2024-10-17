@@ -63,9 +63,9 @@ public abstract class WalletSystemTestsBase : IClassFixture<TestServerFixture<St
                         }
                     }
             });
-            networkOptions.Stamps.Add(stampAndRegistryFixture.StampName, new StampInfo
+            networkOptions.Issuers.Add(stampAndRegistryFixture.StampName, new IssuerInfo
             {
-                Url = stampAndRegistryFixture.StampUrl
+                StampUrl = stampAndRegistryFixture.StampUrl
             });
             StampUrl = stampAndRegistryFixture.StampUrl;
             RegistryName = stampAndRegistryFixture.RegistryName;

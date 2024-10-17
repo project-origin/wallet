@@ -65,9 +65,9 @@ public class WithdrawCertificatesTests : IAsyncLifetime,
                 }
             }
         });
-        networkOptions.Stamps.Add(_stampAndRegistryFixture.StampName, new StampInfo
+        networkOptions.Issuers.Add(_stampAndRegistryFixture.StampName, new IssuerInfo
         {
-            Url = _stampAndRegistryFixture.StampUrlInNetwork
+            StampUrl = _stampAndRegistryFixture.StampUrlInNetwork
         });
 
         var configFile = networkOptions.ToTempYamlFile();

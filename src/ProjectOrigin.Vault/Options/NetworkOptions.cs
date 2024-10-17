@@ -6,7 +6,7 @@ public record NetworkOptions
 {
     public IDictionary<string, RegistryInfo> Registries { get; init; } = new Dictionary<string, RegistryInfo>();
     public IDictionary<string, AreaInfo> Areas { get; init; } = new Dictionary<string, AreaInfo>();
-    public IDictionary<string, StampInfo> Stamps { get; init; } = new Dictionary<string, StampInfo>();
+    public IDictionary<string, IssuerInfo> Issuers { get; init; } = new Dictionary<string, IssuerInfo>();
 }
 
 public record RegistryInfo
@@ -24,7 +24,7 @@ public record KeyInfo
     public required string PublicKey { get; init; }
 }
 
-public record StampInfo
+public record IssuerInfo
 {
-    public required string Url { get; init; }
+    public required string StampUrl { get; init; }
 }

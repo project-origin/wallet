@@ -37,7 +37,7 @@ public class CheckForWithdrawnCertificatesCommandHandler : IConsumer<CheckForWit
     public async Task Consume(ConsumeContext<CheckForWithdrawnCertificatesCommand> context)
     {
         var client = _httpClientFactory.CreateClient();
-        var stamps = _networkOptions.Stamps;
+        var stamps = _networkOptions.Issuers;
 
         foreach (var stamp in stamps)
         {
@@ -49,7 +49,7 @@ public class CheckForWithdrawnCertificatesCommandHandler : IConsumer<CheckForWit
                 LastSyncDate = DateTimeOffset.UtcNow
             };
 
-            var response = (await client.GetFromJsonAsync<ResultList<WithdrawnCertificateDto, PageInfo>>(stamp.Value.Url + $"/v1/certificates/withdrawn?lastWithdrawnId={matchingCursor.SyncPosition}"))!;
+            var response = (await client.GetFromJsonAsync<ResultList<WithdrawnCertificateDto, PageInfo>>(stamp.Value.StampUrl + $"/v1/certificates/withdrawn?lastWithdrawnId={matchingCursor.SyncPosition}"))!;
 
             if (!response.Result.Any())
             {
