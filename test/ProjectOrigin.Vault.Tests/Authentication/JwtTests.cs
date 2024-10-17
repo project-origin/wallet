@@ -9,7 +9,6 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using FluentAssertions;
-using FluentAssertions.Common;
 using ProjectOrigin.Vault.Jobs;
 using ProjectOrigin.Vault.Options;
 using ProjectOrigin.Vault.Tests.Extensions;
