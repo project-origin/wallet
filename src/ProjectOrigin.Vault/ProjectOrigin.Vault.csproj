@@ -30,13 +30,13 @@
     <PackageReference Include="Serilog.AspNetCore" Version="8.0.3" />
     <PackageReference Include="Serilog.Enrichers.Span" Version="3.1.0" />
     <PackageReference Include="Serilog.Expressions" Version="5.0.0" />
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.8.1" />
-    <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="6.8.1" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.9.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="6.9.0" />
   </ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Include="Database\Postgres\Scripts\v1\*.sql">
-      <LogicalName>ProjectOrigin.Vault.Database.Scripts.%(Filename)%(Extension)</LogicalName>
+      <LogicalName>ProjectOrigin.WalletSystem.Server.Database.Scripts.%(Filename)%(Extension)</LogicalName>
     </EmbeddedResource>
     <EmbeddedResource Include="Database\Postgres\Scripts\v2\*.sql">
       <LogicalName>Scripts.V2.%(Filename)%(Extension)</LogicalName>

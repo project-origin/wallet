@@ -55,7 +55,7 @@ rabbitmq:
     #   name:
     #   key:
   # port defines the port of the rabbitmq server
-  port: 5672
+  port:
     # secretRef:
     #   name:
     #   key:
@@ -94,7 +94,7 @@ postgresql:
     #   name:
     #   key:
   # port defines the port of the postgresql database
-  port: 5432
+  port:
     # secretRef:
     #   name:
     #   key:
