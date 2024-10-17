@@ -29,7 +29,12 @@ public class UnitOfWork : IUnitOfWork, IDisposable
             return connection;
         });
 
-        _lazyTransaction = new Lazy<IDbTransaction>(_lazyConnection.Value.BeginTransaction);
+        _lazyTransaction = new Lazy<IDbTransaction>(() =>
+        {
+            if (_lazyConnection.IsValueCreated)
+                return _lazyConnection.Value.BeginTransaction();
+            throw new InvalidOperationException("Connection must be opened before creating a transaction.");
+        });
     }
 
     public void Commit()
@@ -70,6 +75,11 @@ public class UnitOfWork : IUnitOfWork, IDisposable
         }
         else
         {
+            if (!_lazyConnection.IsValueCreated)
+            {
+                var connection = _lazyConnection.Value;
+            }
+
             var newRepository = factory(_lazyTransaction.Value.Connection ?? throw new InvalidOperationException("Transaction is null."));
             _repositories.Add(typeof(T), newRepository);
             return newRepository;
