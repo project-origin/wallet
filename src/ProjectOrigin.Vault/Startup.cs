@@ -24,6 +24,7 @@ using System.IO;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using ProjectOrigin.Vault.Jobs;
 
 namespace ProjectOrigin.Vault;
 
@@ -67,6 +68,11 @@ public class Startup
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
+        services.AddOptions<JobOptions>()
+            .BindConfiguration(JobOptions.Job)
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
         services.ConfigurePersistance(_configuration);
         services.ConfigureAuthentication(_configuration.GetValidSection<AuthOptions>(AuthOptions.Prefix));
         services.ConfigureOtlp(_configuration.GetValidSection<OtlpOptions>(OtlpOptions.Prefix));
@@ -102,6 +108,8 @@ public class Startup
                     .Handle<TransientException>());
             });
 
+            o.AddConsumer<CheckForWithdrawnCertificatesCommandHandler>();
+
             o.AddActivitiesFromNamespaceContaining<TransferFullSliceActivity>();
             o.AddExecuteActivity<WaitCommittedRegistryTransactionActivity, WaitCommittedTransactionArguments>((rc, cfg) =>
             {
@@ -132,6 +140,8 @@ public class Startup
 
         services.AddHttpClient();
         services.ConfigureUriOptionsLoader<NetworkOptions>("network");
+
+        services.AddHostedService<PublishCheckForWithdrawnCertificatesCommandJob>();
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

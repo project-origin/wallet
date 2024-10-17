@@ -92,6 +92,50 @@ public class GranularCertificateProjectorTests
         certificate.Should().NotBeNull();
     }
 
+    [Fact]
+    public void Project_WhenIssuedSlicedAndWithdrawn_ReturnsCertificate()
+    {
+        // Arrange
+        var ownerKey = Algorithms.Secp256k1.GenerateNewPrivateKey();
+        var issuerKey = Algorithms.Ed25519.GenerateNewPrivateKey();
+
+        var id = new Common.V1.FederatedStreamId
+        {
+            Registry = _fixture.Create<string>(),
+            StreamId = new Common.V1.Uuid { Value = Guid.NewGuid().ToString() }
+        };
+
+        var issuedSize = new SecretCommitmentInfo(150);
+        var issued = Issue(id, issuedSize, ownerKey.Derive(1).PublicKey);
+
+        var sliceA = new SecretCommitmentInfo(100);
+        var sliceB = new SecretCommitmentInfo(100);
+        var sliced = Slice(id, issuedSize, sliceA, sliceB, ownerKey.Derive(1).PublicKey);
+
+        var withdraw = Withdraw();
+
+        var projector = new GranularCertificateProjector();
+        var eventStream = new List<Registry.V1.Transaction>
+        {
+            CreateAndSignTransaction(id, issued, issuerKey),
+            CreateAndSignTransaction(id, sliced, ownerKey.Derive(1)),
+            CreateAndSignTransaction(id, withdraw, ownerKey.Derive(2))
+        };
+
+        // Act
+        var certificate = projector.Project(eventStream);
+
+        // Assert
+        certificate.Should().NotBeNull();
+        certificate.Withdrawn.Should().BeTrue();
+    }
+
+    private static Electricity.V1.WithdrawnEvent Withdraw()
+    {
+        return new Electricity.V1.WithdrawnEvent
+        { };
+    }
+
     private static Electricity.V1.IssuedEvent Issue(Common.V1.FederatedStreamId id, SecretCommitmentInfo commitment, IPublicKey publicKey)
     {
         return new Electricity.V1.IssuedEvent

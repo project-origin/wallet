@@ -29,24 +29,25 @@ public class RegistryFixture : IAsyncLifetime
     private const string ElectricityVerifierImage = "ghcr.io/project-origin/electricity-server:1.3.2";
     private const int RabbitMqHttpPort = 15672;
     private const int GrpcPort = 5000;
-    private const string Area = "Narnia";
-    private const string RegistryName = "TestRegistry";
     private const string RegistryAlias = "registry-container";
     private const string VerifierAlias = "verifier-container";
     private const string RegistryPostgresAlias = "registry-postgres-container";
     private const string RabbitMqAlias = "rabbitmq-container";
+    private const string Area = "Narnia";
 
-    private readonly INetwork _network;
     private readonly IContainer _registryContainer;
     private readonly IContainer _verifierContainer;
     private readonly PostgreSqlContainer _registryPostgresContainer;
     private readonly IContainer _rabbitMqContainer;
     private readonly IFutureDockerImage _rabbitMqImage;
 
+    public readonly INetwork Network;
+
     public string IssuerArea => Area;
-    public string Name => RegistryName;
+    public string RegistryName => "TestRegistry";
     public IPrivateKey IssuerKey { get; init; }
     public string RegistryUrl => $"http://{_registryContainer.Hostname}:{_registryContainer.GetMappedPublicPort(GrpcPort)}";
+    public string RegistryUrlWithinNetwork => $"http://{RegistryAlias}:{GrpcPort}";
 
     public RegistryFixture()
     {
@@ -62,7 +63,7 @@ public class RegistryFixture : IAsyncLifetime
               - publicKey: "{Convert.ToBase64String(Encoding.UTF8.GetBytes(IssuerKey.PublicKey.ExportPkixText()))}"
         """, ".yaml");
 
-        _network = new NetworkBuilder()
+        Network = new NetworkBuilder()
             .WithName(Guid.NewGuid().ToString())
             .Build();
 
@@ -73,14 +74,14 @@ public class RegistryFixture : IAsyncLifetime
 
         _rabbitMqContainer = new RabbitMqBuilder()
             .WithImage(_rabbitMqImage)
-            .WithNetwork(_network)
+            .WithNetwork(Network)
             .WithNetworkAliases(RabbitMqAlias)
             .WithPortBinding(RabbitMqHttpPort, true)
             .Build();
 
         _verifierContainer = new ContainerBuilder()
                 .WithImage(ElectricityVerifierImage)
-                .WithNetwork(_network)
+                .WithNetwork(Network)
                 .WithNetworkAliases(VerifierAlias)
                 .WithPortBinding(GrpcPort, true)
                 .WithCommand("--serve")
@@ -91,14 +92,14 @@ public class RegistryFixture : IAsyncLifetime
 
         _registryPostgresContainer = new PostgreSqlBuilder()
             .WithImage("postgres:15")
-            .WithNetwork(_network)
+            .WithNetwork(Network)
             .WithNetworkAliases(RegistryPostgresAlias)
             .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(5432))
             .Build();
 
         _registryContainer = new ContainerBuilder()
                     .WithImage(RegistryImage)
-                    .WithNetwork(_network)
+                    .WithNetwork(Network)
                     .WithNetworkAliases(RegistryAlias)
                     .WithPortBinding(GrpcPort, true)
                     .WithCommand("--migrate", "--serve")
@@ -122,12 +123,12 @@ public class RegistryFixture : IAsyncLifetime
                     .Build();
     }
 
-    public async Task InitializeAsync()
+    public virtual async Task InitializeAsync()
     {
         await _rabbitMqImage.CreateAsync()
             .ConfigureAwait(false);
 
-        await _network.CreateAsync()
+        await Network.CreateAsync()
             .ConfigureAwait(false);
 
         await _registryPostgresContainer.StartWithLoggingAsync()
@@ -143,7 +144,7 @@ public class RegistryFixture : IAsyncLifetime
             .ConfigureAwait(false);
     }
 
-    public async Task DisposeAsync()
+    public virtual async Task DisposeAsync()
     {
         await _registryContainer.StopAsync().ConfigureAwait(false);
         await _verifierContainer.StopAsync().ConfigureAwait(false);
@@ -155,8 +156,8 @@ public class RegistryFixture : IAsyncLifetime
         await _rabbitMqContainer.DisposeAsync().ConfigureAwait(false);
         await _registryPostgresContainer.DisposeAsync().ConfigureAwait(false);
 
-        await _network.DeleteAsync().ConfigureAwait(false);
-        await _network.DisposeAsync().ConfigureAwait(false);
+        await Network.DeleteAsync().ConfigureAwait(false);
+        await Network.DisposeAsync().ConfigureAwait(false);
     }
 
     public async Task<Electricity.V1.IssuedEvent> IssueCertificate(

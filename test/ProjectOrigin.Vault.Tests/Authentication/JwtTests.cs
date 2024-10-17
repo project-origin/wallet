@@ -9,7 +9,9 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using FluentAssertions;
+using ProjectOrigin.Vault.Jobs;
 using ProjectOrigin.Vault.Options;
+using ProjectOrigin.Vault.Tests.Extensions;
 using ProjectOrigin.Vault.Tests.TestClassFixtures;
 using WireMock.RequestBuilders;
 using WireMock.ResponseBuilders;
@@ -154,7 +156,7 @@ public class JwtTests : IClassFixture<PostgresDatabaseFixture>, IClassFixture<In
         };
 
         using TestServerFixture<Startup> server = CreateServer(jwtConfiguration);
-        server.GetTestLogger(_outputHelper);
+        using var logger = server.GetTestLogger(_outputHelper);
 
         // Act
         var result = await CreateWallet(jwtTokenIssuerFixture, server);
@@ -176,7 +178,7 @@ public class JwtTests : IClassFixture<PostgresDatabaseFixture>, IClassFixture<In
         };
 
         using TestServerFixture<Startup> server = CreateServer(jwtConfiguration);
-        server.GetTestLogger(_outputHelper);
+        using var logger = server.GetTestLogger(_outputHelper);
 
         // Act
         var testMethod = () => CreateWallet(jwtTokenIssuerFixture, server);
@@ -201,7 +203,7 @@ public class JwtTests : IClassFixture<PostgresDatabaseFixture>, IClassFixture<In
         };
 
         using TestServerFixture<Startup> server = CreateServer(jwtConfiguration);
-        server.GetTestLogger(_outputHelper);
+        using var logger = server.GetTestLogger(_outputHelper);
 
         // Act
         var testMethod = () => CreateWallet(jwtTokenIssuerFixture, server);
@@ -229,7 +231,7 @@ public class JwtTests : IClassFixture<PostgresDatabaseFixture>, IClassFixture<In
         };
 
         using TestServerFixture<Startup> server = CreateServer(jwtConfiguration);
-        server.GetTestLogger(_outputHelper);
+        using var logger = server.GetTestLogger(_outputHelper);
 
         // Act
         var testMethod = () => CreateWallet(jwtTokenIssuerFixture, server);
@@ -263,7 +265,7 @@ public class JwtTests : IClassFixture<PostgresDatabaseFixture>, IClassFixture<In
         };
 
         using TestServerFixture<Startup> server = CreateServer(jwtConfiguration);
-        server.GetTestLogger(_outputHelper);
+        using var logger = server.GetTestLogger(_outputHelper);
 
         // Act
         var result = await CreateWallet(jwtTokenIssuerFixture, server);
@@ -296,7 +298,7 @@ public class JwtTests : IClassFixture<PostgresDatabaseFixture>, IClassFixture<In
         };
 
         using TestServerFixture<Startup> server = CreateServer(jwtConfiguration);
-        server.GetTestLogger(_outputHelper);
+        using var logger = server.GetTestLogger(_outputHelper);
 
         var invalidIssuer = new JwtTokenIssuerFixture();
 
@@ -325,11 +327,14 @@ public class JwtTests : IClassFixture<PostgresDatabaseFixture>, IClassFixture<In
             {"ConnectionStrings:Database", _dbFixture.ConnectionString},
             {"ServiceOptions:EndpointAddress", "http://dummy.com/"},
             {"VerifySlicesWorkerOptions:SleepTime", "00:00:02"},
-            {"network:ConfigurationUri", new NetworkOptions().ToTempYamlFileUri() }
+            {"network:ConfigurationUri", new NetworkOptions().ToTempYamlFileUri() },
+            {"Job:CheckForWithdrawnCertificatesIntervalInSeconds", "5"}
         };
 
         config = config.Concat(injectedConfig).Concat(_messageBrokerFixture.Configuration).ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
         server.ConfigureHostConfiguration(config);
+        server.ConfigureTestServices += services => services.Remove(services.First(s => s.ImplementationType == typeof(PublishCheckForWithdrawnCertificatesCommandJob)));
+
         return server;
     }
 }

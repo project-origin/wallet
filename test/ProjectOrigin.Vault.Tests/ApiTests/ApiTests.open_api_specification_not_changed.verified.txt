@@ -111,7 +111,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Returns the aggregated claims.",
+            "description": "Returns the aggregated certificates.",
             "content": {
               "application/json": {
                 "schema": {
@@ -197,7 +197,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Returns the aggregated claims.",
+            "description": "Returns the aggregated certificates.",
             "content": {
               "application/json": {
                 "schema": {
@@ -285,7 +285,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Returns the aggregated claims.",
+            "description": "Returns the aggregated certificates.",
             "content": {
               "application/json": {
                 "schema": {
