@@ -2,11 +2,13 @@ using System;
 using System.Collections.Generic;
 using MassTransit;
 using MassTransit.Courier.Contracts;
+using Microsoft.Extensions.Options;
 using ProjectOrigin.Registry.V1;
 using ProjectOrigin.Vault.Activities;
 using ProjectOrigin.Vault.Database;
 using ProjectOrigin.Vault.Extensions;
 using ProjectOrigin.Vault.Models;
+using ProjectOrigin.Vault.Options;
 
 namespace ProjectOrigin.Vault;
 
@@ -17,13 +19,15 @@ public partial class RegistryProcessBuilder : IRegistryProcessBuilder
     private readonly Guid _routingSlipId;
     private readonly string _owner;
     private readonly IRoutingSlipBuilder _slipBuilder;
+    private readonly IOptions<NetworkOptions> _networkOptions;
 
-    public RegistryProcessBuilder(IUnitOfWork unitOfWork, IEndpointNameFormatter formatter, Guid routingSlipId, string owner)
+    public RegistryProcessBuilder(IUnitOfWork unitOfWork, IEndpointNameFormatter formatter, Guid routingSlipId, IOptions<NetworkOptions> networkOptions, string owner)
     {
         _unitOfWork = unitOfWork;
         _formatter = formatter;
         _routingSlipId = routingSlipId;
         _owner = owner;
+        _networkOptions = networkOptions;
         _slipBuilder = new RoutingSlipBuilder(routingSlipId);
     }
 
