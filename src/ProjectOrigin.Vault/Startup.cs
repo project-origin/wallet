@@ -145,7 +145,6 @@ public class Startup
         services.AddHostedService<PublishCheckForWithdrawnCertificatesCommandJob>();
     }
 
-
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
     {
         PrintNetworkOptions(app);
