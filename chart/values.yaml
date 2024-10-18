@@ -272,3 +272,8 @@ retry:
   registryTransactionStillProcessingInitialIntervalSeconds: 60
   # registryTransactionStillProcessingIntervalIncrementSeconds defines the interval increment in seconds for retrying registry transactions that are still processing
   registryTransactionStillProcessingIntervalIncrementSeconds: 60
+
+# job holds configuration for jobs
+job:
+  # checkForWithdrawnCertificatesIntervalInSeconds how many seconds to wait between checking for withdrawn certificates
+  checkForWithdrawnCertificatesIntervalInSeconds: 900
