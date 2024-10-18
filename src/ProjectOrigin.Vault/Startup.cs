@@ -24,6 +24,7 @@ using System.IO;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.Extensions.Logging;
 using ProjectOrigin.Vault.Jobs;
 
 namespace ProjectOrigin.Vault;
@@ -144,8 +145,11 @@ public class Startup
         services.AddHostedService<PublishCheckForWithdrawnCertificatesCommandJob>();
     }
 
+
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
     {
+        PrintNetworkOptions(app);
+
         var pathBase = app.ApplicationServices.GetRequiredService<IOptions<ServiceOptions>>().Value.PathBase;
         app.UsePathBase(pathBase);
 
@@ -162,5 +166,12 @@ public class Startup
         });
 
         app.ConfigureSqlMappers();
+    }
+
+    private void PrintNetworkOptions(IApplicationBuilder app)
+    {
+        var logger = app.ApplicationServices.GetRequiredService<ILogger<Startup>>();
+        var options = app.ApplicationServices.GetRequiredService<IOptions<NetworkOptions>>().Value;
+        logger.LogInformation(options.ToString());
     }
 }
