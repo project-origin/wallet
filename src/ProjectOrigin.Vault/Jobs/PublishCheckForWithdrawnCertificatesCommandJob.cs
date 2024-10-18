@@ -49,6 +49,7 @@ public class PublishCheckForWithdrawnCertificatesCommandJob : BackgroundService
                         var willRunAt = DateTimeOffset.UtcNow.AddSeconds(_options.CheckForWithdrawnCertificatesIntervalInSeconds);
                         _logger.LogInformation("PublishCheckForWithdrawnCertificatesCommandJob was executed at {now} but did not publish. Will run again at {willRunAt}", DateTime.Now, willRunAt);
                         await _unitOfWork.JobExecutionRepository.ReleaseAdvisoryLock(LockKey);
+                        await Sleep(stoppingToken);
                         continue;
                     }
 
@@ -67,7 +68,7 @@ public class PublishCheckForWithdrawnCertificatesCommandJob : BackgroundService
                 }
             }
 
-            await Task.Delay(TimeSpan.FromSeconds(_options.CheckForWithdrawnCertificatesIntervalInSeconds), stoppingToken);
+            await Sleep(stoppingToken);
         }
 
         if (acquiredLock)
@@ -89,5 +90,10 @@ public class PublishCheckForWithdrawnCertificatesCommandJob : BackgroundService
         await _bus.Publish(message, stoppingToken);
 
         _logger.LogInformation("CheckForWithdrawnCertificatesCommand published at: {now}. Will run again at {willRunAt}", DateTime.Now, willRunAt);
+    }
+
+    private async Task Sleep(CancellationToken stoppingToken)
+    {
+        await Task.Delay(TimeSpan.FromSeconds(_options.CheckForWithdrawnCertificatesIntervalInSeconds), stoppingToken);
     }
 }
