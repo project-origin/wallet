@@ -125,6 +125,8 @@ postgresql:
     # configMapRef:
     #   name:
     #   key:
+  # maxPoolSize defines the maximum connection pool size pr replica
+  maxPoolSize: 30
 
 # vault holds the configuration for the vault deployment
 vault:

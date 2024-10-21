@@ -32,7 +32,7 @@ public class WithdrawnCursorRepository : IWithdrawnCursorRepository
             ON CONFLICT (stamp_name)
             DO UPDATE SET sync_position = EXCLUDED.sync_position, last_sync_date = EXCLUDED.last_sync_date";
 
-        var rowsChanged = await _connection.ExecuteAsync(sql,
+        await _connection.ExecuteAsync(sql,
             new
             {
                 stampName = withdrawnCursor.StampName,
