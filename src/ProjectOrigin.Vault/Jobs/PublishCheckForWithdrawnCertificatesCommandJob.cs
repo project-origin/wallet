@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using MassTransit;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -14,18 +15,18 @@ namespace ProjectOrigin.Vault.Jobs;
 public class PublishCheckForWithdrawnCertificatesCommandJob : BackgroundService
 {
     private readonly IBus _bus;
-    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<PublishCheckForWithdrawnCertificatesCommandJob> _logger;
+    private readonly IServiceScopeFactory _scopeFactory;
     private readonly JobOptions _options;
 
     private const int LockKey = (int)JobKeys.PublishCheckForWithdrawnCertificatesCommandJob;
     private const string JobName = nameof(PublishCheckForWithdrawnCertificatesCommandJob);
 
-    public PublishCheckForWithdrawnCertificatesCommandJob(IBus bus, IUnitOfWork unitOfWork, IOptions<JobOptions> options, ILogger<PublishCheckForWithdrawnCertificatesCommandJob> logger)
+    public PublishCheckForWithdrawnCertificatesCommandJob(IBus bus, IOptions<JobOptions> options, ILogger<PublishCheckForWithdrawnCertificatesCommandJob> logger, IServiceScopeFactory scopeFactory)
     {
         _bus = bus;
-        _unitOfWork = unitOfWork;
         _logger = logger;
+        _scopeFactory = scopeFactory;
         _options = options.Value;
     }
 
@@ -34,48 +35,55 @@ public class PublishCheckForWithdrawnCertificatesCommandJob : BackgroundService
         while (!stoppingToken.IsCancellationRequested)
         {
             var acquiredLock = false;
-            try
-            {
-                acquiredLock = await _unitOfWork.JobExecutionRepository.AcquireAdvisoryLock(LockKey);
 
-                if (acquiredLock)
+            using (var scope = _scopeFactory.CreateScope())
+            {
+                var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+                try
                 {
-                    if (await HasBeenRunByOtherReplica())
+                    acquiredLock = await unitOfWork.JobExecutionRepository.AcquireAdvisoryLock(LockKey);
+
+                    if (acquiredLock)
                     {
-                        var willRunAt =
-                            DateTimeOffset.UtcNow.AddSeconds(_options.CheckForWithdrawnCertificatesIntervalInSeconds);
-                        _logger.LogInformation(
-                            "PublishCheckForWithdrawnCertificatesCommandJob was executed at {now} but did not publish. Will run again at {willRunAt}",
-                            DateTime.Now, willRunAt);
-                        continue;
+                        if (await HasBeenRunByOtherReplica(unitOfWork))
+                        {
+                            var willRunAt =
+                                DateTimeOffset.UtcNow.AddSeconds(_options.CheckForWithdrawnCertificatesIntervalInSeconds);
+                            _logger.LogInformation(
+                                "PublishCheckForWithdrawnCertificatesCommandJob was executed at {now} but did not publish. Will run again at {willRunAt}",
+                                DateTime.Now, willRunAt);
+                            continue;
+                        }
+
+                        await PerformPeriodicPublish(stoppingToken);
+
+                        await unitOfWork.JobExecutionRepository.UpdateLastExecutionTime(JobName, DateTimeOffset.UtcNow);
+                        unitOfWork.Commit();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "An error occurred while executing {JobName}", JobName);
+                    unitOfWork.Rollback();
+                }
+                finally
+                {
+                    if (acquiredLock)
+                    {
+                        await unitOfWork.JobExecutionRepository.ReleaseAdvisoryLock(LockKey);
                     }
 
-                    await PerformPeriodicPublish(stoppingToken);
-
-                    await _unitOfWork.JobExecutionRepository.UpdateLastExecutionTime(JobName, DateTimeOffset.UtcNow);
-                    _unitOfWork.Commit();
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "An error occurred while executing {JobName}", JobName);
-                _unitOfWork.Rollback();
-            }
-            finally
-            {
-                if (acquiredLock)
-                {
-                    await _unitOfWork.JobExecutionRepository.ReleaseAdvisoryLock(LockKey);
+                    await Sleep(stoppingToken);
                 }
 
-                await Sleep(stoppingToken);
             }
+
         }
     }
 
-    private async Task<bool> HasBeenRunByOtherReplica()
+    private async Task<bool> HasBeenRunByOtherReplica(IUnitOfWork unitOfWork)
     {
-        var lastExecutionTime = await _unitOfWork.JobExecutionRepository.GetLastExecutionTime(JobName);
+        var lastExecutionTime = await unitOfWork.JobExecutionRepository.GetLastExecutionTime(JobName);
         return lastExecutionTime != null && (DateTimeOffset.UtcNow - lastExecutionTime.Value).TotalSeconds < _options.TimeBeforeItIsOkToRunCheckForWithdrawnCertificatesAgain();
     }
 
