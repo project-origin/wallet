@@ -31,25 +31,22 @@ public class PublishCheckForWithdrawnCertificatesCommandJob : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        bool acquiredLock = false;
-
         while (!stoppingToken.IsCancellationRequested)
         {
-            if (!acquiredLock)
+            var acquiredLock = false;
+            try
             {
                 acquiredLock = await _unitOfWork.JobExecutionRepository.AcquireAdvisoryLock(LockKey);
-            }
 
-            if (acquiredLock)
-            {
-                try
+                if (acquiredLock)
                 {
                     if (await HasBeenRunByOtherReplica())
                     {
-                        var willRunAt = DateTimeOffset.UtcNow.AddSeconds(_options.CheckForWithdrawnCertificatesIntervalInSeconds);
-                        _logger.LogInformation("PublishCheckForWithdrawnCertificatesCommandJob was executed at {now} but did not publish. Will run again at {willRunAt}", DateTime.Now, willRunAt);
-                        await _unitOfWork.JobExecutionRepository.ReleaseAdvisoryLock(LockKey);
-                        await Sleep(stoppingToken);
+                        var willRunAt =
+                            DateTimeOffset.UtcNow.AddSeconds(_options.CheckForWithdrawnCertificatesIntervalInSeconds);
+                        _logger.LogInformation(
+                            "PublishCheckForWithdrawnCertificatesCommandJob was executed at {now} but did not publish. Will run again at {willRunAt}",
+                            DateTime.Now, willRunAt);
                         continue;
                     }
 
@@ -57,23 +54,22 @@ public class PublishCheckForWithdrawnCertificatesCommandJob : BackgroundService
 
                     await _unitOfWork.JobExecutionRepository.UpdateLastExecutionTime(JobName, DateTimeOffset.UtcNow);
                     _unitOfWork.Commit();
-
-                    await _unitOfWork.JobExecutionRepository.ReleaseAdvisoryLock(LockKey);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "An error occurred while executing {JobName}", JobName);
-                    _unitOfWork.Rollback();
-                    await _unitOfWork.JobExecutionRepository.ReleaseAdvisoryLock(LockKey);
                 }
             }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred while executing {JobName}", JobName);
+                _unitOfWork.Rollback();
+            }
+            finally
+            {
+                if (acquiredLock)
+                {
+                    await _unitOfWork.JobExecutionRepository.ReleaseAdvisoryLock(LockKey);
+                }
 
-            await Sleep(stoppingToken);
-        }
-
-        if (acquiredLock)
-        {
-            await _unitOfWork.JobExecutionRepository.ReleaseAdvisoryLock(LockKey);
+                await Sleep(stoppingToken);
+            }
         }
     }
 
