@@ -10,7 +10,9 @@
   {{- include "common.setValue" (list .Values.postgresql.username ".postgresql.username") | nindent 2 }}
 - name: DB_PASSWORD
   {{- include "common.setValue" (list .Values.postgresql.password ".postgresql.password") | nindent 2 }}
+- name: DB_MAXPOOLSIZE
+  {{- include "common.setValue" (list .Values.postgresql.maxPoolSize ".postgresql.maxPoolSize") | nindent 2 }}
 - name: ConnectionStrings__Database
-  value: Host=$(DB_HOST); Port=$(DB_PORT); Database=$(DB_DATABASE); Username=$(DB_USERNAME); Password=$(DB_PASSWORD);
+  value: Host=$(DB_HOST); Port=$(DB_PORT); Database=$(DB_DATABASE); Username=$(DB_USERNAME); Password=$(DB_PASSWORD); Pooling=true; MaxPoolSize=$(DB_MAXPOOLSIZE);
 {{- end }}
 
