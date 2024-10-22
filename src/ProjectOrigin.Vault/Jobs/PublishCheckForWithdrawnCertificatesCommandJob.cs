@@ -72,12 +72,10 @@ public class PublishCheckForWithdrawnCertificatesCommandJob : BackgroundService
                     {
                         await unitOfWork.JobExecutionRepository.ReleaseAdvisoryLock(LockKey);
                     }
-
-                    await Sleep(stoppingToken);
                 }
-
             }
 
+            await Sleep(stoppingToken);
         }
     }
 
