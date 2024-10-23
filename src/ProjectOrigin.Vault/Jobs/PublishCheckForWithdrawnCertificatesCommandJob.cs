@@ -34,48 +34,48 @@ public class PublishCheckForWithdrawnCertificatesCommandJob : BackgroundService
     {
         while (!stoppingToken.IsCancellationRequested)
         {
-            var acquiredLock = false;
-
-            using (var scope = _scopeFactory.CreateScope())
+            try
             {
-                var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-                try
+                using (var scope = _scopeFactory.CreateScope())
                 {
-                    acquiredLock = await unitOfWork.JobExecutionRepository.AcquireAdvisoryLock(LockKey);
+                    var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+
+                    var acquiredLock = await unitOfWork.JobExecutionRepository.AcquireAdvisoryLock(LockKey);
 
                     if (acquiredLock)
                     {
-                        if (await HasBeenRunByOtherReplica(unitOfWork))
+                        try
                         {
-                            var willRunAt =
-                                DateTimeOffset.UtcNow.AddSeconds(_options.CheckForWithdrawnCertificatesIntervalInSeconds);
-                            _logger.LogInformation(
-                                "PublishCheckForWithdrawnCertificatesCommandJob was executed at {now} but did not publish. Will run again at {willRunAt}",
-                                DateTime.Now, willRunAt);
-                            continue;
+                            if (await HasBeenRunByOtherReplica(unitOfWork))
+                            {
+                                var willRunAt = DateTimeOffset.UtcNow.AddSeconds(_options.CheckForWithdrawnCertificatesIntervalInSeconds);
+                                _logger.LogInformation(
+                                    "PublishCheckForWithdrawnCertificatesCommandJob was executed at {now} but did not publish. Will run again at {willRunAt}",
+                                    DateTime.Now, willRunAt);
+                            }
+                            else
+                            {
+                                await PerformPeriodicPublish(stoppingToken);
+
+                                await unitOfWork.JobExecutionRepository.UpdateLastExecutionTime(JobName, DateTimeOffset.UtcNow);
+                                unitOfWork.Commit();
+                            }
                         }
-
-                        await PerformPeriodicPublish(stoppingToken);
-
-                        await unitOfWork.JobExecutionRepository.UpdateLastExecutionTime(JobName, DateTimeOffset.UtcNow);
-                        unitOfWork.Commit();
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "An error occurred while executing {JobName}", JobName);
-                    unitOfWork.Rollback();
-                }
-                finally
-                {
-                    if (acquiredLock)
-                    {
-                        await unitOfWork.JobExecutionRepository.ReleaseAdvisoryLock(LockKey);
+                        finally
+                        {
+                            await unitOfWork.JobExecutionRepository.ReleaseAdvisoryLock(LockKey);
+                        }
                     }
                 }
             }
-
-            await Sleep(stoppingToken);
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred while executing {JobName}", JobName);
+            }
+            finally
+            {
+                await Sleep(stoppingToken);
+            }
         }
     }
 
