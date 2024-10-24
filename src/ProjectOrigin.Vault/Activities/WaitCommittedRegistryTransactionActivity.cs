@@ -17,10 +17,9 @@ public record WaitCommittedTransactionArguments
 {
     public required string RegistryName { get; set; }
     public required string TransactionId { get; set; }
-    public required Guid RequestId { get; set; }
-    public required string Owner { get; set; }
     public required Guid CertificateId { get; set; }
     public required Guid SliceId { get; set; }
+    public RequestStatusArgs? RequestStatusArgs { get; set; }
 }
 
 public class WaitCommittedRegistryTransactionActivity : IExecuteActivity<WaitCommittedTransactionArguments>
@@ -63,8 +62,11 @@ public class WaitCommittedRegistryTransactionActivity : IExecuteActivity<WaitCom
             else if (status.Status == TransactionState.Failed)
             {
                 _logger.LogCritical("Transaction failed on registry. Certificate id {certificateId}, slice id: {sliceId}. Message: {message}", context.Arguments.CertificateId, context.Arguments.SliceId, status.Message);
-                await _unitOfWork.RequestStatusRepository.SetRequestStatus(context.Arguments.RequestId, context.Arguments.Owner, RequestStatusState.Failed, failedReason: "Transaction failed on registry.");
-                _unitOfWork.Commit();
+                if (context.Arguments.RequestStatusArgs != null)
+                {
+                    await _unitOfWork.RequestStatusRepository.SetRequestStatus(context.Arguments.RequestStatusArgs.RequestId, context.Arguments.RequestStatusArgs.Owner, RequestStatusState.Failed, failedReason: "Transaction failed on registry.");
+                    _unitOfWork.Commit();
+                }
                 return context.Faulted(new InvalidRegistryTransactionException($"Transaction failed on registry. Certificate id {context.Arguments.CertificateId}, slice id: {context.Arguments.SliceId}. Message: {status.Message}"));
             }
             else
@@ -81,8 +83,11 @@ public class WaitCommittedRegistryTransactionActivity : IExecuteActivity<WaitCom
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to get requestStatus from registry.");
-            await _unitOfWork.RequestStatusRepository.SetRequestStatus(context.Arguments.RequestId, context.Arguments.Owner, RequestStatusState.Failed, failedReason: "General error. Failed to get requestStatus from registry.");
-            _unitOfWork.Commit();
+            if (context.Arguments.RequestStatusArgs != null)
+            {
+                await _unitOfWork.RequestStatusRepository.SetRequestStatus(context.Arguments.RequestStatusArgs.RequestId, context.Arguments.RequestStatusArgs.Owner, RequestStatusState.Failed, failedReason: "General error. Failed to get requestStatus from registry.");
+                _unitOfWork.Commit();
+            }
             return context.Faulted(ex);
         }
     }

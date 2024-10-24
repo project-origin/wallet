@@ -14,4 +14,5 @@ public interface IClaimRepository
     Task<PageResult<ClaimViewModel>> QueryClaims(QueryClaimsFilter filter);
     Task<PageResultCursor<ClaimViewModel>> QueryClaimsCursor(QueryClaimsFilterCursor filter);
     Task<PageResult<AggregatedClaimViewModel>> QueryAggregatedClaims(QueryAggregatedClaimsFilter filter);
+    Task<Claim> GetClaimFromSliceId(Guid sliceId);
 }

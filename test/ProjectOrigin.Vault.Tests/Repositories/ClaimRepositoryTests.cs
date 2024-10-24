@@ -76,6 +76,32 @@ public class ClaimRepositoryTests : AbstractRepositoryTests
         result.Items.Should().BeEmpty();
     }
 
+    [Fact]
+    public async Task GetClaimFromSliceId_WhenNotClaimed_ThrowsException()
+    {
+        var act = () => _claimRepository.GetClaimFromSliceId(Guid.NewGuid());
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+    }
+
+    [Fact]
+    public async Task GetClaimFromSliceId()
+    {
+        var owner = _fixture.Create<string>();
+        var (conSliceId, prodSliceId) = await CreateClaimsAndGetSliceIds(owner);
+
+        var claimFromConSlice = await _claimRepository.GetClaimFromSliceId(conSliceId);
+        claimFromConSlice.Should().NotBeNull();
+        claimFromConSlice.ProductionSliceId.Should().Be(prodSliceId);
+        claimFromConSlice.ConsumptionSliceId.Should().Be(conSliceId);
+
+        var claimFromProdSlice = await _claimRepository.GetClaimFromSliceId(prodSliceId);
+        claimFromProdSlice.Should().NotBeNull();
+        claimFromProdSlice.ProductionSliceId.Should().Be(prodSliceId);
+        claimFromProdSlice.ConsumptionSliceId.Should().Be(conSliceId);
+
+        claimFromConSlice.Should().BeEquivalentTo(claimFromProdSlice);
+    }
 
     [Fact]
     public async Task Claims_Query_Success()
@@ -281,6 +307,54 @@ public class ClaimRepositoryTests : AbstractRepositoryTests
         result.Limit.Should().Be(take);
         result.Count.Should().Be(numberOfResults);
         result.TotalCount.Should().Be(total);
+    }
+
+    public async Task<(Guid, Guid)> CreateClaimsAndGetSliceIds(string owner)
+    {
+        var certRepository = new CertificateRepository(_connection);
+        var registry = _fixture.Create<string>();
+        var wallet = await CreateWallet(owner);
+        var endpoint = await CreateWalletEndpoint(wallet);
+        var startDate = DateTimeOffset.UtcNow;
+
+        var conCert = await CreateCertificate(registry, GranularCertificateType.Consumption, startDate: startDate, endDate: startDate.AddHours(1));
+        var conSlice = new WalletSlice
+        {
+            Id = Guid.NewGuid(),
+            WalletEndpointId = endpoint.Id,
+            WalletEndpointPosition = 1,
+            RegistryName = registry,
+            CertificateId = conCert.Id,
+            Quantity = 123,
+            RandomR = _fixture.Create<byte[]>(),
+            State = WalletSliceState.Claimed
+        };
+        await certRepository.InsertWalletSlice(conSlice);
+
+        var prodCert = await CreateCertificate(registry, GranularCertificateType.Production, startDate, endDate: startDate.AddHours(1));
+        var prodSlice = new WalletSlice
+        {
+            Id = Guid.NewGuid(),
+            WalletEndpointId = endpoint.Id,
+            WalletEndpointPosition = 2,
+            RegistryName = registry,
+            CertificateId = prodCert.Id,
+            Quantity = 1234,
+            RandomR = _fixture.Create<byte[]>(),
+            State = WalletSliceState.Claimed
+        };
+        await certRepository.InsertWalletSlice(prodSlice);
+
+        var claim = new Claim
+        {
+            Id = Guid.NewGuid(),
+            ConsumptionSliceId = conSlice.Id,
+            ProductionSliceId = prodSlice.Id,
+            State = ClaimState.Claimed
+        };
+        await _claimRepository.InsertClaim(claim);
+
+        return (conSlice.Id, prodSlice.Id);
     }
 
     private async Task CreateClaimsAndCerts(string owner, int numberOfClaims, DateTimeOffset startDate, int delay = 0)
