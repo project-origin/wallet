@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using DotNet.Testcontainers.Builders;
@@ -16,6 +17,8 @@ using System.Net.Http;
 using Testcontainers.PostgreSql;
 using ProjectOrigin.Vault.Tests.Extensions;
 using System.Net.Http.Headers;
+using ProjectOrigin.Vault.Services.REST.v1;
+using Dapper;
 
 namespace ProjectOrigin.Vault.Tests;
 
@@ -222,5 +225,134 @@ public class WithdrawCertificatesTests : IAsyncLifetime,
             certificate.Id.Should().Be(certificateId);
             certificate.Withdrawn.Should().BeTrue();
         }
+    }
+
+    [Fact]
+    public async Task WithdrawCertificate_WhenPartOfCertificateWasClaimed_CertificateWithdrawnClaimUnclaimedAndPartAvailable()
+    {
+        var registryName = _stampAndRegistryFixture.RegistryName;
+        var issuerArea = _stampAndRegistryFixture.IssuerArea;
+
+        var walletClient = CreateHttpClient(Guid.NewGuid().ToString(), Guid.NewGuid().ToString());
+        var wResponse = await walletClient.CreateWallet();
+        var weResponse = await walletClient.CreateWalletEndpoint(wResponse.WalletId);
+
+        var stampClient = CreateStampClient();
+        var rResponse = await stampClient.StampCreateRecipient(new CreateRecipientRequest
+        {
+            WalletEndpointReference = new StampWalletEndpointReferenceDto
+            {
+                Version = weResponse.WalletReference.Version,
+                Endpoint = weResponse.WalletReference.Endpoint,
+                PublicKey = weResponse.WalletReference.PublicKey.Export().ToArray()
+            }
+        });
+
+        var prodGsrn = Some.Gsrn();
+        var prodCertId = Guid.NewGuid();
+        var startDate = DateTimeOffset.UtcNow;
+        uint quantity = 123;
+        var icProdResponse = await stampClient.StampIssueCertificate(new CreateCertificateRequest
+        {
+            RecipientId = rResponse.Id,
+            RegistryName = registryName,
+            MeteringPointId = prodGsrn,
+            Certificate = new StampCertificateDto
+            {
+                Id = prodCertId,
+                Start = startDate.ToUnixTimeSeconds(),
+                End = startDate.AddHours(1).ToUnixTimeSeconds(),
+                GridArea = issuerArea,
+                Quantity = quantity,
+                Type = StampCertificateType.Production,
+                ClearTextAttributes = new Dictionary<string, string>
+                {
+                    { "fuelCode", Some.FuelCode },
+                    { "techCode", Some.TechCode }
+                },
+                HashedAttributes = new List<StampHashedAttribute>
+                {
+                    new () { Key = "assetId", Value = prodGsrn },
+                    new () { Key = "address", Value = "Some road 1234" }
+                }
+            }
+        });
+
+        var conGsrn = Some.Gsrn();
+        var conCertId = Guid.NewGuid();
+        var icConResponse = await stampClient.StampIssueCertificate(new CreateCertificateRequest
+        {
+            RecipientId = rResponse.Id,
+            RegistryName = registryName,
+            MeteringPointId = conGsrn,
+            Certificate = new StampCertificateDto
+            {
+                Id = conCertId,
+                Start = startDate.ToUnixTimeSeconds(),
+                End = startDate.AddHours(1).ToUnixTimeSeconds(),
+                GridArea = issuerArea,
+                Quantity = quantity,
+                Type = StampCertificateType.Consumption,
+                ClearTextAttributes = new Dictionary<string, string> {},
+                HashedAttributes = new List<StampHashedAttribute>
+                {
+                    new () { Key = "assetId", Value = conGsrn }
+                }
+            }
+        });
+
+        await Task.Delay(TimeSpan.FromSeconds(15)); //wait for cert to be on registry and sent back to the wallet
+
+        var claimResponse = await walletClient.CreateClaim(new FederatedStreamId { Registry = registryName, StreamId = conCertId }, 
+            new FederatedStreamId { Registry = registryName, StreamId = prodCertId},
+            quantity);
+
+        await Task.Delay(TimeSpan.FromSeconds(15)); //wait for claim
+
+        var withdrawResponse = await stampClient.StampWithdrawCertificate(registryName, prodCertId);
+
+        using (var connection = new NpgsqlConnection(_postgresFixture.GetConnectionString()))
+        {
+            var claim = await connection.RepeatedlyQueryFirstOrDefaultUntil<Models.Claim>(
+                @"SELECT *
+                    FROM claims
+                    WHERE state = @state",
+                new
+                {
+                    state = ClaimState.Unclaimed
+                }, timeLimit: TimeSpan.FromSeconds(45));
+
+            claim.Should().NotBeNull();
+            claim.State.Should().Be(ClaimState.Unclaimed);
+
+            var certificate = await connection.QueryFirstOrDefaultAsync<Certificate>(
+                @"SELECT id,
+                        registry_name as RegistryName,
+                        start_date as StartDate,
+                        end_date as EndDate,
+                        grid_area as GridArea,
+                        certificate_type as CertificateType,
+                        withdrawn
+	                  FROM public.certificates
+                      WHERE registry_name = @registry
+                      AND id = @certificateId
+                      AND withdrawn = true",
+                new
+                {
+                    registry = registryName,
+                    certificateId = prodCertId
+                });
+
+            certificate.Should().NotBeNull();
+            certificate!.RegistryName.Should().Be(registryName);
+            certificate.Id.Should().Be(prodCertId);
+            certificate.Withdrawn.Should().BeTrue();
+        }
+
+        var certificates = await walletClient.GetCertificates();
+
+        certificates.Result.Should().HaveCount(1);
+        certificates.Result.First().FederatedStreamId.StreamId.Should().Be(conCertId);
+        certificates.Result.First().Quantity.Should().Be(quantity);
     }
 }
