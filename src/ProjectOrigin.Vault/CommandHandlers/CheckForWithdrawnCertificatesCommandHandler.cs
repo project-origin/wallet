@@ -16,6 +16,7 @@ using ProjectOrigin.Vault.Extensions;
 using ProjectOrigin.Vault.Models;
 using ProjectOrigin.Vault.Options;
 using ProjectOrigin.Vault.Services.REST.v1;
+using Claim = ProjectOrigin.Vault.Models.Claim;
 using FederatedStreamId = ProjectOrigin.Common.V1.FederatedStreamId;
 
 namespace ProjectOrigin.Vault.CommandHandlers;
@@ -72,14 +73,20 @@ public class CheckForWithdrawnCertificatesCommandHandler : IConsumer<CheckForWit
             List<Task> tasks = new();
             foreach (var withdrawnCertificate in response.Result)
             {
-                await _unitOfWork.CertificateRepository.WithdrawCertificate(withdrawnCertificate.RegistryName, withdrawnCertificate.CertificateId);
                 var claimedSlices = await _unitOfWork.CertificateRepository.GetClaimedSlicesOfCertificate(withdrawnCertificate.RegistryName, withdrawnCertificate.CertificateId);
+
+                _logger.LogInformation("ClaimedSlices found {count}", claimedSlices.Count());
                 foreach (var claimedSlice in claimedSlices)
                 {
-                    _logger.LogInformation("Unclaiming slice {sliceId} on certificate {registry}, {certificiateId}", claimedSlice.Id, claimedSlice.RegistryName, claimedSlice.CertificateId);
-                    var routingSlip = await BuildUnclaimRoutingSlip(claimedSlice.RegistryName, claimedSlice.CertificateId, claimedSlice.Id);
+                    var claim = await _unitOfWork.ClaimRepository.GetClaimFromSliceId(claimedSlice.Id);
+                    var sliceIdToUnclaim = GetClaimCounterpartOfSlice(claim, claimedSlice.Id);
+                    var sliceToUnclaim = await _unitOfWork.CertificateRepository.GetWalletSlice(sliceIdToUnclaim);  
+
+                    _logger.LogInformation("Unclaiming slice {sliceId} on certificate {registry}, {certificiateId}", sliceToUnclaim.Id, sliceToUnclaim.RegistryName, sliceToUnclaim.CertificateId);
+                    var routingSlip = await BuildUnclaimRoutingSlip(sliceToUnclaim, claim);
                     tasks.Add(context.Execute(routingSlip));
                 }
+                await _unitOfWork.CertificateRepository.WithdrawCertificate(withdrawnCertificate.RegistryName, withdrawnCertificate.CertificateId);
             }
 
             await Task.WhenAll(tasks);
@@ -91,14 +98,21 @@ public class CheckForWithdrawnCertificatesCommandHandler : IConsumer<CheckForWit
         client.Dispose();
     }
 
-    private async Task<RoutingSlip> BuildUnclaimRoutingSlip(string registry, Guid certificateId, Guid sliceId)
+    private Guid GetClaimCounterpartOfSlice(Claim claim, Guid sliceId)
+    {
+        if (claim.ConsumptionSliceId == sliceId)
+            return claim.ProductionSliceId;
+
+        return claim.ConsumptionSliceId;
+    }
+
+    private async Task<RoutingSlip> BuildUnclaimRoutingSlip(WalletSlice slice, Claim claim)
     {
         var builder = new RoutingSlipBuilder(Guid.NewGuid());
 
-        var claim = await _unitOfWork.ClaimRepository.GetClaimFromSliceId(sliceId);
-        var federatedStreamId = new FederatedStreamId { Registry = registry, StreamId = new Uuid { Value = certificateId.ToString() } };
+        var federatedStreamId = new FederatedStreamId { Registry = slice.RegistryName, StreamId = new Uuid { Value = slice.CertificateId.ToString() } };
         var unclaimEvent = CreateUnclaimEvent(claim.Id);
-        var sourceSlicePrivateKey = await _unitOfWork.WalletRepository.GetPrivateKeyForSlice(sliceId);
+        var sourceSlicePrivateKey = await _unitOfWork.WalletRepository.GetPrivateKeyForSlice(slice.Id);
         var transaction = sourceSlicePrivateKey.SignRegistryTransaction(federatedStreamId, unclaimEvent);
 
         builder.AddActivity<SendRegistryTransactionActivity, SendRegistryTransactionArguments>(_formatter,
@@ -110,9 +124,9 @@ public class CheckForWithdrawnCertificatesCommandHandler : IConsumer<CheckForWit
         builder.AddActivity<WaitCommittedRegistryTransactionActivity, WaitCommittedTransactionArguments>(_formatter,
             new()
             {
-                CertificateId = certificateId,
-                RegistryName = registry,
-                SliceId = sliceId,
+                CertificateId = slice.CertificateId,
+                RegistryName = slice.RegistryName,
+                SliceId = slice.Id,
                 TransactionId = transaction.ToShaId(),
                 RequestStatusArgs = null
             });
@@ -122,7 +136,7 @@ public class CheckForWithdrawnCertificatesCommandHandler : IConsumer<CheckForWit
             {
                 SliceStates = new Dictionary<Guid, WalletSliceState>
                 {
-                    { sliceId, WalletSliceState.Available }
+                    { slice.Id, WalletSliceState.Available }
                 }
             });
 
@@ -141,7 +155,6 @@ public class CheckForWithdrawnCertificatesCommandHandler : IConsumer<CheckForWit
     {
         var unclaimEvent = new UnclaimedEvent
         {
-            //TODO what is this?
             AllocationId = new Uuid { Value = claimId.ToString() }
         };
 

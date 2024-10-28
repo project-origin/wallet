@@ -88,7 +88,7 @@ public class ClaimRepositoryTests : AbstractRepositoryTests
     public async Task GetClaimFromSliceId()
     {
         var owner = _fixture.Create<string>();
-        var (conSliceId, prodSliceId) = await CreateClaimsAndGetSliceIds(owner);
+        var (conSliceId, prodSliceId) = await CreateClaimAndGetSliceIds(owner);
 
         var claimFromConSlice = await _claimRepository.GetClaimFromSliceId(conSliceId);
         claimFromConSlice.Should().NotBeNull();
@@ -309,7 +309,7 @@ public class ClaimRepositoryTests : AbstractRepositoryTests
         result.TotalCount.Should().Be(total);
     }
 
-    public async Task<(Guid, Guid)> CreateClaimsAndGetSliceIds(string owner)
+    public async Task<(Guid, Guid)> CreateClaimAndGetSliceIds(string owner)
     {
         var certRepository = new CertificateRepository(_connection);
         var registry = _fixture.Create<string>();

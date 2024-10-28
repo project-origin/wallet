@@ -148,6 +148,7 @@ public class WithdrawCertificatesTests : IAsyncLifetime,
     }
 
     [Fact]
+    //TODO Consumption and production
     public async Task WithdrawCertificate()
     {
         var registryName = _stampAndRegistryFixture.RegistryName;
@@ -228,6 +229,7 @@ public class WithdrawCertificatesTests : IAsyncLifetime,
     }
 
     [Fact]
+    //TODO Consumption and production
     public async Task WithdrawCertificate_WhenPartOfCertificateWasClaimed_CertificateWithdrawnClaimUnclaimedAndPartAvailable()
     {
         var registryName = _stampAndRegistryFixture.RegistryName;
@@ -301,20 +303,23 @@ public class WithdrawCertificatesTests : IAsyncLifetime,
             }
         });
 
-        await Task.Delay(TimeSpan.FromSeconds(15)); //wait for cert to be on registry and sent back to the wallet
+        await Task.Delay(TimeSpan.FromSeconds(30)); //wait for cert to be on registry and sent back to the wallet
 
         var claimResponse = await walletClient.CreateClaim(new FederatedStreamId { Registry = registryName, StreamId = conCertId }, 
             new FederatedStreamId { Registry = registryName, StreamId = prodCertId},
             quantity);
 
-        await Task.Delay(TimeSpan.FromSeconds(15)); //wait for claim
+        await Task.Delay(TimeSpan.FromSeconds(30)); //wait for claim
 
         var withdrawResponse = await stampClient.StampWithdrawCertificate(registryName, prodCertId);
 
         using (var connection = new NpgsqlConnection(_postgresFixture.GetConnectionString()))
         {
             var claim = await connection.RepeatedlyQueryFirstOrDefaultUntil<Models.Claim>(
-                @"SELECT *
+                @"SELECT id,
+                        production_slice_id as ProductionSliceId,
+                        consumption_slice_id as ConsumptionSliceId,
+                        state
                     FROM claims
                     WHERE state = @state",
                 new
