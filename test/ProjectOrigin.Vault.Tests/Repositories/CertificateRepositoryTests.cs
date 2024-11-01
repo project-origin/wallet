@@ -88,6 +88,21 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
     }
 
     [Fact]
+    public async Task WithdrawCertificate_WhenAlreadyWithdrawn()
+    {
+        var registry = _fixture.Create<string>();
+        var certificate1 = await CreateCertificate(registry);
+
+        await _certRepository.WithdrawCertificate(registry, certificate1.Id);
+        await _certRepository.WithdrawCertificate(registry, certificate1.Id);
+
+        var result1 = await _certRepository.GetCertificate(registry, certificate1.Id);
+
+        result1.Should().NotBeNull();
+        result1!.Withdrawn.Should().BeTrue();
+    }
+
+    [Fact]
     public async Task GetClaimedSlicesOfCertificate()
     {
         var registry = _fixture.Create<string>();

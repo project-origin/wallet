@@ -24,8 +24,7 @@ namespace ProjectOrigin.Vault.Tests;
 
 public class WithdrawCertificatesTests : IAsyncLifetime,
     IClassFixture<ContainerImageFixture>,
-    IClassFixture<JwtTokenIssuerFixture>,
-    IClassFixture<StampAndRegistryFixture>
+    IClassFixture<JwtTokenIssuerFixture>
 {
     private readonly Lazy<IContainer> _walletContainer;
     private readonly PostgreSqlContainer _postgresFixture;
@@ -41,12 +40,11 @@ public class WithdrawCertificatesTests : IAsyncLifetime,
     public WithdrawCertificatesTests(
         ContainerImageFixture imageFixture,
         JwtTokenIssuerFixture jwtTokenIssuerFixture,
-        ITestOutputHelper outputHelper,
-        StampAndRegistryFixture stampAndRegistryFixture)
+        ITestOutputHelper outputHelper)
     {
         _jwtTokenIssuerFixture = jwtTokenIssuerFixture;
         _outputHelper = outputHelper;
-        _stampAndRegistryFixture = stampAndRegistryFixture;
+        _stampAndRegistryFixture = new StampAndRegistryFixture();
 
         _postgresFixture = new PostgreSqlBuilder()
             .WithImage("postgres:15")
@@ -147,9 +145,10 @@ public class WithdrawCertificatesTests : IAsyncLifetime,
         return client;
     }
 
-    [Fact]
-    //TODO Consumption and production
-    public async Task WithdrawCertificate()
+    [Theory]
+    [InlineData(StampCertificateType.Production)]
+    [InlineData(StampCertificateType.Consumption)]
+    public async Task WithdrawCertificate(StampCertificateType certificateType)
     {
         var registryName = _stampAndRegistryFixture.RegistryName;
         var issuerArea = _stampAndRegistryFixture.IssuerArea;
@@ -183,7 +182,7 @@ public class WithdrawCertificatesTests : IAsyncLifetime,
                 End = DateTimeOffset.UtcNow.AddHours(1).ToUnixTimeSeconds(),
                 GridArea = issuerArea,
                 Quantity = 123,
-                Type = StampCertificateType.Production,
+                Type = certificateType,
                 ClearTextAttributes = new Dictionary<string, string>
                 {
                     { "fuelCode", Some.FuelCode },
@@ -228,9 +227,10 @@ public class WithdrawCertificatesTests : IAsyncLifetime,
         }
     }
 
-    [Fact]
-    //TODO Consumption and production
-    public async Task WithdrawCertificate_WhenPartOfCertificateWasClaimed_CertificateWithdrawnClaimUnclaimedAndPartAvailable()
+    [Theory]
+    [InlineData(StampCertificateType.Production)]
+    [InlineData(StampCertificateType.Consumption)]
+    public async Task WithdrawCertificate_WhenPartOfCertificateWasClaimed_CertificateWithdrawnClaimUnclaimedAndPartAvailable(StampCertificateType certificateType)
     {
         var registryName = _stampAndRegistryFixture.RegistryName;
         var issuerArea = _stampAndRegistryFixture.IssuerArea;
@@ -311,7 +311,17 @@ public class WithdrawCertificatesTests : IAsyncLifetime,
 
         await Task.Delay(TimeSpan.FromSeconds(30)); //wait for claim
 
-        var withdrawResponse = await stampClient.StampWithdrawCertificate(registryName, prodCertId);
+        Guid withdrawnCertificateId;
+        if (certificateType == StampCertificateType.Production)
+        {
+            var withdrawResponse = await stampClient.StampWithdrawCertificate(registryName, prodCertId);
+            withdrawnCertificateId = prodCertId;
+        }
+        else
+        {
+            var withdrawResponse = await stampClient.StampWithdrawCertificate(registryName, conCertId);
+            withdrawnCertificateId = conCertId;
+        }
 
         using (var connection = new NpgsqlConnection(_postgresFixture.GetConnectionString()))
         {
@@ -345,19 +355,21 @@ public class WithdrawCertificatesTests : IAsyncLifetime,
                 new
                 {
                     registry = registryName,
-                    certificateId = prodCertId
+                    certificateId = withdrawnCertificateId
                 });
 
             certificate.Should().NotBeNull();
             certificate!.RegistryName.Should().Be(registryName);
-            certificate.Id.Should().Be(prodCertId);
+            certificate.Id.Should().Be(withdrawnCertificateId);
             certificate.Withdrawn.Should().BeTrue();
         }
 
         var certificates = await walletClient.GetCertificates();
 
         certificates.Result.Should().HaveCount(1);
-        certificates.Result.First().FederatedStreamId.StreamId.Should().Be(conCertId);
+        certificates.Result.First().FederatedStreamId.StreamId.Should()
+            .Be(certificateType == StampCertificateType.Production ? conCertId : prodCertId);
+
         certificates.Result.First().Quantity.Should().Be(quantity);
     }
 }

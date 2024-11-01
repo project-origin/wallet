@@ -107,7 +107,7 @@ public class RegistryFixture : IAsyncLifetime
                     .WithEnvironment("Otlp__Enabled", "false")
                     .WithEnvironment("Verifiers__project_origin.electricity.v1", $"http://{VerifierAlias}:{GrpcPort}")
                     .WithEnvironment("ImmutableLog__Type", "log")
-                    .WithEnvironment("BlockFinalizer__Interval", "00:00:05")
+                    .WithEnvironment("BlockFinalizer__Interval", "00:00:03")
                     .WithEnvironment("ConnectionStrings__Database", CreateNetworkConnectionString(RegistryPostgresAlias))
                     .WithEnvironment("Cache__Type", "InMemory")
                     .WithEnvironment("RabbitMq__Hostname", RabbitMqAlias)
