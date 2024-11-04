@@ -337,6 +337,7 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
             {
                 new() { Key = "TechCode", Value = "T070000", Type = CertificateAttributeType.ClearText },
                 new() { Key = "FuelCode", Value = "F00000000", Type = CertificateAttributeType.ClearText },
+                new() { Key = "AssetId", Value = "571234567890123456", Type = CertificateAttributeType.Hashed },
             };
 
             var certificate1 = new Certificate
