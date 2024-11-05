@@ -161,9 +161,7 @@ public class TransferTests : AbstractFlowTests
             Quantity = transferredAmount,
             ReceiverId = externalEndpoint.ReceiverId,
             HashedAttributes = [
-                "TechCode",
-                "FuelCode",
-                "AssetId",
+                "AssetId"
             ]
         });
 
