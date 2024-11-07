@@ -49,7 +49,10 @@ public abstract class WalletSystemTestsBase : IClassFixture<TestServerFixture<St
 
         _fixture = new Fixture();
 
-        var networkOptions = new NetworkOptions();
+        var networkOptions = new NetworkOptions
+        {
+            DaysBeforeCertificatesExpire = 60
+        };
         if (stampAndRegistryFixture is not null)
         {
             networkOptions.Registries.Add(stampAndRegistryFixture.RegistryName, new RegistryInfo
@@ -87,7 +90,8 @@ public abstract class WalletSystemTestsBase : IClassFixture<TestServerFixture<St
             {"Retry:RegistryTransactionStillProcessingRetryCount", "5"},
             {"Retry:RegistryTransactionStillProcessingInitialIntervalSeconds", "1"},
             {"Retry:RegistryTransactionStillProcessingIntervalIncrementSeconds", "5"},
-            {"Job:CheckForWithdrawnCertificatesIntervalInSeconds", "5"}
+            {"Job:CheckForWithdrawnCertificatesIntervalInSeconds", "5"},
+            {"Job:ExpireCertificatesIntervalInSeconds", "5"}
         };
 
         config = config.Concat(_messageBrokerFixture.Configuration).ToDictionary(kvp => kvp.Key, kvp => kvp.Value);

@@ -548,4 +548,16 @@ public class CertificateRepository : ICertificateRepository
                 keys = keys.ToArray(),
             })).AsList();
     }
+
+    public async Task ExpireSlices(DateTimeOffset olderThanDate)
+    {
+        await _connection.ExecuteAsync("expire_slices",
+            new
+            {
+                older_than_date = olderThanDate,
+                expire_state_int = WalletSliceState.Expired,
+                available_state_int = WalletSliceState.Available
+            },
+            commandType: CommandType.StoredProcedure);
+    }
 }

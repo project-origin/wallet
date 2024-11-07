@@ -8,10 +8,8 @@ public class JobOptions : IValidatableObject
 
     [Required]
     public int CheckForWithdrawnCertificatesIntervalInSeconds { get; set; }
-    public int TimeBeforeItIsOkToRunCheckForWithdrawnCertificatesAgain()
-    {
-        return ((CheckForWithdrawnCertificatesIntervalInSeconds * 2) / 3);
-    }
+    [Required]
+    public int ExpireCertificatesIntervalInSeconds { get; set; }
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
@@ -19,6 +17,10 @@ public class JobOptions : IValidatableObject
         if (CheckForWithdrawnCertificatesIntervalInSeconds <= 0)
         {
             results.Add(new ValidationResult("CheckForWithdrawnCertificatesIntervalInSeconds must be greater than 0"));
+        }
+        if (ExpireCertificatesIntervalInSeconds <= 0)
+        {
+            results.Add(new ValidationResult("ExpireCertificatesIntervalInSeconds must be greater than 0"));
         }
 
         return results;

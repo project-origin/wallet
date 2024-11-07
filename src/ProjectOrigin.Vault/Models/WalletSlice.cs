@@ -18,5 +18,6 @@ public enum WalletSliceState
     Registering = 3,
     Sliced = 4,
     Claimed = 7,
-    Reserved = 10
+    Reserved = 10,
+    Expired = 15
 }

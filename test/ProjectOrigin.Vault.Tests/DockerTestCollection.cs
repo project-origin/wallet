@@ -44,7 +44,10 @@ public class DockerTestFixture : IAsyncLifetime
             .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(5432))
             .Build();
 
-        var networkOptions = new NetworkOptions();
+        var networkOptions = new NetworkOptions
+        {
+            DaysBeforeCertificatesExpire = 60
+        };
         networkOptions.Registries.Add(StampAndRegistryFixture.RegistryName, new RegistryInfo
         {
             Url = StampAndRegistryFixture.RegistryUrlWithinNetwork,
@@ -83,6 +86,7 @@ public class DockerTestFixture : IAsyncLifetime
             .WithEnvironment("Retry__RegistryTransactionStillProcessingInitialIntervalSeconds", "1")
             .WithEnvironment("Retry__RegistryTransactionStillProcessingIntervalIncrementSeconds", "5")
             .WithEnvironment("Job__CheckForWithdrawnCertificatesIntervalInSeconds", "5")
+            .WithEnvironment("Job__ExpireCertificatesIntervalInSeconds", "5")
             .WithEnvironment("MessageBroker__Type", "InMemory")
             .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(WalletHttpPort))
             //.WithEnvironment("Logging__LogLevel__Default", "Trace")

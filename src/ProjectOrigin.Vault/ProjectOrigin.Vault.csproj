@@ -48,10 +48,6 @@
   </Target>
 
   <ItemGroup>
-    <None Remove="Database\Postgres\Scripts\v2\v2-0009.sql" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Protobuf Include="../../protos/common.proto" Link="protos\common.proto">
       <SourceUrl>https://raw.githubusercontent.com/project-origin/registry/v2.1.0/protos/common.proto</SourceUrl>
     </Protobuf>
@@ -61,12 +57,6 @@
     <Protobuf Include="../../protos/electricity.proto" Link="protos\electricity.proto">
       <SourceUrl>https://raw.githubusercontent.com/project-origin/verifier_electricity/v1.2.0/protos/electricity.proto</SourceUrl>
     </Protobuf>
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Update="Database\Postgres\Scripts\v2\v2-0009.sql">
-      <LogicalName>Scripts.V2.%(Filename)%(Extension)</LogicalName>
-    </EmbeddedResource>
   </ItemGroup>
 
 </Project>

@@ -27,4 +27,5 @@ public interface ICertificateRepository
     Task<IEnumerable<WalletAttribute>> GetWalletAttributes(Guid walletId, Guid certificateId, string registryName, IEnumerable<string> keys);
     Task WithdrawCertificate(string registry, Guid certificateId);
     Task<IEnumerable<WalletSlice>> GetClaimedSlicesOfCertificate(string registry, Guid certificateId);
+    Task ExpireSlices(DateTimeOffset olderThanDate);
 }

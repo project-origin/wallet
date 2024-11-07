@@ -178,6 +178,143 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         insertedSlice.UpdatedAt.Month.Should().Be(DateTimeOffset.UtcNow.Month);
     }
 
+    [Theory]
+    [InlineData(-10, true)]
+    [InlineData(-1, true)]
+    [InlineData(0, false)]
+    [InlineData(1, false)]
+    public async Task ExpireSlices(int addHoursToStartDate, bool expired)
+    {
+        var daysBeforeCertificatesExpire = DateTimeOffset.UtcNow.AddDays(-60);
+
+        var registry = _fixture.Create<string>();
+        var startDate = daysBeforeCertificatesExpire.AddHours(addHoursToStartDate);
+        var certificate = await CreateCertificate(registry, startDate: startDate, endDate: startDate.AddHours(1));
+        var wallet = await CreateWallet(registry);
+        var endpoint = await CreateWalletEndpoint(wallet);
+        var slice = new WalletSlice
+        {
+            Id = Guid.NewGuid(),
+            WalletEndpointId = endpoint.Id,
+            WalletEndpointPosition = 1,
+            RegistryName = registry,
+            CertificateId = certificate.Id,
+            Quantity = _fixture.Create<int>(),
+            RandomR = _fixture.Create<byte[]>(),
+            State = WalletSliceState.Available
+        };
+
+        await _certRepository.InsertWalletSlice(slice);
+
+        await _certRepository.ExpireSlices(daysBeforeCertificatesExpire);
+
+        var sliceDb = await _certRepository.GetWalletSlice(slice.Id);
+
+        if (expired)
+        {
+            sliceDb.State.Should().Be(WalletSliceState.Expired);
+        }
+        else
+        {
+            sliceDb.State.Should().Be(WalletSliceState.Available);
+        }
+    }
+
+    [Fact]
+    public async Task ExpireSlices_AcrossDifferentCertificates()
+    {
+        var daysBeforeCertificatesExpire = DateTimeOffset.UtcNow.AddDays(-60);
+
+        var registry = _fixture.Create<string>();
+        var startDate = daysBeforeCertificatesExpire.AddHours(-1);
+        var certificate1 = await CreateCertificate(registry, startDate: startDate, endDate: startDate.AddHours(1));
+        var certificate2 = await CreateCertificate(registry, startDate: startDate, endDate: startDate.AddHours(1));
+        var wallet = await CreateWallet(registry);
+        var endpoint = await CreateWalletEndpoint(wallet);
+        var slice1 = new WalletSlice
+        {
+            Id = Guid.NewGuid(),
+            WalletEndpointId = endpoint.Id,
+            WalletEndpointPosition = 1,
+            RegistryName = registry,
+            CertificateId = certificate1.Id,
+            Quantity = _fixture.Create<int>(),
+            RandomR = _fixture.Create<byte[]>(),
+            State = WalletSliceState.Available
+        };
+        var slice2 = new WalletSlice
+        {
+            Id = Guid.NewGuid(),
+            WalletEndpointId = endpoint.Id,
+            WalletEndpointPosition = 1,
+            RegistryName = registry,
+            CertificateId = certificate2.Id,
+            Quantity = _fixture.Create<int>(),
+            RandomR = _fixture.Create<byte[]>(),
+            State = WalletSliceState.Available
+        };
+
+        await _certRepository.InsertWalletSlice(slice1);
+        await _certRepository.InsertWalletSlice(slice2);
+
+        await _certRepository.ExpireSlices(daysBeforeCertificatesExpire);
+
+        var slice1Db = await _certRepository.GetWalletSlice(slice1.Id);
+        var slice2Db = await _certRepository.GetWalletSlice(slice2.Id);
+
+        slice1Db.State.Should().Be(WalletSliceState.Expired);
+        slice2Db.State.Should().Be(WalletSliceState.Expired);
+    }
+
+    [Theory]
+    [InlineData(WalletSliceState.Slicing)]
+    [InlineData(WalletSliceState.Registering)]
+    [InlineData(WalletSliceState.Sliced)]
+    [InlineData(WalletSliceState.Claimed)]
+    [InlineData(WalletSliceState.Reserved)]
+    public async Task ExpireSlices_WhenPartWasOtherStatusThanClaimed_OnlyExpireAvailable(WalletSliceState state)
+    {
+        var daysBeforeCertificatesExpire = DateTimeOffset.UtcNow.AddDays(-60);
+
+        var registry = _fixture.Create<string>();
+        var startDate = daysBeforeCertificatesExpire.AddHours(-1);
+        var certificate = await CreateCertificate(registry, startDate: startDate, endDate: startDate.AddHours(1));
+        var wallet = await CreateWallet(registry);
+        var endpoint = await CreateWalletEndpoint(wallet);
+        var slice = new WalletSlice
+        {
+            Id = Guid.NewGuid(),
+            WalletEndpointId = endpoint.Id,
+            WalletEndpointPosition = 1,
+            RegistryName = registry,
+            CertificateId = certificate.Id,
+            Quantity = _fixture.Create<int>(),
+            RandomR = _fixture.Create<byte[]>(),
+            State = WalletSliceState.Available
+        };
+        var otherStateSlice = new WalletSlice
+        {
+            Id = Guid.NewGuid(),
+            WalletEndpointId = endpoint.Id,
+            WalletEndpointPosition = 1,
+            RegistryName = registry,
+            CertificateId = certificate.Id,
+            Quantity = _fixture.Create<int>(),
+            RandomR = _fixture.Create<byte[]>(),
+            State = state
+        };
+        await _certRepository.InsertWalletSlice(slice);
+        await _certRepository.InsertWalletSlice(otherStateSlice);
+
+        await _certRepository.ExpireSlices(daysBeforeCertificatesExpire);
+
+        var sliceDb = await _certRepository.GetWalletSlice(slice.Id);
+        var claimedSliceDb = await _certRepository.GetWalletSlice(otherStateSlice.Id);
+
+        sliceDb.State.Should().Be(WalletSliceState.Expired);
+        claimedSliceDb.State.Should().Be(state);
+    }
+
     [Fact]
     public async Task GetAllOwnedCertificates()
     {

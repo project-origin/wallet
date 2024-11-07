@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
 using FluentAssertions;
 using ProjectOrigin.Vault.Options;
 using Xunit;
@@ -9,22 +8,6 @@ namespace ProjectOrigin.Vault.Tests.Options;
 public class JobOptionsTests
 {
     [Theory]
-    [InlineData(3, 2)]
-    [InlineData(60, 40)]
-    [InlineData(900, 600)] // 15 minutes
-    public void TimeBeforeItIsOkToRunCheckForWithdrawnCertificatesAgain_ReturnsExpectedValue(int init, int expected)
-    {
-        var jobOptions = new JobOptions
-        {
-            CheckForWithdrawnCertificatesIntervalInSeconds = init
-        };
-
-        var result = jobOptions.TimeBeforeItIsOkToRunCheckForWithdrawnCertificatesAgain();
-
-        result.Should().Be(expected);
-    }
-
-    [Theory]
     [InlineData(-900)]
     [InlineData(-1)]
     [InlineData(0)]
@@ -32,13 +15,15 @@ public class JobOptionsTests
     {
         var jobOptions = new JobOptions
         {
-            CheckForWithdrawnCertificatesIntervalInSeconds = init
+            CheckForWithdrawnCertificatesIntervalInSeconds = init,
+            ExpireCertificatesIntervalInSeconds = init
         };
 
         var result = jobOptions.Validate(new ValidationContext(jobOptions));
 
-        result.Should().ContainSingle();
-        result.First().ErrorMessage.Should().Be("CheckForWithdrawnCertificatesIntervalInSeconds must be greater than 0");
+        result.Should().Contain(x =>
+            x.ErrorMessage == "CheckForWithdrawnCertificatesIntervalInSeconds must be greater than 0" ||
+            x.ErrorMessage == "ExpireCertificatesIntervalInSeconds must be greater than 0");
     }
 
     [Theory]
@@ -49,7 +34,8 @@ public class JobOptionsTests
     {
         var jobOptions = new JobOptions
         {
-            CheckForWithdrawnCertificatesIntervalInSeconds = init
+            CheckForWithdrawnCertificatesIntervalInSeconds = init,
+            ExpireCertificatesIntervalInSeconds = init
         };
 
         var result = jobOptions.Validate(new ValidationContext(jobOptions));
