@@ -29,6 +29,6 @@ public class ExpireCertificatesJob : OnlyRunOncePrReplicaJobBase
     {
         var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
 
-        await unitOfWork.CertificateRepository.ExpireSlices(DateTimeOffset.UtcNow.AddDays(_networkOptions.DaysBeforeCertificatesExpire));
+        await unitOfWork.CertificateRepository.ExpireSlices(DateTimeOffset.UtcNow.AddDays(-_networkOptions.DaysBeforeCertificatesExpire));
     }
 }

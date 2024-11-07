@@ -33,6 +33,9 @@ public abstract class WalletSystemTestsBase : IClassFixture<TestServerFixture<St
     public string RegistryName { get; set; } = "some-registry-name";
     public string IssuerArea { get; set; } = "some-issuer-area";
 
+    protected int DaysBeforeCertificatesExpire { get; set; } = 60;
+    protected int ExpireCertificatesIntervalInSeconds { get; set; } = 5;
+
     public WalletSystemTestsBase(
         TestServerFixture<Startup> serverFixture,
         PostgresDatabaseFixture dbFixture,
@@ -51,7 +54,7 @@ public abstract class WalletSystemTestsBase : IClassFixture<TestServerFixture<St
 
         var networkOptions = new NetworkOptions
         {
-            DaysBeforeCertificatesExpire = 60
+            DaysBeforeCertificatesExpire = DaysBeforeCertificatesExpire
         };
         if (stampAndRegistryFixture is not null)
         {
@@ -91,7 +94,7 @@ public abstract class WalletSystemTestsBase : IClassFixture<TestServerFixture<St
             {"Retry:RegistryTransactionStillProcessingInitialIntervalSeconds", "1"},
             {"Retry:RegistryTransactionStillProcessingIntervalIncrementSeconds", "5"},
             {"Job:CheckForWithdrawnCertificatesIntervalInSeconds", "5"},
-            {"Job:ExpireCertificatesIntervalInSeconds", "5"}
+            {"Job:ExpireCertificatesIntervalInSeconds", ExpireCertificatesIntervalInSeconds.ToString()}
         };
 
         config = config.Concat(_messageBrokerFixture.Configuration).ToDictionary(kvp => kvp.Key, kvp => kvp.Value);

@@ -1,6 +1,5 @@
 using AutoFixture;
 using FluentAssertions;
-using Microsoft.AspNetCore.Http;
 using Npgsql;
 using ProjectOrigin.Vault.Tests.TestClassFixtures;
 using ProjectOrigin.Vault.Models;
