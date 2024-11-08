@@ -15,6 +15,7 @@ using Xunit.Abstractions;
 
 namespace ProjectOrigin.Vault.Tests;
 
+//DEPRECATED: Use WalletSystemTestCollection instead
 public abstract class WalletSystemTestsBase : IClassFixture<TestServerFixture<Startup>>, IClassFixture<PostgresDatabaseFixture>, IClassFixture<JwtTokenIssuerFixture>, IDisposable
 {
     protected readonly string endpoint = "http://localhost/";

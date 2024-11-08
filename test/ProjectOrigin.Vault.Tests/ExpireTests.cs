@@ -9,22 +9,21 @@ using Npgsql;
 using ProjectOrigin.Vault.Models;
 using ProjectOrigin.Vault.Repositories;
 using ProjectOrigin.Vault.Services.REST.v1;
-using ProjectOrigin.Vault.Tests.TestClassFixtures;
 using Xunit;
-using Xunit.Abstractions;
 using PageInfo = ProjectOrigin.Vault.Services.REST.v1.PageInfo;
 
 namespace ProjectOrigin.Vault.Tests;
 
-public class ExpireTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
+[Collection(WalletSystemTestCollection.CollectionName)]
+public class ExpireTests 
 {
-    public ExpireTests(TestServerFixture<Startup> serverFixture,
-        PostgresDatabaseFixture dbFixture,
-        InMemoryFixture inMemoryFixture,
-        JwtTokenIssuerFixture jwtTokenIssuerFixture,
-        ITestOutputHelper outputHelper)
-        : base(serverFixture, dbFixture, inMemoryFixture, jwtTokenIssuerFixture, outputHelper, null)
+    private readonly WalletSystemTestFixture _walletTestFixture;
+    private readonly Fixture _fixture;
+
+    public ExpireTests(WalletSystemTestFixture walletTestFixture)
     {
+        _walletTestFixture = walletTestFixture;
+        _fixture = new Fixture();
     }
 
     [Theory]
@@ -37,16 +36,16 @@ public class ExpireTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
         var walletEndpoint = await CreateWalletAndEndpoint(owner);
         var certToExpire = await AddCertificate(walletEndpoint,
             type,
-            startDate: DateTimeOffset.UtcNow.AddDays(-DaysBeforeCertificatesExpire).AddHours(-1),
-            endDate: DateTimeOffset.UtcNow.AddDays(-DaysBeforeCertificatesExpire));
+            startDate: DateTimeOffset.UtcNow.AddDays(-_walletTestFixture.DaysBeforeCertificatesExpire).AddHours(-1),
+            endDate: DateTimeOffset.UtcNow.AddDays(-_walletTestFixture.DaysBeforeCertificatesExpire));
         var cert = await AddCertificate(walletEndpoint,
             type,
             startDate: DateTimeOffset.UtcNow.AddHours(-1),
             endDate: DateTimeOffset.UtcNow);
 
-        await Task.Delay(TimeSpan.FromSeconds(ExpireCertificatesIntervalInSeconds));
+        await Task.Delay(TimeSpan.FromSeconds(_walletTestFixture.ExpireCertificatesIntervalInSeconds));
 
-        var httpClient = CreateAuthenticatedHttpClient(owner, someOwnerName);
+        var httpClient = _walletTestFixture.CreateAuthenticatedHttpClient(owner, someOwnerName);
 
         var res = await httpClient.GetAsync($"v1/certificates");
         var content = JsonConvert.DeserializeObject<ResultList<GranularCertificate, PageInfo>>(await res.Content.ReadAsStringAsync());
@@ -58,14 +57,14 @@ public class ExpireTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
 
     private async Task<WalletEndpoint> CreateWalletAndEndpoint(string owner)
     {
-        using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
+        using (var connection = new NpgsqlConnection(_walletTestFixture.DbFixture.ConnectionString))
         {
             var walletRepository = new WalletRepository(connection);
             var wallet = new Wallet
             {
                 Id = Guid.NewGuid(),
                 Owner = owner,
-                PrivateKey = Algorithm.GenerateNewPrivateKey()
+                PrivateKey = _walletTestFixture.Algorithm.GenerateNewPrivateKey()
             };
             await walletRepository.Create(wallet);
 
@@ -77,7 +76,7 @@ public class ExpireTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
 
     private async Task<Certificate> AddCertificate(WalletEndpoint walletEndpoint, GranularCertificateType type, DateTimeOffset startDate, DateTimeOffset endDate)
     {
-        using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
+        using (var connection = new NpgsqlConnection(_walletTestFixture.DbFixture.ConnectionString))
         {
             var regName = _fixture.Create<string>();
             var certificateRepository = new CertificateRepository(connection);
