@@ -45,12 +45,12 @@ public class ExpireTests
             }
         });
 
-        var certToExpireId = await AddCertificate(stampClient,
+        var certToExpireId = await IssueCertificate(stampClient,
             rResponse.Id,
             type,
             startDate: DateTimeOffset.UtcNow.AddDays(-_dockerTestFixture.DaysBeforeCertificatesExpire).AddHours(-1),
             endDate: DateTimeOffset.UtcNow.AddDays(-_dockerTestFixture.DaysBeforeCertificatesExpire));
-        var certId = await AddCertificate(stampClient,
+        var certId = await IssueCertificate(stampClient,
             rResponse.Id,
             type,
             startDate: DateTimeOffset.UtcNow.AddHours(-1),
@@ -73,7 +73,7 @@ public class ExpireTests
         return walletEndpoint.WalletReference;
     }
 
-    private async Task<Guid> AddCertificate(HttpClient stampClient, Guid recipientId, StampCertificateType type,
+    private async Task<Guid> IssueCertificate(HttpClient stampClient, Guid recipientId, StampCertificateType type,
         DateTimeOffset startDate, DateTimeOffset endDate)
     {
         var gsrn = Some.Gsrn();
