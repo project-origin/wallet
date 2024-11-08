@@ -23,13 +23,13 @@ public class WalletSystemTestCollection : ICollectionFixture<WalletSystemTestFix
 public class WalletSystemTestFixture : IAsyncLifetime
 {
     private readonly string endpoint = "http://localhost/";
-    private readonly TestServerFixture<Startup> _serverFixture;
-    private readonly JwtTokenIssuerFixture _jwtTokenIssuerFixture;
     private readonly InMemoryFixture _inMemoryFixture;
     public PostgresDatabaseFixture DbFixture { get; }
     public StampAndRegistryFixture StampAndRegistryFixture { get; }
+    public TestServerFixture<Startup> ServerFixture { get; }
+    public JwtTokenIssuerFixture JwtTokenIssuerFixture { get; }
 
-    public IHDAlgorithm Algorithm => _serverFixture.GetRequiredService<IHDAlgorithm>();
+    public IHDAlgorithm Algorithm => ServerFixture.GetRequiredService<IHDAlgorithm>();
 
     public string StampUrl { get; set; } = "some-stamp-url";
     public string RegistryName { get; set; } = "some-registry-name";
@@ -40,10 +40,10 @@ public class WalletSystemTestFixture : IAsyncLifetime
 
     public WalletSystemTestFixture()
     {
-        _serverFixture = new TestServerFixture<Startup>();
+        ServerFixture = new TestServerFixture<Startup>();
         DbFixture = new PostgresDatabaseFixture();
         StampAndRegistryFixture = new StampAndRegistryFixture();
-        _jwtTokenIssuerFixture = new JwtTokenIssuerFixture();
+        JwtTokenIssuerFixture = new JwtTokenIssuerFixture();
         _inMemoryFixture = new InMemoryFixture();
 }
 
@@ -82,10 +82,10 @@ public class WalletSystemTestFixture : IAsyncLifetime
             {"ConnectionStrings:Database", DbFixture.ConnectionString},
             {"ServiceOptions:EndpointAddress", endpoint},
             {"auth:type", "jwt"},
-            {"auth:jwt:Audience", _jwtTokenIssuerFixture.Audience},
-            {"auth:jwt:Issuers:0:IssuerName", _jwtTokenIssuerFixture.Issuer},
-            {"auth:jwt:Issuers:0:Type", _jwtTokenIssuerFixture.KeyType},
-            {"auth:jwt:Issuers:0:PemKeyFile", _jwtTokenIssuerFixture.PemFilepath},
+            {"auth:jwt:Audience", JwtTokenIssuerFixture.Audience},
+            {"auth:jwt:Issuers:0:IssuerName", JwtTokenIssuerFixture.Issuer},
+            {"auth:jwt:Issuers:0:Type", JwtTokenIssuerFixture.KeyType},
+            {"auth:jwt:Issuers:0:PemKeyFile", JwtTokenIssuerFixture.PemFilepath},
             {"network:ConfigurationUri", networkOptions.ToTempYamlFileUri() },
             {"Retry:RegistryTransactionStillProcessingRetryCount", "5"},
             {"Retry:RegistryTransactionStillProcessingInitialIntervalSeconds", "1"},
@@ -95,22 +95,22 @@ public class WalletSystemTestFixture : IAsyncLifetime
         };
 
         config = config.Concat(_inMemoryFixture.Configuration).ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
-        _serverFixture.ConfigureHostConfiguration(config);
-        _serverFixture.ConfigureTestServices += services => services.Remove(services.First(s => s.ImplementationType == typeof(PublishCheckForWithdrawnCertificatesCommandJob)));
+        ServerFixture.ConfigureHostConfiguration(config);
+        ServerFixture.ConfigureTestServices += services => services.Remove(services.First(s => s.ImplementationType == typeof(PublishCheckForWithdrawnCertificatesCommandJob)));
     }
 
     public async Task DisposeAsync()
     {
-        _serverFixture.Dispose();
-        _jwtTokenIssuerFixture.Dispose();
+        ServerFixture.Dispose();
+        JwtTokenIssuerFixture.Dispose();
         await DbFixture.DisposeAsync();
         await StampAndRegistryFixture.DisposeAsync();
     }
 
     public HttpClient CreateAuthenticatedHttpClient(string subject, string name, string[]? scopes = null)
     {
-        var client = _serverFixture.CreateHttpClient();
-        var token = _jwtTokenIssuerFixture.GenerateToken(subject, name, scopes);
+        var client = ServerFixture.CreateHttpClient();
+        var token = JwtTokenIssuerFixture.GenerateToken(subject, name, scopes);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         return client;
     }
