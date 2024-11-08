@@ -48,7 +48,6 @@ public class ExpireTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
 
         var httpClient = CreateAuthenticatedHttpClient(owner, someOwnerName);
 
-        //Act
         var res = await httpClient.GetAsync($"v1/certificates");
         var content = JsonConvert.DeserializeObject<ResultList<GranularCertificate, PageInfo>>(await res.Content.ReadAsStringAsync());
 
