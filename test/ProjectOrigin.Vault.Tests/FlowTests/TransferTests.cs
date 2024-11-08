@@ -1,35 +1,24 @@
-using ProjectOrigin.Vault.Tests.TestClassFixtures;
 using System;
-using System.Threading.Tasks;
-using Xunit;
-using Xunit.Abstractions;
-using ProjectOrigin.PedersenCommitment;
 using System.Linq;
-using FluentAssertions;
-using AutoFixture;
-using System.Net.Http.Headers;
-using ProjectOrigin.Vault.Services.REST.v1;
 using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Threading.Tasks;
+using AutoFixture;
+using FluentAssertions;
+using ProjectOrigin.PedersenCommitment;
+using ProjectOrigin.Vault.Services.REST.v1;
+using Xunit;
 
-namespace ProjectOrigin.Vault.Tests;
+namespace ProjectOrigin.Vault.Tests.FlowTests;
 
+[Collection(WalletSystemTestCollection.CollectionName)]
 public class TransferTests : AbstractFlowTests
 {
-    public TransferTests(
-            TestServerFixture<Startup> serverFixture,
-            PostgresDatabaseFixture dbFixture,
-            InMemoryFixture inMemoryFixture,
-            JwtTokenIssuerFixture jwtTokenIssuerFixture,
-            StampAndRegistryFixture stampAndRegistryFixture,
-            ITestOutputHelper outputHelper)
-            : base(
-                  serverFixture,
-                  dbFixture,
-                  inMemoryFixture,
-                  jwtTokenIssuerFixture,
-                  outputHelper,
-                  stampAndRegistryFixture)
+    private readonly Fixture _fixture;
+
+    public TransferTests(WalletSystemTestFixture walletTestFixture) : base(walletTestFixture)
     {
+        _fixture = new Fixture();
     }
 
     [Fact]
@@ -173,8 +162,8 @@ public class TransferTests : AbstractFlowTests
 
     private async Task<(WalletEndpointReference, HttpClient)> CreateWalletEndpointAndHttpClient()
     {
-        var client = _serverFixture.CreateHttpClient();
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _jwtTokenIssuer.GenerateRandomToken());
+        var client = WalletTestFixture.ServerFixture.CreateHttpClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", WalletTestFixture.JwtTokenIssuerFixture.GenerateRandomToken());
         var wallet = await client.CreateWallet();
         var endpoint = await client.CreateWalletEndpoint(wallet.WalletId);
 

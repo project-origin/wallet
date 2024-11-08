@@ -1,8 +1,6 @@
-using ProjectOrigin.Vault.Tests.TestClassFixtures;
 using System;
 using System.Threading.Tasks;
 using Xunit;
-using Xunit.Abstractions;
 using ProjectOrigin.PedersenCommitment;
 using FluentAssertions;
 using System.Linq;
@@ -11,22 +9,10 @@ using ProjectOrigin.Vault.Services.REST.v1;
 
 namespace ProjectOrigin.Vault.Tests.FlowTests;
 
+[Collection(WalletSystemTestCollection.CollectionName)]
 public class ClaimTests : AbstractFlowTests
 {
-    public ClaimTests(
-            TestServerFixture<Startup> serverFixture,
-            PostgresDatabaseFixture dbFixture,
-            InMemoryFixture inMemoryFixture,
-            JwtTokenIssuerFixture jwtTokenIssuerFixture,
-            StampAndRegistryFixture stampAndRegistryFixture,
-            ITestOutputHelper outputHelper)
-            : base(
-                  serverFixture,
-                  dbFixture,
-                  inMemoryFixture,
-                  jwtTokenIssuerFixture,
-                  outputHelper,
-                  stampAndRegistryFixture)
+    public ClaimTests(WalletSystemTestFixture walletTestFixture) : base(walletTestFixture)
     {
     }
 
@@ -36,8 +22,8 @@ public class ClaimTests : AbstractFlowTests
         //Arrange
         var position = 1;
 
-        var client = _serverFixture.CreateHttpClient();
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _jwtTokenIssuer.GenerateRandomToken());
+        var client = WalletTestFixture.ServerFixture.CreateHttpClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", WalletTestFixture.JwtTokenIssuerFixture.GenerateRandomToken());
 
         var wallet = await client.CreateWallet();
         var endpoint = await client.CreateWalletEndpoint(wallet.WalletId);

@@ -10,6 +10,10 @@ using DotNet.Testcontainers.Containers;
 using ProjectOrigin.Vault.Tests.Extensions;
 using Testcontainers.PostgreSql;
 using Xunit;
+using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
+using ProjectOrigin.HierarchicalDeterministicKeys.Implementations;
+using System.Net.Http.Headers;
+using System.Net.Http;
 
 namespace ProjectOrigin.Vault.Tests;
 
@@ -24,18 +28,22 @@ public class DockerTestFixture : IAsyncLifetime
     public ContainerImageFixture ImageFixture { get; private set; }
     public StampAndRegistryFixture StampAndRegistryFixture { get; private set; }
     public PostgreSqlContainer PostgresFixture { get; private set; }
+    public JwtTokenIssuerFixture JwtTokenIssuerFixture { get; private set; }
     public Lazy<IContainer> WalletContainer;
-
 
     public int WalletHttpPort = 5000;
     public string WalletAlias = "wallet-container";
     public string PathBase = "/wallet-api";
     public string WalletPostgresAlias = "wallet-postgres";
 
+    public int DaysBeforeCertificatesExpire { get; } = 60;
+    public int ExpireCertificatesIntervalInSeconds { get; } = 5;
+    public IHDAlgorithm Algorithm => new Secp256k1Algorithm();
     public DockerTestFixture()
     {
         ImageFixture = new ContainerImageFixture();
         StampAndRegistryFixture = new StampAndRegistryFixture();
+        JwtTokenIssuerFixture = new JwtTokenIssuerFixture();
 
         PostgresFixture = new PostgreSqlBuilder()
             .WithImage("postgres:15")
@@ -46,7 +54,7 @@ public class DockerTestFixture : IAsyncLifetime
 
         var networkOptions = new NetworkOptions
         {
-            DaysBeforeCertificatesExpire = 60
+            DaysBeforeCertificatesExpire = DaysBeforeCertificatesExpire
         };
         networkOptions.Registries.Add(StampAndRegistryFixture.RegistryName, new RegistryInfo
         {
@@ -86,13 +94,12 @@ public class DockerTestFixture : IAsyncLifetime
             .WithEnvironment("Retry__RegistryTransactionStillProcessingInitialIntervalSeconds", "1")
             .WithEnvironment("Retry__RegistryTransactionStillProcessingIntervalIncrementSeconds", "5")
             .WithEnvironment("Job__CheckForWithdrawnCertificatesIntervalInSeconds", "5")
-            .WithEnvironment("Job__ExpireCertificatesIntervalInSeconds", "5")
+            .WithEnvironment("Job__ExpireCertificatesIntervalInSeconds", ExpireCertificatesIntervalInSeconds.ToString())
             .WithEnvironment("MessageBroker__Type", "InMemory")
             .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(WalletHttpPort))
             //.WithEnvironment("Logging__LogLevel__Default", "Trace")
             .Build());
     }
-
 
     public async Task InitializeAsync()
     {
@@ -109,6 +116,26 @@ public class DockerTestFixture : IAsyncLifetime
             await WalletContainer.Value.StopAsync();
             await PostgresFixture.StopAsync();
             await ImageFixture.DisposeAsync();
+            JwtTokenIssuerFixture.Dispose();
         }
+    }
+
+    public HttpClient CreateAuthenticatedHttpClient(string subject, string name, string[]? scopes = null)
+    {
+        var client = new HttpClient();
+        client.BaseAddress = new UriBuilder("http",
+            WalletContainer.Value.Hostname,
+            WalletContainer.Value.GetMappedPublicPort(WalletHttpPort),
+            PathBase).Uri;
+        var token = JwtTokenIssuerFixture.GenerateToken(subject, name, scopes);
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        return client;
+    }
+
+    public HttpClient CreateStampClient()
+    {
+        var client = new HttpClient();
+        client.BaseAddress = new Uri(StampAndRegistryFixture.StampUrl);
+        return client;
     }
 }
