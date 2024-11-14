@@ -80,7 +80,7 @@ public class CheckForWithdrawnCertificatesCommandHandler : IConsumer<CheckForWit
                 {
                     var claim = await _unitOfWork.ClaimRepository.GetClaimFromSliceId(claimedSlice.Id);
                     var sliceIdToUnclaim = GetClaimCounterpartOfSlice(claim, claimedSlice.Id);
-                    var sliceToUnclaim = await _unitOfWork.CertificateRepository.GetWalletSlice(sliceIdToUnclaim);  
+                    var sliceToUnclaim = await _unitOfWork.CertificateRepository.GetWalletSlice(sliceIdToUnclaim);
 
                     _logger.LogInformation("Unclaiming slice {sliceId} on certificate {registry}, {certificiateId}", sliceToUnclaim.Id, sliceToUnclaim.RegistryName, sliceToUnclaim.CertificateId);
                     var routingSlip = await BuildUnclaimRoutingSlip(sliceToUnclaim, claim);

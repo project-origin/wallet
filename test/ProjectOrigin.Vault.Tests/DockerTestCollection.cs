@@ -13,7 +13,7 @@ using Xunit;
 
 namespace ProjectOrigin.Vault.Tests;
 
-[CollectionDefinition(CollectionName)] 
+[CollectionDefinition(CollectionName)]
 public class DockerTestCollection : ICollectionFixture<DockerTestFixture>
 {
     public const string CollectionName = "DockerTestCollection";
