@@ -233,9 +233,11 @@ public class WithdrawCertificatesTests :
                         consumption_slice_id as ConsumptionSliceId,
                         state
                     FROM claims
-                    WHERE state = @state",
+                    WHERE id = @claimId
+                    AND state = @state",
                 new
                 {
+                    claimId = claimResponse.ClaimRequestId,
                     state = ClaimState.Unclaimed
                 }, timeLimit: TimeSpan.FromSeconds(45));
 
