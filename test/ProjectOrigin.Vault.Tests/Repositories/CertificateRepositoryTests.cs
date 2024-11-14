@@ -12,7 +12,6 @@ using Xunit;
 using ProjectOrigin.Vault.Tests.TestClassFixtures;
 using ProjectOrigin.Vault.Activities.Exceptions;
 using System.Text;
-using WireMock.Pact.Models.V2;
 
 namespace ProjectOrigin.Vault.Tests.Repositories;
 
