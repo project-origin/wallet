@@ -9,9 +9,9 @@
     <PackageReference Include="ProjectOrigin.TestCommon" Version="1.0.0-rc.10" />
     <PackageReference Include="FluentAssertions" Version="6.12.1" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
-    <PackageReference Include="Testcontainers.PostgreSql" Version="3.10.0" />
-    <PackageReference Include="Testcontainers.RabbitMq" Version="3.10.0" />
-    <PackageReference Include="Verify.Xunit" Version="27.0.1" />
+    <PackageReference Include="Testcontainers.PostgreSql" Version="4.0.0" />
+    <PackageReference Include="Testcontainers.RabbitMq" Version="4.0.0" />
+    <PackageReference Include="Verify.Xunit" Version="28.0.0" />
     <PackageReference Include="WireMock.Net" Version="1.6.6" />
     <PackageReference Include="xunit" Version="2.9.2" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2">
