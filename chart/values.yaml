@@ -247,7 +247,7 @@ migrationWaiter:
     # repository is the repository to pull the image from
     repository: bitnami/kubectl
     # tag is the tag to pull defaults to the chart version
-    tag: 1.31.1
+    tag: 1.31.2
   # resources holds the configuration for the resource requests and limits
   resources:
     # requests holds the configuration for the resource requests
@@ -263,8 +263,6 @@ migrationWaiter:
       cpu:
       # memory defines the memory limit for the registry server
       memory: 50Mi
-      # ephemeralStorage defines the ephemeral storage limit for the verifier server
-      ephemeralStorage: 100Mi
 
 # retry holds the configuration for retry logic
 retry:
