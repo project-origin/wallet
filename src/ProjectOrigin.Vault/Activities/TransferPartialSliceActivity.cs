@@ -125,10 +125,13 @@ public class TransferPartialSliceActivity : IExecuteActivity<TransferPartialSlic
                 {
                     RegistryName = transaction.Header.FederatedStreamId.Registry,
                     TransactionId = transaction.ToShaId(),
-                    RequestId = context.Arguments.RequestId,
-                    Owner = context.Arguments.Owner,
                     CertificateId = transferredSlice.CertificateId,
-                    SliceId = transferredSlice.Id
+                    SliceId = transferredSlice.Id,
+                    RequestStatusArgs = new RequestStatusArgs
+                    {
+                        RequestId = context.Arguments.RequestId,
+                        Owner = context.Arguments.Owner
+                    }
                 });
 
             builder.AddActivity<UpdateSliceStateActivity, UpdateSliceStateArguments>(_formatter,

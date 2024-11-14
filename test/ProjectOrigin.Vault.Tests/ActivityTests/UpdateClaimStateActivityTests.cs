@@ -34,8 +34,11 @@ public class UpdateClaimStateActivityTests
         {
             Id = Guid.NewGuid(),
             State = ClaimState.Claimed,
-            RequestId = Guid.NewGuid(),
-            Owner = Guid.NewGuid().ToString()
+            RequestStatusArgs = new RequestStatusArgs
+            {
+                RequestId = Guid.NewGuid(),
+                Owner = Guid.NewGuid().ToString()
+            }
         });
 
         // Act
@@ -56,8 +59,11 @@ public class UpdateClaimStateActivityTests
         {
             Id = Guid.NewGuid(),
             State = ClaimState.Claimed,
-            RequestId = Guid.NewGuid(),
-            Owner = Guid.NewGuid().ToString()
+            RequestStatusArgs = new RequestStatusArgs
+            {
+                RequestId = Guid.NewGuid(),
+                Owner = Guid.NewGuid().ToString()
+            }
         });
         _unitOfWork.ClaimRepository.When(x => x.SetClaimState(Arg.Any<Guid>(), Arg.Any<ClaimState>())).Do(x => throw exceptionToBeThrown);
 

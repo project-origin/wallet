@@ -415,7 +415,7 @@ public class CertificateRepository : ICertificateRepository
             });
 
         if (rowsChanged != 1)
-            throw new InvalidOperationException($"Certificate with registry {registry} and certificateId {certificateId} could not be found");
+            throw new InvalidOperationException($"Rows changed: {rowsChanged}. Certificate with registry {registry} and certificateId {certificateId} could not be found");
     }
 
     public async Task<IEnumerable<WalletSlice>> GetClaimedSlicesOfCertificate(string registry, Guid certificateId)

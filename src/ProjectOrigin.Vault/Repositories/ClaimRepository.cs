@@ -26,6 +26,19 @@ public class ClaimRepository : IClaimRepository
             });
     }
 
+    public Task<Claim> GetClaimFromSliceId(Guid sliceId)
+    {
+        return _connection.QuerySingleAsync<Claim>(
+            @"SELECT *
+              FROM claims
+              WHERE production_slice_id = @sliceId
+                 OR consumption_slice_id = @sliceId",
+            new
+            {
+                sliceId
+            });
+    }
+
     public Task InsertClaim(Claim newClaim)
     {
         return _connection.ExecuteAsync(
