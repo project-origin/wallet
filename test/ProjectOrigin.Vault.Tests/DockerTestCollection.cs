@@ -17,7 +17,7 @@ using System.Net.Http;
 
 namespace ProjectOrigin.Vault.Tests;
 
-[CollectionDefinition(CollectionName)] 
+[CollectionDefinition(CollectionName)]
 public class DockerTestCollection : ICollectionFixture<DockerTestFixture>
 {
     public const string CollectionName = "DockerTestCollection";
@@ -30,6 +30,7 @@ public class DockerTestFixture : IAsyncLifetime
     public PostgreSqlContainer PostgresFixture { get; private set; }
     public JwtTokenIssuerFixture JwtTokenIssuerFixture { get; private set; }
     public Lazy<IContainer> WalletContainer;
+
 
     public int WalletHttpPort = 5000;
     public string WalletAlias = "wallet-container";
@@ -101,6 +102,7 @@ public class DockerTestFixture : IAsyncLifetime
             .Build());
     }
 
+
     public async Task InitializeAsync()
     {
         await ImageFixture.InitializeAsync();
@@ -118,7 +120,7 @@ public class DockerTestFixture : IAsyncLifetime
             await ImageFixture.DisposeAsync();
             JwtTokenIssuerFixture.Dispose();
         }
-    }
+        }
 
     public HttpClient CreateAuthenticatedHttpClient(string subject, string name, string[]? scopes = null)
     {

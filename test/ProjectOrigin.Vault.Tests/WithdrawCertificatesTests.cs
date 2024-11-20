@@ -15,7 +15,7 @@ using Dapper;
 namespace ProjectOrigin.Vault.Tests;
 
 [Collection(DockerTestCollection.CollectionName)]
-public class WithdrawCertificatesTests : 
+public class WithdrawCertificatesTests :
     IClassFixture<JwtTokenIssuerFixture>
 {
     private readonly DockerTestFixture _dockerTestFixture;
@@ -197,7 +197,7 @@ public class WithdrawCertificatesTests :
                 GridArea = issuerArea,
                 Quantity = quantity,
                 Type = StampCertificateType.Consumption,
-                ClearTextAttributes = new Dictionary<string, string> {},
+                ClearTextAttributes = new Dictionary<string, string> { },
                 HashedAttributes = new List<StampHashedAttribute>
                 {
                     new () { Key = "assetId", Value = conGsrn }
@@ -207,8 +207,8 @@ public class WithdrawCertificatesTests :
 
         await Task.Delay(TimeSpan.FromSeconds(30)); //wait for cert to be on registry and sent back to the wallet
 
-        var claimResponse = await walletClient.CreateClaim(new FederatedStreamId { Registry = registryName, StreamId = conCertId }, 
-            new FederatedStreamId { Registry = registryName, StreamId = prodCertId},
+        var claimResponse = await walletClient.CreateClaim(new FederatedStreamId { Registry = registryName, StreamId = conCertId },
+            new FederatedStreamId { Registry = registryName, StreamId = prodCertId },
             quantity);
 
         await Task.Delay(TimeSpan.FromSeconds(30)); //wait for claim
@@ -233,9 +233,11 @@ public class WithdrawCertificatesTests :
                         consumption_slice_id as ConsumptionSliceId,
                         state
                     FROM claims
-                    WHERE state = @state",
+                    WHERE id = @claimId
+                    AND state = @state",
                 new
                 {
+                    claimId = claimResponse.ClaimRequestId,
                     state = ClaimState.Unclaimed
                 }, timeLimit: TimeSpan.FromSeconds(45));
 
