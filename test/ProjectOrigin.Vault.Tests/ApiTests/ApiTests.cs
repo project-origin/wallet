@@ -19,7 +19,7 @@ using Claim = ProjectOrigin.Vault.Models.Claim;
 namespace ProjectOrigin.Vault.Tests;
 
 [Collection(WalletSystemTestCollection.CollectionName)]
-public class ApiTests 
+public class ApiTests
 {
     private readonly WalletSystemTestFixture _walletTestFixture;
     private readonly Fixture _fixture;

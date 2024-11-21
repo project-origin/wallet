@@ -141,7 +141,7 @@ public class Startup
 
         services.AddHttpClient();
         services.ConfigureUriOptionsLoader<NetworkOptions>("network");
-        
+
         services.AddHostedService<PublishCheckForWithdrawnCertificatesCommandJob>();
         services.AddHostedService<ExpireCertificatesJob>();
     }

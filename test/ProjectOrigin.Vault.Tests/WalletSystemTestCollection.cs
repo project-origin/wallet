@@ -45,7 +45,7 @@ public class WalletSystemTestFixture : IAsyncLifetime
         StampAndRegistryFixture = new StampAndRegistryFixture();
         JwtTokenIssuerFixture = new JwtTokenIssuerFixture();
         _inMemoryFixture = new InMemoryFixture();
-}
+    }
 
     public async Task InitializeAsync()
     {

@@ -120,7 +120,7 @@ public class DockerTestFixture : IAsyncLifetime
             await ImageFixture.DisposeAsync();
             JwtTokenIssuerFixture.Dispose();
         }
-        }
+    }
 
     public HttpClient CreateAuthenticatedHttpClient(string subject, string name, string[]? scopes = null)
     {

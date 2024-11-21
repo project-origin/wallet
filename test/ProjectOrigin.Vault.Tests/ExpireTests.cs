@@ -13,7 +13,7 @@ using PageInfo = ProjectOrigin.Vault.Services.REST.v1.PageInfo;
 namespace ProjectOrigin.Vault.Tests;
 
 [Collection(DockerTestCollection.CollectionName)]
-public class ExpireTests 
+public class ExpireTests
 {
     private readonly DockerTestFixture _dockerTestFixture;
     private readonly Fixture _fixture;

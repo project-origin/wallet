@@ -1,9 +1,6 @@
-using ProjectOrigin.Vault.Tests.TestClassFixtures;
 using System.Collections.Generic;
-using Xunit.Abstractions;
 using System.Threading.Tasks;
 using ProjectOrigin.PedersenCommitment;
-using Xunit;
 using System;
 using System.Linq;
 using Xunit.Sdk;
@@ -12,7 +9,7 @@ using System.Net.Http.Json;
 
 namespace ProjectOrigin.Vault.Tests;
 
-public abstract class AbstractFlowTests 
+public abstract class AbstractFlowTests
 {
     protected readonly WalletSystemTestFixture WalletTestFixture;
 
