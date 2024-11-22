@@ -10,8 +10,7 @@ public record NetworkOptions : IValidatableObject
     public IDictionary<string, AreaInfo> Areas { get; init; } = new Dictionary<string, AreaInfo>();
     public IDictionary<string, IssuerInfo> Issuers { get; init; } = new Dictionary<string, IssuerInfo>();
 
-    [Required]
-    public int DaysBeforeCertificatesExpire { get; init; }
+    public int? DaysBeforeCertificatesExpire { get; init; }
 
     public override string ToString()
     {
@@ -37,7 +36,7 @@ public record NetworkOptions : IValidatableObject
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
         List<ValidationResult> results = new();
-        if (DaysBeforeCertificatesExpire <= 0)
+        if (DaysBeforeCertificatesExpire != null && DaysBeforeCertificatesExpire <= 0)
         {
             results.Add(new ValidationResult("DaysBeforeCertificatesExpire must be greater than 0"));
         }

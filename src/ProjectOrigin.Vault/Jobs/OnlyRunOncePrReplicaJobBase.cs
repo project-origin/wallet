@@ -15,21 +15,28 @@ public abstract class OnlyRunOncePrReplicaJobBase : BackgroundService
     private readonly int _runIntervalInSeconds;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger _logger;
-    private readonly IUnitOfWork _unitOfWork;
+    private readonly bool _enabled;
 
-    public OnlyRunOncePrReplicaJobBase(string jobName, JobKeys jobKey, int runIntervalInSeconds, IServiceScopeFactory scopeFactory, ILogger logger)
+    public OnlyRunOncePrReplicaJobBase(string jobName, JobKeys jobKey, int runIntervalInSeconds, IServiceScopeFactory scopeFactory, ILogger logger, bool enabled)
     {
         _jobName = jobName;
         _jobKey = jobKey;
         _runIntervalInSeconds = runIntervalInSeconds;
         _scopeFactory = scopeFactory;
         _logger = logger;
+        _enabled = enabled;
     }
 
     protected abstract Task PerformPeriodicTask(IServiceScope scope, CancellationToken stoppingToken);
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        if (!_enabled)
+        {
+            _logger.LogInformation("{jobName} is disabled!", _jobName);
+            return;
+        }
+
         while (!stoppingToken.IsCancellationRequested)
         {
             try

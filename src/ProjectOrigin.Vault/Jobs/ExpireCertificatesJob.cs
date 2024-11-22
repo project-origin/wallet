@@ -20,7 +20,8 @@ public class ExpireCertificatesJob : OnlyRunOncePrReplicaJobBase
             JobKeys.ExpireCertificatesJob,
             options.Value.ExpireCertificatesIntervalInSeconds,
             scopeFactory,
-            logger)
+            logger,
+            networkOptions.Value.DaysBeforeCertificatesExpire != null)
     {
         _networkOptions = networkOptions.Value;
     }
@@ -29,6 +30,9 @@ public class ExpireCertificatesJob : OnlyRunOncePrReplicaJobBase
     {
         var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
 
-        await unitOfWork.CertificateRepository.ExpireSlices(DateTimeOffset.UtcNow.AddDays(-_networkOptions.DaysBeforeCertificatesExpire));
+        if (_networkOptions.DaysBeforeCertificatesExpire == null)
+            return;
+
+        await unitOfWork.CertificateRepository.ExpireSlices(DateTimeOffset.UtcNow.AddDays(-_networkOptions.DaysBeforeCertificatesExpire.Value));
     }
 }

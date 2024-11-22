@@ -35,7 +35,7 @@ public class WalletSystemTestFixture : IAsyncLifetime
     public string RegistryName { get; set; } = "some-registry-name";
     public string IssuerArea { get; set; } = "some-issuer-area";
 
-    public int DaysBeforeCertificatesExpire { get; set; } = 60;
+    public int? DaysBeforeCertificatesExpire { get; set; } = 60;
     public int ExpireCertificatesIntervalInSeconds { get; set; } = 5;
 
     public WalletSystemTestFixture()

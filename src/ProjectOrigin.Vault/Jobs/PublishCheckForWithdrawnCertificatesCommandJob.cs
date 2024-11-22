@@ -18,7 +18,8 @@ public class PublishCheckForWithdrawnCertificatesCommandJob : OnlyRunOncePrRepli
             JobKeys.PublishCheckForWithdrawnCertificatesCommandJob,
             options.Value.CheckForWithdrawnCertificatesIntervalInSeconds,
             scopeFactory,
-            logger)
+            logger,
+            enabled:true)
     {
         _bus = bus;
     }

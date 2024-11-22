@@ -1,7 +1,5 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http;
 using System.Threading.Tasks;
 using AutoFixture;
 using FluentAssertions;
@@ -29,10 +27,12 @@ public class ExpireTests
     [InlineData(StampCertificateType.Consumption)]
     public async Task ExpireCertificates(StampCertificateType type)
     {
+        var registryName = _dockerTestFixture.StampAndRegistryFixture.RegistryName;
+        var issuerArea = _dockerTestFixture.StampAndRegistryFixture.IssuerArea;
         var owner = _fixture.Create<string>();
         var someOwnerName = _fixture.Create<string>();
         var httpClient = _dockerTestFixture.CreateAuthenticatedHttpClient(owner, someOwnerName);
-        var walletEndpoint = await CreateWalletAndEndpoint(httpClient);
+        var walletEndpoint = await httpClient.CreateWalletAndEndpoint();
 
         var stampClient = _dockerTestFixture.CreateStampClient();
         var rResponse = await stampClient.StampCreateRecipient(new CreateRecipientRequest
@@ -45,12 +45,15 @@ public class ExpireTests
             }
         });
 
-        var certToExpireId = await IssueCertificate(stampClient,
+        var certToExpireId = await stampClient.IssueCertificate(registryName,
+            issuerArea,
             rResponse.Id,
             type,
-            startDate: DateTimeOffset.UtcNow.AddDays(-_dockerTestFixture.DaysBeforeCertificatesExpire).AddHours(-1),
-            endDate: DateTimeOffset.UtcNow.AddDays(-_dockerTestFixture.DaysBeforeCertificatesExpire));
-        var certId = await IssueCertificate(stampClient,
+            startDate: DateTimeOffset.UtcNow.AddDays(-_dockerTestFixture.DaysBeforeCertificatesExpire!.Value).AddHours(-1),
+            endDate: DateTimeOffset.UtcNow.AddDays(-_dockerTestFixture.DaysBeforeCertificatesExpire!.Value));
+
+        var certId = await stampClient.IssueCertificate(registryName,
+            issuerArea,
             rResponse.Id,
             type,
             startDate: DateTimeOffset.UtcNow.AddHours(-1),
@@ -64,47 +67,5 @@ public class ExpireTests
         content.Should().NotBeNull();
         content.Result.Count().Should().Be(1);
         content.Result.First().FederatedStreamId.StreamId.Should().Be(certId);
-    }
-
-    private async Task<WalletEndpointReference> CreateWalletAndEndpoint(HttpClient client)
-    {
-        var wallet = await client.CreateWallet();
-        var walletEndpoint = await client.CreateWalletEndpoint(wallet.WalletId);
-        return walletEndpoint.WalletReference;
-    }
-
-    private async Task<Guid> IssueCertificate(HttpClient stampClient, Guid recipientId, StampCertificateType type,
-        DateTimeOffset startDate, DateTimeOffset endDate)
-    {
-        var gsrn = Some.Gsrn();
-        var certificateId = Guid.NewGuid();
-        var registryName = _dockerTestFixture.StampAndRegistryFixture.RegistryName;
-        var issuerArea = _dockerTestFixture.StampAndRegistryFixture.IssuerArea;
-        var icResponse = await stampClient.StampIssueCertificate(new CreateCertificateRequest
-        {
-            RecipientId = recipientId,
-            RegistryName = registryName,
-            MeteringPointId = gsrn,
-            Certificate = new StampCertificateDto
-            {
-                Id = certificateId,
-                Start = startDate.ToUnixTimeSeconds(),
-                End = endDate.ToUnixTimeSeconds(),
-                GridArea = issuerArea,
-                Quantity = 123,
-                Type = type,
-                ClearTextAttributes = new Dictionary<string, string>
-                {
-                    { "fuelCode", Some.FuelCode },
-                    { "techCode", Some.TechCode }
-                },
-                HashedAttributes = new List<StampHashedAttribute>
-                {
-                    new() { Key = "assetId", Value = gsrn },
-                    new() { Key = "address", Value = "Some road 1234" }
-                }
-            }
-        });
-        return certificateId;
     }
 }
