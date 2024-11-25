@@ -56,10 +56,13 @@ public partial class RegistryProcessBuilder : IRegistryProcessBuilder
         {
             RegistryName = transaction.Header.FederatedStreamId.Registry,
             TransactionId = transaction.ToShaId(),
-            RequestId = _routingSlipId,
-            Owner = _owner,
             CertificateId = new Guid(transaction.Header.FederatedStreamId.StreamId.Value),
-            SliceId = sliceId
+            SliceId = sliceId,
+            RequestStatusArgs = new RequestStatusArgs
+            {
+                RequestId = _routingSlipId,
+                Owner = _owner
+            }
         });
     }
 

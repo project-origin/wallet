@@ -221,7 +221,8 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
                     new() { Key = "AssetId", Value = "571234567890123456", Type = CertificateAttributeType.ClearText },
                     new() { Key = "TechCode", Value = "T070000", Type = CertificateAttributeType.ClearText },
                     new() { Key = "FuelCode", Value = "F00000000", Type = CertificateAttributeType.ClearText },
-                }
+                },
+                Withdrawn = false
             };
             var consumptionCertificate = new Certificate
             {
@@ -234,7 +235,8 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
                 Attributes = new List<CertificateAttribute>
                 {
                     new() { Key = "AssetId", Value = "571234567891234567", Type = CertificateAttributeType.ClearText },
-                }
+                },
+                Withdrawn = false
             };
             await certificateRepository.InsertCertificate(productionCertificate);
             await certificateRepository.InsertCertificate(consumptionCertificate);
@@ -335,6 +337,7 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
             {
                 new() { Key = "TechCode", Value = "T070000", Type = CertificateAttributeType.ClearText },
                 new() { Key = "FuelCode", Value = "F00000000", Type = CertificateAttributeType.ClearText },
+                new() { Key = "AssetId", Value = "571234567890123456", Type = CertificateAttributeType.Hashed },
             };
 
             var certificate1 = new Certificate
@@ -345,7 +348,8 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
                 EndDate = DateTimeOffset.Parse("2023-01-01T13:00Z"),
                 GridArea = "DK1",
                 CertificateType = GranularCertificateType.Production,
-                Attributes = attributes
+                Attributes = attributes,
+                Withdrawn = false
             };
             var certificate2 = new Certificate
             {
@@ -355,7 +359,8 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
                 EndDate = DateTimeOffset.Parse("2023-01-01T14:00Z"),
                 GridArea = "DK1",
                 CertificateType = GranularCertificateType.Production,
-                Attributes = attributes
+                Attributes = attributes,
+                Withdrawn = false
             };
             await certificateRepository.InsertCertificate(certificate1);
             await certificateRepository.InsertCertificate(certificate2);

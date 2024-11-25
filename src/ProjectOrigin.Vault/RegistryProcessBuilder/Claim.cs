@@ -17,7 +17,7 @@ public partial class RegistryProcessBuilder
         if (productionSlice.Quantity != consumptionSlice.Quantity)
             throw new InvalidOperationException("Production and consumption slices must have the same quantity");
 
-        var allocationId = Guid.NewGuid();
+        var allocationId = _routingSlipId; //_routingSlipId = ClaimId
 
         AddActivity<AllocateActivity, AllocateArguments>(new AllocateArguments
         {
@@ -73,8 +73,11 @@ public partial class RegistryProcessBuilder
         {
             Id = allocationId,
             State = ClaimState.Claimed,
-            RequestId = _routingSlipId,
-            Owner = _owner
+            RequestStatusArgs = new RequestStatusArgs
+            {
+                RequestId = _routingSlipId,
+                Owner = _owner
+            }
         });
     }
 

@@ -113,7 +113,8 @@ public static class PostgresFixtureExtensions
                 EndDate = end ?? start?.AddDays(1) ?? DateTimeOffset.Now.AddDays(1),
                 GridArea = Area,
                 CertificateType = type,
-                Attributes = attributes
+                Attributes = attributes,
+                Withdrawn = false
             };
             await certificateRepository.InsertCertificate(cert);
 
@@ -216,7 +217,8 @@ public static class PostgresFixtureExtensions
                 StartDate = issuedEvent.Period.Start.ToDateTimeOffset(),
                 EndDate = issuedEvent.Period.End.ToDateTimeOffset(),
                 GridArea = issuedEvent.GridArea,
-                CertificateType = (GranularCertificateType)issuedEvent.Type
+                CertificateType = (GranularCertificateType)issuedEvent.Type,
+                Withdrawn = false
             };
 
             await certificateRepository.InsertCertificate(certificate);

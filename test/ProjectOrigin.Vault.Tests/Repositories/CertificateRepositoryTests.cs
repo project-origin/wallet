@@ -43,7 +43,8 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
             EndDate = DateTimeOffset.Now.AddDays(1).ToUtcTime(),
             GridArea = "DK1",
             CertificateType = GranularCertificateType.Production,
-            Attributes = attributes
+            Attributes = attributes,
+            Withdrawn = false
         };
 
         // Act
@@ -66,6 +67,124 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
 
         // Assert
         result.Should().BeEquivalentTo(certificate);
+    }
+
+    [Fact]
+    public async Task WithdrawCertificate()
+    {
+        var registry = _fixture.Create<string>();
+        var certificate1 = await CreateCertificate(registry);
+        var certificate2 = await CreateCertificate(registry);
+
+        await _certRepository.WithdrawCertificate(registry, certificate1.Id);
+
+        var result1 = await _certRepository.GetCertificate(registry, certificate1.Id);
+        var result2 = await _certRepository.GetCertificate(registry, certificate2.Id);
+
+        result1.Should().NotBeNull();
+        result2.Should().NotBeNull();
+        result1!.Withdrawn.Should().BeTrue();
+        result2!.Withdrawn.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task WithdrawCertificate_WhenAlreadyWithdrawn()
+    {
+        var registry = _fixture.Create<string>();
+        var certificate1 = await CreateCertificate(registry);
+
+        await _certRepository.WithdrawCertificate(registry, certificate1.Id);
+        await _certRepository.WithdrawCertificate(registry, certificate1.Id);
+
+        var result1 = await _certRepository.GetCertificate(registry, certificate1.Id);
+
+        result1.Should().NotBeNull();
+        result1!.Withdrawn.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task GetCertificatesAndAggregatedCertificates_ShouldNotReturnWithdrawnCertificates()
+    {
+        var registry = _fixture.Create<string>();
+        var certificate = await CreateCertificate(registry);
+        var owner = _fixture.Create<string>();
+        var wallet = await CreateWallet(owner);
+        var endpoint = await CreateWalletEndpoint(wallet);
+        var slice = new WalletSlice
+        {
+            Id = Guid.NewGuid(),
+            WalletEndpointId = endpoint.Id,
+            WalletEndpointPosition = 1,
+            RegistryName = registry,
+            CertificateId = certificate.Id,
+            Quantity = _fixture.Create<int>(),
+            RandomR = _fixture.Create<byte[]>(),
+            State = WalletSliceState.Available
+        };
+
+        await _certRepository.InsertWalletSlice(slice);
+        await _certRepository.WithdrawCertificate(registry, certificate.Id);
+
+        var queryResult1 = await _certRepository.QueryCertificates(new QueryCertificatesFilterCursor
+        {
+            Owner = owner,
+            UpdatedSince = null
+        });
+        queryResult1.Items.Should().BeEmpty();
+
+        var queryResult2 = await _certRepository.QueryAvailableCertificates(new QueryCertificatesFilter
+        {
+            Owner = owner
+        });
+        queryResult2.Items.Should().BeEmpty();
+
+        var aggregated = await _certRepository.QueryAggregatedAvailableCertificates(new QueryAggregatedCertificatesFilter
+        {
+            Owner = owner,
+            TimeAggregate = TimeAggregate.Day,
+            TimeZone = "Europe/Copenhagen"
+        });
+        aggregated.Items.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetClaimedSlicesOfCertificate()
+    {
+        var registry = _fixture.Create<string>();
+        var certificate = await CreateCertificate(registry);
+        var owner = _fixture.Create<string>();
+        var wallet = await CreateWallet(owner);
+        var endpoint = await CreateWalletEndpoint(wallet);
+        var slice = new WalletSlice
+        {
+            Id = Guid.NewGuid(),
+            WalletEndpointId = endpoint.Id,
+            WalletEndpointPosition = 1,
+            RegistryName = registry,
+            CertificateId = certificate.Id,
+            Quantity = _fixture.Create<int>(),
+            RandomR = _fixture.Create<byte[]>(),
+            State = WalletSliceState.Available
+        };
+        var claimedSlice = new WalletSlice
+        {
+            Id = Guid.NewGuid(),
+            WalletEndpointId = endpoint.Id,
+            WalletEndpointPosition = 2,
+            RegistryName = registry,
+            CertificateId = certificate.Id,
+            Quantity = _fixture.Create<int>(),
+            RandomR = _fixture.Create<byte[]>(),
+            State = WalletSliceState.Claimed
+        };
+
+        await _certRepository.InsertWalletSlice(slice);
+        await _certRepository.InsertWalletSlice(claimedSlice);
+
+        var claimedSlices = await _certRepository.GetClaimedSlicesOfCertificate(registry, certificate.Id);
+
+        claimedSlices.Should().HaveCount(1);
+        claimedSlices.First().Should().BeEquivalentTo(claimedSlice, options => options.Excluding(x => x.UpdatedAt));
     }
 
     [Fact]
@@ -350,7 +469,8 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
             EndDate = DateTimeOffset.Now.AddDays(1).ToUtcTime(),
             GridArea = "DK1",
             CertificateType = GranularCertificateType.Production,
-            Attributes = attributes
+            Attributes = attributes,
+            Withdrawn = false
         };
 
         var slice = new WalletSlice
@@ -541,6 +661,23 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
     }
 
     [Fact]
+    public async Task ReserveSlice_OnlyWithdrawnSlices_ThrowException()
+    {
+        var registry = _fixture.Create<string>();
+        var owner = _fixture.Create<string>();
+        var wallet = await CreateWallet(owner);
+        var slice = await CreateAndInsertCertificateWithSlice(registry, await CreateWalletEndpoint(wallet), 1,
+            quantity: 200);
+
+        await _certRepository.WithdrawCertificate(registry, slice.CertificateId);
+
+        var act = () => _certRepository.ReserveQuantity(owner, slice.RegistryName, slice.CertificateId, 200);
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("Owner has less to reserve than available");
+    }
+
+    [Fact]
     public async Task ReserveSlice_LessThan_ThrowsException()
     {
         // Arrange
@@ -621,7 +758,8 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
             EndDate = DateTimeOffset.Now.AddDays(1).ToUtcTime(),
             GridArea = "DK1",
             CertificateType = GranularCertificateType.Production,
-            Attributes = attributes
+            Attributes = attributes,
+            Withdrawn = false
         };
         await _certRepository.InsertCertificate(certificate);
 

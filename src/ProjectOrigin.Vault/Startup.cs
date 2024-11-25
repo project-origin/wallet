@@ -24,6 +24,8 @@ using System.IO;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.Extensions.Logging;
+using ProjectOrigin.Vault.Jobs;
 
 namespace ProjectOrigin.Vault;
 
@@ -62,6 +64,16 @@ public class Startup
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
+        services.AddOptions<RetryOptions>()
+            .BindConfiguration(RetryOptions.Retry)
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        services.AddOptions<JobOptions>()
+            .BindConfiguration(JobOptions.Job)
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
         services.ConfigurePersistance(_configuration);
         services.ConfigureAuthentication(_configuration.GetValidSection<AuthOptions>(AuthOptions.Prefix));
         services.ConfigureOtlp(_configuration.GetValidSection<OtlpOptions>(OtlpOptions.Prefix));
@@ -97,10 +109,15 @@ public class Startup
                     .Handle<TransientException>());
             });
 
+            o.AddConsumer<CheckForWithdrawnCertificatesCommandHandler>();
+
             o.AddActivitiesFromNamespaceContaining<TransferFullSliceActivity>();
-            o.AddExecuteActivity<WaitCommittedRegistryTransactionActivity, WaitCommittedTransactionArguments>(cfg =>
+            o.AddExecuteActivity<WaitCommittedRegistryTransactionActivity, WaitCommittedTransactionArguments>((rc, cfg) =>
             {
-                cfg.UseRetry(r => r.Interval(100, TimeSpan.FromSeconds(10))
+                var retryOptions = rc.GetRequiredService<IOptions<RetryOptions>>();
+                cfg.UseRetry(r => r.Incremental(retryOptions!.Value.RegistryTransactionStillProcessingRetryCount,
+                        TimeSpan.FromSeconds(retryOptions.Value.RegistryTransactionStillProcessingInitialIntervalSeconds),
+                        TimeSpan.FromSeconds(retryOptions.Value.RegistryTransactionStillProcessingIntervalIncrementSeconds))
                     .Handle<RegistryTransactionStillProcessingException>());
             });
 
@@ -124,10 +141,14 @@ public class Startup
 
         services.AddHttpClient();
         services.ConfigureUriOptionsLoader<NetworkOptions>("network");
+
+        services.AddHostedService<PublishCheckForWithdrawnCertificatesCommandJob>();
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
     {
+        PrintNetworkOptions(app);
+
         var pathBase = app.ApplicationServices.GetRequiredService<IOptions<ServiceOptions>>().Value.PathBase;
         app.UsePathBase(pathBase);
 
@@ -144,5 +165,12 @@ public class Startup
         });
 
         app.ConfigureSqlMappers();
+    }
+
+    private void PrintNetworkOptions(IApplicationBuilder app)
+    {
+        var logger = app.ApplicationServices.GetRequiredService<ILogger<Startup>>();
+        var options = app.ApplicationServices.GetRequiredService<IOptions<NetworkOptions>>().Value;
+        logger.LogInformation(options.ToString());
     }
 }

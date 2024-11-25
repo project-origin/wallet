@@ -55,7 +55,7 @@ rabbitmq:
     #   name:
     #   key:
   # port defines the port of the rabbitmq server
-  port: 5672
+  port:
     # secretRef:
     #   name:
     #   key:
@@ -94,7 +94,7 @@ postgresql:
     #   name:
     #   key:
   # port defines the port of the postgresql database
-  port: 5432
+  port:
     # secretRef:
     #   name:
     #   key:
@@ -125,6 +125,8 @@ postgresql:
     # configMapRef:
     #   name:
     #   key:
+  # maxPoolSize defines the maximum connection pool size pr replica
+  maxPoolSize: 30
 
 # vault holds the configuration for the vault deployment
 vault:
@@ -209,6 +211,9 @@ networkConfig:
   #     DK1:
   #       issuerKeys:
   #       - publicKey: "Ay02vkc6FGV8FwtvVsmBO2p7UdbZIcFhvMGFB40D3DKX"
+  #   issuers:
+  #     Denmark:
+  #       stampUrl: "https://stamp.narnia.example.com",
 
   # json defines the network configuration as a string in json
   json: #|-
@@ -226,6 +231,11 @@ networkConfig:
   #          }
   #        ]
   #      }
+  #    },
+  #    "issuers": {
+  #      "Denmark": {
+  #        "stampUrl": "https://stamp.narnia.example.com"
+  #      }
   #    }
   #  }
 
@@ -237,4 +247,33 @@ migrationWaiter:
     # repository is the repository to pull the image from
     repository: bitnami/kubectl
     # tag is the tag to pull defaults to the chart version
-    tag: 1.31.1
+    tag: 1.31.3
+  # resources holds the configuration for the resource requests and limits
+  resources:
+    # requests holds the configuration for the resource requests
+    requests:
+      # cpu defines the cpu request limit for the registry server
+      cpu: 0.1
+      # memory defines the memory request limit for the registry server
+      memory:
+
+    # limits holds the configuration for the resource limits
+    limits:
+      # cpu defines the cpu limit for the registry server
+      cpu:
+      # memory defines the memory limit for the registry server
+      memory: 50Mi
+
+# retry holds the configuration for retry logic
+retry:
+  # registryTransactionStillProcessingRetryCount defines the number of retries for registry transactions that are still processing
+  registryTransactionStillProcessingRetryCount: 5
+  # registryTransactionStillProcessingInitialIntervalSeconds defines the initial interval in seconds for retrying registry transactions that are still processing
+  registryTransactionStillProcessingInitialIntervalSeconds: 60
+  # registryTransactionStillProcessingIntervalIncrementSeconds defines the interval increment in seconds for retrying registry transactions that are still processing
+  registryTransactionStillProcessingIntervalIncrementSeconds: 60
+
+# job holds configuration for jobs
+job:
+  # checkForWithdrawnCertificatesIntervalInSeconds how many seconds to wait between checking for withdrawn certificates
+  checkForWithdrawnCertificatesIntervalInSeconds: 900

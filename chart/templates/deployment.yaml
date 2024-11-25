@@ -1,5 +1,4 @@
 ---
-{{- $tag := .Values.image.tag | default .Chart.AppVersion -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -23,12 +22,7 @@ spec:
       initContainers:
         - name: wait-for-migration
           image: {{ include "common.image" (dict "root" $ "image" $.Values.migrationWaiter.image) }}
-          resources:
-            requests:
-              cpu: 0.1
-            limits:
-              memory: 50Mi
-              ephemeral-storage: "1Mi"
+          {{- include "common.limits" $.Values.migrationWaiter.resources | nindent 10 }}
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
@@ -82,10 +76,10 @@ spec:
               value: {{ $.Values.rabbitmq.quorum | quote}}
             {{- if $.Values.rabbitmq.quorum }}
             - name: MessageBroker__RabbitMQ__Replicas
-              value: {{ required "rabbitmq.replicas must be set when quorum enabled" $.Values.rabbitmq.replicas }}
+              value: {{ required "rabbitmq.replicas must be set when quorum enabled" $.Values.rabbitmq.replicas | quote }}
             {{- end }}
 
-          # Authentication
+            # Authentication
             - name: auth__type
               value: {{ .Values.config.auth.type }}
           {{- if eq .Values.config.auth.type "header" }}
@@ -111,7 +105,18 @@ spec:
           {{- else}}
             {{- fail "Unsupported auth type specified. Please specify 'auth.type' as either 'jwt' or 'header'." }}
           {{- end }}
-
+          
+            # Retry
+            - name: Retry__RegistryTransactionStillProcessingRetryCount
+              value: {{ .Values.retry.registryTransactionStillProcessingRetryCount | quote }}
+            - name: Retry__RegistryTransactionStillProcessingInitialIntervalSeconds
+              value: {{ .Values.retry.registryTransactionStillProcessingInitialIntervalSeconds | quote }}
+            - name: Retry__RegistryTransactionStillProcessingIntervalIncrementSeconds
+              value: {{ .Values.retry.registryTransactionStillProcessingIntervalIncrementSeconds | quote }}
+              
+            # Jobs
+            - name: Job__CheckForWithdrawnCertificatesIntervalInSeconds
+              value: {{ .Values.job.checkForWithdrawnCertificatesIntervalInSeconds | quote }}
           volumeMounts:
             {{- include "common.networkConfig.volumeMounts" .Values.networkConfig | nindent 12}}
           {{- with .Values.vault.volumeMounts }}

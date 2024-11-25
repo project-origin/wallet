@@ -11,6 +11,7 @@
       gridArea: DK1,
       certificateType: production,
       attributes: {
+        assetId: 571234567890123456,
         fuelCode: F00000000,
         techCode: T070000
       }
@@ -26,6 +27,7 @@
       gridArea: DK1,
       certificateType: production,
       attributes: {
+        assetId: 571234567890123456,
         fuelCode: F00000000,
         techCode: T070000
       }

@@ -10,13 +10,13 @@
     <PackageReference Include="Dapper" Version="2.1.44" />
     <PackageReference Include="dbup-postgresql" Version="5.0.40" />
     <PackageReference Include="Grpc.AspNetCore" Version="2.66.0" />
-    <PackageReference Include="MassTransit" Version="8.2.5" />
-    <PackageReference Include="MassTransit.RabbitMQ" Version="8.2.5" />
-    <PackageReference Include="Npgsql" Version="8.0.4" />
-    <PackageReference Include="Npgsql.OpenTelemetry" Version="8.0.4" />
+    <PackageReference Include="MassTransit" Version="8.3.0" />
+    <PackageReference Include="MassTransit.RabbitMQ" Version="8.3.0" />
+    <PackageReference Include="Npgsql" Version="8.0.5" />
+    <PackageReference Include="Npgsql.OpenTelemetry" Version="8.0.5" />
     <PackageReference Include="NSec.Cryptography" Version="24.4.0" />
-    <PackageReference Include="Microsoft.Identity.Web" Version="3.2.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.8" />
+    <PackageReference Include="Microsoft.Identity.Web" Version="3.2.2" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.10" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="8.0.0" />
     <PackageReference Include="OpenTelemetry" Version="1.9.0" />
     <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.9.0" />
@@ -26,17 +26,17 @@
     <PackageReference Include="OpenTelemetry.Instrumentation.Process" Version="0.5.0-beta.7" />
     <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.9.0" />
     <PackageReference Include="ProjectOrigin.PedersenCommitment" Version="1.1.1" />
-    <PackageReference Include="ProjectOrigin.HierarchicalDeterministicKeys" Version="1.0.0" />
-    <PackageReference Include="Serilog.AspNetCore" Version="8.0.2" />
+    <PackageReference Include="ProjectOrigin.HierarchicalDeterministicKeys" Version="1.1.0" />
+    <PackageReference Include="Serilog.AspNetCore" Version="8.0.3" />
     <PackageReference Include="Serilog.Enrichers.Span" Version="3.1.0" />
     <PackageReference Include="Serilog.Expressions" Version="5.0.0" />
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.8.0" />
-    <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="6.8.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.9.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="6.9.0" />
   </ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Include="Database\Postgres\Scripts\v1\*.sql">
-      <LogicalName>ProjectOrigin.Vault.Database.Scripts.%(Filename)%(Extension)</LogicalName>
+      <LogicalName>ProjectOrigin.WalletSystem.Server.Database.Scripts.%(Filename)%(Extension)</LogicalName>
     </EmbeddedResource>
     <EmbeddedResource Include="Database\Postgres\Scripts\v2\*.sql">
       <LogicalName>Scripts.V2.%(Filename)%(Extension)</LogicalName>
@@ -48,18 +48,18 @@
   </Target>
 
   <ItemGroup>
-    <None Remove="Database\Postgres\Scripts\v2\v2-0005.sql" />
+    <None Remove="Database\Postgres\Scripts\v2\v2-0009.sql" />
   </ItemGroup>
 
   <ItemGroup>
     <Protobuf Include="../../protos/common.proto" Link="protos\common.proto">
-      <SourceUrl>https://raw.githubusercontent.com/project-origin/registry/v2.0.0/protos/common.proto</SourceUrl>
+      <SourceUrl>https://raw.githubusercontent.com/project-origin/registry/v2.1.0/protos/common.proto</SourceUrl>
     </Protobuf>
     <Protobuf Include="../../protos/registry.proto" Link="protos\registry.proto">
-      <SourceUrl>https://raw.githubusercontent.com/project-origin/registry/v2.0.0/protos/registry.proto</SourceUrl>
+      <SourceUrl>https://raw.githubusercontent.com/project-origin/registry/v2.1.0/protos/registry.proto</SourceUrl>
     </Protobuf>
     <Protobuf Include="../../protos/electricity.proto" Link="protos\electricity.proto">
-      <SourceUrl>https://raw.githubusercontent.com/project-origin/verifier_electricity/v1.3.0/protos/electricity.proto</SourceUrl>
+      <SourceUrl>https://raw.githubusercontent.com/project-origin/verifier_electricity/v1.2.0/protos/electricity.proto</SourceUrl>
     </Protobuf>
     <Protobuf Include="../../protos/chronicler.proto" Link="protos\chronicler.proto">
       <SourceUrl>https://raw.githubusercontent.com/project-origin/chronicler/v1.0.0-rc.1/src/Protos/chronicler.proto</SourceUrl>
@@ -67,7 +67,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Update="Database\Postgres\Scripts\v2\v2-0005.sql">
+    <EmbeddedResource Update="Database\Postgres\Scripts\v2\v2-0009.sql">
       <LogicalName>Scripts.V2.%(Filename)%(Extension)</LogicalName>
     </EmbeddedResource>
   </ItemGroup>
