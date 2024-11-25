@@ -88,8 +88,6 @@ public class AllocateActivity : IExecuteActivity<AllocateArguments>
                 {
                     RegistryName = transaction.Header.FederatedStreamId.Registry,
                     TransactionId = transaction.ToShaId(),
-                    RequestId = context.Arguments.RequestId,
-                    Owner = context.Arguments.Owner,
                     CertificateId = Guid.Parse(context.Arguments.CertificateId.StreamId.Value),
                     SliceId = sliceId
                 });
