@@ -10,7 +10,7 @@ using ProjectOrigin.Vault.Services.REST.v1;
 namespace ProjectOrigin.Vault.Tests.JobTests;
 
 [Collection(DockerTestCollectionWithExpireTurnedOff.CollectionName)]
-public class ExpireCertificatesJobTests 
+public class ExpireCertificatesJobTests
 {
     private readonly DockerTestFixtureWithExpireTurnedOff _dockerFixture;
     private readonly Fixture _fixture;
