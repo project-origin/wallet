@@ -23,12 +23,16 @@ public abstract class AbstractFlowTests
         Electricity.V1.GranularCertificateType type,
         SecretCommitmentInfo issuedCommitment,
         int position,
+        DateTimeOffset? startDate = null,
+        DateTimeOffset? endDate = null,
         List<(string Key, string Value, byte[]? Salt)>? attributes = null)
     {
         var issuedEvent = await WalletTestFixture.StampAndRegistryFixture.IssueCertificate(
             type,
             issuedCommitment,
             endpoint.PublicKey.Derive(position).GetPublicKey(),
+            startDate,
+            endDate,
             attributes);
 
         var client = WalletTestFixture.ServerFixture.CreateHttpClient();

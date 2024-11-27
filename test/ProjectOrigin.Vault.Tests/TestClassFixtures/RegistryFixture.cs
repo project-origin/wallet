@@ -15,6 +15,7 @@ using Grpc.Net.Client;
 using ProjectOrigin.HierarchicalDeterministicKeys;
 using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
 using ProjectOrigin.PedersenCommitment;
+using ProjectOrigin.Registry.V1;
 using ProjectOrigin.TestCommon;
 using ProjectOrigin.TestCommon.Extensions;
 using Testcontainers.PostgreSql;
@@ -61,6 +62,7 @@ public class RegistryFixture : IAsyncLifetime
           {Area}:
             issuerKeys:
               - publicKey: "{Convert.ToBase64String(Encoding.UTF8.GetBytes(IssuerKey.PublicKey.ExportPkixText()))}"
+        daysBeforeCertificatesExpire: 60
         """, ".yaml");
 
         Network = new NetworkBuilder()
@@ -164,8 +166,13 @@ public class RegistryFixture : IAsyncLifetime
         Electricity.V1.GranularCertificateType type,
         SecretCommitmentInfo commitment,
         IPublicKey ownerKey,
+        DateTimeOffset? startDate = null,
+        DateTimeOffset? endDate = null,
         List<(string Key, string Value, byte[]? Salt)>? attributes = null)
     {
+        startDate ??= new DateTimeOffset(2023, 1, 10, 12, 0, 0, TimeSpan.Zero);
+        endDate ??= new DateTimeOffset(2023, 1, 10, 13, 0, 0, TimeSpan.Zero);
+
         var id = new Common.V1.FederatedStreamId
         {
             Registry = RegistryName,
@@ -178,8 +185,8 @@ public class RegistryFixture : IAsyncLifetime
             Type = type,
             Period = new Electricity.V1.DateInterval
             {
-                Start = Timestamp.FromDateTimeOffset(new DateTimeOffset(2023, 1, 10, 12, 0, 0, TimeSpan.Zero)),
-                End = Timestamp.FromDateTimeOffset(new DateTimeOffset(2023, 1, 10, 13, 0, 0, TimeSpan.Zero))
+                Start = Timestamp.FromDateTimeOffset(startDate.Value),
+                End = Timestamp.FromDateTimeOffset(endDate.Value)
             },
             GridArea = Area,
             QuantityCommitment = new Electricity.V1.Commitment
@@ -256,6 +263,73 @@ public class RegistryFixture : IAsyncLifetime
         }
 
         return issuedEvent;
+    }
+
+    public async Task<GetTransactionStatusResponse> AllocateEvent(
+        Guid allocationId,
+        Common.V1.FederatedStreamId productionId,
+        Common.V1.FederatedStreamId consumptionId,
+        SecretCommitmentInfo productionSlice,
+        SecretCommitmentInfo consumptionSlice,
+        byte[]? overwrideEqualityProof = null)
+    {
+        var allocatedEvent = new Electricity.V1.AllocatedEvent()
+        {
+            AllocationId = new Common.V1.Uuid { Value = allocationId.ToString() },
+            ProductionCertificateId = productionId,
+            ConsumptionCertificateId = consumptionId,
+            ProductionSourceSliceHash = ByteString.CopyFrom(SHA256.HashData(productionSlice.Commitment.C)),
+            ConsumptionSourceSliceHash = ByteString.CopyFrom(SHA256.HashData(consumptionSlice.Commitment.C)),
+            EqualityProof = ByteString.CopyFrom(overwrideEqualityProof ?? SecretCommitmentInfo.CreateEqualityProof(productionSlice, consumptionSlice, allocationId.ToString())),
+        };
+
+        var header = new TransactionHeader
+        {
+            FederatedStreamId = productionId,
+            PayloadType = Electricity.V1.AllocatedEvent.Descriptor.FullName,
+            PayloadSha512 = ByteString.CopyFrom(SHA512.HashData(allocatedEvent.ToByteArray())),
+            Nonce = Guid.NewGuid().ToString(),
+        };
+
+        var transaction = new Transaction
+        {
+            Header = header,
+            HeaderSignature = ByteString.CopyFrom(IssuerKey.Sign(header.ToByteArray())),
+            Payload = allocatedEvent.ToByteString()
+        };
+
+        var request = new Registry.V1.SendTransactionsRequest();
+        request.Transactions.Add(transaction);
+
+        var channel = GrpcChannel.ForAddress(RegistryUrl);
+        var client = new Registry.V1.RegistryService.RegistryServiceClient(channel);
+        await client.SendTransactionsAsync(request);
+
+        var statusRequest = new Registry.V1.GetTransactionStatusRequest
+        {
+            Id = Convert.ToBase64String(SHA256.HashData(transaction.ToByteArray()))
+        };
+
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+        while (true)
+        {
+            var status = await client.GetTransactionStatusAsync(statusRequest);
+
+            if (status.Status == Registry.V1.TransactionState.Committed)
+                return status;
+            else if (status.Status == Registry.V1.TransactionState.Failed)
+                return status;
+
+            if (stopwatch.Elapsed > TimeSpan.FromSeconds(15))
+            {
+                var registryLog = await _registryContainer.GetLogsAsync();
+                var verifierLog = await _verifierContainer.GetLogsAsync();
+
+                throw new Exception($"Timed out waiting for transaction to commit {status.Status},\n\nRegistry Log:\n{registryLog}\n\nVerifier Log:\n{verifierLog}");
+            }
+
+            await Task.Delay(1000);
+        }
     }
 
     private static string CreateNetworkConnectionString(

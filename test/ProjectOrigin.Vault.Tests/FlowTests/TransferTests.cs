@@ -129,7 +129,7 @@ public class TransferTests : AbstractFlowTests
             Electricity.V1.GranularCertificateType.Production,
             new SecretCommitmentInfo(issuedAmount),
             1,
-            [
+            attributes: [
                 ("TechCode", "T010101", null),
                 ("FuelCode", "F010101", null),
                 ("AssetId", "1264541", new byte[] { 0x01, 0x02, 0x03, 0x04 }),
