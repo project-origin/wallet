@@ -17,7 +17,7 @@ public abstract class OnlyRunOncePrReplicaJobBase : BackgroundService
     private readonly ILogger _logger;
     private readonly bool _enabled;
 
-    public OnlyRunOncePrReplicaJobBase(string jobName, JobKeys jobKey, int runIntervalInSeconds, IServiceScopeFactory scopeFactory, ILogger logger, bool enabled)
+    protected OnlyRunOncePrReplicaJobBase(string jobName, JobKeys jobKey, int runIntervalInSeconds, IServiceScopeFactory scopeFactory, ILogger logger, bool enabled)
     {
         _jobName = jobName;
         _jobKey = jobKey;
