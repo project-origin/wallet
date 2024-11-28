@@ -24,8 +24,8 @@ public class ClaimTests : AbstractFlowTests
     {
         //Arrange
         var position = 1;
-        var startDate = new DateTimeOffset(2023, 1, 10, 12, 0, 0, TimeSpan.Zero);
-        var endDate = new DateTimeOffset(2023, 1, 10, 13, 0, 0, TimeSpan.Zero);
+        var endDate = DateTimeOffset.UtcNow;
+        var startDate = endDate.AddHours(-1);
 
         var client = WalletTestFixture.ServerFixture.CreateHttpClient();
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", WalletTestFixture.JwtTokenIssuerFixture.GenerateRandomToken());

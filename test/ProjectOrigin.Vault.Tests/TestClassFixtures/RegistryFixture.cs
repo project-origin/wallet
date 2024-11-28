@@ -170,8 +170,8 @@ public class RegistryFixture : IAsyncLifetime
         DateTimeOffset? endDate = null,
         List<(string Key, string Value, byte[]? Salt)>? attributes = null)
     {
-        startDate ??= new DateTimeOffset(2023, 1, 10, 12, 0, 0, TimeSpan.Zero);
-        endDate ??= new DateTimeOffset(2023, 1, 10, 13, 0, 0, TimeSpan.Zero);
+        endDate ??= DateTimeOffset.UtcNow;
+        startDate ??= endDate.Value.AddHours(-1);
 
         var id = new Common.V1.FederatedStreamId
         {
