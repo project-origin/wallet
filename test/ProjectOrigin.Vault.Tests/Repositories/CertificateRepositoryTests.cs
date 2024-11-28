@@ -321,10 +321,11 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
     {
         var daysBeforeCertificatesExpire = DateTimeOffset.UtcNow.AddDays(-60);
 
+        var owner = _fixture.Create<string>();
         var registry = _fixture.Create<string>();
         var startDate = daysBeforeCertificatesExpire.AddHours(-1);
         var certificate = await CreateCertificate(registry, startDate: startDate, endDate: startDate.AddHours(1));
-        var wallet = await CreateWallet(registry);
+        var wallet = await CreateWallet(owner);
         var endpoint = await CreateWalletEndpoint(wallet);
         var slice = new WalletSlice
         {
@@ -358,6 +359,55 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
 
         sliceDb.State.Should().Be(WalletSliceState.Expired);
         claimedSliceDb.State.Should().Be(state);
+    }
+
+    [Fact]
+    public async Task GetCertificates_DoesNotGetExpiredCertificates()
+    {
+        var daysBeforeCertificatesExpire = DateTimeOffset.UtcNow.AddDays(-60);
+
+        var owner = _fixture.Create<string>();
+        var registry = _fixture.Create<string>();
+        var startDate = daysBeforeCertificatesExpire.AddHours(-1);
+        var certificate = await CreateCertificate(registry, startDate: startDate, endDate: startDate.AddHours(1));
+        var wallet = await CreateWallet(owner);
+        var endpoint = await CreateWalletEndpoint(wallet);
+        var slice = new WalletSlice
+        {
+            Id = Guid.NewGuid(),
+            WalletEndpointId = endpoint.Id,
+            WalletEndpointPosition = 1,
+            RegistryName = registry,
+            CertificateId = certificate.Id,
+            Quantity = _fixture.Create<int>(),
+            RandomR = _fixture.Create<byte[]>(),
+            State = WalletSliceState.Available
+        };
+        await _certRepository.InsertWalletSlice(slice);
+
+        await _certRepository.ExpireSlices(daysBeforeCertificatesExpire);
+
+        var queryResult1 = await _certRepository.QueryCertificates(new QueryCertificatesFilterCursor
+        {
+            Owner = owner,
+            UpdatedSince = null
+        });
+        queryResult1.Items.Should().BeEmpty();
+
+        var queryResult2 = await _certRepository.QueryAvailableCertificates(new QueryCertificatesFilter
+        {
+            Owner = owner
+        });
+        queryResult2.Items.Should().BeEmpty();
+
+        var aggregated = await _certRepository.QueryAggregatedAvailableCertificates(new QueryAggregatedCertificatesFilter
+        {
+            Owner = owner,
+            TimeAggregate = TimeAggregate.Day,
+            TimeZone = "Europe/Copenhagen"
+        });
+        aggregated.Items.Should().BeEmpty();
+
     }
 
     [Fact]
