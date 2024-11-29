@@ -211,6 +211,10 @@ networkConfig:
   #     DK1:
   #       issuerKeys:
   #       - publicKey: "Ay02vkc6FGV8FwtvVsmBO2p7UdbZIcFhvMGFB40D3DKX"
+  #       chronicler":
+  #          url: https://chronicler.narnia.example.com
+  #          signerKeys:
+  #          - publicKey: "Ay02vkc6FGV8FwtvVsmBO2p7UdbZIcFhvMGFB40D3DKX"
   #   issuers:
   #     Denmark:
   #       stampUrl: "https://stamp.narnia.example.com",
@@ -229,7 +233,15 @@ networkConfig:
   #          {
   #            "publicKey": "Ay02vkc6FGV8FwtvVsmBO2p7UdbZIcFhvMGFB40D3DKX"
   #          }
-  #        ]
+  #        ],
+  #        "chronicler": {
+  #          "url": "https://chronicler.narnia.example.com"
+  #          "signerKeys": [
+  #            {
+  #              "publicKey": "Ay02vkc6FGV8FwtvVsmBO2p7UdbZIcFhvMGFB40D3DKX"
+  #            }
+  #          ]
+  #        }
   #      }
   #    },
   #    "issuers": {
