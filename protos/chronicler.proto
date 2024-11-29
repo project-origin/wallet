@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+import "common.proto";
+
+package project_origin.chronicler.v1;
+
+service ChroniclerService {
+    // Register an intent to claim a certificate
+    rpc RegisterClaimIntent (ClaimIntentRequest) returns (ClaimIntentResponse);
+}
+
+message ClaimIntentRequest {
+    // The id of the certificate to claim
+    project_origin.common.v1.FederatedStreamId certificate_id = 1;
+
+    // The quantity of the certificate to claim
+    int32 quantity = 2;
+
+    // The random value to be used in the claim
+    bytes random_r = 3;
+}
+
+message ClaimIntentResponse {
+    // The signature of the claim intent
+    bytes signature = 1;
+}
+
+message ClaimIntent {
+    // The id of the certificate to claim
+    project_origin.common.v1.FederatedStreamId certificate_id = 1;
+
+    // The quantity of the certificate to claim
+    bytes commitment = 2;
+}

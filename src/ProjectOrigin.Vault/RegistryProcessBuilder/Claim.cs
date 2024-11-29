@@ -1,10 +1,9 @@
 using System;
-using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Google.Protobuf;
+using ProjectOrigin.Chronicler.V1;
 using ProjectOrigin.Common.V1;
 using ProjectOrigin.Electricity.V1;
-using ProjectOrigin.PedersenCommitment;
 using ProjectOrigin.Vault.Activities;
 using ProjectOrigin.Vault.Extensions;
 using ProjectOrigin.Vault.Models;
@@ -20,29 +19,46 @@ public partial class RegistryProcessBuilder
 
         var allocationId = _routingSlipId; //_routingSlipId = ClaimId
 
+        AddActivity<AllocateActivity, AllocateArguments>(new AllocateArguments
+        {
+            AllocationId = allocationId,
+            CertificateId = productionSlice.GetFederatedStreamId(),
+            ProductionSliceId = productionSlice.Id,
+            ConsumptionSliceId = consumptionSlice.Id,
+            ChroniclerRequestId = await GetClaimIntentId(productionSlice),
+            Owner = _owner,
+            RequestId = _routingSlipId
+        });
+
+        AddActivity<AllocateActivity, AllocateArguments>(new AllocateArguments
+        {
+            AllocationId = allocationId,
+            CertificateId = consumptionSlice.GetFederatedStreamId(),
+            ProductionSliceId = productionSlice.Id,
+            ConsumptionSliceId = consumptionSlice.Id,
+            ChroniclerRequestId = await GetClaimIntentId(consumptionSlice),
+            Owner = _owner,
+            RequestId = _routingSlipId
+        });
+
+        await _unitOfWork.ClaimRepository.InsertClaim(new Claim
+        {
+            Id = allocationId,
+            ProductionSliceId = productionSlice.Id,
+            ConsumptionSliceId = consumptionSlice.Id,
+            State = ClaimState.Created,
+        });
+
         var productionKey = await _unitOfWork.WalletRepository.GetPrivateKeyForSlice(productionSlice.Id);
         var consumptionKey = await _unitOfWork.WalletRepository.GetPrivateKeyForSlice(consumptionSlice.Id);
 
         var productionId = productionSlice.GetFederatedStreamId();
         var consumptionId = consumptionSlice.GetFederatedStreamId();
 
-        var allocatedEvent = CreateAllocatedEvent(allocationId, consumptionSlice, productionSlice);
-        AddRegistryTransactionActivity(productionKey.SignRegistryTransaction(productionId, allocatedEvent), productionSlice.Id);
-        AddRegistryTransactionActivity(consumptionKey.SignRegistryTransaction(consumptionId, allocatedEvent), consumptionSlice.Id);
-
-        var newClaim = new Claim
-        {
-            Id = allocationId,
-            ProductionSliceId = productionSlice.Id,
-            ConsumptionSliceId = consumptionSlice.Id,
-            State = ClaimState.Created,
-        };
-        await _unitOfWork.ClaimRepository.InsertClaim(newClaim);
-
-        var prodClaimedEvent = CreateClaimedEvent(allocationId, productionId);
+        var prodClaimedEvent = CreateClaimedEvent(allocationId, productionSlice.GetFederatedStreamId());
         AddRegistryTransactionActivity(productionKey.SignRegistryTransaction(productionId, prodClaimedEvent), productionSlice.Id);
 
-        var consClaimedEvent = CreateClaimedEvent(allocationId, consumptionId);
+        var consClaimedEvent = CreateClaimedEvent(allocationId, consumptionSlice.GetFederatedStreamId());
         AddRegistryTransactionActivity(consumptionKey.SignRegistryTransaction(consumptionId, consClaimedEvent), consumptionSlice.Id);
 
         AddActivity<UpdateSliceStateActivity, UpdateSliceStateArguments>(new UpdateSliceStateArguments
@@ -65,22 +81,33 @@ public partial class RegistryProcessBuilder
         });
     }
 
-    private static AllocatedEvent CreateAllocatedEvent(Guid allocationId, WalletSlice consumption, WalletSlice production)
+    private async Task<Guid?> GetClaimIntentId(WalletSlice slice)
     {
-        var cons = new SecretCommitmentInfo((uint)consumption.Quantity, consumption.RandomR);
-        var prod = new SecretCommitmentInfo((uint)production.Quantity, production.RandomR);
-        var equalityProof = SecretCommitmentInfo.CreateEqualityProof(prod, cons, allocationId.ToString());
+        var certificate = await _unitOfWork.CertificateRepository.GetCertificate(slice.RegistryName, slice.CertificateId)
+            ?? throw new InvalidOperationException($"Certificate not found {slice.RegistryName}-{slice.CertificateId}");
 
-        return new AllocatedEvent
+        if (!_networkOptions.Value.Areas.TryGetValue(certificate.GridArea, out var areaInfo))
+            throw new InvalidOperationException($"Area not found {certificate.GridArea}");
+
+        Guid? chroniclerRequestId = null;
+        if (areaInfo.Chronicler is not null)
         {
-            AllocationId = new Uuid { Value = allocationId.ToString() },
-            ProductionCertificateId = production.GetFederatedStreamId(),
-            ConsumptionCertificateId = consumption.GetFederatedStreamId(),
-            ProductionSourceSliceHash = ByteString.CopyFrom(SHA256.HashData(prod.Commitment.C)),
-            ConsumptionSourceSliceHash = ByteString.CopyFrom(SHA256.HashData(cons.Commitment.C)),
-            EqualityProof = ByteString.CopyFrom(equalityProof),
-        };
+            chroniclerRequestId = Guid.NewGuid();
+            AddActivity<SendClaimIntentToChroniclerActivity, SendClaimIntentToChroniclerArgument>(new SendClaimIntentToChroniclerArgument
+            {
+                ClaimIntentRequest = new ClaimIntentRequest
+                {
+                    CertificateId = slice.GetFederatedStreamId(),
+                    Quantity = (int)slice.Quantity,
+                    RandomR = ByteString.CopyFrom(slice.RandomR)
+                },
+                Id = chroniclerRequestId.Value
+            });
+        }
+
+        return chroniclerRequestId;
     }
+
 
     private static ClaimedEvent CreateClaimedEvent(Guid allocationId, FederatedStreamId federatedStreamId)
     {
