@@ -10,8 +10,8 @@ using System.Threading.Tasks;
 using ProjectOrigin.Vault.Extensions;
 using Xunit;
 using ProjectOrigin.Vault.Tests.TestClassFixtures;
-using ProjectOrigin.Vault.Activities.Exceptions;
 using System.Text;
+using ProjectOrigin.Vault.Exceptions;
 
 namespace ProjectOrigin.Vault.Tests.Repositories;
 
@@ -718,7 +718,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
         var act = () => _certRepository.ReserveQuantity(owner, slice.RegistryName, slice.CertificateId, 200);
 
         // Assert
-        await act.Should().ThrowAsync<TransientException>()
+        await act.Should().ThrowAsync<QuantityNotYetAvailableToReserveException>()
             .WithMessage("Owner has enough quantity, but it is not yet available to reserve");
     }
 

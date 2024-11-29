@@ -12,7 +12,6 @@ using ProjectOrigin.HierarchicalDeterministicKeys.Implementations;
 using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
 using ProjectOrigin.PedersenCommitment;
 using ProjectOrigin.Vault.Tests.TestExtensions;
-using ProjectOrigin.Vault.Activities.Exceptions;
 using ProjectOrigin.Vault.CommandHandlers;
 using ProjectOrigin.Vault.Database;
 using ProjectOrigin.Vault.Models;
@@ -23,6 +22,7 @@ using System;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
+using ProjectOrigin.Vault.Exceptions;
 using Xunit;
 
 namespace ProjectOrigin.Vault.Tests.CommandHandlers;

@@ -8,6 +8,7 @@ using Microsoft.Extensions.Options;
 using ProjectOrigin.Registry.V1;
 using ProjectOrigin.Vault.Activities.Exceptions;
 using ProjectOrigin.Vault.Database;
+using ProjectOrigin.Vault.Exceptions;
 using ProjectOrigin.Vault.Models;
 using ProjectOrigin.Vault.Options;
 
