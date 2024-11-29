@@ -25,6 +25,7 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
+using ProjectOrigin.Vault.Exceptions;
 using ProjectOrigin.Vault.Jobs;
 
 namespace ProjectOrigin.Vault;
@@ -91,23 +92,15 @@ public class Startup
                 });
             }
 
-            o.AddConsumer<TransferCertificateCommandHandler>(cfg =>
-            {
-                cfg.UseMessageRetry(r => r.Interval(100, TimeSpan.FromMinutes(1))
-                    .Handle<TransientException>());
-            });
+            o.AddConsumer<TransferCertificateCommandHandler>();
 
             o.AddConsumer<VerifySliceCommandHandler>(cfg =>
             {
-                cfg.UseMessageRetry(r => r.Interval(100, TimeSpan.FromMinutes(1))
+                cfg.UseMessageRetry(r => r.Interval(5, TimeSpan.FromSeconds(10))
                     .Handle<TransientException>());
             });
 
-            o.AddConsumer<ClaimCertificateCommandHandler>(cfg =>
-            {
-                cfg.UseMessageRetry(r => r.Interval(100, TimeSpan.FromMinutes(1))
-                    .Handle<TransientException>());
-            });
+            o.AddConsumer<ClaimCertificateCommandHandler>();
 
             o.AddConsumer<CheckForWithdrawnCertificatesCommandHandler>();
 

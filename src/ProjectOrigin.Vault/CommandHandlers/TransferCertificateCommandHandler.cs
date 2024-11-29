@@ -5,6 +5,7 @@ using MassTransit;
 using Microsoft.Extensions.Logging;
 using ProjectOrigin.Vault.Activities;
 using ProjectOrigin.Vault.Database;
+using ProjectOrigin.Vault.Exceptions;
 using ProjectOrigin.Vault.Extensions;
 using ProjectOrigin.Vault.Models;
 
@@ -95,6 +96,12 @@ public class TransferCertificateCommandHandler : IConsumer<TransferCertificateCo
         {
             _unitOfWork.Rollback();
             _logger.LogWarning(ex, "Transfer is not allowed.");
+        }
+        catch (QuantityNotYetAvailableToReserveException ex)
+        {
+            _unitOfWork.Rollback();
+            _logger.LogWarning(ex, "Failed to handle transfer at this time.");
+            await context.Publish(context.Message);
         }
         catch (Exception ex)
         {

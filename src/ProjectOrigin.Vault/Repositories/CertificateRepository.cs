@@ -4,7 +4,7 @@ using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using Dapper;
-using ProjectOrigin.Vault.Activities.Exceptions;
+using ProjectOrigin.Vault.Exceptions;
 using ProjectOrigin.Vault.Extensions;
 using ProjectOrigin.Vault.Models;
 using ProjectOrigin.Vault.ViewModels;
@@ -459,7 +459,7 @@ public class CertificateRepository : ICertificateRepository
     /// <param name="reserveQuantity"></param>
     /// <returns></returns>
     /// <exception cref="InvalidOperationException">Thrown when the owner does not have enough to reserve the requested amount</exception>
-    /// <exception cref="TransientException">Thrown when the owner currently does not have enogth available, but will have later</exception>
+    /// <exception cref="QuantityNotYetAvailableToReserveException">Thrown when the owner currently does not have enogth available, but will have later</exception>
     public async Task<IList<WalletSlice>> ReserveQuantity(string owner, string registryName, Guid certificateId,
         uint reserveQuantity)
     {
@@ -501,11 +501,11 @@ public class CertificateRepository : ICertificateRepository
         }
         else if (willBeAvailable < reserveQuantity)
         {
-            throw new InvalidOperationException($"Owner has less to reserve than available");
+            throw new InvalidOperationException("Owner has less to reserve than available");
         }
         else if (willBeAvailable >= reserveQuantity)
         {
-            throw new TransientException($"Owner has enough quantity, but it is not yet available to reserve");
+            throw new QuantityNotYetAvailableToReserveException("Owner has enough quantity, but it is not yet available to reserve");
         }
         else
         {
