@@ -81,7 +81,7 @@ public class ClaimCertificatesCommandHandlerTests
             Arg.Any<string>(),
             Arg.Any<Guid>(),
             Arg.Any<uint>())
-            .ThrowsAsync(_ => throw new QuantityNotYetAvailableToReserveException("Failed to handle claim at this time."));
+            .ThrowsAsync(_ => throw new QuantityNotYetAvailableToReserveException("Owner has enough quantity, but it is not yet available to reserve"));
 
         // act
         await _commandHandler.Consume(_context);
