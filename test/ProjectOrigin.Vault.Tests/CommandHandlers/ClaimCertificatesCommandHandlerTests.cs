@@ -8,10 +8,9 @@ using MassTransit;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
-using NSubstitute.ReceivedExtensions;
-using ProjectOrigin.Vault.Activities.Exceptions;
 using ProjectOrigin.Vault.CommandHandlers;
 using ProjectOrigin.Vault.Database;
+using ProjectOrigin.Vault.Exceptions;
 using ProjectOrigin.Vault.Models;
 using Xunit;
 
@@ -63,7 +62,7 @@ public class ClaimCertificatesCommandHandlerTests
     }
 
     [Fact]
-    public async Task ReserveQuantityThrowsTransientException_TransientException()
+    public async Task ReserveQuantityThrowsQuantityNotYetAvailableToReserveException_Requeue()
     {
         // arrange
         var command = new ClaimCertificateCommand
@@ -82,13 +81,12 @@ public class ClaimCertificatesCommandHandlerTests
             Arg.Any<string>(),
             Arg.Any<Guid>(),
             Arg.Any<uint>())
-            .ThrowsAsync(_ => throw new TransientException("Failed to handle claim at this time."));
+            .ThrowsAsync(_ => throw new QuantityNotYetAvailableToReserveException("Owner has enough quantity, but it is not yet available to reserve"));
 
         // act
-        var sut = () => _commandHandler.Consume(_context);
+        await _commandHandler.Consume(_context);
 
-        // assert
-        await sut.Should().ThrowAsync<TransientException>();
+        await _context.Received(1).Publish(Arg.Any<ClaimCertificateCommand>());
     }
 
     [Fact]

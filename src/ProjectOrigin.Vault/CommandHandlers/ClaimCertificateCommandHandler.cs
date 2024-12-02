@@ -4,8 +4,8 @@ using System.Threading.Tasks;
 using MassTransit;
 using MassTransit.Courier.Contracts;
 using Microsoft.Extensions.Logging;
-using ProjectOrigin.Vault.Activities.Exceptions;
 using ProjectOrigin.Vault.Database;
+using ProjectOrigin.Vault.Exceptions;
 using ProjectOrigin.Vault.Extensions;
 using ProjectOrigin.Vault.Models;
 
@@ -63,11 +63,11 @@ public class ClaimCertificateCommandHandler : IConsumer<ClaimCertificateCommand>
             _unitOfWork.Rollback();
             _logger.LogWarning(ex, "Claim is not allowed.");
         }
-        catch (TransientException ex)
+        catch (QuantityNotYetAvailableToReserveException ex)
         {
             _unitOfWork.Rollback();
             _logger.LogWarning(ex, "Failed to handle claim at this time.");
-            throw;
+            await context.Publish(context.Message);
         }
         catch (Exception ex)
         {

@@ -53,7 +53,7 @@ public record RegistryInfo
 public class AreaInfo
 {
     public required IList<KeyInfo> IssuerKeys { get; set; }
-
+    public ChroniclerInfo? Chronicler { get; init; }
     public override string ToString()
     {
         var sb = new StringBuilder();
@@ -62,13 +62,19 @@ public class AreaInfo
             sb.Append($"{key.PublicKey} ");
         }
         return sb.ToString();
-
     }
 }
 
 public record KeyInfo
 {
     public required string PublicKey { get; init; }
+}
+
+
+public record ChroniclerInfo
+{
+    public required string Url { get; init; }
+    public required IList<KeyInfo> SignerKeys { get; set; } = new List<KeyInfo>();
 }
 
 public record IssuerInfo
