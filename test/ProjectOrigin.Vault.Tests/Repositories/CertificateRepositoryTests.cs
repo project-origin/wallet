@@ -224,11 +224,9 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
     }
 
     [Theory]
-    [InlineData(-10, true)]
-    [InlineData(-1, true)]
-    [InlineData(0, false)]
-    [InlineData(1, false)]
-    public async Task ExpireSlices(int addHoursToStartDate, bool expired)
+    [InlineData(-10)]
+    [InlineData(-1)]
+    public async Task ExpireSlices_Expired(int addHoursToStartDate)
     {
         var daysBeforeCertificatesExpire = DateTimeOffset.UtcNow.AddDays(-60);
 
@@ -255,14 +253,40 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
 
         var sliceDb = await _certRepository.GetWalletSlice(slice.Id);
 
-        if (expired)
+        sliceDb.State.Should().Be(WalletSliceState.Expired);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    public async Task ExpireSlices_Available(int addHoursToStartDate)
+    {
+        var daysBeforeCertificatesExpire = DateTimeOffset.UtcNow.AddDays(-60);
+
+        var registry = _fixture.Create<string>();
+        var startDate = daysBeforeCertificatesExpire.AddHours(addHoursToStartDate);
+        var certificate = await CreateCertificate(registry, startDate: startDate, endDate: startDate.AddHours(1));
+        var wallet = await CreateWallet(registry);
+        var endpoint = await CreateWalletEndpoint(wallet);
+        var slice = new WalletSlice
         {
-            sliceDb.State.Should().Be(WalletSliceState.Expired);
-        }
-        else
-        {
-            sliceDb.State.Should().Be(WalletSliceState.Available);
-        }
+            Id = Guid.NewGuid(),
+            WalletEndpointId = endpoint.Id,
+            WalletEndpointPosition = 1,
+            RegistryName = registry,
+            CertificateId = certificate.Id,
+            Quantity = _fixture.Create<int>(),
+            RandomR = _fixture.Create<byte[]>(),
+            State = WalletSliceState.Available
+        };
+
+        await _certRepository.InsertWalletSlice(slice);
+
+        await _certRepository.ExpireSlices(daysBeforeCertificatesExpire);
+
+        var sliceDb = await _certRepository.GetWalletSlice(slice.Id);
+
+        sliceDb.State.Should().Be(WalletSliceState.Available);
     }
 
     [Fact]
