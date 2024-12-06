@@ -34,7 +34,7 @@ public class TelemetryIntegrationTest :
 
         var combinedConfiguration = new Dictionary<string, string?>(inMemoryFixture.Configuration)
         {
-            {"network:ConfigurationUri", new NetworkOptions().ToTempYamlFileUri() },
+            {"network:ConfigurationUri", new NetworkOptions { DaysBeforeCertificatesExpire = 60 }.ToTempYamlFileUri() },
             {"Otlp:Enabled", "true"},
             {"Otlp:Endpoint", openTelemetryFixture.OtelUrl},
             {"ConnectionStrings:Database", dbFixture.ConnectionString},
@@ -44,7 +44,8 @@ public class TelemetryIntegrationTest :
             {"auth:jwt:Issuers:0:IssuerName", jwtTokenIssuerFixture.Issuer},
             {"auth:jwt:Issuers:0:PemKeyFile", jwtTokenIssuerFixture.PemFilepath},
             {"auth:jwt:Issuers:0:Type", jwtTokenIssuerFixture.KeyType},
-            {"Job:CheckForWithdrawnCertificatesIntervalInSeconds", "5"}
+            {"Job:CheckForWithdrawnCertificatesIntervalInSeconds", "5"},
+            {"Job:ExpireCertificatesIntervalInSeconds", "5"}
         };
 
         serverFixture.ConfigureHostConfiguration(combinedConfiguration);

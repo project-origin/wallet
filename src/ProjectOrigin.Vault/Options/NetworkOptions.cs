@@ -1,13 +1,16 @@
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Text;
 
 namespace ProjectOrigin.Vault.Options;
 
-public record NetworkOptions
+public record NetworkOptions : IValidatableObject
 {
     public IDictionary<string, RegistryInfo> Registries { get; init; } = new Dictionary<string, RegistryInfo>();
     public IDictionary<string, AreaInfo> Areas { get; init; } = new Dictionary<string, AreaInfo>();
     public IDictionary<string, IssuerInfo> Issuers { get; init; } = new Dictionary<string, IssuerInfo>();
+
+    public int? DaysBeforeCertificatesExpire { get; init; }
 
     public override string ToString()
     {
@@ -28,6 +31,17 @@ public record NetworkOptions
             sb.Append($"{issuer.Key}-StampUrl:{issuer.Value.StampUrl}. ");
         }
         return sb.ToString();
+    }
+
+    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    {
+        List<ValidationResult> results = new();
+        if (DaysBeforeCertificatesExpire != null && DaysBeforeCertificatesExpire <= 0)
+        {
+            results.Add(new ValidationResult("DaysBeforeCertificatesExpire must be greater than 0"));
+        }
+
+        return results;
     }
 }
 

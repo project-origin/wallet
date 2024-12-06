@@ -218,6 +218,7 @@ networkConfig:
   #   issuers:
   #     Denmark:
   #       stampUrl: "https://stamp.narnia.example.com",
+  #   daysBeforeCertificatesExpire: 60  //if null certificates does not expire
 
   # json defines the network configuration as a string in json
   json: #|-
@@ -248,7 +249,8 @@ networkConfig:
   #      "Denmark": {
   #        "stampUrl": "https://stamp.narnia.example.com"
   #      }
-  #    }
+  #    },
+  #    "daysBeforeCertificatesExpire" : "60" //if null certificates does not expire
   #  }
 
 # migrationWaiter holds the configuration for the migration waiter

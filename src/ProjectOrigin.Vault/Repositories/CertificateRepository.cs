@@ -162,6 +162,7 @@ public class CertificateRepository : ICertificateRepository
                     AND (@start IS NULL OR start_date >= @start)
                     AND (@end IS NULL OR end_date <= @end)
                     AND (@type IS NULL OR certificate_type = @type)
+                    AND quantity != 0
             );
             SELECT count(*) FROM certificates_work_table;
             SELECT * FROM certificates_work_table WHERE (@UpdatedSince IS NULL OR updated_at > @UpdatedSince) LIMIT @limit;
@@ -547,5 +548,17 @@ public class CertificateRepository : ICertificateRepository
                 registryName,
                 keys = keys.ToArray(),
             })).AsList();
+    }
+
+    public async Task ExpireSlices(DateTimeOffset olderThanDate)
+    {
+        await _connection.ExecuteAsync("expire_slices",
+            new
+            {
+                older_than_date = olderThanDate,
+                expire_state_int = WalletSliceState.Expired,
+                available_state_int = WalletSliceState.Available
+            },
+            commandType: CommandType.StoredProcedure);
     }
 }

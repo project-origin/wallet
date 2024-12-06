@@ -1,9 +1,6 @@
-using ProjectOrigin.Vault.Tests.TestClassFixtures;
 using System.Collections.Generic;
-using Xunit.Abstractions;
 using System.Threading.Tasks;
 using ProjectOrigin.PedersenCommitment;
-using Xunit;
 using System;
 using System.Linq;
 using Xunit.Sdk;
@@ -12,21 +9,13 @@ using System.Net.Http.Json;
 
 namespace ProjectOrigin.Vault.Tests;
 
-public abstract class AbstractFlowTests : WalletSystemTestsBase, IClassFixture<StampAndRegistryFixture>, IClassFixture<InMemoryFixture>, IClassFixture<JwtTokenIssuerFixture>
+public abstract class AbstractFlowTests
 {
-    private readonly StampAndRegistryFixture _registryFixture;
-    protected readonly JwtTokenIssuerFixture _jwtTokenIssuer;
+    protected readonly WalletSystemTestFixture WalletTestFixture;
 
-    public AbstractFlowTests(
-        TestServerFixture<Startup> serverFixture,
-        PostgresDatabaseFixture dbFixture,
-        IMessageBrokerFixture messageBrokerFixture,
-        JwtTokenIssuerFixture jwtTokenIssuerFixture,
-        ITestOutputHelper outputHelper,
-        StampAndRegistryFixture stampAndRegistryFixture) : base(serverFixture, dbFixture, messageBrokerFixture, jwtTokenIssuerFixture, outputHelper, stampAndRegistryFixture)
+    public AbstractFlowTests(WalletSystemTestFixture walletTestFixture)
     {
-        _registryFixture = stampAndRegistryFixture;
-        _jwtTokenIssuer = jwtTokenIssuerFixture;
+        WalletTestFixture = walletTestFixture;
     }
 
     protected async Task<FederatedStreamId> IssueCertificateToEndpoint(
@@ -34,15 +23,19 @@ public abstract class AbstractFlowTests : WalletSystemTestsBase, IClassFixture<S
         Electricity.V1.GranularCertificateType type,
         SecretCommitmentInfo issuedCommitment,
         int position,
+        DateTimeOffset? startDate = null,
+        DateTimeOffset? endDate = null,
         List<(string Key, string Value, byte[]? Salt)>? attributes = null)
     {
-        var issuedEvent = await _registryFixture.IssueCertificate(
+        var issuedEvent = await WalletTestFixture.StampAndRegistryFixture.IssueCertificate(
             type,
             issuedCommitment,
             endpoint.PublicKey.Derive(position).GetPublicKey(),
+            startDate,
+            endDate,
             attributes);
 
-        var client = _serverFixture.CreateHttpClient();
+        var client = WalletTestFixture.ServerFixture.CreateHttpClient();
 
         var receiveRequest = new ReceiveRequest
         {

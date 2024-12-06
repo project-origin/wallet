@@ -1,8 +1,6 @@
 using AutoFixture;
 using FluentAssertions;
-using Microsoft.AspNetCore.Http;
 using Npgsql;
-using ProjectOrigin.Vault.Tests.TestClassFixtures;
 using ProjectOrigin.Vault.Models;
 using ProjectOrigin.Vault.Repositories;
 using ProjectOrigin.Vault.Services.REST.v1;
@@ -16,33 +14,26 @@ using Newtonsoft.Json;
 using VerifyTests;
 using VerifyXunit;
 using Xunit;
-using Xunit.Abstractions;
 using Claim = ProjectOrigin.Vault.Models.Claim;
 
 namespace ProjectOrigin.Vault.Tests;
 
-public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
+[Collection(WalletSystemTestCollection.CollectionName)]
+public class ApiTests
 {
-    public ApiTests(
-        TestServerFixture<Startup> serverFixture,
-        PostgresDatabaseFixture dbFixture,
-        InMemoryFixture inMemoryFixture,
-        JwtTokenIssuerFixture jwtTokenIssuerFixture,
-        ITestOutputHelper outputHelper)
-        : base(
-            serverFixture,
-            dbFixture,
-            inMemoryFixture,
-            jwtTokenIssuerFixture,
-            outputHelper,
-            null)
+    private readonly WalletSystemTestFixture _walletTestFixture;
+    private readonly Fixture _fixture;
+
+    public ApiTests(WalletSystemTestFixture walletTestFixture)
     {
+        _walletTestFixture = walletTestFixture;
+        _fixture = new Fixture();
     }
 
     [Fact]
     public async Task open_api_specification_not_changed()
     {
-        var httpClient = _serverFixture.CreateHttpClient();
+        var httpClient = _walletTestFixture.ServerFixture.CreateHttpClient();
         var specificationResponse = await httpClient.GetAsync("swagger/v1/swagger.json");
         var specification = await specificationResponse.Content.ReadAsStringAsync();
         await Verifier.Verify(specification);
@@ -54,7 +45,7 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
         //Arrange
         var owner = _fixture.Create<string>();
         var someOwnerName = _fixture.Create<string>();
-        var httpClient = CreateAuthenticatedHttpClient(owner, someOwnerName);
+        var httpClient = _walletTestFixture.CreateAuthenticatedHttpClient(owner, someOwnerName);
 
         //Act
         var res = await httpClient.PostAsJsonAsync("v1/wallets", new { });
@@ -70,7 +61,7 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
         //Arrange
         var owner = _fixture.Create<string>();
         var someOwnerName = _fixture.Create<string>();
-        var httpClient = CreateAuthenticatedHttpClient(owner, someOwnerName);
+        var httpClient = _walletTestFixture.CreateAuthenticatedHttpClient(owner, someOwnerName);
 
         var httpResponse = await httpClient.PostAsJsonAsync("v1/wallets", new { });
         var walletResponse = await httpResponse.Content.ReadFromJsonAsync<CreateWalletResponse>();
@@ -90,7 +81,7 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
         //Arrange
         var owner = _fixture.Create<string>();
         var someOwnerName = _fixture.Create<string>();
-        var httpClient = CreateAuthenticatedHttpClient(owner, someOwnerName);
+        var httpClient = _walletTestFixture.CreateAuthenticatedHttpClient(owner, someOwnerName);
         await AddCertificatesToOwner(owner);
 
         //Act
@@ -112,7 +103,7 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
     {
         var owner = _fixture.Create<string>();
         var someOwnerName = _fixture.Create<string>();
-        var httpClient = CreateAuthenticatedHttpClient(owner, someOwnerName);
+        var httpClient = _walletTestFixture.CreateAuthenticatedHttpClient(owner, someOwnerName);
         var res = await httpClient.GetAsync("v1/certificates?sortBy=BADVALUE&sort=asc");
         res.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
@@ -123,7 +114,7 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
         //Arrange
         var owner = _fixture.Create<string>();
         var someOwnerName = _fixture.Create<string>();
-        var httpClient = CreateAuthenticatedHttpClient(owner, someOwnerName);
+        var httpClient = _walletTestFixture.CreateAuthenticatedHttpClient(owner, someOwnerName);
         await AddCertificatesToOwner(owner);
 
         //Act
@@ -147,7 +138,7 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
         //Arrange
         var owner = _fixture.Create<string>();
         var someOwnerName = _fixture.Create<string>();
-        var httpClient = CreateAuthenticatedHttpClient(owner, someOwnerName);
+        var httpClient = _walletTestFixture.CreateAuthenticatedHttpClient(owner, someOwnerName);
         await AddCertificatesToOwner(owner);
         var updatedSince = DateTimeOffset.UtcNow.AddMilliseconds(-500).ToUnixTimeSeconds();
 
@@ -167,7 +158,7 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
         //Arrange
         var owner = _fixture.Create<string>();
         var someOwnerName = _fixture.Create<string>();
-        var httpClient = CreateAuthenticatedHttpClient(owner, someOwnerName);
+        var httpClient = _walletTestFixture.CreateAuthenticatedHttpClient(owner, someOwnerName);
         await AddCertificatesToOwner(owner);
 
         //Act
@@ -186,19 +177,19 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
         //Arrange
         var owner = _fixture.Create<string>();
         var someOwnerName = _fixture.Create<string>();
-        var httpClient = CreateAuthenticatedHttpClient(owner, someOwnerName);
+        var httpClient = _walletTestFixture.CreateAuthenticatedHttpClient(owner, someOwnerName);
 
         var startDate = DateTimeOffset.Parse("2023-01-01T12:00Z");
         var endDate = DateTimeOffset.Parse("2023-01-01T13:00Z");
 
-        using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
+        using (var connection = new NpgsqlConnection(_walletTestFixture.DbFixture.ConnectionString))
         {
             var walletRepository = new WalletRepository(connection);
             var wallet = new Wallet
             {
                 Id = Guid.NewGuid(),
                 Owner = owner,
-                PrivateKey = Algorithm.GenerateNewPrivateKey()
+                PrivateKey = _walletTestFixture.Algorithm.GenerateNewPrivateKey()
             };
             await walletRepository.Create(wallet);
 
@@ -317,14 +308,14 @@ public class ApiTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture>
 
     private async Task AddCertificatesToOwner(string owner)
     {
-        using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
+        using (var connection = new NpgsqlConnection(_walletTestFixture.DbFixture.ConnectionString))
         {
             var walletRepository = new WalletRepository(connection);
             var wallet = new Wallet
             {
                 Id = Guid.NewGuid(),
                 Owner = owner,
-                PrivateKey = Algorithm.GenerateNewPrivateKey()
+                PrivateKey = _walletTestFixture.Algorithm.GenerateNewPrivateKey()
             };
             await walletRepository.Create(wallet);
 

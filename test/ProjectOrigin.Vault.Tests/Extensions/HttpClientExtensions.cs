@@ -60,6 +60,46 @@ public static class HttpClientExtensions
     public static Task<WithdrawnCertificateDto> StampWithdrawCertificate(this HttpClient client, string registry, Guid certificateId) =>
             client.PostAsJsonAsync($"v1/certificates/{registry}/{certificateId}/withdraw", new { }).ParseJson<WithdrawnCertificateDto>();
 
+    public static async Task<WalletEndpointReference> CreateWalletAndEndpoint(this HttpClient client)
+    {
+        var wallet = await client.CreateWallet();
+        var walletEndpoint = await client.CreateWalletEndpoint(wallet.WalletId);
+        return walletEndpoint.WalletReference;
+    }
+
+    public static async Task<Guid> IssueCertificate(this HttpClient stampClient, string registryName, string issuerArea, Guid recipientId, StampCertificateType type,
+        DateTimeOffset startDate, DateTimeOffset endDate)
+    {
+        var gsrn = Some.Gsrn();
+        var certificateId = Guid.NewGuid();
+        var icResponse = await stampClient.StampIssueCertificate(new CreateCertificateRequest
+        {
+            RecipientId = recipientId,
+            RegistryName = registryName,
+            MeteringPointId = gsrn,
+            Certificate = new StampCertificateDto
+            {
+                Id = certificateId,
+                Start = startDate.ToUnixTimeSeconds(),
+                End = endDate.ToUnixTimeSeconds(),
+                GridArea = issuerArea,
+                Quantity = 123,
+                Type = type,
+                ClearTextAttributes = new Dictionary<string, string>
+                {
+                    { "fuelCode", Some.FuelCode },
+                    { "techCode", Some.TechCode }
+                },
+                HashedAttributes = new List<StampHashedAttribute>
+                {
+                    new() { Key = "assetId", Value = gsrn },
+                    new() { Key = "address", Value = "Some road 1234" }
+                }
+            }
+        });
+        return certificateId;
+    }
+
     private static async Task<T> Timeout<T>(Func<Task<T>> func, TimeSpan timeout)
     {
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();

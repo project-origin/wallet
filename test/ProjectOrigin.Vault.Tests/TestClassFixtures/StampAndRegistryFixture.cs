@@ -40,7 +40,7 @@ public class StampAndRegistryFixture : RegistryFixture
             var hostPort = ((IPEndPoint)udp.Client.LocalEndPoint!).Port;
 
             return new ContainerBuilder()
-                .WithImage("ghcr.io/project-origin/stamp:4.0.0")
+                .WithImage("ghcr.io/project-origin/stamp:4.0.1")
                 .WithNetwork(Network)
                 .WithNetworkAliases(StampAlias)
                 .WithPortBinding(hostPort, StampHttpPort)

@@ -1,7 +1,5 @@
-using ProjectOrigin.Vault.Tests.TestClassFixtures;
 using System.Threading.Tasks;
 using Xunit;
-using Xunit.Abstractions;
 using ProjectOrigin.PedersenCommitment;
 using FluentAssertions;
 using System;
@@ -10,22 +8,10 @@ using System.Net.Http.Headers;
 
 namespace ProjectOrigin.Vault.Tests.FlowTests;
 
+[Collection(WalletSystemTestCollection.CollectionName)]
 public class ReceiveTests : AbstractFlowTests
 {
-    public ReceiveTests(
-            TestServerFixture<Startup> serverFixture,
-            PostgresDatabaseFixture dbFixture,
-            InMemoryFixture inMemoryFixture,
-            JwtTokenIssuerFixture jwtTokenIssuerFixture,
-            StampAndRegistryFixture stampAndRegistryFixture,
-            ITestOutputHelper outputHelper)
-            : base(
-                  serverFixture,
-                  dbFixture,
-                  inMemoryFixture,
-                  jwtTokenIssuerFixture,
-                  outputHelper,
-                  stampAndRegistryFixture)
+    public ReceiveTests(WalletSystemTestFixture walletTestFixture) : base(walletTestFixture)
     {
     }
 
@@ -34,8 +20,8 @@ public class ReceiveTests : AbstractFlowTests
     {
         var position = 1;
 
-        var client = _serverFixture.CreateHttpClient();
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _jwtTokenIssuer.GenerateRandomToken());
+        var client = WalletTestFixture.ServerFixture.CreateHttpClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", WalletTestFixture.JwtTokenIssuerFixture.GenerateRandomToken());
 
         var wallet = await client.CreateWallet();
         var endpoint = await client.CreateWalletEndpoint(wallet.WalletId);
@@ -45,7 +31,7 @@ public class ReceiveTests : AbstractFlowTests
             Electricity.V1.GranularCertificateType.Production,
             new SecretCommitmentInfo(250),
             position++,
-            [
+            attributes: [
                 ("TechCode", "T010101", null),
                 ("FuelCode", "F010101", null),
             ]);
@@ -74,8 +60,8 @@ public class ReceiveTests : AbstractFlowTests
     {
         var position = 1;
 
-        var client = _serverFixture.CreateHttpClient();
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _jwtTokenIssuer.GenerateRandomToken());
+        var client = WalletTestFixture.ServerFixture.CreateHttpClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", WalletTestFixture.JwtTokenIssuerFixture.GenerateRandomToken());
 
         var wallet = await client.CreateWallet();
         var endpoint = await client.CreateWalletEndpoint(wallet.WalletId);
@@ -85,7 +71,7 @@ public class ReceiveTests : AbstractFlowTests
             Electricity.V1.GranularCertificateType.Production,
             new SecretCommitmentInfo(250),
             position++,
-            new(){
+            attributes: new(){
                 ("techCode", "T010101", null),
                 ("fuelCode", "F010101", null),
                 ("assetId", "1264541", new byte[] { 0x01, 0x02, 0x03, 0x04 }),

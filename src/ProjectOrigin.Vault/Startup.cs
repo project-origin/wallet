@@ -144,6 +144,7 @@ public class Startup
         services.ConfigureUriOptionsLoader<NetworkOptions>("network");
 
         services.AddHostedService<PublishCheckForWithdrawnCertificatesCommandJob>();
+        services.AddHostedService<ExpireCertificatesJob>();
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

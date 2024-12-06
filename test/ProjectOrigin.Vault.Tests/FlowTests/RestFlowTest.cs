@@ -1,7 +1,5 @@
-using ProjectOrigin.Vault.Tests.TestClassFixtures;
 using System.Threading.Tasks;
 using Xunit;
-using Xunit.Abstractions;
 using FluentAssertions;
 using System.Net.Http;
 using System.Text;
@@ -12,25 +10,16 @@ using System.Collections.Generic;
 using ProjectOrigin.Vault.Services.REST.v1;
 using System.Text.Json;
 
-namespace ProjectOrigin.Vault.Tests;
+namespace ProjectOrigin.Vault.Tests.FlowTests;
 
+[Collection(WalletSystemTestCollection.CollectionName)]
 public class RestFlowTest : AbstractFlowTests
 {
-    public RestFlowTest(
-            TestServerFixture<Startup> serverFixture,
-            PostgresDatabaseFixture dbFixture,
-            InMemoryFixture inMemoryFixture,
-            JwtTokenIssuerFixture jwtTokenIssuerFixture,
-            StampAndRegistryFixture stampAndRegistryFixture,
-            ITestOutputHelper outputHelper)
-            : base(
-                  serverFixture,
-                  dbFixture,
-                  inMemoryFixture,
-                  jwtTokenIssuerFixture,
-                  outputHelper,
-                  stampAndRegistryFixture)
+    private readonly Fixture _fixture;
+
+    public RestFlowTest(WalletSystemTestFixture walletTestFixture) : base(walletTestFixture)
     {
+        _fixture = new Fixture();
     }
 
     [Fact]
@@ -39,8 +28,8 @@ public class RestFlowTest : AbstractFlowTests
         // Arrange
         var subject = Guid.NewGuid().ToString();
 
-        var client = _serverFixture.CreateHttpClient();
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _jwtTokenIssuer.GenerateToken(subject, _fixture.Create<string>()));
+        var client = WalletTestFixture.ServerFixture.CreateHttpClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", WalletTestFixture.JwtTokenIssuerFixture.GenerateToken(subject, _fixture.Create<string>()));
 
         // create wallet
         var walletResponse = await client.PostAsync("v1/wallets", ToJsonContent(new { })).ParseJson<CreateWalletResponse>();

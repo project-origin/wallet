@@ -18,12 +18,12 @@ using System.Net.Http;
 namespace ProjectOrigin.Vault.Tests;
 
 [CollectionDefinition(CollectionName)]
-public class DockerTestCollection : ICollectionFixture<DockerTestFixture>
+public class DockerTestCollectionWithExpireTurnedOff : ICollectionFixture<DockerTestFixtureWithExpireTurnedOff>
 {
-    public const string CollectionName = "DockerTestCollection";
+    public const string CollectionName = "DockerTestCollectionWithExpireTurnedOff";
 }
 
-public class DockerTestFixture : IAsyncLifetime
+public class DockerTestFixtureWithExpireTurnedOff : IAsyncLifetime
 {
     public ContainerImageFixture ImageFixture { get; private set; }
     public StampAndRegistryFixture StampAndRegistryFixture { get; private set; }
@@ -37,10 +37,10 @@ public class DockerTestFixture : IAsyncLifetime
     public string PathBase = "/wallet-api";
     public string WalletPostgresAlias = "wallet-postgres";
 
-    public int? DaysBeforeCertificatesExpire { get; } = 60;
+    public int? DaysBeforeCertificatesExpire { get; } = null;
     public int ExpireCertificatesIntervalInSeconds { get; } = 5;
     public IHDAlgorithm Algorithm => new Secp256k1Algorithm();
-    public DockerTestFixture()
+    public DockerTestFixtureWithExpireTurnedOff()
     {
         ImageFixture = new ContainerImageFixture();
         StampAndRegistryFixture = new StampAndRegistryFixture();

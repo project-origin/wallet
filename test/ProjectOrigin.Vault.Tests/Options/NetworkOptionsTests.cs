@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using FluentAssertions;
 using ProjectOrigin.Vault.Options;
 using Xunit;
@@ -20,5 +21,36 @@ public class NetworkOptionsTests
         var str = options.ToString();
 
         str.Should().Contain("Registries found: ");
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData(1)]
+    [InlineData(60)]
+    public void Validate(int? expireDays)
+    {
+        var options = new NetworkOptions
+        {
+            DaysBeforeCertificatesExpire = expireDays
+        };
+
+        var result = options.Validate(new ValidationContext(options));
+        result.Should().BeEmpty();
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void Validate_Error(int? expireDays)
+    {
+        var options = new NetworkOptions
+        {
+            DaysBeforeCertificatesExpire = expireDays
+        };
+
+        var result = options.Validate(new ValidationContext(options));
+
+        result.Should().Contain(x =>
+            x.ErrorMessage == "DaysBeforeCertificatesExpire must be greater than 0");
     }
 }
