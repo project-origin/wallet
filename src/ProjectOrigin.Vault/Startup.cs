@@ -92,7 +92,11 @@ public class Startup
                 });
             }
 
-            o.AddConsumer<TransferCertificateCommandHandler>();
+            o.AddConsumer<TransferCertificateCommandHandler>(cfg =>
+            {
+                cfg.UseMessageRetry(r => r.Interval(20, TimeSpan.FromSeconds(5))
+                    .Handle<QuantityNotYetAvailableToReserveException>());
+            });
 
             o.AddConsumer<VerifySliceCommandHandler>(cfg =>
             {
@@ -100,7 +104,11 @@ public class Startup
                     .Handle<TransientException>());
             });
 
-            o.AddConsumer<ClaimCertificateCommandHandler>();
+            o.AddConsumer<ClaimCertificateCommandHandler>(cfg =>
+            {
+                cfg.UseMessageRetry(r => r.Interval(20, TimeSpan.FromSeconds(5))
+                    .Handle<QuantityNotYetAvailableToReserveException>());
+            });
 
             o.AddConsumer<CheckForWithdrawnCertificatesCommandHandler>();
 

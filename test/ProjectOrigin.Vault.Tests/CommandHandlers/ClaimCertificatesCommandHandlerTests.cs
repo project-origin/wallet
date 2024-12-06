@@ -62,7 +62,7 @@ public class ClaimCertificatesCommandHandlerTests
     }
 
     [Fact]
-    public async Task ReserveQuantityThrowsQuantityNotYetAvailableToReserveException_Requeue()
+    public async Task ReserveQuantityThrowsQuantityNotYetAvailableToReserveException_Throws()
     {
         // arrange
         var command = new ClaimCertificateCommand
@@ -84,9 +84,9 @@ public class ClaimCertificatesCommandHandlerTests
             .ThrowsAsync(_ => throw new QuantityNotYetAvailableToReserveException("Owner has enough quantity, but it is not yet available to reserve"));
 
         // act
-        await _commandHandler.Consume(_context);
+        var sut = () => _commandHandler.Consume(_context);
 
-        await _context.Received(1).Publish(Arg.Any<ClaimCertificateCommand>());
+        await sut.Should().ThrowAsync<QuantityNotYetAvailableToReserveException>();
     }
 
     [Fact]

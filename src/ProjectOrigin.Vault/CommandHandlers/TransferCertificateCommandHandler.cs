@@ -101,7 +101,7 @@ public class TransferCertificateCommandHandler : IConsumer<TransferCertificateCo
         {
             _unitOfWork.Rollback();
             _logger.LogWarning(ex, "Failed to handle transfer at this time.");
-            await context.Publish(context.Message);
+            throw;
         }
         catch (Exception ex)
         {
