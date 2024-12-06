@@ -67,7 +67,7 @@ public class ClaimCertificateCommandHandler : IConsumer<ClaimCertificateCommand>
         {
             _unitOfWork.Rollback();
             _logger.LogWarning(ex, "Failed to handle claim at this time.");
-            await context.Publish(context.Message);
+            throw;
         }
         catch (Exception ex)
         {

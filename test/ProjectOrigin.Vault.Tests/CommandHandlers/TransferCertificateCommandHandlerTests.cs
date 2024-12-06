@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using AutoFixture;
+using FluentAssertions;
 using MassTransit;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
@@ -38,7 +39,7 @@ public class TransferCertificateCommandHandlerTests
     }
 
     [Fact]
-    public async Task ReserveQuantityThrowsQuantityNotYetAvailableToReserveException_Requeue()
+    public async Task ReserveQuantityThrowsQuantityNotYetAvailableToReserveException_Throws()
     {
         var command = new TransferCertificateCommand
         {
@@ -60,8 +61,8 @@ public class TransferCertificateCommandHandlerTests
                 Arg.Any<uint>())
             .ThrowsAsync(_ => throw new QuantityNotYetAvailableToReserveException("Owner has enough quantity, but it is not yet available to reserve"));
 
-        await _commandHandler.Consume(_context);
+        var sut = () => _commandHandler.Consume(_context);
 
-        await _context.Received(1).Publish(Arg.Any<TransferCertificateCommand>());
+        await sut.Should().ThrowAsync<QuantityNotYetAvailableToReserveException>();
     }
 }
