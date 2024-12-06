@@ -94,7 +94,7 @@ public class Startup
 
             o.AddConsumer<TransferCertificateCommandHandler>(cfg =>
             {
-                cfg.UseMessageRetry(r => r.Interval(10, TimeSpan.FromSeconds(15))
+                cfg.UseMessageRetry(r => r.Interval(20, TimeSpan.FromSeconds(5))
                     .Handle<QuantityNotYetAvailableToReserveException>());
             });
 
@@ -106,7 +106,7 @@ public class Startup
 
             o.AddConsumer<ClaimCertificateCommandHandler>(cfg =>
             {
-                cfg.UseMessageRetry(r => r.Interval(10, TimeSpan.FromSeconds(15))
+                cfg.UseMessageRetry(r => r.Interval(20, TimeSpan.FromSeconds(5))
                     .Handle<QuantityNotYetAvailableToReserveException>());
             });
 
