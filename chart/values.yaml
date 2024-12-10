@@ -291,3 +291,5 @@ retry:
 job:
   # checkForWithdrawnCertificatesIntervalInSeconds how many seconds to wait between checking for withdrawn certificates
   checkForWithdrawnCertificatesIntervalInSeconds: 900
+  # expireCertificatesIntervalInSeconds how many seconds between expire job runs
+  expireCertificatesIntervalInSeconds: 3600
