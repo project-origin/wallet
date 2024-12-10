@@ -105,7 +105,7 @@ spec:
           {{- else}}
             {{- fail "Unsupported auth type specified. Please specify 'auth.type' as either 'jwt' or 'header'." }}
           {{- end }}
-          
+
             # Retry
             - name: Retry__RegistryTransactionStillProcessingRetryCount
               value: {{ .Values.retry.registryTransactionStillProcessingRetryCount | quote }}
@@ -113,10 +113,12 @@ spec:
               value: {{ .Values.retry.registryTransactionStillProcessingInitialIntervalSeconds | quote }}
             - name: Retry__RegistryTransactionStillProcessingIntervalIncrementSeconds
               value: {{ .Values.retry.registryTransactionStillProcessingIntervalIncrementSeconds | quote }}
-              
+
             # Jobs
             - name: Job__CheckForWithdrawnCertificatesIntervalInSeconds
               value: {{ .Values.job.checkForWithdrawnCertificatesIntervalInSeconds | quote }}
+            - name: Job__ExpireCertificatesIntervalInSeconds
+              value: {{ .Values.job.expireCertificatesIntervalInSeconds | quote }}
           volumeMounts:
             {{- include "common.networkConfig.volumeMounts" .Values.networkConfig | nindent 12}}
           {{- with .Values.vault.volumeMounts }}
