@@ -65,7 +65,7 @@ public class ExpireTests
         var content = JsonConvert.DeserializeObject<ResultList<GranularCertificate, PageInfo>>(await res.Content.ReadAsStringAsync());
 
         content.Should().NotBeNull();
-        content.Result.Count().Should().Be(1);
+        content!.Result.Count().Should().Be(1);
         content.Result.First().FederatedStreamId.StreamId.Should().Be(certId);
     }
 }

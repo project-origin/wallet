@@ -45,19 +45,16 @@ namespace ProjectOrigin.Vault.Tests.ActivityTests
             var arguments = new SendClaimIntentToChroniclerArgument
             {
                 Id = System.Guid.NewGuid(),
-                ClaimIntentRequest = new ClaimIntentRequest()
+                CertificateId = new FederatedStreamId()
                 {
-                    CertificateId = new FederatedStreamId()
+                    Registry = registryName,
+                    StreamId = new Uuid
                     {
-                        Registry = registryName,
-                        StreamId = new Uuid
-                        {
-                            Value = System.Guid.NewGuid().ToString()
-                        }
-                    },
-                    Quantity = 1,
-                    RandomR = ByteString.CopyFrom(fixture.Create<byte[]>()),
-                }
+                        Value = System.Guid.NewGuid().ToString()
+                    }
+                },
+                Quantity = 1,
+                RandomR = fixture.Create<byte[]>(),
             };
 
             var returnValue = Mock.Of<ExecutionResult>();
@@ -99,19 +96,16 @@ namespace ProjectOrigin.Vault.Tests.ActivityTests
             var arguments = new SendClaimIntentToChroniclerArgument
             {
                 Id = System.Guid.NewGuid(),
-                ClaimIntentRequest = new ClaimIntentRequest()
+                CertificateId = new FederatedStreamId()
                 {
-                    CertificateId = new FederatedStreamId()
+                    Registry = registryName,
+                    StreamId = new Uuid
                     {
-                        Registry = registryName,
-                        StreamId = new Uuid
-                        {
-                            Value = System.Guid.NewGuid().ToString()
-                        }
-                    },
-                    Quantity = 1,
-                    RandomR = ByteString.CopyFrom(new byte[] { 1, 2, 3 }),
-                }
+                        Value = System.Guid.NewGuid().ToString()
+                    }
+                },
+                Quantity = 1,
+                RandomR = new byte[] { 1, 2, 3 },
             };
 
             var context = new Mock<ExecuteContext<SendClaimIntentToChroniclerArgument>>(MockBehavior.Strict);
