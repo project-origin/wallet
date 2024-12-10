@@ -6,6 +6,7 @@ using MassTransit;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ProjectOrigin.Chronicler.V1;
+using ProjectOrigin.Common.V1;
 using ProjectOrigin.Vault.Activities.Exceptions;
 using ProjectOrigin.Vault.Options;
 
@@ -14,7 +15,9 @@ namespace ProjectOrigin.Vault.Activities;
 public record SendClaimIntentToChroniclerArgument
 {
     public required Guid Id { get; init; }
-    public required ClaimIntentRequest ClaimIntentRequest { get; init; }
+    public required FederatedStreamId CertificateId { get; init; }
+    public required int Quantity { get; init; }
+    public required byte[] RandomR { get; init; }
 }
 
 public class SendClaimIntentToChroniclerActivity : IExecuteActivity<SendClaimIntentToChroniclerArgument>
@@ -50,9 +53,7 @@ public class SendClaimIntentToChroniclerActivity : IExecuteActivity<SendClaimInt
 
         try
         {
-            var claimIntentRequest = context.Arguments.ClaimIntentRequest;
-
-            var registryName = claimIntentRequest.CertificateId.Registry;
+            var registryName = context.Arguments.CertificateId.Registry;
             if (!_networkOptions.Value.Registries.TryGetValue(registryName, out var registryInfo))
                 throw new ArgumentException($"Registry with name {registryName} not found in configuration.");
 
@@ -60,7 +61,12 @@ public class SendClaimIntentToChroniclerActivity : IExecuteActivity<SendClaimInt
 
             var client = _factory(channel);
 
-            var result = await client.RegisterClaimIntentAsync(claimIntentRequest);
+            var result = await client.RegisterClaimIntentAsync(new ClaimIntentRequest
+            {
+                CertificateId = context.Arguments.CertificateId,
+                Quantity = context.Arguments.Quantity,
+                RandomR = Google.Protobuf.ByteString.CopyFrom(context.Arguments.RandomR)
+            });
 
             _logger.LogDebug("Claim intent registered with Chronicler");
 

@@ -1,7 +1,5 @@
 using System;
 using System.Threading.Tasks;
-using Google.Protobuf;
-using ProjectOrigin.Chronicler.V1;
 using ProjectOrigin.Common.V1;
 using ProjectOrigin.Electricity.V1;
 using ProjectOrigin.Vault.Activities;
@@ -95,13 +93,10 @@ public partial class RegistryProcessBuilder
             chroniclerRequestId = Guid.NewGuid();
             AddActivity<SendClaimIntentToChroniclerActivity, SendClaimIntentToChroniclerArgument>(new SendClaimIntentToChroniclerArgument
             {
-                ClaimIntentRequest = new ClaimIntentRequest
-                {
-                    CertificateId = slice.GetFederatedStreamId(),
-                    Quantity = (int)slice.Quantity,
-                    RandomR = ByteString.CopyFrom(slice.RandomR)
-                },
-                Id = chroniclerRequestId.Value
+                Id = chroniclerRequestId.Value,
+                CertificateId = slice.GetFederatedStreamId(),
+                Quantity = (int)slice.Quantity,
+                RandomR = slice.RandomR
             });
         }
 

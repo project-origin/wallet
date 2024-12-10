@@ -53,7 +53,7 @@ public class TransferCertificateCommandHandlerTests
         };
         _context.Message.Returns(command);
         _unitOfWork.WalletRepository.GetExternalEndpoint(Arg.Any<Guid>())
-            .Returns(new ExternalEndpoint { Endpoint = "http://localhost:5000", Id = Guid.NewGuid(), Owner = _owner, ReferenceText = "", PublicKey = null });
+            .Returns(new ExternalEndpoint { Endpoint = "http://localhost:5000", Id = Guid.NewGuid(), Owner = _owner, ReferenceText = "", PublicKey = null! });
         _unitOfWork.CertificateRepository.ReserveQuantity(
                 Arg.Any<string>(),
                 Arg.Any<string>(),
