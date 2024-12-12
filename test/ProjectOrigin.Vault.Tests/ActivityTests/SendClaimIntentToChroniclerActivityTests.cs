@@ -42,7 +42,7 @@ namespace ProjectOrigin.Vault.Tests.ActivityTests
             chroniclerServiceMock.Setup(x => x.RegisterClaimIntentAsync(It.IsAny<ClaimIntentRequest>(), null, null, default))
                 .Returns(asyncUnaryCall);
 
-            var arguments = new SendClaimIntentToChroniclerArgument
+            var arguments = new SendClaimIntentToChroniclerArguments
             {
                 Id = System.Guid.NewGuid(),
                 CertificateId = new FederatedStreamId()
@@ -58,7 +58,7 @@ namespace ProjectOrigin.Vault.Tests.ActivityTests
             };
 
             var returnValue = Mock.Of<ExecutionResult>();
-            var context = new Mock<ExecuteContext<SendClaimIntentToChroniclerArgument>>(MockBehavior.Strict);
+            var context = new Mock<ExecuteContext<SendClaimIntentToChroniclerArguments>>(MockBehavior.Strict);
             context.Setup(x => x.TrackingNumber).Returns(System.Guid.NewGuid());
             context.Setup(x => x.ActivityName).Returns(nameof(SendClaimIntentToChroniclerActivity));
             context.Setup(x => x.Arguments).Returns(arguments);
@@ -93,7 +93,7 @@ namespace ProjectOrigin.Vault.Tests.ActivityTests
             // Arrange
             var registryName = "MyRegistry";
 
-            var arguments = new SendClaimIntentToChroniclerArgument
+            var arguments = new SendClaimIntentToChroniclerArguments
             {
                 Id = System.Guid.NewGuid(),
                 CertificateId = new FederatedStreamId()
@@ -108,7 +108,7 @@ namespace ProjectOrigin.Vault.Tests.ActivityTests
                 RandomR = new byte[] { 1, 2, 3 },
             };
 
-            var context = new Mock<ExecuteContext<SendClaimIntentToChroniclerArgument>>(MockBehavior.Strict);
+            var context = new Mock<ExecuteContext<SendClaimIntentToChroniclerArguments>>(MockBehavior.Strict);
             context.Setup(x => x.TrackingNumber).Returns(System.Guid.NewGuid());
             context.Setup(x => x.ActivityName).Returns(nameof(SendClaimIntentToChroniclerActivity));
             context.Setup(x => x.Arguments).Returns(arguments);

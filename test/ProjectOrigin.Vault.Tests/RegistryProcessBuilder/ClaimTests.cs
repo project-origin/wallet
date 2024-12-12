@@ -184,14 +184,14 @@ public class ClaimTests : IClassFixture<PostgresDatabaseFixture>
         // Assert
         slip.Should().NotBeNull();
 
-        slip.Itinerary[0].ShouldBeActivity<SendClaimIntentToChroniclerActivity, SendClaimIntentToChroniclerArgument>()
-            .Should().Match<SendClaimIntentToChroniclerArgument>(x =>
+        slip.Itinerary[0].ShouldBeActivity<SendClaimIntentToChroniclerActivity, SendClaimIntentToChroniclerArguments>()
+            .Should().Match<SendClaimIntentToChroniclerArguments>(x =>
                 x.Id != Guid.Empty &&
                 x.CertificateId.Registry == prodCert.RegistryName &&
                 x.CertificateId.StreamId.Value == prodCert.Id.ToString() &&
                 x.Quantity == prodSlice.Quantity &&
                 x.RandomR.ToArray().SequenceEqual(prodSlice.RandomR));
-        var chronId = slip.Itinerary[0].ShouldBeActivity<SendClaimIntentToChroniclerActivity, SendClaimIntentToChroniclerArgument>().Id;
+        var chronId = slip.Itinerary[0].ShouldBeActivity<SendClaimIntentToChroniclerActivity, SendClaimIntentToChroniclerArguments>().Id;
 
         slip.Itinerary[1].ShouldBeActivity<AllocateActivity, AllocateArguments>()
             .Should().Match<AllocateArguments>(x =>
@@ -207,14 +207,14 @@ public class ClaimTests : IClassFixture<PostgresDatabaseFixture>
         var allocationId = slip.Itinerary[1].ShouldBeActivity<AllocateActivity, AllocateArguments>().AllocationId.ToString();
 
 
-        slip.Itinerary[2].ShouldBeActivity<SendClaimIntentToChroniclerActivity, SendClaimIntentToChroniclerArgument>()
-            .Should().Match<SendClaimIntentToChroniclerArgument>(x =>
+        slip.Itinerary[2].ShouldBeActivity<SendClaimIntentToChroniclerActivity, SendClaimIntentToChroniclerArguments>()
+            .Should().Match<SendClaimIntentToChroniclerArguments>(x =>
                 x.Id != Guid.Empty &&
                 x.CertificateId.Registry == consCert.RegistryName &&
                 x.CertificateId.StreamId.Value == consCert.Id.ToString() &&
                 x.Quantity == consSlice.Quantity &&
                 x.RandomR.ToArray().SequenceEqual(consSlice.RandomR));
-        var chronId2 = slip.Itinerary[2].ShouldBeActivity<SendClaimIntentToChroniclerActivity, SendClaimIntentToChroniclerArgument>().Id;
+        var chronId2 = slip.Itinerary[2].ShouldBeActivity<SendClaimIntentToChroniclerActivity, SendClaimIntentToChroniclerArguments>().Id;
 
         slip.Itinerary[3].ShouldBeActivity<AllocateActivity, AllocateArguments>()
             .Should().Match<AllocateArguments>(x =>

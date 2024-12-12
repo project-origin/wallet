@@ -87,7 +87,7 @@ public class ChroniclerExecutionTest
         sc.AddMassTransitTestHarness(cfg =>
             {
                 cfg.SetKebabCaseEndpointNameFormatter();
-                cfg.AddExecuteActivity<SendClaimIntentToChroniclerActivity, SendClaimIntentToChroniclerArgument>();
+                cfg.AddExecuteActivity<SendClaimIntentToChroniclerActivity, SendClaimIntentToChroniclerArguments>();
                 cfg.AddExecuteActivity<AllocateActivity, AllocateArguments>();
             });
 
@@ -101,8 +101,8 @@ public class ChroniclerExecutionTest
         var chroniclerId = Guid.NewGuid();
         var slipBuilder = new RoutingSlipBuilder(NewId.NextGuid());
         var commitmentInfo = new SecretCommitmentInfo(5);
-        var addr = harness.GetExecuteActivityAddress<SendClaimIntentToChroniclerActivity, SendClaimIntentToChroniclerArgument>();
-        slipBuilder.AddActivity(nameof(SendClaimIntentToChroniclerActivity), addr, new SendClaimIntentToChroniclerArgument
+        var addr = harness.GetExecuteActivityAddress<SendClaimIntentToChroniclerActivity, SendClaimIntentToChroniclerArguments>();
+        slipBuilder.AddActivity(nameof(SendClaimIntentToChroniclerActivity), addr, new SendClaimIntentToChroniclerArguments
         {
             Id = chroniclerId,
             CertificateId = certId,
