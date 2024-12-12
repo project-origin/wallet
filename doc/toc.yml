@@ -18,6 +18,8 @@
     href: flows/transfer.md
   - name: Receive
     href: flows/receive_slice.md
+  - name: Expire
+    href: flows/expire.md
 
 - name: Architecture
   items:
