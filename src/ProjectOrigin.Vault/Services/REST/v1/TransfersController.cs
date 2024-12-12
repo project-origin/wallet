@@ -240,7 +240,7 @@ public record GetTransfersQueryParameters
     /// The number of items to skip.
     /// </summary>
     [DefaultValue(0)]
-    public int Skip { get; init; }
+    public int Skip { get; init; } = 0;
 }
 
 public record AggregateTransfersQueryParameters
@@ -274,7 +274,7 @@ public record AggregateTransfersQueryParameters
     /// The number of items to skip.
     /// </summary>
     [DefaultValue(0)]
-    public int Skip { get; init; }
+    public int Skip { get; init; } = 0;
 }
 
 /// <summary>

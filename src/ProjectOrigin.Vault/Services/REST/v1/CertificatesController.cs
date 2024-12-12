@@ -182,7 +182,7 @@ public record GetCertificatesQueryParameters
     /// The number of items to skip.
     /// </summary>
     [DefaultValue(0)]
-    public int Skip { get; init; }
+    public int Skip { get; init; } = 0;
 }
 
 [JsonConverter(typeof(StringEnumConverter))]
@@ -257,7 +257,7 @@ public record AggregateCertificatesQueryParameters
     /// The number of items to skip.
     /// </summary>
     [DefaultValue(0)]
-    public int Skip { get; init; }
+    public int Skip { get; init; } = 0;
 }
 
 public record AggregateCertificatesCursorQueryParameters

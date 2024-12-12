@@ -222,7 +222,7 @@ public record GetClaimsQueryParameters
     /// The number of items to skip.
     /// </summary>
     [DefaultValue(0)]
-    public int Skip { get; init; }
+    public int Skip { get; init; } = 0;
 }
 
 public record AggregateClaimsQueryParameters
@@ -256,7 +256,7 @@ public record AggregateClaimsQueryParameters
     /// The number of items to skip.
     /// </summary>
     [DefaultValue(0)]
-    public int Skip { get; init; }
+    public int Skip { get; init; } = 0;
 }
 
 /// <summary>

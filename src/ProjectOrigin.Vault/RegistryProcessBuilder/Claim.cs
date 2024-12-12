@@ -91,7 +91,7 @@ public partial class RegistryProcessBuilder
         if (areaInfo.Chronicler is not null)
         {
             chroniclerRequestId = Guid.NewGuid();
-            AddActivity<SendClaimIntentToChroniclerActivity, SendClaimIntentToChroniclerArgument>(new SendClaimIntentToChroniclerArgument
+            AddActivity<SendClaimIntentToChroniclerActivity, SendClaimIntentToChroniclerArguments>(new SendClaimIntentToChroniclerArguments
             {
                 Id = chroniclerRequestId.Value,
                 CertificateId = slice.GetFederatedStreamId(),
