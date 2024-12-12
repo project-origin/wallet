@@ -71,7 +71,7 @@ public class SendClaimIntentToChroniclerActivity : IExecuteActivity<SendClaimInt
             _logger.LogDebug("Claim intent registered with Chronicler");
 
             Dictionary<string, object> variables = new() {
-                { context.Arguments.Id.ToString(), result.Signature.ToByteArray() }
+                { context.Arguments.Id.ToString(), Convert.ToBase64String(result.Signature.ToByteArray()) }
             };
 
             return context.CompletedWithVariables(variables);
