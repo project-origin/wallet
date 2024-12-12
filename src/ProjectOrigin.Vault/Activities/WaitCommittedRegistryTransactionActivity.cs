@@ -78,6 +78,11 @@ public class WaitCommittedRegistryTransactionActivity : IExecuteActivity<WaitCom
         }
         catch (RpcException ex)
         {
+            if (context.Arguments.RequestStatusArgs != null)
+            {
+                await _unitOfWork.RequestStatusRepository.SetRequestStatus(context.Arguments.RequestStatusArgs.RequestId, context.Arguments.RequestStatusArgs.Owner, RequestStatusState.Failed, failedReason: "Failed to communicate with registry");
+                _unitOfWork.Commit();
+            }
             _logger.LogError(ex, "Failed to communicate with registry.");
             return context.Faulted(new TransientException("Failed to communicate with registry.", ex));
         }

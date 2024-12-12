@@ -146,8 +146,11 @@ public class TransferPartialSliceActivity : IExecuteActivity<TransferPartialSlic
                     ExternalEndpointId = externalEndpoint.Id,
                     SliceId = transferredSlice.Id,
                     WalletAttributes = walletAttributes.ToArray(),
-                    RequestId = context.Arguments.RequestId,
-                    Owner = context.Arguments.Owner
+                    RequestStatusArgs = new RequestStatusArgs
+                    {
+                        RequestId = context.Arguments.RequestId,
+                        Owner = context.Arguments.Owner
+                    }
                 });
 
             builder.AddActivitiesFromSourceItinerary();

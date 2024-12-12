@@ -18,8 +18,7 @@ public record SendInformationToReceiverWalletArgument
     public required Guid ExternalEndpointId { get; init; }
     public required Guid SliceId { get; init; }
     public required WalletAttribute[] WalletAttributes { get; init; }
-    public required Guid RequestId { get; init; }
-    public required string Owner { get; init; }
+    public RequestStatusArgs RequestStatusArgs { get; init; }
 }
 
 public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInformationToReceiverWalletArgument>
@@ -28,7 +27,8 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
     private readonly ILogger<SendInformationToReceiverWalletActivity> _logger;
     private readonly Uri _ownEndpoint;
 
-    public SendInformationToReceiverWalletActivity(IUnitOfWork unitOfWork, IOptions<ServiceOptions> walletSystemOptions, ILogger<SendInformationToReceiverWalletActivity> logger)
+    public SendInformationToReceiverWalletActivity(IUnitOfWork unitOfWork, IOptions<ServiceOptions> walletSystemOptions,
+        ILogger<SendInformationToReceiverWalletActivity> logger)
     {
         _unitOfWork = unitOfWork;
         _logger = logger;
@@ -37,16 +37,22 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
 
     public async Task<ExecutionResult> Execute(ExecuteContext<SendInformationToReceiverWalletArgument> context)
     {
-        _logger.LogDebug("RoutingSlip {TrackingNumber} - Executing {ActivityName}", context.TrackingNumber, context.ActivityName);
+        _logger.LogDebug("RoutingSlip {TrackingNumber} - Executing {ActivityName}", context.TrackingNumber,
+            context.ActivityName);
 
         var newSlice = await _unitOfWork.TransferRepository.GetTransferredSlice(context.Arguments.SliceId);
-        var externalEndpoint = await _unitOfWork.WalletRepository.GetExternalEndpoint(context.Arguments.ExternalEndpointId);
+        var externalEndpoint =
+            await _unitOfWork.WalletRepository.GetExternalEndpoint(context.Arguments.ExternalEndpointId);
         if (externalEndpoint.Endpoint.Equals(_ownEndpoint.ToString()))
         {
+            await _unitOfWork.RequestStatusRepository.SetRequestStatus(context.Arguments.RequestId,
+                context.Arguments.Owner, RequestStatusState.Completed);
             return await InsertIntoLocalWallet(context, newSlice, externalEndpoint);
         }
         else
         {
+            await _unitOfWork.RequestStatusRepository.SetRequestStatus(context.Arguments.RequestId,
+                context.Arguments.Owner, RequestStatusState.Completed);
             return await SendOverRestToExternalWallet(context, newSlice, externalEndpoint);
         }
     }
@@ -85,7 +91,8 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
 
             var response = await client.PostAsJsonAsync(externalEndpoint.Endpoint, request);
             response.EnsureSuccessStatusCode();
-            await _unitOfWork.TransferRepository.SetTransferredSliceState(newSlice.Id, TransferredSliceState.Transferred);
+            await _unitOfWork.TransferRepository.SetTransferredSliceState(newSlice.Id,
+                TransferredSliceState.Transferred);
 
             _logger.LogDebug("Information Sent to receiver");
 
@@ -98,7 +105,9 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
         }
     }
 
-    private async Task<ExecutionResult> InsertIntoLocalWallet(ExecuteContext<SendInformationToReceiverWalletArgument> context, TransferredSlice newSlice, ExternalEndpoint externalEndpoint)
+    private async Task<ExecutionResult> InsertIntoLocalWallet(
+        ExecuteContext<SendInformationToReceiverWalletArgument> context, TransferredSlice newSlice,
+        ExternalEndpoint externalEndpoint)
     {
         _logger.LogDebug("Receiver is local.");
 
@@ -106,8 +115,10 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
 
         if (walletEndpoint is null)
         {
-            _logger.LogError("Local receiver wallet could not be found for reciever wallet {ReceiverWalletId}", externalEndpoint.Id);
-            return context.Faulted(new Exception($"Local receiver wallet could not be found for reciever wallet {externalEndpoint.Id}"));
+            _logger.LogError("Local receiver wallet could not be found for reciever wallet {ReceiverWalletId}",
+                externalEndpoint.Id);
+            return context.Faulted(
+                new Exception($"Local receiver wallet could not be found for reciever wallet {externalEndpoint.Id}"));
         }
 
         var slice = new WalletSlice
@@ -127,7 +138,6 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
         {
             await _unitOfWork.CertificateRepository.InsertWalletAttribute(walletEndpoint.WalletId, walletAttribute);
         }
-        await _unitOfWork.RequestStatusRepository.SetRequestStatus(context.Arguments.RequestId, context.Arguments.Owner, RequestStatusState.Completed);
 
         _unitOfWork.Commit();
 
