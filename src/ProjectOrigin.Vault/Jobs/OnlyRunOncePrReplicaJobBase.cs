@@ -41,6 +41,7 @@ public abstract class OnlyRunOncePrReplicaJobBase : BackgroundService
         {
             try
             {
+                _logger.LogInformation("{jobName} is running at: {time}", _jobName, DateTimeOffset.Now);
                 using (var scope = _scopeFactory.CreateScope())
                 {
                     var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
@@ -51,6 +52,7 @@ public abstract class OnlyRunOncePrReplicaJobBase : BackgroundService
                     {
                         try
                         {
+                            _logger.LogInformation("{jobName} acquired lock.", _jobName);
                             if (await HasBeenRunByOtherReplica(unitOfWork))
                             {
                                 _logger.LogInformation("{jobName} was executed at {now} but did not publish. Will run again at {willRunAt}", _jobName, DateTime.Now, DateTimeOffset.UtcNow.AddSeconds(_runIntervalInSeconds));
@@ -65,9 +67,17 @@ public abstract class OnlyRunOncePrReplicaJobBase : BackgroundService
                                 unitOfWork.Commit();
                             }
                         }
+                        catch (Exception)
+                        {
+                            _logger.LogInformation("{jobName} rollback.", _jobName);
+                            unitOfWork.Rollback();
+                            throw;
+                        }
                         finally
                         {
+                            _logger.LogInformation("{jobName} trying to release lock.", _jobName);
                             await unitOfWork.JobExecutionRepository.ReleaseAdvisoryLock((int)_jobKey);
+                            _logger.LogInformation("{jobName} released lock.", _jobName);
                         }
                     }
                 }
