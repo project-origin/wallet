@@ -48,7 +48,8 @@ public class AllocateActivity : IExecuteActivity<AllocateArguments>
             var prod = await _unitOfWork.CertificateRepository.GetWalletSlice(context.Arguments.ProductionSliceId);
 
             byte[]? chroniclerSignature = context.Arguments.ChroniclerRequestId is not null
-                ? context.GetVariable<byte[]>(context.Arguments.ChroniclerRequestId.Value.ToString())
+                ? Convert.FromBase64String(context.GetVariable<string>(context.Arguments.ChroniclerRequestId.Value.ToString())
+                    ?? throw new InvalidOperationException("Allocate activity with ChroniclerRequestId but result variable not found"))
                 : null;
 
             var allocatedEvent = CreateAllocatedEvent(context.Arguments.AllocationId, cons, prod, chroniclerSignature);
@@ -64,7 +65,6 @@ public class AllocateActivity : IExecuteActivity<AllocateArguments>
             _logger.LogDebug("Claim intent registered with Chronicler");
 
             return AddTransferRequiredActivities(context, transaction, slice.Id);
-
         }
         catch (Exception ex)
         {
