@@ -48,7 +48,8 @@ public class AllocateActivity : IExecuteActivity<AllocateArguments>
             var prod = await _unitOfWork.CertificateRepository.GetWalletSlice(context.Arguments.ProductionSliceId);
 
             byte[]? chroniclerSignature = context.Arguments.ChroniclerRequestId is not null
-                ? Convert.FromBase64String(context.GetVariable<string>(context.Arguments.ChroniclerRequestId.Value.ToString()) ?? throw new Exception("Chronicler signature not found"))
+                ? Convert.FromBase64String(context.GetVariable<string>(context.Arguments.ChroniclerRequestId.Value.ToString())
+                    ?? throw new InvalidOperationException("Allocate activity with ChroniclerRequestId but result variable not found"))
                 : null;
 
             var allocatedEvent = CreateAllocatedEvent(context.Arguments.AllocationId, cons, prod, chroniclerSignature);
