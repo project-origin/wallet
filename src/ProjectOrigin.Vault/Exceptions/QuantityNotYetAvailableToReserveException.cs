@@ -1,7 +1,10 @@
 using System;
+using System.ComponentModel;
 
 namespace ProjectOrigin.Vault.Exceptions;
-public class QuantityNotYetAvailableToReserveException : Exception
+
+[Serializable]
+public class QuantityNotYetAvailableToReserveException : WarningException
 {
     public QuantityNotYetAvailableToReserveException(string? message) : base(message)
     {
