@@ -62,7 +62,7 @@ namespace ProjectOrigin.Vault.Tests.ActivityTests
             context.Setup(x => x.TrackingNumber).Returns(System.Guid.NewGuid());
             context.Setup(x => x.ActivityName).Returns(nameof(SendClaimIntentToChroniclerActivity));
             context.Setup(x => x.Arguments).Returns(arguments);
-            context.Setup(x => x.CompletedWithVariables(It.Is<Dictionary<string, object>>(x => (x[arguments.Id.ToString()] as byte[])!.SequenceEqual(signature)))).Returns(returnValue);
+            context.Setup(x => x.CompletedWithVariables(It.Is<Dictionary<string, object>>(x => x[arguments.Id.ToString()].Equals(Convert.ToBase64String(signature))))).Returns(returnValue);
 
             var options = new NetworkOptions()
             {
@@ -84,7 +84,6 @@ namespace ProjectOrigin.Vault.Tests.ActivityTests
 
             // Assert
             result.Should().Be(returnValue);
-
         }
 
         [Fact]
