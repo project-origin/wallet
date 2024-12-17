@@ -4,7 +4,6 @@ using MassTransit;
 using MassTransit.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
-using ProjectOrigin.Vault.Tests.TestClassFixtures;
 using Xunit;
 using ProjectOrigin.Vault.Activities;
 using ProjectOrigin.Vault.Options;

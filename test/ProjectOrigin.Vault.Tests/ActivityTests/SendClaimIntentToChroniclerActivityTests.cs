@@ -13,7 +13,6 @@ using Grpc.Core;
 using System.Collections.Generic;
 using ProjectOrigin.Vault.Activities.Exceptions;
 using AutoFixture;
-using System.Linq;
 using System;
 
 namespace ProjectOrigin.Vault.Tests.ActivityTests
