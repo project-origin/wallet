@@ -115,8 +115,11 @@ public class SendInformationToReceiverWalletActivityTests
                 attribute1,
                 attribute2
             ],
-            RequestId = Guid.NewGuid(),
-            Owner = owner
+            RequestStatusArgs = new RequestStatusArgs
+            {
+                RequestId = Guid.NewGuid(),
+                Owner = owner
+            }
         });
 
         // Act
@@ -198,8 +201,11 @@ public class SendInformationToReceiverWalletActivityTests
             ExternalEndpointId = endpoint.Id,
             SliceId = transferredSlice.Id,
             WalletAttributes = [],
-            RequestId = Guid.NewGuid(),
-            Owner = owner
+            RequestStatusArgs = new RequestStatusArgs
+            {
+                RequestId = Guid.NewGuid(),
+                Owner = owner
+            }
         });
 
         // Act
@@ -279,8 +285,11 @@ public class SendInformationToReceiverWalletActivityTests
                 attribute1,
                 attribute2
             ],
-            RequestId = Guid.NewGuid(),
-            Owner = owner
+            RequestStatusArgs = new RequestStatusArgs
+            {
+                RequestId = Guid.NewGuid(),
+                Owner = owner
+            }
         });
 
         // Act
@@ -341,8 +350,11 @@ public class SendInformationToReceiverWalletActivityTests
             ExternalEndpointId = externalEndpoint.Id,
             SliceId = transferredSlice.Id,
             WalletAttributes = [],
-            RequestId = Guid.NewGuid(),
-            Owner = owner
+            RequestStatusArgs = new RequestStatusArgs
+            {
+                RequestId = Guid.NewGuid(),
+                Owner = owner
+            }
         });
 
         var fault = Substitute.For<MassTransit.ExecutionResult>();
@@ -353,6 +365,8 @@ public class SendInformationToReceiverWalletActivityTests
         var result = await _activity.Execute(_context);
 
         // Assert
+        
+
         await _transferRepository.Received(0).SetTransferredSliceState(Arg.Any<Guid>(), TransferredSliceState.Transferred);
         result.Should().Be(fault);
     }

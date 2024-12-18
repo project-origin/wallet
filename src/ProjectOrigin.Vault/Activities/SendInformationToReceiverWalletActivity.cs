@@ -45,14 +45,14 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
             await _unitOfWork.WalletRepository.GetExternalEndpoint(context.Arguments.ExternalEndpointId);
         if (externalEndpoint.Endpoint.Equals(_ownEndpoint.ToString()))
         {
-            await _unitOfWork.RequestStatusRepository.SetRequestStatus(context.Arguments.RequestId,
-                context.Arguments.Owner, RequestStatusState.Completed);
+            await _unitOfWork.RequestStatusRepository.SetRequestStatus(context.Arguments.RequestStatusArgs.RequestId,
+                context.Arguments.RequestStatusArgs.Owner, RequestStatusState.Completed);
             return await InsertIntoLocalWallet(context, newSlice, externalEndpoint);
         }
         else
         {
-            await _unitOfWork.RequestStatusRepository.SetRequestStatus(context.Arguments.RequestId,
-                context.Arguments.Owner, RequestStatusState.Completed);
+            await _unitOfWork.RequestStatusRepository.SetRequestStatus(context.Arguments.RequestStatusArgs.RequestId,
+                context.Arguments.RequestStatusArgs.Owner, RequestStatusState.Completed);
             return await SendOverRestToExternalWallet(context, newSlice, externalEndpoint);
         }
     }
