@@ -12,7 +12,7 @@ using ProjectOrigin.Vault.Options;
 
 namespace ProjectOrigin.Vault.Activities;
 
-public record SendClaimIntentToChroniclerArgument
+public record SendClaimIntentToChroniclerArguments
 {
     public required Guid Id { get; init; }
     public required FederatedStreamId CertificateId { get; init; }
@@ -20,7 +20,7 @@ public record SendClaimIntentToChroniclerArgument
     public required byte[] RandomR { get; init; }
 }
 
-public class SendClaimIntentToChroniclerActivity : IExecuteActivity<SendClaimIntentToChroniclerArgument>
+public class SendClaimIntentToChroniclerActivity : IExecuteActivity<SendClaimIntentToChroniclerArguments>
 {
     private readonly ILogger<SendClaimIntentToChroniclerActivity> _logger;
     private readonly IOptions<NetworkOptions> _networkOptions;
@@ -47,7 +47,7 @@ public class SendClaimIntentToChroniclerActivity : IExecuteActivity<SendClaimInt
         _factory = factory;
     }
 
-    public async Task<ExecutionResult> Execute(ExecuteContext<SendClaimIntentToChroniclerArgument> context)
+    public async Task<ExecutionResult> Execute(ExecuteContext<SendClaimIntentToChroniclerArguments> context)
     {
         _logger.LogDebug("RoutingSlip {TrackingNumber} - Executing {ActivityName}", context.TrackingNumber, context.ActivityName);
 
@@ -71,7 +71,7 @@ public class SendClaimIntentToChroniclerActivity : IExecuteActivity<SendClaimInt
             _logger.LogDebug("Claim intent registered with Chronicler");
 
             Dictionary<string, object> variables = new() {
-                { context.Arguments.Id.ToString(), result.Signature.ToByteArray() }
+                { context.Arguments.Id.ToString(), Convert.ToBase64String(result.Signature.ToByteArray()) }
             };
 
             return context.CompletedWithVariables(variables);
