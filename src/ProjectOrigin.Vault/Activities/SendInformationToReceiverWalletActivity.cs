@@ -36,7 +36,9 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
 
     public async Task<ExecutionResult> Execute(ExecuteContext<SendInformationToReceiverWalletArgument> context)
     {
-        _logger.LogInformation("Starting Activity: {Activity}, RequestId: {RequestId} ", nameof(SendInformationToReceiverWalletActivity), context.Arguments.RequestStatusArgs.RequestId);
+        if (context.Arguments.RequestStatusArgs != null)
+            _logger.LogInformation("Starting Activity: {Activity}, RequestId: {RequestId} ",
+                nameof(SendInformationToReceiverWalletActivity), context.Arguments.RequestStatusArgs.RequestId);
 
         _logger.LogDebug("RoutingSlip {TrackingNumber} - Executing {ActivityName}", context.TrackingNumber, context.ActivityName);
 

@@ -27,7 +27,10 @@ public class UpdateSliceStateActivity : IExecuteActivity<UpdateSliceStateArgumen
 
     public async Task<ExecutionResult> Execute(ExecuteContext<UpdateSliceStateArguments> context)
     {
-        _logger.LogInformation("Starting Activity: {Activity}, RequestId: {RequestId} ", nameof(UpdateSliceStateActivity), context.Arguments.RequestStatusArgs.RequestId);
+        if (context.Arguments.RequestStatusArgs != null)
+        {
+            _logger.LogInformation("Starting Activity: {Activity}, RequestId: {RequestId} ", nameof(UpdateSliceStateActivity), context.Arguments.RequestStatusArgs.RequestId);
+        }
 
         _logger.LogDebug("RoutingSlip {TrackingNumber} - Executing {ActivityName}", context.TrackingNumber, context.ActivityName);
 
@@ -39,7 +42,10 @@ public class UpdateSliceStateActivity : IExecuteActivity<UpdateSliceStateArgumen
                 await _unitOfWork.CertificateRepository.SetWalletSliceState(id, state);
             }
             _unitOfWork.Commit();
-            _logger.LogInformation("Ending Activity: {Activity}, RequestId: {RequestId} ", nameof(UpdateSliceStateActivity), context.Arguments.RequestStatusArgs.RequestId);
+            if (context.Arguments.RequestStatusArgs != null)
+            {
+                _logger.LogInformation("Ending Activity: {Activity}, RequestId: {RequestId} ", nameof(UpdateSliceStateActivity), context.Arguments.RequestStatusArgs.RequestId);
+            }
 
             return context.Completed();
         }
