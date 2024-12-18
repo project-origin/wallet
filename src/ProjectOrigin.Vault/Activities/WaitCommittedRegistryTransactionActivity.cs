@@ -38,6 +38,8 @@ public class WaitCommittedRegistryTransactionActivity : IExecuteActivity<WaitCom
 
     public async Task<ExecutionResult> Execute(ExecuteContext<WaitCommittedTransactionArguments> context)
     {
+        _logger.LogInformation("Starting Activity: {Activity}, RequestId: {RequestId} ", nameof(WaitCommittedRegistryTransactionActivity), context.Arguments.RequestStatusArgs.RequestId);
+
         _logger.LogDebug("RoutingSlip {TrackingNumber} - Executing {ActivityName}", context.TrackingNumber, context.ActivityName);
 
         try
@@ -58,6 +60,8 @@ public class WaitCommittedRegistryTransactionActivity : IExecuteActivity<WaitCom
 
             if (status.Status == TransactionState.Committed)
             {
+                _logger.LogInformation("Ending Activity: {Activity}, RequestId: {RequestId} ", nameof(WaitCommittedRegistryTransactionActivity), context.Arguments.RequestStatusArgs.RequestId);
+
                 return context.Completed();
             }
             else if (status.Status == TransactionState.Failed)
@@ -72,6 +76,8 @@ public class WaitCommittedRegistryTransactionActivity : IExecuteActivity<WaitCom
             }
             else
             {
+                _logger.LogInformation("Ending  STILL IN Process Activity: {Activity}, RequestId: {RequestId} ", nameof(WaitCommittedRegistryTransactionActivity), context.Arguments.RequestStatusArgs.RequestId);
+
                 _logger.LogDebug("Transaction is still processing on registry.");
                 return context.Faulted(new RegistryTransactionStillProcessingException("Transaction is still processing on registry."));
             }

@@ -82,8 +82,8 @@ public class ClaimTests : IClassFixture<PostgresDatabaseFixture>
                 x.ChroniclerRequestId == null &&
                 x.CertificateId.Registry == prodCert.RegistryName &&
                 x.CertificateId.StreamId.Value == prodCert.Id.ToString() &&
-                x.RequestId != Guid.Empty &&
-                x.Owner != string.Empty);
+                x.RequestStatusArgs.RequestId != Guid.Empty &&
+                x.RequestStatusArgs.Owner != string.Empty);
 
         var allocationId = slip.Itinerary[0].ShouldBeActivity<AllocateActivity, AllocateArguments>().AllocationId.ToString();
 
@@ -95,8 +95,8 @@ public class ClaimTests : IClassFixture<PostgresDatabaseFixture>
                 x.ChroniclerRequestId == null &&
                 x.CertificateId.Registry == consCert.RegistryName &&
                 x.CertificateId.StreamId.Value == consCert.Id.ToString() &&
-                x.RequestId != Guid.Empty &&
-                x.Owner != string.Empty);
+                x.RequestStatusArgs.RequestId != Guid.Empty &&
+                x.RequestStatusArgs.Owner != string.Empty);
 
         var (t3, _) = slip.Itinerary[2].ShouldBeTransactionWithEvent<ClaimedEvent>(
             transaction =>
@@ -201,8 +201,8 @@ public class ClaimTests : IClassFixture<PostgresDatabaseFixture>
                 x.ChroniclerRequestId.Equals(chronId) &&
                 x.CertificateId.Registry == prodCert.RegistryName &&
                 x.CertificateId.StreamId.Value == prodCert.Id.ToString() &&
-                x.RequestId != Guid.Empty &&
-                x.Owner != string.Empty);
+                x.RequestStatusArgs.RequestId != Guid.Empty &&
+                x.RequestStatusArgs.Owner != string.Empty);
 
         var allocationId = slip.Itinerary[1].ShouldBeActivity<AllocateActivity, AllocateArguments>().AllocationId.ToString();
 
@@ -224,8 +224,8 @@ public class ClaimTests : IClassFixture<PostgresDatabaseFixture>
                 x.ChroniclerRequestId.Equals(chronId2) &&
                 x.CertificateId.Registry == consCert.RegistryName &&
                 x.CertificateId.StreamId.Value == consCert.Id.ToString() &&
-                x.RequestId != Guid.Empty &&
-                x.Owner != string.Empty);
+                x.RequestStatusArgs.RequestId != Guid.Empty &&
+                x.RequestStatusArgs.Owner != string.Empty);
 
         var (t3, _) = slip.Itinerary[4].ShouldBeTransactionWithEvent<ClaimedEvent>(
             transaction =>

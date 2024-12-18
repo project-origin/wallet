@@ -18,8 +18,7 @@ public record SendInformationToReceiverWalletArgument
     public required Guid ExternalEndpointId { get; init; }
     public required Guid SliceId { get; init; }
     public required WalletAttribute[] WalletAttributes { get; init; }
-    public required Guid RequestId { get; init; }
-    public required string Owner { get; init; }
+    public RequestStatusArgs RequestStatusArgs { get; init; }
 }
 
 public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInformationToReceiverWalletArgument>
@@ -37,6 +36,8 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
 
     public async Task<ExecutionResult> Execute(ExecuteContext<SendInformationToReceiverWalletArgument> context)
     {
+        _logger.LogInformation("Starting Activity: {Activity}, RequestId: {RequestId} ", nameof(SendInformationToReceiverWalletActivity), context.Arguments.RequestStatusArgs.RequestId);
+
         _logger.LogDebug("RoutingSlip {TrackingNumber} - Executing {ActivityName}", context.TrackingNumber, context.ActivityName);
 
         var newSlice = await _unitOfWork.TransferRepository.GetTransferredSlice(context.Arguments.SliceId);
@@ -49,6 +50,7 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
         {
             return await SendOverRestToExternalWallet(context, newSlice, externalEndpoint);
         }
+
     }
 
     private async Task<ExecutionResult> SendOverRestToExternalWallet(
@@ -86,8 +88,12 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
             var response = await client.PostAsJsonAsync(externalEndpoint.Endpoint, request);
             response.EnsureSuccessStatusCode();
             await _unitOfWork.TransferRepository.SetTransferredSliceState(newSlice.Id, TransferredSliceState.Transferred);
+            await _unitOfWork.RequestStatusRepository.SetRequestStatus(context.Arguments.RequestStatusArgs.RequestId, context.Arguments.RequestStatusArgs.Owner, RequestStatusState.Completed);
+
+            _unitOfWork.Commit();
 
             _logger.LogDebug("Information Sent to receiver");
+            _logger.LogInformation("Ending ExternalWallet Activity: {Activity}, RequestId: {RequestId} ", nameof(SendInformationToReceiverWalletActivity), context.Arguments.RequestStatusArgs.RequestId);
 
             return context.Completed();
         }
@@ -127,11 +133,12 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
         {
             await _unitOfWork.CertificateRepository.InsertWalletAttribute(walletEndpoint.WalletId, walletAttribute);
         }
-        await _unitOfWork.RequestStatusRepository.SetRequestStatus(context.Arguments.RequestId, context.Arguments.Owner, RequestStatusState.Completed);
+        await _unitOfWork.RequestStatusRepository.SetRequestStatus(context.Arguments.RequestStatusArgs.RequestId, context.Arguments.RequestStatusArgs.Owner, RequestStatusState.Completed);
 
         _unitOfWork.Commit();
 
         _logger.LogDebug("Slice inserted locally into receiver wallet.");
+        _logger.LogInformation("Ending IntoLocalWallet Activity: {Activity}, RequestId: {RequestId} ", nameof(SendInformationToReceiverWalletActivity), context.Arguments.RequestStatusArgs.RequestId);
 
         return context.Completed();
     }

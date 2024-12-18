@@ -27,6 +27,8 @@ public class UpdateClaimStateActivity : IExecuteActivity<UpdateClaimStateArgumen
 
     public async Task<ExecutionResult> Execute(ExecuteContext<UpdateClaimStateArguments> context)
     {
+        _logger.LogInformation("Starting Activity: {Activity}, RequestId: {RequestId} ", nameof(UpdateClaimStateActivity), context.Arguments.RequestStatusArgs.RequestId);
+
         _logger.LogDebug("RoutingSlip {TrackingNumber} - Executing {ActivityName}", context.TrackingNumber, context.ActivityName);
 
         try
@@ -39,6 +41,8 @@ public class UpdateClaimStateActivity : IExecuteActivity<UpdateClaimStateArgumen
             }
 
             _unitOfWork.Commit();
+            _logger.LogInformation("Ending Activity: {Activity}, RequestId: {RequestId} ", nameof(UpdateClaimStateActivity), context.Arguments.RequestStatusArgs.RequestId);
+
             return context.Completed();
         }
         catch (Exception ex)

@@ -118,7 +118,8 @@ public class CheckForWithdrawnCertificatesCommandHandler : IConsumer<CheckForWit
         builder.AddActivity<SendRegistryTransactionActivity, SendRegistryTransactionArguments>(_formatter,
             new()
             {
-                Transaction = transaction
+                Transaction = transaction,
+                RequestStatusArgs = null
             });
 
         builder.AddActivity<WaitCommittedRegistryTransactionActivity, WaitCommittedTransactionArguments>(_formatter,
