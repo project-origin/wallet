@@ -66,6 +66,7 @@ public class TransferFullSliceActivity : IExecuteActivity<TransferFullSliceArgum
             };
             await _unitOfWork.TransferRepository.InsertTransferredSlice(transferredSlice);
 
+            _logger.LogInformation($"Registering transfer for certificateId {sourceSlice.CertificateId}");
 
             var transferredEvent = CreateTransferEvent(sourceSlice, receiverPublicKey);
 

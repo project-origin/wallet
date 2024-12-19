@@ -43,10 +43,12 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
         var externalEndpoint = await _unitOfWork.WalletRepository.GetExternalEndpoint(context.Arguments.ExternalEndpointId);
         if (externalEndpoint.Endpoint.Equals(_ownEndpoint.ToString()))
         {
+            _logger.LogInformation("Sending to local wallet.");
             return await InsertIntoLocalWallet(context, newSlice, externalEndpoint);
         }
         else
         {
+            _logger.LogInformation("Sending to external wallet.");
             return await SendOverRestToExternalWallet(context, newSlice, externalEndpoint);
         }
     }
@@ -58,7 +60,7 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
     {
         try
         {
-            _logger.LogDebug("Preparing to send information to receiver");
+            _logger.LogInformation("Preparing to send information to receiver");
 
             var request = new ReceiveRequest
             {
@@ -81,13 +83,13 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
             };
 
             var client = new HttpClient();
-            _logger.LogDebug("Sending information to receiver");
+            _logger.LogInformation("Sending information to receiver");
 
             var response = await client.PostAsJsonAsync(externalEndpoint.Endpoint, request);
             response.EnsureSuccessStatusCode();
             await _unitOfWork.TransferRepository.SetTransferredSliceState(newSlice.Id, TransferredSliceState.Transferred);
 
-            _logger.LogDebug("Information Sent to receiver");
+            _logger.LogInformation("Information Sent to receiver");
 
             return context.Completed();
         }
@@ -100,7 +102,7 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
 
     private async Task<ExecutionResult> InsertIntoLocalWallet(ExecuteContext<SendInformationToReceiverWalletArgument> context, TransferredSlice newSlice, ExternalEndpoint externalEndpoint)
     {
-        _logger.LogDebug("Receiver is local.");
+        _logger.LogInformation("Receiver is local.");
 
         var walletEndpoint = await _unitOfWork.WalletRepository.GetWalletEndpoint(externalEndpoint.PublicKey);
 
@@ -131,7 +133,7 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
 
         _unitOfWork.Commit();
 
-        _logger.LogDebug("Slice inserted locally into receiver wallet.");
+        _logger.LogInformation("Slice inserted locally into receiver wallet.");
 
         return context.Completed();
     }
