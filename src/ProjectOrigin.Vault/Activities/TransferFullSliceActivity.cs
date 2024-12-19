@@ -26,12 +26,12 @@ public record TransferFullSliceArguments
 public class TransferFullSliceActivity : IExecuteActivity<TransferFullSliceArguments>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly ILogger<TransferPartialSliceActivity> _logger;
+    private readonly ILogger<TransferFullSliceActivity> _logger;
     private readonly IEndpointNameFormatter _formatter;
 
     public TransferFullSliceActivity(
         IUnitOfWork unitOfWork,
-        ILogger<TransferPartialSliceActivity> logger,
+        ILogger<TransferFullSliceActivity> logger,
         IEndpointNameFormatter formatter)
     {
         _unitOfWork = unitOfWork;
