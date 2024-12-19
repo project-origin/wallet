@@ -113,8 +113,7 @@ public class ChroniclerExecutionTest
             AllocationId = Guid.NewGuid(),
             ChroniclerRequestId = chroniclerId,
             CertificateId = certId,
-            Owner = "",
-            RequestId = Guid.NewGuid(),
+            RequestStatusArgs = new RequestStatusArgs() { Owner = "", RequestId = Guid.NewGuid() },
             ConsumptionSliceId = Guid.NewGuid(),
             ProductionSliceId = Guid.NewGuid(),
         });

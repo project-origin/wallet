@@ -20,8 +20,7 @@ public record TransferFullSliceArguments
     public required Guid SourceSliceId { get; init; }
     public required Guid ExternalEndpointId { get; init; }
     public required string[] HashedAttributes { get; init; }
-    public required Guid RequestId { get; init; }
-    public required string Owner { get; init; }
+    public required RequestStatusArgs RequestStatusArgs { get; init; }
 }
 
 public class TransferFullSliceActivity : IExecuteActivity<TransferFullSliceArguments>
@@ -42,6 +41,8 @@ public class TransferFullSliceActivity : IExecuteActivity<TransferFullSliceArgum
 
     public async Task<ExecutionResult> Execute(ExecuteContext<TransferFullSliceArguments> context)
     {
+        _logger.LogInformation("Starting Activity: {Activity}, RequestId: {RequestId} ", nameof(TransferFullSliceActivity), context.Arguments.RequestStatusArgs.RequestId);
+
         _logger.LogDebug("RoutingSlip {TrackingNumber} - Executing {ActivityName}", context.TrackingNumber, context.ActivityName);
 
         try
@@ -78,6 +79,7 @@ public class TransferFullSliceActivity : IExecuteActivity<TransferFullSliceArgum
             var states = new Dictionary<Guid, WalletSliceState>() {
                 { sourceSlice.Id, WalletSliceState.Sliced }
             };
+            _logger.LogInformation("Ending Activity: {Activity}, RequestId: {RequestId} ", nameof(TransferFullSliceActivity), context.Arguments.RequestStatusArgs.RequestId);
 
             return AddTransferRequiredActivities(context, externalEndpoint, transferredSlice, transaction, states, walletAttributes);
         }
@@ -96,7 +98,8 @@ public class TransferFullSliceActivity : IExecuteActivity<TransferFullSliceArgum
             builder.AddActivity<SendRegistryTransactionActivity, SendRegistryTransactionArguments>(_formatter,
                 new()
                 {
-                    Transaction = transaction
+                    Transaction = transaction,
+                    RequestStatusArgs = context.Arguments.RequestStatusArgs
                 });
 
             builder.AddActivity<WaitCommittedRegistryTransactionActivity, WaitCommittedTransactionArguments>(_formatter,
@@ -106,11 +109,7 @@ public class TransferFullSliceActivity : IExecuteActivity<TransferFullSliceArgum
                     TransactionId = transaction.ToShaId(),
                     CertificateId = transferredSlice.CertificateId,
                     SliceId = transferredSlice.Id,
-                    RequestStatusArgs = new RequestStatusArgs
-                    {
-                        RequestId = context.Arguments.RequestId,
-                        Owner = context.Arguments.Owner
-                    }
+                    RequestStatusArgs = context.Arguments.RequestStatusArgs
                 });
 
             builder.AddActivity<UpdateSliceStateActivity, UpdateSliceStateArguments>(_formatter,
@@ -125,8 +124,7 @@ public class TransferFullSliceActivity : IExecuteActivity<TransferFullSliceArgum
                     ExternalEndpointId = externalEndpoint.Id,
                     SliceId = transferredSlice.Id,
                     WalletAttributes = walletAttributes.ToArray(),
-                    RequestId = context.Arguments.RequestId,
-                    Owner = context.Arguments.Owner
+                    RequestStatusArgs = context.Arguments.RequestStatusArgs
                 });
 
             builder.AddActivitiesFromSourceItinerary();

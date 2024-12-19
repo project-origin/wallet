@@ -20,8 +20,8 @@ public record AllocateArguments
     public required Guid ProductionSliceId { get; init; }
     public Guid? ChroniclerRequestId { get; init; }
     public required FederatedStreamId CertificateId { get; init; }
-    public required Guid RequestId { get; init; }
-    public required string Owner { get; init; }
+    public required RequestStatusArgs RequestStatusArgs { get; init; }
+
 }
 
 public class AllocateActivity : IExecuteActivity<AllocateArguments>
@@ -44,6 +44,7 @@ public class AllocateActivity : IExecuteActivity<AllocateArguments>
     {
         try
         {
+            _logger.LogInformation("Starting Activity: {Activity}, RequestId: {RequestId} ", nameof(AllocateActivity), context.Arguments.RequestStatusArgs.RequestId);
             var cons = await _unitOfWork.CertificateRepository.GetWalletSlice(context.Arguments.ConsumptionSliceId);
             var prod = await _unitOfWork.CertificateRepository.GetWalletSlice(context.Arguments.ProductionSliceId);
 
@@ -63,6 +64,7 @@ public class AllocateActivity : IExecuteActivity<AllocateArguments>
             var transaction = key.SignRegistryTransaction(context.Arguments.CertificateId, allocatedEvent);
 
             _logger.LogDebug("Claim intent registered with Chronicler");
+            _logger.LogInformation("Ending Activity: {Activity}, RequestId: {RequestId} ", nameof(AllocateActivity), context.Arguments.RequestStatusArgs.RequestId);
 
             return AddTransferRequiredActivities(context, transaction, slice.Id);
         }
@@ -80,7 +82,8 @@ public class AllocateActivity : IExecuteActivity<AllocateArguments>
             builder.AddActivity<SendRegistryTransactionActivity, SendRegistryTransactionArguments>(_formatter,
                 new()
                 {
-                    Transaction = transaction
+                    Transaction = transaction,
+                    RequestStatusArgs = context.Arguments.RequestStatusArgs
                 });
 
             builder.AddActivity<WaitCommittedRegistryTransactionActivity, WaitCommittedTransactionArguments>(_formatter,

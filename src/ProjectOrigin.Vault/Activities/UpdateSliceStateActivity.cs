@@ -11,6 +11,7 @@ namespace ProjectOrigin.Vault.Activities;
 public record UpdateSliceStateArguments()
 {
     public required Dictionary<Guid, WalletSliceState> SliceStates { get; init; }
+    public RequestStatusArgs? RequestStatusArgs { get; set; }
 }
 
 public class UpdateSliceStateActivity : IExecuteActivity<UpdateSliceStateArguments>
@@ -26,6 +27,11 @@ public class UpdateSliceStateActivity : IExecuteActivity<UpdateSliceStateArgumen
 
     public async Task<ExecutionResult> Execute(ExecuteContext<UpdateSliceStateArguments> context)
     {
+        if (context.Arguments.RequestStatusArgs != null)
+        {
+            _logger.LogInformation("Starting Activity: {Activity}, RequestId: {RequestId} ", nameof(UpdateSliceStateActivity), context.Arguments.RequestStatusArgs.RequestId);
+        }
+
         _logger.LogDebug("RoutingSlip {TrackingNumber} - Executing {ActivityName}", context.TrackingNumber, context.ActivityName);
 
         try
@@ -36,6 +42,11 @@ public class UpdateSliceStateActivity : IExecuteActivity<UpdateSliceStateArgumen
                 await _unitOfWork.CertificateRepository.SetWalletSliceState(id, state);
             }
             _unitOfWork.Commit();
+            if (context.Arguments.RequestStatusArgs != null)
+            {
+                _logger.LogInformation("Ending Activity: {Activity}, RequestId: {RequestId} ", nameof(UpdateSliceStateActivity), context.Arguments.RequestStatusArgs.RequestId);
+            }
+
             return context.Completed();
         }
         catch (Exception ex)

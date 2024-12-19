@@ -22,8 +22,7 @@ public record TransferPartialSliceArguments
     public required Guid ExternalEndpointId { get; init; }
     public required uint Quantity { get; init; }
     public required string[] HashedAttributes { get; init; }
-    public required Guid RequestId { get; init; }
-    public required string Owner { get; init; }
+    public required RequestStatusArgs RequestStatusArgs { get; init; }
 }
 
 public class TransferPartialSliceActivity : IExecuteActivity<TransferPartialSliceArguments>
@@ -44,6 +43,7 @@ public class TransferPartialSliceActivity : IExecuteActivity<TransferPartialSlic
 
     public async Task<ExecutionResult> Execute(ExecuteContext<TransferPartialSliceArguments> context)
     {
+        _logger.LogInformation("Starting Activity: {Activity}, RequestId: {RequestId} ", nameof(TransferPartialSliceActivity), context.Arguments.RequestStatusArgs.RequestId);
         _logger.LogDebug("RoutingSlip {TrackingNumber} - Executing {ActivityName}", context.TrackingNumber, context.ActivityName);
 
         try
@@ -99,6 +99,7 @@ public class TransferPartialSliceActivity : IExecuteActivity<TransferPartialSlic
                 { sourceSlice.Id, WalletSliceState.Sliced },
                 { remainderSlice.Id, WalletSliceState.Available }
             };
+            _logger.LogInformation("Ending Activity: {Activity}, RequestId: {RequestId} ", nameof(TransferPartialSliceActivity), context.Arguments.RequestStatusArgs.RequestId);
 
             return AddTransferRequiredActivities(context, receiverEndpoints, transferredSlice, transaction, states, walletAttributes);
         }
@@ -117,7 +118,8 @@ public class TransferPartialSliceActivity : IExecuteActivity<TransferPartialSlic
             builder.AddActivity<SendRegistryTransactionActivity, SendRegistryTransactionArguments>(_formatter,
                 new()
                 {
-                    Transaction = transaction
+                    Transaction = transaction,
+                    RequestStatusArgs = context.Arguments.RequestStatusArgs
                 });
 
             builder.AddActivity<WaitCommittedRegistryTransactionActivity, WaitCommittedTransactionArguments>(_formatter,
@@ -127,11 +129,7 @@ public class TransferPartialSliceActivity : IExecuteActivity<TransferPartialSlic
                     TransactionId = transaction.ToShaId(),
                     CertificateId = transferredSlice.CertificateId,
                     SliceId = transferredSlice.Id,
-                    RequestStatusArgs = new RequestStatusArgs
-                    {
-                        RequestId = context.Arguments.RequestId,
-                        Owner = context.Arguments.Owner
-                    }
+                    RequestStatusArgs = context.Arguments.RequestStatusArgs
                 });
 
             builder.AddActivity<UpdateSliceStateActivity, UpdateSliceStateArguments>(_formatter,
@@ -146,8 +144,7 @@ public class TransferPartialSliceActivity : IExecuteActivity<TransferPartialSlic
                     ExternalEndpointId = externalEndpoint.Id,
                     SliceId = transferredSlice.Id,
                     WalletAttributes = walletAttributes.ToArray(),
-                    RequestId = context.Arguments.RequestId,
-                    Owner = context.Arguments.Owner
+                    RequestStatusArgs = context.Arguments.RequestStatusArgs
                 });
 
             builder.AddActivitiesFromSourceItinerary();

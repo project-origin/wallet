@@ -49,7 +49,12 @@ public partial class RegistryProcessBuilder : IRegistryProcessBuilder
         AddActivity<SendRegistryTransactionActivity, SendRegistryTransactionArguments>(
         new SendRegistryTransactionArguments()
         {
-            Transaction = transaction
+            Transaction = transaction,
+            RequestStatusArgs = new RequestStatusArgs
+            {
+                RequestId = _routingSlipId,
+                Owner = _owner
+            }
         });
 
         AddActivity<WaitCommittedRegistryTransactionActivity, WaitCommittedTransactionArguments>(new WaitCommittedTransactionArguments()
