@@ -88,6 +88,7 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
             var response = await client.PostAsJsonAsync(externalEndpoint.Endpoint, request);
             response.EnsureSuccessStatusCode();
             await _unitOfWork.TransferRepository.SetTransferredSliceState(newSlice.Id, TransferredSliceState.Transferred);
+            _unitOfWork.Commit();
 
             _logger.LogInformation("Information Sent to receiver");
 
