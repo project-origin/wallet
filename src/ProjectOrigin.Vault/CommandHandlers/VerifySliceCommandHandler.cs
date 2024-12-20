@@ -46,10 +46,10 @@ public class VerifySliceCommandHandler : IConsumer<VerifySliceCommand>
         var receivedSlice = context.Message;
 
         // Get Granular Certificate Projection from registry
-        _logger.LogInformation($"Getting certificate {receivedSlice.Registry}, {receivedSlice.CertificateId} from registry");
+        _logger.LogInformation("Getting certificate {receivedSlice.Registry}, {receivedSlice.CertificateId} from registry", receivedSlice.Registry, receivedSlice.CertificateId);
         var getCertificateResult = await _registryService.GetGranularCertificate(receivedSlice.Registry, receivedSlice.CertificateId);
 
-        _logger.LogInformation($"Got certificate {receivedSlice.Registry}, {receivedSlice.CertificateId} from registry");
+        _logger.LogInformation("Got certificate {receivedSlice.Registry}, {receivedSlice.CertificateId} from registry", receivedSlice.Registry, receivedSlice.CertificateId);
         switch (getCertificateResult)
         {
             case GetCertificateResult.Success:
