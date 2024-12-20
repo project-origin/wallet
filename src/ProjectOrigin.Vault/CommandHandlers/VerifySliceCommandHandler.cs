@@ -46,10 +46,10 @@ public class VerifySliceCommandHandler : IConsumer<VerifySliceCommand>
         var receivedSlice = context.Message;
 
         // Get Granular Certificate Projection from registry
-        _logger.LogInformation("Getting certificate {receivedSlice.Registry}, {receivedSlice.CertificateId} from registry", receivedSlice.Registry, receivedSlice.CertificateId);
+        _logger.LogInformation("Getting certificate {registry}, {certificateId} from registry", receivedSlice.Registry, receivedSlice.CertificateId);
         var getCertificateResult = await _registryService.GetGranularCertificate(receivedSlice.Registry, receivedSlice.CertificateId);
 
-        _logger.LogInformation("Got certificate {receivedSlice.Registry}, {receivedSlice.CertificateId} from registry", receivedSlice.Registry, receivedSlice.CertificateId);
+        _logger.LogInformation("Got certificate {registry}, {certificateId} from registry", receivedSlice.Registry, receivedSlice.CertificateId);
         switch (getCertificateResult)
         {
             case GetCertificateResult.Success:
@@ -153,6 +153,6 @@ public class VerifySliceCommandHandler : IConsumer<VerifySliceCommand>
 
         _unitOfWork.Commit();
 
-        _logger.LogInformation("Slice on certificate ”{certificateId}” inserted into wallet.", slice.CertificateId);
+        _logger.LogInformation("Slice on certificate with id {certificateId} inserted into wallet.", slice.CertificateId);
     }
 }
