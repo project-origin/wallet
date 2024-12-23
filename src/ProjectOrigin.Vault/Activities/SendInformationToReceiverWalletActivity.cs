@@ -38,6 +38,8 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
     public async Task<ExecutionResult> Execute(ExecuteContext<SendInformationToReceiverWalletArgument> context)
     {
         _logger.LogDebug("RoutingSlip {TrackingNumber} - Executing {ActivityName}", context.TrackingNumber, context.ActivityName);
+        _logger.LogInformation("Starting Activity: {Activity}, RequestId: {RequestId} ",
+            nameof(SendInformationToReceiverWalletActivity), context.Arguments.RequestId);
 
         var newSlice = await _unitOfWork.TransferRepository.GetTransferredSlice(context.Arguments.SliceId);
         var externalEndpoint = await _unitOfWork.WalletRepository.GetExternalEndpoint(context.Arguments.ExternalEndpointId);
@@ -88,9 +90,12 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
             var response = await client.PostAsJsonAsync(externalEndpoint.Endpoint, request);
             response.EnsureSuccessStatusCode();
             await _unitOfWork.TransferRepository.SetTransferredSliceState(newSlice.Id, TransferredSliceState.Transferred);
+            await _unitOfWork.RequestStatusRepository.SetRequestStatus(context.Arguments.RequestId, context.Arguments.Owner, RequestStatusState.Completed);
+
             _unitOfWork.Commit();
 
             _logger.LogInformation("Information Sent to receiver");
+            _logger.LogInformation("Ending ExternalWallet Activity: {Activity}, RequestId: {RequestId} ", nameof(SendInformationToReceiverWalletActivity), context.Arguments.RequestId);
 
             return context.Completed();
         }
@@ -135,7 +140,7 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
         _unitOfWork.Commit();
 
         _logger.LogInformation("Slice inserted locally into receiver wallet.");
-
+        _logger.LogInformation("Ending IntoLocalWallet Activity: {Activity}, RequestId: {RequestId} ", nameof(SendInformationToReceiverWalletActivity), context.Arguments.RequestId);
         return context.Completed();
     }
 }

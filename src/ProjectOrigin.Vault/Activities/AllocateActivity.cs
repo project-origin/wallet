@@ -44,6 +44,7 @@ public class AllocateActivity : IExecuteActivity<AllocateArguments>
     {
         try
         {
+            _logger.LogInformation("Starting Activity: {Activity}, RequestId: {RequestId} ", nameof(SendRegistryTransactionActivity), context.Arguments.RequestId);
             var cons = await _unitOfWork.CertificateRepository.GetWalletSlice(context.Arguments.ConsumptionSliceId);
             var prod = await _unitOfWork.CertificateRepository.GetWalletSlice(context.Arguments.ProductionSliceId);
 
