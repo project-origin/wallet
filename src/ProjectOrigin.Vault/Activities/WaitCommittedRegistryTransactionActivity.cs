@@ -39,6 +39,10 @@ public class WaitCommittedRegistryTransactionActivity : IExecuteActivity<WaitCom
     public async Task<ExecutionResult> Execute(ExecuteContext<WaitCommittedTransactionArguments> context)
     {
         _logger.LogDebug("RoutingSlip {TrackingNumber} - Executing {ActivityName}", context.TrackingNumber, context.ActivityName);
+        if (context.Arguments.RequestStatusArgs != null)
+        {
+            _logger.LogInformation("Starting Activity: {Activity}, RequestId: {RequestId} ", nameof(WaitCommittedRegistryTransactionActivity), context.Arguments.RequestStatusArgs.RequestId);
+        }
 
         try
         {
@@ -58,6 +62,11 @@ public class WaitCommittedRegistryTransactionActivity : IExecuteActivity<WaitCom
 
             if (status.Status == TransactionState.Committed)
             {
+                if (context.Arguments.RequestStatusArgs != null)
+                {
+                    _logger.LogInformation("Ending Activity: {Activity}, RequestId: {RequestId} ", nameof(WaitCommittedRegistryTransactionActivity), context.Arguments.RequestStatusArgs.RequestId);
+                }
+
                 return context.Completed();
             }
             else if (status.Status == TransactionState.Failed)

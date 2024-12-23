@@ -45,6 +45,8 @@ public class TransferPartialSliceActivity : IExecuteActivity<TransferPartialSlic
     public async Task<ExecutionResult> Execute(ExecuteContext<TransferPartialSliceArguments> context)
     {
         _logger.LogDebug("RoutingSlip {TrackingNumber} - Executing {ActivityName}", context.TrackingNumber, context.ActivityName);
+        _logger.LogInformation("Starting Activity: {Activity}, RequestId: {RequestId} ", nameof(TransferPartialSliceArguments), context.Arguments.RequestId);
+
 
         try
         {
@@ -99,6 +101,7 @@ public class TransferPartialSliceActivity : IExecuteActivity<TransferPartialSlic
                 { sourceSlice.Id, WalletSliceState.Sliced },
                 { remainderSlice.Id, WalletSliceState.Available }
             };
+            _logger.LogInformation("Ending Activity: {Activity}, RequestId: {RequestId} ", nameof(TransferPartialSliceArguments), context.Arguments.RequestId);
 
             return AddTransferRequiredActivities(context, receiverEndpoints, transferredSlice, transaction, states, walletAttributes);
         }
