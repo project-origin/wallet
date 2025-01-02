@@ -16,7 +16,6 @@ using ProjectOrigin.Vault.Models;
 using Xunit;
 using ProjectOrigin.Vault.Options;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace ProjectOrigin.Vault.Tests;
 
