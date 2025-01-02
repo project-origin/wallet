@@ -91,13 +91,13 @@ public partial class RegistryProcessBuilder
         if (areaInfo.Chronicler is not null)
         {
             chroniclerRequestId = Guid.NewGuid();
-            AddActivity<SendClaimIntentToChroniclerActivity, SendClaimIntentToChroniclerArguments>(new SendClaimIntentToChroniclerArguments
-            {
-                Id = chroniclerRequestId.Value,
-                CertificateId = slice.GetFederatedStreamId(),
-                Quantity = (int)slice.Quantity,
-                RandomR = slice.RandomR
-            });
+            // AddActivity<SendClaimIntentToChroniclerActivity, SendClaimIntentToChroniclerArguments>(new SendClaimIntentToChroniclerArguments
+            // {
+            //     Id = chroniclerRequestId.Value,
+            //     CertificateId = slice.GetFederatedStreamId(),
+            //     Quantity = (int)slice.Quantity,
+            //     RandomR = slice.RandomR
+            // });
         }
 
         return chroniclerRequestId;
