@@ -48,12 +48,12 @@ public class AllocateActivity : IExecuteActivity<AllocateArguments>
             var cons = await _unitOfWork.CertificateRepository.GetWalletSlice(context.Arguments.ConsumptionSliceId);
             var prod = await _unitOfWork.CertificateRepository.GetWalletSlice(context.Arguments.ProductionSliceId);
 
-            // byte[]? chroniclerSignature = context.Arguments.ChroniclerRequestId is not null
-            //     ? Convert.FromBase64String(context.GetVariable<string>(context.Arguments.ChroniclerRequestId.Value.ToString())
-            //         ?? throw new InvalidOperationException("Allocate activity with ChroniclerRequestId but result variable not found"))
-            //     : null;
+            byte[]? chroniclerSignature = context.Arguments.ChroniclerRequestId is not null
+                ? Convert.FromBase64String(context.GetVariable<string>(context.Arguments.ChroniclerRequestId.Value.ToString())
+                    ?? throw new InvalidOperationException("Allocate activity with ChroniclerRequestId but result variable not found"))
+                : null;
 
-            var allocatedEvent = CreateAllocatedEvent(context.Arguments.AllocationId, cons, prod, null);
+            var allocatedEvent = CreateAllocatedEvent(context.Arguments.AllocationId, cons, prod, chroniclerSignature);
 
             var slice = cons.RegistryName == context.Arguments.CertificateId.Registry
                    && cons.CertificateId == Guid.Parse(context.Arguments.CertificateId.StreamId.Value)
