@@ -11,6 +11,7 @@ using NSubstitute.ExceptionExtensions;
 using ProjectOrigin.Vault.CommandHandlers;
 using ProjectOrigin.Vault.Database;
 using ProjectOrigin.Vault.Exceptions;
+using ProjectOrigin.Vault.Metrics;
 using ProjectOrigin.Vault.Models;
 using Xunit;
 
@@ -25,6 +26,7 @@ public class ClaimCertificatesCommandHandlerTests
     private readonly IRegistryProcessBuilder _processBuilder;
     private readonly ClaimCertificateCommandHandler _commandHandler;
     private readonly ConsumeContext<ClaimCertificateCommand> _context;
+    private readonly IClaimMetrics _claimsMetrics;
 
     public ClaimCertificatesCommandHandlerTests()
     {
@@ -37,11 +39,13 @@ public class ClaimCertificatesCommandHandlerTests
         _processBuilderFactory.Create(Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<IUnitOfWork>()).Returns(_processBuilder);
 
         _unitOfWork = Substitute.For<IUnitOfWork>();
+        _claimsMetrics = Substitute.For<IClaimMetrics>();
 
         _commandHandler = new ClaimCertificateCommandHandler(
             Substitute.For<ILogger<ClaimCertificateCommandHandler>>(),
             _unitOfWork,
-            _processBuilderFactory
+            _processBuilderFactory,
+            _claimsMetrics
         );
         _context = Substitute.For<ConsumeContext<ClaimCertificateCommand>>();
     }

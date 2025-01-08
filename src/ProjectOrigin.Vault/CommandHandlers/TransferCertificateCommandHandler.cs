@@ -7,6 +7,7 @@ using ProjectOrigin.Vault.Activities;
 using ProjectOrigin.Vault.Database;
 using ProjectOrigin.Vault.Exceptions;
 using ProjectOrigin.Vault.Extensions;
+using ProjectOrigin.Vault.Metrics;
 using ProjectOrigin.Vault.Models;
 
 namespace ProjectOrigin.Vault.CommandHandlers;
@@ -27,15 +28,18 @@ public class TransferCertificateCommandHandler : IConsumer<TransferCertificateCo
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<TransferCertificateCommandHandler> _logger;
     private readonly IEndpointNameFormatter _formatter;
+    private readonly ITransferMetrics _transferMetrics;
 
     public TransferCertificateCommandHandler(
         IUnitOfWork unitOfWork,
         ILogger<TransferCertificateCommandHandler> logger,
-        IEndpointNameFormatter formatter)
+        IEndpointNameFormatter formatter,
+        ITransferMetrics transferMetrics)
     {
         _unitOfWork = unitOfWork;
         _logger = logger;
         _formatter = formatter;
+        _transferMetrics = transferMetrics;
     }
 
     public async Task Consume(ConsumeContext<TransferCertificateCommand> context)
@@ -90,11 +94,15 @@ public class TransferCertificateCommandHandler : IConsumer<TransferCertificateCo
 
             await Task.WhenAll(tasks);
             _unitOfWork.Commit();
+            _transferMetrics.IncrementCompleted();
+
             _logger.LogDebug("Transfer command complete.");
         }
         catch (InvalidOperationException ex)
         {
             _unitOfWork.Rollback();
+            _transferMetrics.IncrementRejected();
+
             _logger.LogWarning(ex, "Transfer is not allowed.");
         }
         catch (QuantityNotYetAvailableToReserveException ex)

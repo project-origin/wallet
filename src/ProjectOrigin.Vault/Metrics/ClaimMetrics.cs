@@ -2,19 +2,27 @@ using System.Diagnostics.Metrics;
 
 namespace ProjectOrigin.Vault.Metrics;
 
-public class ClaimMetrics
+public interface IClaimMetrics
 {
-    private const string MetricName = "ProjectOrigin.Vault.Claim";
-    private readonly Counter<long> _claimsCounter;
+    void IncrementClaimed();
+    void IncrementRejected();
+}
 
-    public ClaimMetrics()
+public class ClaimMetrics(MeterBase meterBase) : IClaimMetrics
+{
+    private readonly Counter<long> _claimsCount = meterBase.Meter.CreateCounter<long>(name: "po.vault.claim.certificate.count", unit: "{claim}");
+    private readonly Counter<long> _claimsClaimedCount = meterBase.Meter.CreateCounter<long>(name: "po.vault.claim.certificate.claimed.count", unit: "{claim}");
+    private readonly Counter<long> _claimsRejectedCount = meterBase.Meter.CreateCounter<long>(name: "po.vault.claim.certificate.rejected.count", unit: "{claim}");
+
+    public void IncrementClaimed()
     {
-        var meter = new Meter(MetricName);
-        _claimsCounter = meter.CreateCounter<long>("po_vault_claim_count", "claims", "Total number of claims processed.");
+        _claimsCount.Add(1);
+        _claimsClaimedCount.Add(1);
     }
 
-    public void UpdateMetric()
+    public void IncrementRejected()
     {
-        _claimsCounter.Add(1);
+        _claimsCount.Add(1);
+        _claimsRejectedCount.Add(1);
     }
 }

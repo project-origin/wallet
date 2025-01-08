@@ -2,19 +2,27 @@
 
 namespace ProjectOrigin.Vault.Metrics;
 
-public class TransferMetrics
+public interface ITransferMetrics
 {
-    private const string MetricName = "ProjectOrigin.Vault.Transfer";
-    private readonly Counter<long> _transferCounter;
+    void IncrementCompleted();
+    void IncrementRejected();
+}
 
-    public TransferMetrics()
+public class TransferMetrics(MeterBase meterBase) : ITransferMetrics
+{
+    private readonly Counter<long> _transferCount = meterBase.Meter.CreateCounter<long>(name: "po.vault.transfer.count", unit: "{transfer}");
+    private readonly Counter<long> _transferCompletedCount = meterBase.Meter.CreateCounter<long>(name: "po.vault.transfer.completed.count", unit: "{transfer}");
+    private readonly Counter<long> _transferRejectedCount = meterBase.Meter.CreateCounter<long>(name: "po.vault.transfer.rejected.count", unit: "{transfer}");
+
+    public void IncrementCompleted()
     {
-        var meter = new Meter(MetricName);
-        _transferCounter = meter.CreateCounter<long>("po_vault_transfer_count", "transfers", "Total number of transfers processed.");
+        _transferCount.Add(1);
+        _transferCompletedCount.Add(1);
     }
 
-    public void UpdateMetric()
+    public void IncrementRejected()
     {
-        _transferCounter.Add(1);
+        _transferCount.Add(1);
+        _transferRejectedCount.Add(1);
     }
 }
