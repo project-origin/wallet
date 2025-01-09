@@ -11,7 +11,6 @@ using NSubstitute.ExceptionExtensions;
 using ProjectOrigin.Vault.CommandHandlers;
 using ProjectOrigin.Vault.Database;
 using ProjectOrigin.Vault.Exceptions;
-using ProjectOrigin.Vault.Metrics;
 using ProjectOrigin.Vault.Models;
 using Xunit;
 

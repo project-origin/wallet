@@ -7,7 +7,6 @@ using Microsoft.Extensions.Logging;
 using ProjectOrigin.Vault.Database;
 using ProjectOrigin.Vault.Exceptions;
 using ProjectOrigin.Vault.Extensions;
-using ProjectOrigin.Vault.Metrics;
 using ProjectOrigin.Vault.Models;
 
 namespace ProjectOrigin.Vault.CommandHandlers;
