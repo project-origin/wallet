@@ -35,6 +35,7 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
         _fixture = new Fixture();
         _dbFixture = postgresDatabaseFixture;
         _unitOfWork = _dbFixture.CreateUnitOfWork();
+        _transferMetrics = Substitute.For<ITransferMetrics>();
 
         _options = MsOptions.Options.Create(new ServiceOptions
         {
@@ -63,8 +64,6 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
     [Fact]
     public async Task GetTransfersCursor()
     {
-        _transferMetrics = Substitute.For<ITransferMetrics>();
-
         // Arrange
         var issuestartDate = new DateTimeOffset(2020, 6, 1, 12, 0, 0, TimeSpan.Zero);
         var issueEndDate = new DateTimeOffset(2020, 6, 30, 12, 0, 0, TimeSpan.Zero);
@@ -110,7 +109,6 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
     [Fact]
     public async Task GetTransfers()
     {
-        _transferMetrics = Substitute.For<ITransferMetrics>();
         // Arrange
         var issuestartDate = new DateTimeOffset(2020, 6, 1, 12, 0, 0, TimeSpan.Zero);
         var issueEndDate = new DateTimeOffset(2020, 6, 30, 12, 0, 0, TimeSpan.Zero);
@@ -158,8 +156,6 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
     [InlineData("America/Toronto", new long[] { 1600, 2400, 800 })]
     public async Task AggregateTransfers(string timezone, long[] values)
     {
-        _transferMetrics = Substitute.For<ITransferMetrics>();
-
         // Arrange
         var issuestartDate = new DateTimeOffset(2020, 6, 1, 12, 0, 0, TimeSpan.Zero);
         var issueEndDate = new DateTimeOffset(2020, 6, 30, 12, 0, 0, TimeSpan.Zero);
@@ -207,8 +203,6 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
     [Fact]
     public async Task AggregateTransfers_Invalid_TimeZone()
     {
-        _transferMetrics = Substitute.For<ITransferMetrics>();
-
         // Arrange
         var subject = _fixture.Create<string>();
         var controller = new TransfersController(_transferMetrics)
@@ -232,8 +226,6 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
     [Fact]
     public async Task TransferCertificate_Unauthorized()
     {
-        _transferMetrics = Substitute.For<ITransferMetrics>();
-
         // Arrange
         var controller = new TransfersController(_transferMetrics);
 
@@ -257,8 +249,6 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
     [Fact]
     public async Task IfReceivedTransferRequestButNoSuccessResponse_DoesNotIncrementCounters()
     {
-        _transferMetrics = Substitute.For<ITransferMetrics>();
-
         // Arrange
         var controller = new TransfersController(_transferMetrics);
 
@@ -283,8 +273,6 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
     [Fact]
     public async Task TransferCertificate_PublishesCommand()
     {
-        _transferMetrics = Substitute.For<ITransferMetrics>();
-
         // Arrange
         var subject = _fixture.Create<string>();
         var request = _fixture.Create<TransferRequest>();
@@ -333,8 +321,6 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
     [Fact]
     public async Task SuccessfulTransferIncrementsMetricsCounters()
     {
-        _transferMetrics = Substitute.For<ITransferMetrics>();
-
         // Arrange
         var subject = _fixture.Create<string>();
         var request = _fixture.Create<TransferRequest>();
