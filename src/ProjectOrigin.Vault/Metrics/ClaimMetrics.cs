@@ -5,24 +5,23 @@ namespace ProjectOrigin.Vault.Metrics;
 public interface IClaimMetrics
 {
     void IncrementClaimed();
-    void IncrementRejected();
+    void IncrementClaimIntents();
 }
 
 public class ClaimMetrics(MeterBase meterBase) : IClaimMetrics
 {
-    private readonly Counter<long> _claimsCount = meterBase.Meter.CreateCounter<long>(name: "po.vault.claim.certificate.count", unit: "{claim}");
-    private readonly Counter<long> _claimsClaimedCount = meterBase.Meter.CreateCounter<long>(name: "po.vault.claim.certificate.claimed.count", unit: "{claim}");
-    private readonly Counter<long> _claimsRejectedCount = meterBase.Meter.CreateCounter<long>(name: "po.vault.claim.certificate.rejected.count", unit: "{claim}");
+    private readonly Counter<long> _claimsClaimedCounter =
+        meterBase.Meter.CreateCounter<long>(
+            name: "po.vault.claim.certificate.claimed.count",
+            unit: "{claim}",
+            description: "The number of certificate claims successfully completed.");
 
-    public void IncrementClaimed()
-    {
-        _claimsCount.Add(1);
-        _claimsClaimedCount.Add(1);
-    }
+    private readonly Counter<long> _claimIntentsCounter =
+        meterBase.Meter.CreateCounter<long>(
+            name: "po.vault.claim.certificate.intent.received.count",
+            unit: "{claim}",
+            description: "The total number of certificate claim intents received.");
 
-    public void IncrementRejected()
-    {
-        _claimsCount.Add(1);
-        _claimsRejectedCount.Add(1);
-    }
+    public void IncrementClaimed() => _claimsClaimedCounter.Add(1);
+    public void IncrementClaimIntents() => _claimIntentsCounter.Add(1);
 }

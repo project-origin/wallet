@@ -7,6 +7,7 @@ using MassTransit;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ProjectOrigin.Vault.Database;
+using ProjectOrigin.Vault.Metrics;
 using ProjectOrigin.Vault.Models;
 using ProjectOrigin.Vault.Options;
 using ProjectOrigin.Vault.Services.REST.v1;
@@ -27,12 +28,14 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<SendInformationToReceiverWalletActivity> _logger;
     private readonly Uri _ownEndpoint;
+    private readonly ITransferMetrics _transferMetrics;
 
-    public SendInformationToReceiverWalletActivity(IUnitOfWork unitOfWork, IOptions<ServiceOptions> walletSystemOptions, ILogger<SendInformationToReceiverWalletActivity> logger)
+    public SendInformationToReceiverWalletActivity(IUnitOfWork unitOfWork, IOptions<ServiceOptions> walletSystemOptions, ILogger<SendInformationToReceiverWalletActivity> logger, ITransferMetrics transferMetrics)
     {
         _unitOfWork = unitOfWork;
         _logger = logger;
         _ownEndpoint = new Uri(walletSystemOptions.Value.EndpointAddress, "/v1/slices");
+        _transferMetrics = transferMetrics;
     }
 
     public async Task<ExecutionResult> Execute(ExecuteContext<SendInformationToReceiverWalletArgument> context)
@@ -43,14 +46,18 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
 
         var newSlice = await _unitOfWork.TransferRepository.GetTransferredSlice(context.Arguments.SliceId);
         var externalEndpoint = await _unitOfWork.WalletRepository.GetExternalEndpoint(context.Arguments.ExternalEndpointId);
+
+        // TODO: We might want to differentiate between transfers to local wallets and external wallets, for our metrics.
         if (externalEndpoint.Endpoint.Equals(_ownEndpoint.ToString()))
         {
             _logger.LogInformation("Sending to local wallet.");
+            _transferMetrics.IncrementCompleted();
             return await InsertIntoLocalWallet(context, newSlice, externalEndpoint);
         }
         else
         {
             _logger.LogInformation("Sending to external wallet.");
+            _transferMetrics.IncrementCompleted();
             return await SendOverRestToExternalWallet(context, newSlice, externalEndpoint);
         }
     }

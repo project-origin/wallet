@@ -5,24 +5,24 @@ namespace ProjectOrigin.Vault.Metrics;
 public interface ITransferMetrics
 {
     void IncrementCompleted();
-    void IncrementRejected();
+    void IncrementTransferIntents();
 }
 
 public class TransferMetrics(MeterBase meterBase) : ITransferMetrics
 {
-    private readonly Counter<long> _transferCount = meterBase.Meter.CreateCounter<long>(name: "po.vault.transfer.count", unit: "{transfer}");
-    private readonly Counter<long> _transferCompletedCount = meterBase.Meter.CreateCounter<long>(name: "po.vault.transfer.completed.count", unit: "{transfer}");
-    private readonly Counter<long> _transferRejectedCount = meterBase.Meter.CreateCounter<long>(name: "po.vault.transfer.rejected.count", unit: "{transfer}");
+    private readonly Counter<long> _transferIntentsCounter =
+        meterBase.Meter.CreateCounter<long>(
+            name: "po.vault.transfer.intent.count",
+            unit: "{transfer}",
+            description: "The number of certificate transfer intents received.");
 
-    public void IncrementCompleted()
-    {
-        _transferCount.Add(1);
-        _transferCompletedCount.Add(1);
-    }
+    private readonly Counter<long> _transfersCompletedCounter =
+        meterBase.Meter.CreateCounter<long>(
+            name: "po.vault.transfer.completed.count",
+            unit: "{transfer}",
+            description: "The number of certificate transfers successfully completed.");
 
-    public void IncrementRejected()
-    {
-        _transferCount.Add(1);
-        _transferRejectedCount.Add(1);
-    }
+    public void IncrementCompleted() => _transfersCompletedCounter.Add(1);
+
+    public void IncrementTransferIntents() => _transferIntentsCounter.Add(1);
 }

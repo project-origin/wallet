@@ -13,9 +13,8 @@ public class TransferMetricsTests
 {
     private readonly ITransferMetrics _transferMetrics;
 
-    private readonly MetricCollector<long> _countCollector;
-    private readonly MetricCollector<long> _completedCollector;
-    private readonly MetricCollector<long> _rejectedCollector;
+    private readonly MetricCollector<long> _transferIntentsCollector;
+    private readonly MetricCollector<long> _transfersCompletedCollector;
 
     public TransferMetricsTests()
     {
@@ -32,46 +31,42 @@ public class TransferMetricsTests
         var meterFactory = provider.GetRequiredService<IMeterFactory>();
         _transferMetrics = provider.GetRequiredService<ITransferMetrics>();
 
-        _countCollector =
-            new MetricCollector<long>(meterFactory, "ProjectOrigin.Vault", "po.vault.transfer.count");
-        _completedCollector =
+        _transferIntentsCollector =
+            new MetricCollector<long>(meterFactory, "ProjectOrigin.Vault", "po.vault.transfer.intent.count");
+        _transfersCompletedCollector =
             new MetricCollector<long>(meterFactory, "ProjectOrigin.Vault", "po.vault.transfer.completed.count");
-        _rejectedCollector =
-            new MetricCollector<long>(meterFactory, "ProjectOrigin.Vault", "po.vault.transfer.rejected.count");
     }
 
     [Fact]
-    public void IncrementCompleted_ShouldUpdateCounters()
+    public void IncrementCompleted_ShouldUpdateCounter()
     {
         _transferMetrics.IncrementCompleted();
 
-        _countCollector.GetMeasurementSnapshot().EvaluateAsCounter().Should().Be(1);
-        _completedCollector.GetMeasurementSnapshot().EvaluateAsCounter().Should().Be(1);
+        _transfersCompletedCollector.GetMeasurementSnapshot().EvaluateAsCounter().Should().Be(1);
     }
 
     [Fact]
-    public void IncrementRejected_ShouldUpdateCounters()
+    public void IncrementIntents_ShouldUpdateCounter()
     {
-        _transferMetrics.IncrementRejected();
+        _transferMetrics.IncrementTransferIntents();
 
-        _countCollector.GetMeasurementSnapshot().EvaluateAsCounter().Should().Be(1);
-        _rejectedCollector.GetMeasurementSnapshot().EvaluateAsCounter().Should().Be(1);
+        _transferIntentsCollector.GetMeasurementSnapshot().EvaluateAsCounter().Should().Be(1);
     }
 
     [Fact]
-    public void IncrementCompleted_ShouldNotAffectRejectedCounters()
+    public void IncrementCompleted_ShouldNotAffectRejectedCounter()
     {
         _transferMetrics.IncrementCompleted();
 
-        _rejectedCollector.GetMeasurementSnapshot().EvaluateAsCounter().Should().Be(0);
+        _transferIntentsCollector.GetMeasurementSnapshot().EvaluateAsCounter().Should().Be(0);
     }
 
     [Fact]
-    public void IncrementRejected_ShouldNotAffectCompletedCounters()
+    public void IncrementIntents_ShouldNotAffectCompletedCounter()
     {
-        _transferMetrics.IncrementRejected();
+        _transferMetrics.IncrementTransferIntents();
 
-        _completedCollector.GetMeasurementSnapshot().EvaluateAsCounter().Should().Be(0);
+        _transfersCompletedCollector.GetMeasurementSnapshot().EvaluateAsCounter().Should().Be(0);
     }
 
     private static IConfiguration CreateConfiguration()

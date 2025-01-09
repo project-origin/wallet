@@ -28,18 +28,15 @@ public class ClaimCertificateCommandHandler : IConsumer<ClaimCertificateCommand>
     private readonly ILogger<ClaimCertificateCommandHandler> _logger;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IRegistryProcessBuilderFactory _processBuilderFactory;
-    private readonly IClaimMetrics _claimsMetrics;
 
     public ClaimCertificateCommandHandler(
         ILogger<ClaimCertificateCommandHandler> logger,
         IUnitOfWork unitOfWork,
-        IRegistryProcessBuilderFactory registryProcessBuilderFactory,
-        IClaimMetrics claimsMetrics)
+        IRegistryProcessBuilderFactory registryProcessBuilderFactory)
     {
         _logger = logger;
         _unitOfWork = unitOfWork;
         _processBuilderFactory = registryProcessBuilderFactory;
-        _claimsMetrics = claimsMetrics;
     }
 
     public async Task Consume(ConsumeContext<ClaimCertificateCommand> context)
@@ -59,13 +56,11 @@ public class ClaimCertificateCommandHandler : IConsumer<ClaimCertificateCommand>
 
             await context.Execute(routingSlip);
             _unitOfWork.Commit();
-            _claimsMetrics.IncrementClaimed();
             _logger.LogDebug($"Claim command complete.");
         }
         catch (InvalidOperationException ex)
         {
             _unitOfWork.Rollback();
-            _claimsMetrics.IncrementRejected();
             _logger.LogWarning(ex, "Claim is not allowed.");
         }
         catch (QuantityNotYetAvailableToReserveException ex)

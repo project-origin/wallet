@@ -13,9 +13,8 @@ public class ClaimMetricsTests
 {
     private readonly IClaimMetrics _claimMetrics;
 
-    private readonly MetricCollector<long> _countCollector;
-    private readonly MetricCollector<long> _claimedCollector;
-    private readonly MetricCollector<long> _rejectedCollector;
+    private readonly MetricCollector<long> _claimIntentsCollector;
+    private readonly MetricCollector<long> _claimsClaimedCollector;
 
     public ClaimMetricsTests()
     {
@@ -33,43 +32,36 @@ public class ClaimMetricsTests
         var meterFactory = provider.GetRequiredService<IMeterFactory>();
         _claimMetrics = provider.GetRequiredService<IClaimMetrics>();
 
-        _countCollector = new MetricCollector<long>(meterFactory, "ProjectOrigin.Vault", "po.vault.claim.certificate.count");
-        _claimedCollector = new MetricCollector<long>(meterFactory, "ProjectOrigin.Vault", "po.vault.claim.certificate.claimed.count");
-        _rejectedCollector = new MetricCollector<long>(meterFactory, "ProjectOrigin.Vault", "po.vault.claim.certificate.rejected.count");
+        _claimsClaimedCollector = new MetricCollector<long>(meterFactory, "ProjectOrigin.Vault", "po.vault.claim.certificate.claimed.count");
+        _claimIntentsCollector = new MetricCollector<long>(meterFactory, "ProjectOrigin.Vault", "po.vault.claim.certificate.intent.received.count");
     }
 
     [Fact]
-    public void IncrementClaimed_ShouldUpdateCounters()
+    public void IncrementClaimed_ShouldUpdateCounter()
     {
         _claimMetrics.IncrementClaimed();
-
-        _countCollector.GetMeasurementSnapshot().EvaluateAsCounter().Should().Be(1);
-        _claimedCollector.GetMeasurementSnapshot().EvaluateAsCounter().Should().Be(1);
+        _claimsClaimedCollector.GetMeasurementSnapshot().EvaluateAsCounter().Should().Be(1);
     }
 
     [Fact]
-    public void IncrementRejected_ShouldUpdateCounters()
+    public void IncrementIntents_ShouldUpdateCounter()
     {
-        _claimMetrics.IncrementRejected();
-
-        _countCollector.GetMeasurementSnapshot().EvaluateAsCounter().Should().Be(1);
-        _rejectedCollector.GetMeasurementSnapshot().EvaluateAsCounter().Should().Be(1);
+        _claimMetrics.IncrementClaimIntents();
+        _claimIntentsCollector.GetMeasurementSnapshot().EvaluateAsCounter().Should().Be(1);
     }
 
     [Fact]
-    public void IncrementClaimed_ShouldNotAffectRejectedCounters()
+    public void IncrementClaimed_ShouldNotAffectIntentsCounter()
     {
         _claimMetrics.IncrementClaimed();
-
-        _rejectedCollector.GetMeasurementSnapshot().EvaluateAsCounter().Should().Be(0);
+        _claimIntentsCollector.GetMeasurementSnapshot().EvaluateAsCounter().Should().Be(0);
     }
 
     [Fact]
-    public void IncrementRejected_ShouldNotAffectClaimedCounters()
+    public void IncrementIntents_ShouldNotAffectRejectedCounter()
     {
-        _claimMetrics.IncrementRejected();
-
-        _claimedCollector.GetMeasurementSnapshot().EvaluateAsCounter().Should().Be(0);
+        _claimMetrics.IncrementClaimIntents();
+        _claimsClaimedCollector.GetMeasurementSnapshot().EvaluateAsCounter().Should().Be(0);
     }
 
     private static IConfiguration CreateConfiguration()

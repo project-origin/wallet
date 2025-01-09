@@ -11,6 +11,7 @@ using Microsoft.Identity.Web.Resource;
 using ProjectOrigin.Vault.CommandHandlers;
 using ProjectOrigin.Vault.Database;
 using ProjectOrigin.Vault.Extensions;
+using ProjectOrigin.Vault.Metrics;
 using ProjectOrigin.Vault.Models;
 using ProjectOrigin.Vault.Options;
 
@@ -20,6 +21,12 @@ namespace ProjectOrigin.Vault.Services.REST.v1;
 [ApiController]
 public class ClaimsController : ControllerBase
 {
+    private readonly IClaimMetrics _claimMetrics;
+
+    public ClaimsController(IClaimMetrics claimMetrics)
+    {
+        _claimMetrics = claimMetrics;
+    }
     /// <summary>
     /// Gets all claims in the wallet
     /// </summary>
@@ -162,6 +169,7 @@ public class ClaimsController : ControllerBase
         await bus.Publish(command);
 
         unitOfWork.Commit();
+        _claimMetrics.IncrementClaimIntents();
 
         return Accepted(serviceOptions.Value.PathBase + "/v1/request-status/" + command.ClaimId, new ClaimResponse()
         {
