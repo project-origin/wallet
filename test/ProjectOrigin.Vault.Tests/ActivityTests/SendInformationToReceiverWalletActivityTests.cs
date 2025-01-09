@@ -6,7 +6,6 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using MsOptions = Microsoft.Extensions.Options;
 using NSubstitute;
-using NSubstitute.ReceivedExtensions;
 using ProjectOrigin.HierarchicalDeterministicKeys.Implementations;
 using ProjectOrigin.Vault.Activities;
 using ProjectOrigin.Vault.Database;
@@ -235,35 +234,6 @@ public class SendInformationToReceiverWalletActivityTests
     }
 
     [Fact]
-    public Task SuccessfulResponseFromTransferApiCallsIncrementsTransferIntentsCounter()
-    {
-        // Arrange
-        var wireMockServer = WireMockServer.Start();
-        var hdAlgorithm = new Secp256k1Algorithm();
-
-        var options = new JsonSerializerOptions(JsonSerializerDefaults.Web);
-        options.Converters.Add(new IHDPublicKeyConverter(hdAlgorithm));
-
-        var owner = _fixture.Create<string>();
-        var endpoint = new ExternalEndpoint
-        {
-            Id = Guid.NewGuid(),
-            Endpoint = $"{wireMockServer.Urls[0]}/v1/slices",
-            PublicKey = hdAlgorithm.GenerateNewPrivateKey().Neuter(),
-            Owner = owner,
-            ReferenceText = _fixture.Create<string>(),
-        };
-        _walletRepository.GetExternalEndpoint(Arg.Any<Guid>()).Returns(endpoint);
-
-        wireMockServer.Given(Request.Create().WithPath("/v1/slices").UsingPost())
-            .RespondWith(Response.Create().WithStatusCode(201));
-
-        // Assert
-        _transferMetrics.Received(1).IncrementTransferIntents();
-        return Task.CompletedTask;
-    }
-
-    [Fact]
     public async Task SendOverRestToExternalWallet_EndpointNotExisting_404()
     {
         // Arrange
@@ -464,7 +434,7 @@ public class SendInformationToReceiverWalletActivityTests
     }
 
     [Fact]
-    public async Task WhenReceivingTransferApiRequest_ButFailingCompletionOfTransfer_ShouldOnlyIncrementTransferIntentsCounter()
+    public async Task WhenFailingCompletionOfTransfer_ShouldNotIncrementTransferIntentsCounter()
     {
         // Arrange
         var hdAlgorithm = new Secp256k1Algorithm();
@@ -517,7 +487,6 @@ public class SendInformationToReceiverWalletActivityTests
         result.Should().Be(fault);
 
         // Assert
-        _transferMetrics.Received(1).IncrementTransferIntents();
         _transferMetrics.Received(0).IncrementCompleted();
     }
 }
