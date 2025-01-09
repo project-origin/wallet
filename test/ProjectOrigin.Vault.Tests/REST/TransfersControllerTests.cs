@@ -319,7 +319,7 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
     }
 
     [Fact]
-    public async Task SuccessfulTransferIncrementsMetricsCounters()
+    public async Task SuccessfulTransferIncrementsIntentCounter()
     {
         // Arrange
         var subject = _fixture.Create<string>();

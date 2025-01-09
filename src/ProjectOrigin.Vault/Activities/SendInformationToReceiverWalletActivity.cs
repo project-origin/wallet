@@ -47,17 +47,14 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
         var newSlice = await _unitOfWork.TransferRepository.GetTransferredSlice(context.Arguments.SliceId);
         var externalEndpoint = await _unitOfWork.WalletRepository.GetExternalEndpoint(context.Arguments.ExternalEndpointId);
 
-        // TODO: We might want to differentiate between transfers to local wallets and external wallets, for our metrics.
         if (externalEndpoint.Endpoint.Equals(_ownEndpoint.ToString()))
         {
             _logger.LogInformation("Sending to local wallet.");
-            _transferMetrics.IncrementCompleted();
             return await InsertIntoLocalWallet(context, newSlice, externalEndpoint);
         }
         else
         {
             _logger.LogInformation("Sending to external wallet.");
-            _transferMetrics.IncrementCompleted();
             return await SendOverRestToExternalWallet(context, newSlice, externalEndpoint);
         }
     }
@@ -100,6 +97,7 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
             await _unitOfWork.RequestStatusRepository.SetRequestStatus(context.Arguments.RequestId, context.Arguments.Owner, RequestStatusState.Completed);
 
             _unitOfWork.Commit();
+            _transferMetrics.IncrementCompleted();
 
             _logger.LogInformation("Information Sent to receiver");
             _logger.LogInformation("Ending ExternalWallet Activity: {Activity}, RequestId: {RequestId} ", nameof(SendInformationToReceiverWalletActivity), context.Arguments.RequestId);
@@ -145,6 +143,7 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
         await _unitOfWork.RequestStatusRepository.SetRequestStatus(context.Arguments.RequestId, context.Arguments.Owner, RequestStatusState.Completed);
 
         _unitOfWork.Commit();
+        _transferMetrics.IncrementCompleted();
 
         _logger.LogInformation("Slice inserted locally into receiver wallet.");
         _logger.LogInformation("Ending IntoLocalWallet Activity: {Activity}, RequestId: {RequestId} ", nameof(SendInformationToReceiverWalletActivity), context.Arguments.RequestId);
