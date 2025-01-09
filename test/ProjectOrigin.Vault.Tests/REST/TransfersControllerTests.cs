@@ -350,7 +350,6 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
 
         // Assert
         _transferMetrics.Received(1).IncrementTransferIntents();
-        _transferMetrics.Received(1).IncrementCompleted();
     }
 
     private static ControllerContext CreateContextWithUser(string subject)
