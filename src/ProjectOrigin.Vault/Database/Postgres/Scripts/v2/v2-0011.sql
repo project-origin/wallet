@@ -4,7 +4,7 @@ CREATE INDEX IF NOT EXISTS idx_wallet_slices_certificate_id_registry
 
 CREATE INDEX IF NOT EXISTS idx_attributes_certificate_id_registry
     ON public.attributes
-    (registry_name, certificate_id);
+    (certificate_id, attribute_key, registry_name);
 
 CREATE INDEX IF NOT EXISTS idx_wallet_attributes_certificate_wallet_attribute
     ON public.wallet_attributes
