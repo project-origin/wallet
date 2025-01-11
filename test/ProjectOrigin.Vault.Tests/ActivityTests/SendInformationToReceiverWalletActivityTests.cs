@@ -434,7 +434,7 @@ public class SendInformationToReceiverWalletActivityTests
     }
 
     [Fact]
-    public async Task WhenFailingCompletionOfTransfer_ShouldNotIncrementTransferIntentsCounter()
+    public async Task WhenFailingCompletionOfTransfer_ShouldNotIncrementTransfersCompletedCounter()
     {
         // Arrange
         var hdAlgorithm = new Secp256k1Algorithm();
