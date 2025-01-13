@@ -12,7 +12,7 @@ public class TransferMetrics(MeterBase meterBase) : ITransferMetrics
 {
     private readonly Counter<long> _transferIntentsCounter =
         meterBase.Meter.CreateCounter<long>(
-            name: "po._vault_transfer_intent_count",
+            name: "po_vault_transfer_intent_count",
             unit: "{transfer}",
             description: "The number of certificate transfer intents received.");
 
