@@ -32,8 +32,8 @@ public class ClaimMetricsTests
         var meterFactory = provider.GetRequiredService<IMeterFactory>();
         _claimMetrics = provider.GetRequiredService<IClaimMetrics>();
 
-        _claimsClaimedCollector = new MetricCollector<long>(meterFactory, "ProjectOrigin.Vault", "po.vault.claim.certificate.claimed.count");
-        _claimIntentsCollector = new MetricCollector<long>(meterFactory, "ProjectOrigin.Vault", "po.vault.claim.certificate.intent.received.count");
+        _claimsClaimedCollector = new MetricCollector<long>(meterFactory, "ProjectOrigin.Vault", "po_vault_claim_certificate_claimed_count");
+        _claimIntentsCollector = new MetricCollector<long>(meterFactory, "ProjectOrigin.Vault", "po_vault_claim_certificate_intent_received_count");
     }
 
     [Fact]

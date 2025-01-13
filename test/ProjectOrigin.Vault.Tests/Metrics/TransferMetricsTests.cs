@@ -32,9 +32,9 @@ public class TransferMetricsTests
         _transferMetrics = provider.GetRequiredService<ITransferMetrics>();
 
         _transferIntentsCollector =
-            new MetricCollector<long>(meterFactory, "ProjectOrigin.Vault", "po.vault.transfer.intent.count");
+            new MetricCollector<long>(meterFactory, "ProjectOrigin.Vault", "po._vault_transfer_intent_count");
         _transfersCompletedCollector =
-            new MetricCollector<long>(meterFactory, "ProjectOrigin.Vault", "po.vault.transfer.completed.count");
+            new MetricCollector<long>(meterFactory, "ProjectOrigin.Vault", "po_vault_transfer_completed_count");
     }
 
     [Fact]
