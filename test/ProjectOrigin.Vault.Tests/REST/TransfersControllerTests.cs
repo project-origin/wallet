@@ -9,11 +9,13 @@ using MassTransit.Testing;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
+using NSubstitute;
 using MsOptions = Microsoft.Extensions.Options;
 using ProjectOrigin.Vault.Tests.TestClassFixtures;
 using ProjectOrigin.Vault.Tests.TestExtensions;
 using ProjectOrigin.Vault.CommandHandlers;
 using ProjectOrigin.Vault.Database;
+using ProjectOrigin.Vault.Metrics;
 using ProjectOrigin.Vault.Options;
 using ProjectOrigin.Vault.Services.REST.v1;
 using Xunit;
@@ -26,12 +28,14 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
     private readonly PostgresDatabaseFixture _dbFixture;
     private readonly IUnitOfWork _unitOfWork;
     private readonly MsOptions.IOptions<ServiceOptions> _options;
+    private ITransferMetrics _transferMetrics;
 
     public TransfersControllerTests(PostgresDatabaseFixture postgresDatabaseFixture)
     {
         _fixture = new Fixture();
         _dbFixture = postgresDatabaseFixture;
         _unitOfWork = _dbFixture.CreateUnitOfWork();
+        _transferMetrics = Substitute.For<ITransferMetrics>();
 
         _options = MsOptions.Options.Create(new ServiceOptions
         {
@@ -43,8 +47,10 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
     [Fact]
     public async Task Verify_Unauthorized()
     {
+        _transferMetrics = Substitute.For<ITransferMetrics>();
+
         // Arrange
-        var controller = new TransfersController();
+        var controller = new TransfersController(_transferMetrics);
 
         // Act
         var result = await controller.GetTransfers(
@@ -65,7 +71,7 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
         var queryEndDate = new DateTimeOffset(2020, 6, 10, 12, 0, 0, TimeSpan.Zero);
 
         var subject = _fixture.Create<string>();
-        var controller = new TransfersController
+        var controller = new TransfersController(_transferMetrics)
         {
             ControllerContext = CreateContextWithUser(subject)
         };
@@ -110,7 +116,7 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
         var queryEndDate = new DateTimeOffset(2020, 6, 10, 12, 0, 0, TimeSpan.Zero);
 
         var subject = _fixture.Create<string>();
-        var controller = new TransfersController
+        var controller = new TransfersController(_transferMetrics)
         {
             ControllerContext = CreateContextWithUser(subject)
         };
@@ -157,7 +163,7 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
         var queryEndDate = new DateTimeOffset(2020, 6, 10, 12, 0, 0, TimeSpan.Zero);
 
         var subject = _fixture.Create<string>();
-        var controller = new TransfersController
+        var controller = new TransfersController(_transferMetrics)
         {
             ControllerContext = CreateContextWithUser(subject)
         };
@@ -199,7 +205,7 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
     {
         // Arrange
         var subject = _fixture.Create<string>();
-        var controller = new TransfersController
+        var controller = new TransfersController(_transferMetrics)
         {
             ControllerContext = CreateContextWithUser(subject)
         };
@@ -221,7 +227,7 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
     public async Task TransferCertificate_Unauthorized()
     {
         // Arrange
-        var controller = new TransfersController();
+        var controller = new TransfersController(_transferMetrics);
 
         await using var provider = new ServiceCollection()
             .AddMassTransitTestHarness(x =>
@@ -241,6 +247,30 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
     }
 
     [Fact]
+    public async Task IfReceivedTransferRequestButNoSuccessResponse_DoesNotIncrementCounters()
+    {
+        // Arrange
+        var controller = new TransfersController(_transferMetrics);
+
+        await using var provider = new ServiceCollection()
+            .AddMassTransitTestHarness(x =>
+            {
+            })
+            .BuildServiceProvider(true);
+
+        // Act
+        var result = await controller.TransferCertificate(
+            provider.GetRequiredService<ITestHarness>().Bus,
+            _unitOfWork,
+            _options,
+            _fixture.Create<TransferRequest>());
+
+        // Assert
+        _transferMetrics.DidNotReceive().IncrementTransferIntents();
+        _transferMetrics.DidNotReceive().IncrementCompleted();
+    }
+
+    [Fact]
     public async Task TransferCertificate_PublishesCommand()
     {
         // Arrange
@@ -256,7 +286,7 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
         var harness = provider.GetRequiredService<ITestHarness>();
 
         await harness.Start();
-        var controller = new TransfersController
+        var controller = new TransfersController(_transferMetrics)
         {
             ControllerContext = CreateContextWithUser(subject)
         };
@@ -286,6 +316,40 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
         sentCommand.CertificateId.Should().Be(request.CertificateId.StreamId);
         sentCommand.Quantity.Should().Be(request.Quantity);
         sentCommand.Receiver.Should().Be(request.ReceiverId);
+    }
+
+    [Fact]
+    public async Task SuccessfulTransferIncrementsIntentCounter()
+    {
+        // Arrange
+        var subject = _fixture.Create<string>();
+        var request = _fixture.Create<TransferRequest>();
+
+        await using var provider = new ServiceCollection()
+            .AddMassTransitTestHarness(x =>
+            {
+            })
+            .BuildServiceProvider(true);
+
+        var harness = provider.GetRequiredService<ITestHarness>();
+
+        await harness.Start();
+        var controller = new TransfersController(_transferMetrics)
+        {
+            ControllerContext = CreateContextWithUser(subject)
+        };
+
+        // Act
+        var result = await controller.TransferCertificate(
+            harness.Bus,
+            _unitOfWork,
+            _options,
+            request);
+
+        result.Result.Should().BeOfType<AcceptedResult>();
+
+        // Assert
+        _transferMetrics.Received(1).IncrementTransferIntents();
     }
 
     private static ControllerContext CreateContextWithUser(string subject)

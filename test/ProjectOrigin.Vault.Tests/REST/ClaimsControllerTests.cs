@@ -9,11 +9,14 @@ using MassTransit.Testing;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
+using NSubstitute;
+using NSubstitute.ReceivedExtensions;
 using MsOptions = Microsoft.Extensions.Options;
 using ProjectOrigin.Vault.Tests.TestClassFixtures;
 using ProjectOrigin.Vault.Tests.TestExtensions;
 using ProjectOrigin.Vault.CommandHandlers;
 using ProjectOrigin.Vault.Database;
+using ProjectOrigin.Vault.Metrics;
 using ProjectOrigin.Vault.Options;
 using ProjectOrigin.Vault.Models;
 using ProjectOrigin.Vault.Services.REST.v1;
@@ -28,12 +31,14 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
     private readonly PostgresDatabaseFixture _dbFixture;
     private readonly IUnitOfWork _unitOfWork;
     private readonly MsOptions.IOptions<ServiceOptions> _options;
+    private readonly IClaimMetrics _claimMetrics;
 
     public ClaimsControllerTests(PostgresDatabaseFixture postgresDatabaseFixture)
     {
         _fixture = new Fixture();
         _dbFixture = postgresDatabaseFixture;
         _unitOfWork = _dbFixture.CreateUnitOfWork();
+        _claimMetrics = Substitute.For<IClaimMetrics>();
 
         _options = MsOptions.Options.Create(new ServiceOptions
         {
@@ -46,7 +51,7 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
     public async Task Verify_Unauthorized()
     {
         // Arrange
-        var controller = new ClaimsController();
+        var controller = new ClaimsController(_claimMetrics);
 
         // Act
         var result = await controller.GetClaims(
@@ -65,7 +70,7 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
         var issueEndDate = new DateTimeOffset(2020, 6, 1, 23, 0, 0, TimeSpan.Zero);
 
         var subject = _fixture.Create<string>();
-        var controller = new ClaimsController
+        var controller = new ClaimsController(_claimMetrics)
         {
             ControllerContext = CreateContextWithUser(subject)
         };
@@ -103,7 +108,7 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
         var queryEndDate = new DateTimeOffset(2020, 6, 10, 12, 0, 0, TimeSpan.Zero);
 
         var subject = _fixture.Create<string>();
-        var controller = new ClaimsController
+        var controller = new ClaimsController(_claimMetrics)
         {
             ControllerContext = CreateContextWithUser(subject)
         };
@@ -164,7 +169,7 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
     {
         // Arrange
         var subject = _fixture.Create<string>();
-        var controller = new ClaimsController
+        var controller = new ClaimsController(_claimMetrics)
         {
             ControllerContext = CreateContextWithUser(subject)
         };
@@ -186,7 +191,7 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
     public async Task ClaimCertificate_Unauthorized()
     {
         // Arrange
-        var controller = new ClaimsController();
+        var controller = new ClaimsController(_claimMetrics);
 
         await using var provider = new ServiceCollection()
             .AddMassTransitTestHarness(x => { })
@@ -217,7 +222,7 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
         var harness = provider.GetRequiredService<ITestHarness>();
 
         await harness.Start();
-        var controller = new ClaimsController
+        var controller = new ClaimsController(_claimMetrics)
         {
             ControllerContext = CreateContextWithUser(subject)
         };
@@ -249,6 +254,58 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
         sentCommand.ProductionCertificateId.Should().Be(request.ProductionCertificateId.StreamId);
         sentCommand.Quantity.Should().Be(request.Quantity);
     }
+
+    [Fact]
+    public async Task ClaimCertificate_IncrementsClaimIntentsCounter()
+    {
+        // Arrange
+        var subject = _fixture.Create<string>();
+        var request = _fixture.Create<ClaimRequest>();
+
+        await using var provider = new ServiceCollection()
+            .AddMassTransitTestHarness(x => { })
+            .BuildServiceProvider(true);
+
+        var harness = provider.GetRequiredService<ITestHarness>();
+
+        await harness.Start();
+        var controller = new ClaimsController(_claimMetrics)
+        {
+            ControllerContext = CreateContextWithUser(subject)
+        };
+
+        // Act
+        await controller.ClaimCertificate(
+            harness.Bus,
+            _unitOfWork,
+            _options,
+            request);
+
+        // Assert
+        _claimMetrics.Received(1).IncrementClaimIntents();
+    }
+
+    [Fact]
+    public async Task IfReceivedCreateClaimRequestButNoSuccessResponse_DoNotIncrementIntentsCounter()
+    {
+        // Arrange
+        var controller = new ClaimsController(_claimMetrics);
+
+        await using var provider = new ServiceCollection()
+            .AddMassTransitTestHarness(x => { })
+            .BuildServiceProvider(true);
+
+        // Act
+        var result = await controller.ClaimCertificate(
+            provider.GetRequiredService<ITestHarness>().Bus,
+            _unitOfWork,
+            _options,
+            _fixture.Create<ClaimRequest>());
+
+        // Assert
+        _claimMetrics.Received(0).IncrementClaimIntents();
+    }
+
 
     private static ControllerContext CreateContextWithUser(string subject)
     {
