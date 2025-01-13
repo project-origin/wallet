@@ -67,8 +67,8 @@ public class TransferRepository : ITransferRepository
         SELECT * FROM transfer_work_table WHERE (@UpdatedSince IS NULL OR updated_at > @UpdatedSince) LIMIT @limit;
         SELECT attributes.registry_name, attributes.certificate_id, attributes.attribute_key as key, attributes.attribute_value as value, attributes.attribute_type as type
         FROM attributes_view attributes
-            WHERE (wallet_id IS NULL AND (registry_name, certificate_id) IN (SELECT registry_name, certificate_id FROM transfer_work_table))
-                OR (wallet_id, registry_name, certificate_id) IN (SELECT wallet_id, registry_name, certificate_id FROM transfer_work_table)
+            WHERE (registry_name, certificate_id) IN (SELECT registry_name, certificate_id FROM transfer_work_table)
+			  AND (wallet_id IS NULL OR wallet_id in (SELECT DISTINCT(wallet_id) FROM transfer_work_table))
         ";
 
         using (var gridReader = await _connection.QueryMultipleAsync(sql, filter))
@@ -112,8 +112,8 @@ public class TransferRepository : ITransferRepository
         SELECT * FROM transfer_work_table LIMIT @limit OFFSET @skip;
         SELECT attributes.registry_name, attributes.certificate_id, attributes.attribute_key as key, attributes.attribute_value as value, attributes.attribute_type as type
         FROM attributes_view attributes
-            WHERE (wallet_id IS NULL AND (registry_name, certificate_id) IN (SELECT registry_name, certificate_id FROM transfer_work_table))
-                OR (wallet_id, registry_name, certificate_id) IN (SELECT wallet_id, registry_name, certificate_id FROM transfer_work_table)
+            WHERE (registry_name, certificate_id) IN (SELECT registry_name, certificate_id FROM transfer_work_table)
+			  AND (wallet_id IS NULL OR wallet_id in (SELECT DISTINCT(wallet_id) FROM transfer_work_table))
         ";
 
         using (var gridReader = await _connection.QueryMultipleAsync(sql, filter))

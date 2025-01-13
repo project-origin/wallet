@@ -85,10 +85,10 @@ public class ClaimRepository : IClaimRepository
         SELECT * FROM claims_work_table WHERE (@UpdatedSince IS NULL OR updated_at > @UpdatedSince) LIMIT @limit;
         SELECT attributes.registry_name, attributes.certificate_id, attributes.attribute_key as key, attributes.attribute_value as value, attributes.attribute_type as type
         FROM attributes_view attributes
-        WHERE (wallet_id IS NULL AND (registry_name, certificate_id) IN (SELECT consumption_registry_name, consumption_certificate_id FROM claims_work_table))
-           OR (wallet_id IS NULL AND (registry_name, certificate_id) IN (SELECT production_registry_name, production_certificate_id FROM claims_work_table))
-           OR (registry_name, certificate_id, wallet_id) IN (SELECT consumption_registry_name, consumption_certificate_id, wallet_id FROM claims_work_table)
-           OR (registry_name, certificate_id, wallet_id) IN (SELECT production_registry_name, production_certificate_id, wallet_id FROM claims_work_table);
+        WHERE ((registry_name, certificate_id) IN (SELECT consumption_registry_name, consumption_certificate_id FROM claims_work_table)
+		  AND (wallet_id IS NULL OR wallet_id in (SELECT DISTINCT(wallet_id) FROM claims_work_table)))
+          OR ((registry_name, certificate_id) IN (SELECT production_registry_name, production_certificate_id FROM claims_work_table)
+		  AND (wallet_id IS NULL OR wallet_id in (SELECT DISTINCT(wallet_id) FROM claims_work_table)));
         ";
 
         using (var gridReader = await _connection.QueryMultipleAsync(sql, filter))
@@ -138,10 +138,10 @@ public class ClaimRepository : IClaimRepository
         SELECT * FROM claims_work_table LIMIT @limit OFFSET @skip;
         SELECT attributes.registry_name, attributes.certificate_id, attributes.attribute_key as key, attributes.attribute_value as value, attributes.attribute_type as type
         FROM attributes_view attributes
-        WHERE (wallet_id IS NULL AND (registry_name, certificate_id) IN (SELECT consumption_registry_name, consumption_certificate_id FROM claims_work_table))
-           OR (wallet_id IS NULL AND (registry_name, certificate_id) IN (SELECT production_registry_name, production_certificate_id FROM claims_work_table))
-           OR (registry_name, certificate_id, wallet_id) IN (SELECT consumption_registry_name, consumption_certificate_id, wallet_id FROM claims_work_table)
-           OR (registry_name, certificate_id, wallet_id) IN (SELECT production_registry_name, production_certificate_id, wallet_id FROM claims_work_table);
+        WHERE ((registry_name, certificate_id) IN (SELECT consumption_registry_name, consumption_certificate_id FROM claims_work_table)
+		  AND (wallet_id IS NULL OR wallet_id in (SELECT DISTINCT(wallet_id) FROM claims_work_table)))
+          OR ((registry_name, certificate_id) IN (SELECT production_registry_name, production_certificate_id FROM claims_work_table)
+		  AND (wallet_id IS NULL OR wallet_id in (SELECT DISTINCT(wallet_id) FROM claims_work_table)));
         ";
 
         using (var gridReader = await _connection.QueryMultipleAsync(sql, filter))
