@@ -24,6 +24,7 @@ using System.Security.Cryptography;
 using System.Threading.Tasks;
 using ProjectOrigin.Vault.Exceptions;
 using Xunit;
+using ByteString = Google.Protobuf.ByteString;
 
 namespace ProjectOrigin.Vault.Tests.CommandHandlers;
 

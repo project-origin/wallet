@@ -21,6 +21,7 @@ using ProjectOrigin.TestCommon.Extensions;
 using Testcontainers.PostgreSql;
 using Testcontainers.RabbitMq;
 using Xunit;
+using ByteString = Google.Protobuf.ByteString;
 
 namespace ProjectOrigin.Vault.Tests.TestClassFixtures;
 

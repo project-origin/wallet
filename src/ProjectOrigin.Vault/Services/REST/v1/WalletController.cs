@@ -73,7 +73,15 @@ public class WalletController : ControllerBase
 
             unitOfWork.Commit();
 
-            return Created(new Uri(serviceOptions.Value.EndpointAddress, Path.Combine(serviceOptions.Value.PathBase, "v1/wallets", newWallet.Id.ToString())), new CreateWalletResponse
+            var baseUri = new Uri(serviceOptions.Value.EndpointAddress.ToString());
+
+            var walletUri = baseUri.Combine(
+                serviceOptions.Value.PathBase,
+                "v1/wallets",
+                newWallet.Id.ToString()
+            );
+
+            return Created(walletUri, new CreateWalletResponse
             {
                 WalletId = newWallet.Id
             });
@@ -190,12 +198,16 @@ public class WalletController : ControllerBase
 
         unitOfWork.Commit();
 
+        var baseUri = new Uri(serviceOptions.Value.EndpointAddress.ToString());
+
+        var slicesUri = baseUri.Combine(serviceOptions.Value.PathBase, "v1/slices");
+
         return Created(null as string, new CreateWalletEndpointResponse
         {
             WalletReference = new WalletEndpointReference
             {
                 Version = 1,
-                Endpoint = new Uri(serviceOptions.Value.EndpointAddress, Path.Combine(serviceOptions.Value.PathBase, $"v1/slices")),
+                Endpoint = slicesUri,
                 PublicKey = walletEndpoint.PublicKey
             }
         });
