@@ -90,11 +90,13 @@ public class TransferCertificateCommandHandler : IConsumer<TransferCertificateCo
 
             await Task.WhenAll(tasks);
             _unitOfWork.Commit();
+
             _logger.LogDebug("Transfer command complete.");
         }
         catch (InvalidOperationException ex)
         {
             _unitOfWork.Rollback();
+
             _logger.LogWarning(ex, "Transfer is not allowed.");
         }
         catch (QuantityNotYetAvailableToReserveException ex)

@@ -33,8 +33,7 @@ public class TransferCertificateCommandHandlerTests
         _commandHandler = new TransferCertificateCommandHandler(
             _unitOfWork,
             Substitute.For<ILogger<TransferCertificateCommandHandler>>(),
-            Substitute.For<IEndpointNameFormatter>()
-        );
+            Substitute.For<IEndpointNameFormatter>());
         _context = Substitute.For<ConsumeContext<TransferCertificateCommand>>();
     }
 

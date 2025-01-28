@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using MassTransit;
 using Microsoft.Extensions.Logging;
 using ProjectOrigin.Vault.Database;
+using ProjectOrigin.Vault.Metrics;
 using ProjectOrigin.Vault.Models;
 
 namespace ProjectOrigin.Vault.Activities;
@@ -18,11 +19,13 @@ public class UpdateClaimStateActivity : IExecuteActivity<UpdateClaimStateArgumen
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<UpdateClaimStateActivity> _logger;
+    private readonly IClaimMetrics _claimsMetrics;
 
-    public UpdateClaimStateActivity(IUnitOfWork unitOfWork, ILogger<UpdateClaimStateActivity> logger)
+    public UpdateClaimStateActivity(IUnitOfWork unitOfWork, ILogger<UpdateClaimStateActivity> logger, IClaimMetrics claimsMetrics)
     {
         _unitOfWork = unitOfWork;
         _logger = logger;
+        _claimsMetrics = claimsMetrics;
     }
 
     public async Task<ExecutionResult> Execute(ExecuteContext<UpdateClaimStateArguments> context)
@@ -47,6 +50,7 @@ public class UpdateClaimStateActivity : IExecuteActivity<UpdateClaimStateArgumen
             {
                 _logger.LogInformation("Ending Activity: {Activity}, RequestId: {RequestId} ", nameof(UpdateClaimStateActivity), context.Arguments.RequestStatusArgs.RequestId);
             }
+            _claimsMetrics.IncrementClaimed();
             return context.Completed();
         }
         catch (Exception ex)

@@ -11,6 +11,7 @@ using ProjectOrigin.Vault.Database;
 using ProjectOrigin.Vault.Extensions;
 using ProjectOrigin.Vault.Models;
 using Microsoft.Extensions.Options;
+using ProjectOrigin.Vault.Metrics;
 using ProjectOrigin.Vault.Options;
 
 namespace ProjectOrigin.Vault.Services.REST.v1;
@@ -19,6 +20,13 @@ namespace ProjectOrigin.Vault.Services.REST.v1;
 [ApiController]
 public class TransfersController : ControllerBase
 {
+    private readonly ITransferMetrics _transferMetrics;
+
+    public TransfersController(ITransferMetrics transferMetrics)
+    {
+        _transferMetrics = transferMetrics;
+    }
+
     /// <summary>
     /// Gets detailed list of all of the transfers that have been made to other wallets.
     /// </summary>
@@ -186,6 +194,7 @@ public class TransfersController : ControllerBase
         await bus.Publish(command);
 
         unitOfWork.Commit();
+        _transferMetrics.IncrementTransferIntents();
 
         return Accepted(serviceOptions.Value.PathBase + "/v1/request-status/" + command.TransferRequestId, new TransferResponse()
         {

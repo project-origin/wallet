@@ -27,6 +27,7 @@ using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
 using ProjectOrigin.Vault.Exceptions;
 using ProjectOrigin.Vault.Jobs;
+using ProjectOrigin.Vault.Metrics;
 
 namespace ProjectOrigin.Vault;
 
@@ -77,6 +78,10 @@ public class Startup
 
         services.ConfigurePersistance(_configuration);
         services.ConfigureAuthentication(_configuration.GetValidSection<AuthOptions>(AuthOptions.Prefix));
+        services.AddSingleton<MeterBase>();
+        services.AddSingleton<IClaimMetrics, ClaimMetrics>();
+        services.AddSingleton<ITransferMetrics, TransferMetrics>();
+
         services.ConfigureOtlp(_configuration.GetValidSection<OtlpOptions>(OtlpOptions.Prefix));
 
         services.AddMassTransit(o =>

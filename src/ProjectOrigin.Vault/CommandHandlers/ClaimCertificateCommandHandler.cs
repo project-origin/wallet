@@ -55,7 +55,6 @@ public class ClaimCertificateCommandHandler : IConsumer<ClaimCertificateCommand>
 
             await context.Execute(routingSlip);
             _unitOfWork.Commit();
-
             _logger.LogDebug($"Claim command complete.");
         }
         catch (InvalidOperationException ex)

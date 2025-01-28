@@ -12,6 +12,7 @@ using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using ProjectOrigin.Vault.Database;
 using ProjectOrigin.Vault.Database.Postgres;
+using ProjectOrigin.Vault.Metrics;
 using ProjectOrigin.Vault.Options;
 using ProjectOrigin.Vault.Services.REST;
 using Serilog;
@@ -80,6 +81,7 @@ public static class IServiceCollectionExtensions
                     .AddHttpClientInstrumentation()
                     .AddAspNetCoreInstrumentation()
                     .AddMeter(MassTransit.Monitoring.InstrumentationOptions.MeterName)
+                    .AddMeter(MeterBase.MeterName)
                     .AddRuntimeInstrumentation()
                     .AddProcessInstrumentation()
                     .AddOtlpExporter(o => o.Endpoint = otlpOptions.Endpoint!))
