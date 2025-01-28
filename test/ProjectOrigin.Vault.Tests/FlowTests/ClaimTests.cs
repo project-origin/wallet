@@ -97,4 +97,34 @@ public class ClaimTests : AbstractFlowTests
         allocateEventStatus.Status.Should().Be(TransactionState.Failed);
         allocateEventStatus.Message.Should().Be("Certificate has expired");
     }
+
+    [Fact]
+    public async Task WhenClaimingMoreThanPossible_ClaimRequestSetToFailed()
+    {
+        var position = 1;
+        var endDate = DateTimeOffset.UtcNow;
+        var startDate = endDate.AddHours(-1);
+
+        var client = WalletTestFixture.ServerFixture.CreateHttpClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", WalletTestFixture.JwtTokenIssuerFixture.GenerateRandomToken());
+
+        var wallet = await client.CreateWallet();
+        var endpoint = await client.CreateWalletEndpoint(wallet.WalletId);
+
+        var productionId = await IssueCertificateToEndpoint(endpoint.WalletReference, Electricity.V1.GranularCertificateType.Production, new SecretCommitmentInfo(200), position++, startDate, endDate);
+        var consumptionId = await IssueCertificateToEndpoint(endpoint.WalletReference, Electricity.V1.GranularCertificateType.Consumption, new SecretCommitmentInfo(300), position++, startDate, endDate);
+
+        await client.GetCertificatesWithTimeout(2, TimeSpan.FromMinutes(1));
+
+        var response = await client.CreateClaim(
+            consumptionId,
+            productionId,
+            400u);
+
+        await Task.Delay(TimeSpan.FromSeconds(5));
+
+        var requestStatus = await client.GetRequestStatus(response.ClaimRequestId);
+
+        Assert.Equal(RequestStatus.Failed, requestStatus.Status);
+    }
 }

@@ -61,6 +61,8 @@ public class ClaimCertificateCommandHandler : IConsumer<ClaimCertificateCommand>
         {
             _unitOfWork.Rollback();
             _logger.LogWarning(ex, "Claim is not allowed.");
+            await _unitOfWork.RequestStatusRepository.SetRequestStatus(context.Message.ClaimId, context.Message.Owner, RequestStatusState.Failed, failedReason: "Claim is not allowed.");
+            _unitOfWork.Commit();
         }
         catch (QuantityNotYetAvailableToReserveException ex)
         {
@@ -72,6 +74,8 @@ public class ClaimCertificateCommandHandler : IConsumer<ClaimCertificateCommand>
         {
             _unitOfWork.Rollback();
             _logger.LogError(ex, "failed to handle claim");
+            await _unitOfWork.RequestStatusRepository.SetRequestStatus(context.Message.ClaimId, context.Message.Owner, RequestStatusState.Failed, failedReason: "failed to handle claim");
+            _unitOfWork.Commit();
         }
     }
 
