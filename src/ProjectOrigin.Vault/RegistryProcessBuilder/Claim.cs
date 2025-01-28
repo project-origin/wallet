@@ -24,8 +24,11 @@ public partial class RegistryProcessBuilder
             ProductionSliceId = productionSlice.Id,
             ConsumptionSliceId = consumptionSlice.Id,
             ChroniclerRequestId = await GetClaimIntentId(productionSlice),
-            Owner = _owner,
-            RequestId = _routingSlipId
+            RequestStatusArgs = new RequestStatusArgs
+            {
+                Owner = _owner,
+                RequestId = _routingSlipId
+            }
         });
 
         AddActivity<AllocateActivity, AllocateArguments>(new AllocateArguments
@@ -35,8 +38,11 @@ public partial class RegistryProcessBuilder
             ProductionSliceId = productionSlice.Id,
             ConsumptionSliceId = consumptionSlice.Id,
             ChroniclerRequestId = await GetClaimIntentId(consumptionSlice),
-            Owner = _owner,
-            RequestId = _routingSlipId
+            RequestStatusArgs = new RequestStatusArgs
+            {
+                Owner = _owner,
+                RequestId = _routingSlipId
+            }
         });
 
         await _unitOfWork.ClaimRepository.InsertClaim(new Claim
