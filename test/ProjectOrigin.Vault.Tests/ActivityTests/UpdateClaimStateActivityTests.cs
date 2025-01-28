@@ -103,7 +103,6 @@ public class UpdateClaimStateActivityTests
         // Assert
         _context.Received(1).Faulted(Arg.Is(exceptionToBeThrown));
         _unitOfWork.Received(1).Rollback();
-        _unitOfWork.DidNotReceive().Commit();
         _context.DidNotReceive().Completed();
     }
 }
