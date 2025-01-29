@@ -57,12 +57,7 @@ public class UpdateClaimStateActivity : IExecuteActivity<UpdateClaimStateArgumen
         {
             _logger.LogError(ex, "Error while updating claim state");
             _unitOfWork.Rollback();
-            if (context.Arguments.RequestStatusArgs != null)
-            {
-                await _unitOfWork.RequestStatusRepository.SetRequestStatus(context.Arguments.RequestStatusArgs.RequestId, context.Arguments.RequestStatusArgs.Owner, RequestStatusState.Failed, "Error while updating claim state");
-                _unitOfWork.Commit();
-            }
-            return context.Faulted(ex);
+            throw;
         }
     }
 }
