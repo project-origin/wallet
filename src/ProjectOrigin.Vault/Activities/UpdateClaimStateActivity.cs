@@ -57,7 +57,7 @@ public class UpdateClaimStateActivity : IExecuteActivity<UpdateClaimStateArgumen
         {
             _logger.LogError(ex, "Error while updating claim state");
             _unitOfWork.Rollback();
-            return context.Faulted(ex);
+            throw;
         }
     }
 }
