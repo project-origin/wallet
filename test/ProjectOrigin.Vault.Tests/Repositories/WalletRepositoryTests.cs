@@ -4,6 +4,7 @@ using ProjectOrigin.Vault.Tests.TestClassFixtures;
 using ProjectOrigin.Vault.Models;
 using ProjectOrigin.Vault.Repositories;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -184,5 +185,39 @@ public class WalletRepositoryTests : AbstractRepositoryTests
 
         // Assert
         number.Should().Be(3);
+    }
+
+    [Fact]
+    public async Task GetWalletRemainderEndpoint_WhenCalledConcurrently_ShouldNotViolateRemainderEndpointConstraint()
+    {
+        const int numberOfConcurrentCalls = 2; // Change this to 1, and watch the test pass :)
+
+        var subject = Guid.NewGuid().ToString();
+        var wallet = new Wallet
+        {
+            Id = Guid.NewGuid(),
+            Owner = subject,
+            PrivateKey = _algorithm.GenerateNewPrivateKey()
+        };
+
+        using (var setupConnection = _dbFixture.GetConnectionFactory().CreateConnection())
+        {
+            setupConnection.Open();
+            var repo = new WalletRepository(setupConnection);
+            await repo.Create(wallet);
+        }
+
+        var tasks = Enumerable.Range(0, numberOfConcurrentCalls)
+            .Select(_ => Task.Run(async () =>
+            {
+                using var connection = _dbFixture.GetConnectionFactory().CreateConnection();
+                connection.Open();
+                var repo = new WalletRepository(connection);
+
+                await repo.GetWalletRemainderEndpoint(wallet.Id);
+            }))
+            .ToList();
+
+        await Task.WhenAll(tasks);
     }
 }
