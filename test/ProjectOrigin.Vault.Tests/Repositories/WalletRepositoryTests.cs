@@ -190,7 +190,7 @@ public class WalletRepositoryTests : AbstractRepositoryTests
     [Fact]
     public async Task GetWalletRemainderEndpoint_WhenCalledConcurrently_ShouldNotViolateRemainderEndpointConstraint()
     {
-        const int numberOfConcurrentCalls = 2; // Change this to 1, and watch the test pass :)
+        const int numberOfConcurrentCalls = 10; // Change this to 1, and watch the test pass :)
 
         var subject = Guid.NewGuid().ToString();
         var wallet = new Wallet
