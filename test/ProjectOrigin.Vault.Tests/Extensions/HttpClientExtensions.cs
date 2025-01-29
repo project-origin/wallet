@@ -30,6 +30,9 @@ public static class HttpClientExtensions
     public static Task<ResultList<GranularCertificate, PageInfo>> GetCertificates(this HttpClient client) =>
         client.GetAsync($"v1/certificates").ParseJson<ResultList<GranularCertificate, PageInfo>>();
 
+    public static Task<RequestStatusResponse> GetRequestStatus(this HttpClient client, Guid requestId) =>
+        client.GetAsync($"v1/request-status/{requestId}").ParseJson<RequestStatusResponse>();
+
     public static Task<IEnumerable<GranularCertificate>> GetCertificatesWithTimeout(this HttpClient client, int count, TimeSpan timeout) =>
         Timeout(async () =>
         {

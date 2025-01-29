@@ -98,12 +98,10 @@ public class UpdateClaimStateActivityTests
         _unitOfWork.ClaimRepository.When(x => x.SetClaimState(Arg.Any<Guid>(), Arg.Any<ClaimState>())).Do(x => throw exceptionToBeThrown);
 
         // Act
-        await _activity.Execute(_context);
+        await Assert.ThrowsAsync<Exception>(async () => await _activity.Execute(_context));
 
         // Assert
-        _context.Received(1).Faulted(Arg.Is(exceptionToBeThrown));
         _unitOfWork.Received(1).Rollback();
-        _unitOfWork.DidNotReceive().Commit();
         _context.DidNotReceive().Completed();
     }
 }

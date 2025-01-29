@@ -20,8 +20,7 @@ public record AllocateArguments
     public required Guid ProductionSliceId { get; init; }
     public Guid? ChroniclerRequestId { get; init; }
     public required FederatedStreamId CertificateId { get; init; }
-    public required Guid RequestId { get; init; }
-    public required string Owner { get; init; }
+    public required RequestStatusArgs RequestStatusArgs { get; init; }
 }
 
 public class AllocateActivity : IExecuteActivity<AllocateArguments>
@@ -44,7 +43,7 @@ public class AllocateActivity : IExecuteActivity<AllocateArguments>
     {
         try
         {
-            _logger.LogInformation("Starting Activity: {Activity}, RequestId: {RequestId} ", nameof(SendRegistryTransactionActivity), context.Arguments.RequestId);
+            _logger.LogInformation("Starting Activity: {Activity}, RequestId: {RequestId} ", nameof(SendRegistryTransactionActivity), context.Arguments.RequestStatusArgs.RequestId);
             var cons = await _unitOfWork.CertificateRepository.GetWalletSlice(context.Arguments.ConsumptionSliceId);
             var prod = await _unitOfWork.CertificateRepository.GetWalletSlice(context.Arguments.ProductionSliceId);
 
@@ -70,6 +69,11 @@ public class AllocateActivity : IExecuteActivity<AllocateArguments>
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error registering claim intent with Chronicler");
+            await _unitOfWork.RequestStatusRepository.SetRequestStatus(context.Arguments.RequestStatusArgs.RequestId,
+                context.Arguments.RequestStatusArgs.Owner,
+                RequestStatusState.Failed,
+                "Error registering claim intent with Chronicler");
+            _unitOfWork.Commit();
             return context.Faulted(ex);
         }
     }
