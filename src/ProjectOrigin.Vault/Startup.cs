@@ -113,6 +113,7 @@ public class Startup
             {
                 cfg.UseMessageRetry(r => r.Interval(20, TimeSpan.FromSeconds(5))
                     .Handle<QuantityNotYetAvailableToReserveException>());
+                cfg.UseRandomDelay<ClaimCertificateCommandHandler, ClaimCertificateCommand>(1, 1500);
             });
 
             o.AddConsumer<CheckForWithdrawnCertificatesCommandHandler>();
