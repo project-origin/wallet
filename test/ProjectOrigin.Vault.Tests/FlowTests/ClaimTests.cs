@@ -127,4 +127,33 @@ public class ClaimTests : AbstractFlowTests
 
         Assert.Equal(RequestStatus.Failed, requestStatus.Status);
     }
+
+    [Fact]
+    public async Task WhenTryingToClaimUnknownCertificate_ClaimRequestSetToFailed()
+    {
+        var position = 1;
+        var endDate = DateTimeOffset.UtcNow;
+        var startDate = endDate.AddHours(-1);
+
+        var client = WalletTestFixture.ServerFixture.CreateHttpClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", WalletTestFixture.JwtTokenIssuerFixture.GenerateRandomToken());
+
+        var wallet = await client.CreateWallet();
+        var endpoint = await client.CreateWalletEndpoint(wallet.WalletId);
+
+        var consumptionId = await IssueCertificateToEndpoint(endpoint.WalletReference, Electricity.V1.GranularCertificateType.Consumption, new SecretCommitmentInfo(300), position++, startDate, endDate);
+
+        await client.GetCertificatesWithTimeout(1, TimeSpan.FromMinutes(1));
+
+        var response = await client.CreateClaim(
+            consumptionId,
+            consumptionId with { StreamId = Guid.NewGuid() },
+            400u);
+
+        await Task.Delay(TimeSpan.FromSeconds(5));
+
+        var requestStatus = await client.GetRequestStatus(response.ClaimRequestId);
+
+        Assert.Equal(RequestStatus.Failed, requestStatus.Status);
+    }
 }
