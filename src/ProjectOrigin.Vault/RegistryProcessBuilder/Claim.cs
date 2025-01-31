@@ -27,7 +27,8 @@ public partial class RegistryProcessBuilder
             RequestStatusArgs = new RequestStatusArgs
             {
                 Owner = _owner,
-                RequestId = _routingSlipId
+                RequestId = _routingSlipId,
+                RequestStatusType = RequestStatusType.Claim
             }
         });
 
@@ -41,7 +42,8 @@ public partial class RegistryProcessBuilder
             RequestStatusArgs = new RequestStatusArgs
             {
                 Owner = _owner,
-                RequestId = _routingSlipId
+                RequestId = _routingSlipId,
+                RequestStatusType = RequestStatusType.Claim
             }
         });
 
@@ -60,10 +62,12 @@ public partial class RegistryProcessBuilder
         var consumptionId = consumptionSlice.GetFederatedStreamId();
 
         var prodClaimedEvent = CreateClaimedEvent(allocationId, productionSlice.GetFederatedStreamId());
-        AddRegistryTransactionActivity(productionKey.SignRegistryTransaction(productionId, prodClaimedEvent), productionSlice.Id);
+        AddRegistryTransactionActivity(productionKey.SignRegistryTransaction(productionId, prodClaimedEvent), productionSlice.Id,
+            new RequestStatusArgs { Owner = _owner, RequestId = _routingSlipId, RequestStatusType = RequestStatusType.Claim});
 
         var consClaimedEvent = CreateClaimedEvent(allocationId, consumptionSlice.GetFederatedStreamId());
-        AddRegistryTransactionActivity(consumptionKey.SignRegistryTransaction(consumptionId, consClaimedEvent), consumptionSlice.Id);
+        AddRegistryTransactionActivity(consumptionKey.SignRegistryTransaction(consumptionId, consClaimedEvent), consumptionSlice.Id,
+            new RequestStatusArgs { Owner = _owner, RequestId = _routingSlipId, RequestStatusType = RequestStatusType.Claim });
 
         AddActivity<UpdateSliceStateActivity, UpdateSliceStateArguments>(new UpdateSliceStateArguments
         {
@@ -80,7 +84,8 @@ public partial class RegistryProcessBuilder
             RequestStatusArgs = new RequestStatusArgs
             {
                 RequestId = _routingSlipId,
-                Owner = _owner
+                Owner = _owner,
+                RequestStatusType = RequestStatusType.Claim
             }
         });
     }

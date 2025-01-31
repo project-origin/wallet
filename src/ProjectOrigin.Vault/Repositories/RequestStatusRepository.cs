@@ -22,14 +22,16 @@ public class RequestStatusRepository : IRequestStatusRepository
     public async Task InsertRequestStatus(RequestStatus status)
     {
         await _connection.ExecuteAsync(
-            @"INSERT INTO request_statuses(request_id, owner, status, failed_reason)
-              VALUES (@requestId, @owner, @status, @failedReason)",
+            @"INSERT INTO request_statuses(request_id, owner, status, failed_reason, created, type)
+              VALUES (@requestId, @owner, @status, @failedReason, @created, @type)",
             new
             {
                 status.RequestId,
                 status.Owner,
                 status.Status,
-                status.FailedReason
+                status.FailedReason,
+                status.Created,
+                status.Type
             });
     }
 

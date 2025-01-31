@@ -9,6 +9,7 @@ using ProjectOrigin.PedersenCommitment;
 using ProjectOrigin.Registry.V1;
 using ProjectOrigin.Vault.Database;
 using ProjectOrigin.Vault.Extensions;
+using ProjectOrigin.Vault.Metrics;
 using ProjectOrigin.Vault.Models;
 
 namespace ProjectOrigin.Vault.Activities;
@@ -28,15 +29,18 @@ public class AllocateActivity : IExecuteActivity<AllocateArguments>
     private readonly ILogger<AllocateActivity> _logger;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IEndpointNameFormatter _formatter;
+    private readonly IClaimMetrics _claimMetrics;
 
     public AllocateActivity(
         ILogger<AllocateActivity> logger,
         IUnitOfWork unitOfWork,
-        IEndpointNameFormatter formatter)
+        IEndpointNameFormatter formatter,
+        IClaimMetrics claimMetrics)
     {
         _logger = logger;
         _unitOfWork = unitOfWork;
         _formatter = formatter;
+        _claimMetrics = claimMetrics;
     }
 
     public async Task<ExecutionResult> Execute(ExecuteContext<AllocateArguments> context)
@@ -74,6 +78,7 @@ public class AllocateActivity : IExecuteActivity<AllocateArguments>
                 RequestStatusState.Failed,
                 "Error registering claim intent with Chronicler");
             _unitOfWork.Commit();
+            _claimMetrics.IncrementFailedClaims();
             return context.Faulted(ex);
         }
     }

@@ -116,7 +116,8 @@ public class ChroniclerExecutionTest
             RequestStatusArgs = new RequestStatusArgs
             {
                 Owner = "",
-                RequestId = Guid.NewGuid()
+                RequestId = Guid.NewGuid(),
+                RequestStatusType = RequestStatusType.Claim
             },
             ConsumptionSliceId = Guid.NewGuid(),
             ProductionSliceId = Guid.NewGuid(),

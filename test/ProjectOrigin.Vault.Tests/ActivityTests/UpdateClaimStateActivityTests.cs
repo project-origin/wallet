@@ -42,7 +42,8 @@ public class UpdateClaimStateActivityTests
             RequestStatusArgs = new RequestStatusArgs
             {
                 RequestId = Guid.NewGuid(),
-                Owner = Guid.NewGuid().ToString()
+                Owner = Guid.NewGuid().ToString(),
+                RequestStatusType = RequestStatusType.Claim
             }
         });
 
@@ -66,7 +67,8 @@ public class UpdateClaimStateActivityTests
             RequestStatusArgs = new RequestStatusArgs
             {
                 RequestId = Guid.NewGuid(),
-                Owner = Guid.NewGuid().ToString()
+                Owner = Guid.NewGuid().ToString(),
+                RequestStatusType = RequestStatusType.Claim
             }
         });
 
@@ -92,7 +94,8 @@ public class UpdateClaimStateActivityTests
             RequestStatusArgs = new RequestStatusArgs
             {
                 RequestId = Guid.NewGuid(),
-                Owner = Guid.NewGuid().ToString()
+                Owner = Guid.NewGuid().ToString(),
+                RequestStatusType = RequestStatusType.Claim
             }
         });
         _unitOfWork.ClaimRepository.When(x => x.SetClaimState(Arg.Any<Guid>(), Arg.Any<ClaimState>())).Do(x => throw exceptionToBeThrown);
