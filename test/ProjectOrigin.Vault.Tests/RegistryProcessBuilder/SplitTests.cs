@@ -67,7 +67,7 @@ public class SplitTests : IClassFixture<PostgresDatabaseFixture>
 
         // Act
         var (newSlice1, newSlice2) = await _processBuilder.SplitSlice(sourceSlice, 100,
-            new RequestStatusArgs { Owner = Guid.NewGuid().ToString(), RequestId = Guid.NewGuid(), RequestStatusType = RequestStatusType.Claim});
+            new RequestStatusArgs { Owner = Guid.NewGuid().ToString(), RequestId = Guid.NewGuid(), RequestStatusType = RequestStatusType.Claim });
         var slip = _processBuilder.Build();
 
         // Assert

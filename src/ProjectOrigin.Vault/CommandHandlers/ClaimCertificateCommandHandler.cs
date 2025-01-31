@@ -56,7 +56,7 @@ public class ClaimCertificateCommandHandler : IConsumer<ClaimCertificateCommand>
 
             var processBuilder = _processBuilderFactory.Create(msg.ClaimId, msg.Owner, _unitOfWork);
 
-            var routingSlip = await BuildClaimRoutingSlip(processBuilder, msg.Quantity, reservedConsumptionSlices, reservedProductionSlices, new RequestStatusArgs { Owner = msg.Owner, RequestId = msg.ClaimId, RequestStatusType = RequestStatusType.Claim});
+            var routingSlip = await BuildClaimRoutingSlip(processBuilder, msg.Quantity, reservedConsumptionSlices, reservedProductionSlices, new RequestStatusArgs { Owner = msg.Owner, RequestId = msg.ClaimId, RequestStatusType = RequestStatusType.Claim });
 
             await context.Execute(routingSlip);
             _unitOfWork.Commit();

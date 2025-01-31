@@ -63,7 +63,7 @@ public partial class RegistryProcessBuilder
 
         var prodClaimedEvent = CreateClaimedEvent(allocationId, productionSlice.GetFederatedStreamId());
         AddRegistryTransactionActivity(productionKey.SignRegistryTransaction(productionId, prodClaimedEvent), productionSlice.Id,
-            new RequestStatusArgs { Owner = _owner, RequestId = _routingSlipId, RequestStatusType = RequestStatusType.Claim});
+            new RequestStatusArgs { Owner = _owner, RequestId = _routingSlipId, RequestStatusType = RequestStatusType.Claim });
 
         var consClaimedEvent = CreateClaimedEvent(allocationId, consumptionSlice.GetFederatedStreamId());
         AddRegistryTransactionActivity(consumptionKey.SignRegistryTransaction(consumptionId, consClaimedEvent), consumptionSlice.Id,
