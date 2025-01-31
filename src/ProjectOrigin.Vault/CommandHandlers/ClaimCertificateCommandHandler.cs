@@ -73,6 +73,8 @@ public class ClaimCertificateCommandHandler : IConsumer<ClaimCertificateCommand>
         catch (QuantityNotYetAvailableToReserveException ex)
         {
             _unitOfWork.Rollback();
+            // Add jitter to delay the retry
+            await Task.Delay(TimeSpan.FromSeconds(Random.Shared.Next(5, 10)));
             _logger.LogWarning(ex, "Failed to handle claim at this time.");
             throw;
         }
