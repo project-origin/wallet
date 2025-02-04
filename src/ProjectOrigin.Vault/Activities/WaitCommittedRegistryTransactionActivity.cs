@@ -5,6 +5,7 @@ using Grpc.Net.Client;
 using MassTransit;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Npgsql;
 using ProjectOrigin.Registry.V1;
 using ProjectOrigin.Vault.Activities.Exceptions;
 using ProjectOrigin.Vault.Database;
@@ -96,7 +97,12 @@ public class WaitCommittedRegistryTransactionActivity : IExecuteActivity<WaitCom
         catch (RpcException ex)
         {
             _logger.LogError(ex, "Failed to communicate with registry.");
-            return context.Faulted(new TransientException("Failed to communicate with registry.", ex));
+            throw new TransientException("Failed to communicate with registry.", ex);
+        }
+        catch (PostgresException ex)
+        {
+            _logger.LogError(ex, "Failed to communicate with the database.");
+            throw new TransientException("Failed to communicate with the database.", ex);
         }
         catch (Exception ex)
         {
@@ -111,7 +117,7 @@ public class WaitCommittedRegistryTransactionActivity : IExecuteActivity<WaitCom
                     _claimMetrics.IncrementFailedClaims();
                 }
             }
-            return context.Faulted(ex);
+            throw;
         }
     }
 }

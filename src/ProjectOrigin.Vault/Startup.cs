@@ -94,6 +94,9 @@ public class Startup
                 {
                     if (cfg is IRabbitMqReceiveEndpointConfigurator rmq)
                         rmq.SetQuorumQueue(options.RabbitMq.Replicas);
+
+                    cfg.UseMessageRetry(r => r.Interval(5, TimeSpan.FromSeconds(10))
+                        .Handle<TransientException>());
                 });
             }
 
@@ -101,12 +104,6 @@ public class Startup
             {
                 cfg.UseMessageRetry(r => r.Interval(20, TimeSpan.FromSeconds(5))
                     .Handle<QuantityNotYetAvailableToReserveException>());
-            });
-
-            o.AddConsumer<VerifySliceCommandHandler>(cfg =>
-            {
-                cfg.UseMessageRetry(r => r.Interval(5, TimeSpan.FromSeconds(10))
-                    .Handle<TransientException>());
             });
 
             o.AddConsumer<ClaimCertificateCommandHandler>(cfg =>

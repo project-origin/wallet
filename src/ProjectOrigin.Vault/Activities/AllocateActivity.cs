@@ -47,7 +47,7 @@ public class AllocateActivity : IExecuteActivity<AllocateArguments>
     {
         try
         {
-            _logger.LogInformation("Starting Activity: {Activity}, RequestId: {RequestId} ", nameof(SendRegistryTransactionActivity), context.Arguments.RequestStatusArgs.RequestId);
+            _logger.LogInformation("Starting Activity: {Activity}, RequestId: {RequestId} ", nameof(AllocateActivity), context.Arguments.RequestStatusArgs.RequestId);
             var cons = await _unitOfWork.CertificateRepository.GetWalletSlice(context.Arguments.ConsumptionSliceId);
             var prod = await _unitOfWork.CertificateRepository.GetWalletSlice(context.Arguments.ProductionSliceId);
 
@@ -72,14 +72,14 @@ public class AllocateActivity : IExecuteActivity<AllocateArguments>
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error registering claim intent with Chronicler");
+            _logger.LogError(ex, "Error allocating certificate");
             await _unitOfWork.RequestStatusRepository.SetRequestStatus(context.Arguments.RequestStatusArgs.RequestId,
                 context.Arguments.RequestStatusArgs.Owner,
                 RequestStatusState.Failed,
-                "Error registering claim intent with Chronicler");
+                "Error allocating certificate");
             _unitOfWork.Commit();
             _claimMetrics.IncrementFailedClaims();
-            return context.Faulted(ex);
+            throw;
         }
     }
 

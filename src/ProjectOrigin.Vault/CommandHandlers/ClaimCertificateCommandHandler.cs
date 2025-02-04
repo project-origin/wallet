@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using MassTransit;
 using MassTransit.Courier.Contracts;
 using Microsoft.Extensions.Logging;
+using Npgsql;
 using ProjectOrigin.Vault.Activities;
 using ProjectOrigin.Vault.Database;
 using ProjectOrigin.Vault.Exceptions;
@@ -77,6 +78,11 @@ public class ClaimCertificateCommandHandler : IConsumer<ClaimCertificateCommand>
             await Task.Delay(TimeSpan.FromSeconds(Random.Shared.Next(5, 10)));
             _logger.LogWarning(ex, "Failed to handle claim at this time.");
             throw;
+        }
+        catch (PostgresException ex)
+        {
+            _logger.LogError(ex, "Failed to communicate with the database.");
+            throw new TransientException("Failed to communicate with the database.", ex);
         }
         catch (Exception ex)
         {
