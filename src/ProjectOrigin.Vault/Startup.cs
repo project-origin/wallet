@@ -100,6 +100,8 @@ public class Startup
                 });
             }
 
+            o.AddConsumer<VerifySliceCommandHandler>();
+
             o.AddConsumer<TransferCertificateCommandHandler>(cfg =>
             {
                 cfg.UseMessageRetry(r => r.Interval(20, TimeSpan.FromSeconds(5))
