@@ -168,7 +168,7 @@ public class ClaimCertificatesCommandHandlerTests
         _processBuilder.Received(1).SetWalletSliceStates(Arg.Is<Dictionary<Guid, WalletSliceState>>(x => x.SequenceEqual(new Dictionary<Guid, WalletSliceState>
         {
             { c2.Id, WalletSliceState.Available }
-        })));
+        })), Arg.Any<RequestStatusArgs>());
         _processBuilder.ReceivedCalls().Count().Should().Be(4);
     }
 
@@ -195,7 +195,7 @@ public class ClaimCertificatesCommandHandlerTests
         _processBuilder.Received(1).SetWalletSliceStates(Arg.Is<Dictionary<Guid, WalletSliceState>>(x => x.SequenceEqual(new Dictionary<Guid, WalletSliceState>
         {
             { cRemainder.Id, WalletSliceState.Available }
-        })));
+        })), Arg.Any<RequestStatusArgs>());
 
         _processBuilder.ReceivedCalls().Count().Should().Be(8);
     }
@@ -223,7 +223,7 @@ public class ClaimCertificatesCommandHandlerTests
         _processBuilder.Received(1).SetWalletSliceStates(Arg.Is<Dictionary<Guid, WalletSliceState>>(x => x.SequenceEqual(new Dictionary<Guid, WalletSliceState>
         {
             { p6.Id, WalletSliceState.Available }
-        })));
+        })), Arg.Any<RequestStatusArgs>());
 
         _processBuilder.ReceivedCalls().Count().Should().Be(8);
     }

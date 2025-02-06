@@ -61,20 +61,22 @@ public partial class RegistryProcessBuilder
         var productionId = productionSlice.GetFederatedStreamId();
         var consumptionId = consumptionSlice.GetFederatedStreamId();
 
+        var requestStatusArgs = new RequestStatusArgs { Owner = _owner, RequestId = _routingSlipId, RequestStatusType = RequestStatusType.Claim };
         var prodClaimedEvent = CreateClaimedEvent(allocationId, productionSlice.GetFederatedStreamId());
         AddRegistryTransactionActivity(productionKey.SignRegistryTransaction(productionId, prodClaimedEvent), productionSlice.Id,
-            new RequestStatusArgs { Owner = _owner, RequestId = _routingSlipId, RequestStatusType = RequestStatusType.Claim });
+            requestStatusArgs);
 
         var consClaimedEvent = CreateClaimedEvent(allocationId, consumptionSlice.GetFederatedStreamId());
         AddRegistryTransactionActivity(consumptionKey.SignRegistryTransaction(consumptionId, consClaimedEvent), consumptionSlice.Id,
-            new RequestStatusArgs { Owner = _owner, RequestId = _routingSlipId, RequestStatusType = RequestStatusType.Claim });
+            requestStatusArgs);
 
         AddActivity<UpdateSliceStateActivity, UpdateSliceStateArguments>(new UpdateSliceStateArguments
         {
             SliceStates = new(){
                 {productionSlice.Id, WalletSliceState.Claimed},
                 {consumptionSlice.Id, WalletSliceState.Claimed},
-            }
+            },
+            RequestStatusArgs = requestStatusArgs
         });
 
         AddActivity<UpdateClaimStateActivity, UpdateClaimStateArguments>(new UpdateClaimStateArguments

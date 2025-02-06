@@ -97,6 +97,7 @@ public class WaitCommittedRegistryTransactionActivity : IExecuteActivity<WaitCom
         catch (RpcException ex)
         {
             _logger.LogError(ex, "Failed to communicate with registry.");
+            _unitOfWork.Rollback();
             throw new TransientException("Failed to communicate with registry.", ex);
         }
         catch (PostgresException ex)
@@ -107,6 +108,7 @@ public class WaitCommittedRegistryTransactionActivity : IExecuteActivity<WaitCom
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to get requestStatus from registry.");
+            _unitOfWork.Rollback();
             if (context.Arguments.RequestStatusArgs != null)
             {
                 await _unitOfWork.RequestStatusRepository.SetRequestStatus(context.Arguments.RequestStatusArgs.RequestId, context.Arguments.RequestStatusArgs.Owner, RequestStatusState.Failed, failedReason: "General error. Failed to get requestStatus from registry.");
@@ -117,7 +119,7 @@ public class WaitCommittedRegistryTransactionActivity : IExecuteActivity<WaitCom
                     _claimMetrics.IncrementFailedClaims();
                 }
             }
-            throw;
+            return context.Completed(ex);
         }
     }
 }

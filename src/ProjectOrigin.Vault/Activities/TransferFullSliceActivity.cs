@@ -115,7 +115,8 @@ public class TransferFullSliceActivity : IExecuteActivity<TransferFullSliceArgum
             builder.AddActivity<UpdateSliceStateActivity, UpdateSliceStateArguments>(_formatter,
                 new()
                 {
-                    SliceStates = states
+                    SliceStates = states,
+                    RequestStatusArgs = context.Arguments.RequestStatusArgs
                 });
 
             builder.AddActivity<SendInformationToReceiverWalletActivity, SendInformationToReceiverWalletArgument>(_formatter,

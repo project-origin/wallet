@@ -122,7 +122,7 @@ public class ClaimCertificateCommandHandler : IConsumer<ClaimCertificateCommand>
                 if (consumptionRemainderSlice.Quantity > remainderToClaim)
                 {
                     var (quantitySlice, remainderSlice) = await processBuilder.SplitSlice(consumptionRemainderSlice, remainderToClaim, requestStatusArgs);
-                    processBuilder.SetWalletSliceStates(new() { { remainderSlice.Id, WalletSliceState.Available } });
+                    processBuilder.SetWalletSliceStates(new() { { remainderSlice.Id, WalletSliceState.Available } }, requestStatusArgs);
                     consumptionRemainderSlice = quantitySlice;
                 }
 
@@ -158,7 +158,7 @@ public class ClaimCertificateCommandHandler : IConsumer<ClaimCertificateCommand>
         if (productionRemainderSlice is not null)
         {
             // if last production slice has remainder, it should be returned to the available
-            processBuilder.SetWalletSliceStates(new() { { productionRemainderSlice.Id, WalletSliceState.Available } });
+            processBuilder.SetWalletSliceStates(new() { { productionRemainderSlice.Id, WalletSliceState.Available } }, requestStatusArgs);
         }
 
         return processBuilder.Build();

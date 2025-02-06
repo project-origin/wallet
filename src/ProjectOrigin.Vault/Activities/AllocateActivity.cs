@@ -4,10 +4,12 @@ using System.Threading.Tasks;
 using Google.Protobuf;
 using MassTransit;
 using Microsoft.Extensions.Logging;
+using Npgsql;
 using ProjectOrigin.Common.V1;
 using ProjectOrigin.PedersenCommitment;
 using ProjectOrigin.Registry.V1;
 using ProjectOrigin.Vault.Database;
+using ProjectOrigin.Vault.Exceptions;
 using ProjectOrigin.Vault.Extensions;
 using ProjectOrigin.Vault.Metrics;
 using ProjectOrigin.Vault.Models;
@@ -70,6 +72,11 @@ public class AllocateActivity : IExecuteActivity<AllocateArguments>
 
             return AddTransferRequiredActivities(context, transaction, slice.Id);
         }
+        catch (PostgresException ex)
+        {
+            _logger.LogError(ex, "Failed to communicate with the database.");
+            throw new TransientException("Failed to communicate with the database.", ex);
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error allocating certificate");
@@ -80,7 +87,7 @@ public class AllocateActivity : IExecuteActivity<AllocateArguments>
                 "Error allocating certificate");
             _unitOfWork.Commit();
             _claimMetrics.IncrementFailedClaims();
-            throw;
+            return context.Completed(ex);
         }
     }
 

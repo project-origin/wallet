@@ -70,7 +70,8 @@ public partial class RegistryProcessBuilder
             SliceStates = newSlices
                 .Select(s => KeyValuePair.Create(s.Id, WalletSliceState.Reserved))
                 .Append(KeyValuePair.Create(sourceSlice.Id, WalletSliceState.Sliced))
-                .ToDictionary(x => x.Key, x => x.Value)
+                .ToDictionary(x => x.Key, x => x.Value),
+            RequestStatusArgs = requestStatusArgs
         });
     }
 
