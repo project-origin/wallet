@@ -73,6 +73,7 @@ public class AllocateActivity : IExecuteActivity<AllocateArguments>
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error allocating certificate");
+            _unitOfWork.Rollback();
             await _unitOfWork.RequestStatusRepository.SetRequestStatus(context.Arguments.RequestStatusArgs.RequestId,
                 context.Arguments.RequestStatusArgs.Owner,
                 RequestStatusState.Failed,
