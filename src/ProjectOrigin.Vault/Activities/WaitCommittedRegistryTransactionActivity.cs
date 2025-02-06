@@ -86,7 +86,7 @@ public class WaitCommittedRegistryTransactionActivity : IExecuteActivity<WaitCom
                         _claimMetrics.IncrementFailedClaims();
                     }
                 }
-                return context.Faulted(new InvalidRegistryTransactionException($"Transaction failed on registry. Certificate id {context.Arguments.CertificateId}, slice id: {context.Arguments.SliceId}. Message: {status.Message}"));
+                return context.Completed(new InvalidRegistryTransactionException($"Transaction failed on registry. Certificate id {context.Arguments.CertificateId}, slice id: {context.Arguments.SliceId}. Message: {status.Message}"));
             }
             else
             {
