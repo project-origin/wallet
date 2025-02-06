@@ -188,6 +188,8 @@ public class TransfersController : ControllerBase
         {
             RequestId = command.TransferRequestId,
             Owner = subject,
+            Type = RequestStatusType.Transfer,
+            Created = DateTimeOffset.UtcNow,
             Status = RequestStatusState.Pending
         });
 

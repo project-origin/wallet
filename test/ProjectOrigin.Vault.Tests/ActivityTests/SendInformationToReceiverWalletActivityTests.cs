@@ -119,8 +119,12 @@ public class SendInformationToReceiverWalletActivityTests
                 attribute1,
                 attribute2
             ],
-            RequestId = Guid.NewGuid(),
-            Owner = owner
+            RequestStatusArgs = new RequestStatusArgs
+            {
+                RequestId = Guid.NewGuid(),
+                Owner = owner,
+                RequestStatusType = RequestStatusType.Transfer
+            }
         });
 
         // Act
@@ -221,8 +225,12 @@ public class SendInformationToReceiverWalletActivityTests
                 attribute1,
                 attribute2
             ],
-            RequestId = Guid.NewGuid(),
-            Owner = owner
+            RequestStatusArgs = new RequestStatusArgs
+            {
+                RequestId = Guid.NewGuid(),
+                Owner = owner,
+                RequestStatusType = RequestStatusType.Transfer
+            }
         });
 
         // Act
@@ -274,8 +282,12 @@ public class SendInformationToReceiverWalletActivityTests
             ExternalEndpointId = endpoint.Id,
             SliceId = transferredSlice.Id,
             WalletAttributes = [],
-            RequestId = Guid.NewGuid(),
-            Owner = owner
+            RequestStatusArgs = new RequestStatusArgs
+            {
+                RequestId = Guid.NewGuid(),
+                Owner = owner,
+                RequestStatusType = RequestStatusType.Transfer
+            }
         });
 
         // Act
@@ -355,8 +367,12 @@ public class SendInformationToReceiverWalletActivityTests
                 attribute1,
                 attribute2
             ],
-            RequestId = Guid.NewGuid(),
-            Owner = owner
+            RequestStatusArgs = new RequestStatusArgs
+            {
+                RequestId = Guid.NewGuid(),
+                Owner = owner,
+                RequestStatusType = RequestStatusType.Transfer
+            }
         });
 
         // Act
@@ -417,8 +433,12 @@ public class SendInformationToReceiverWalletActivityTests
             ExternalEndpointId = externalEndpoint.Id,
             SliceId = transferredSlice.Id,
             WalletAttributes = [],
-            RequestId = Guid.NewGuid(),
-            Owner = owner
+            RequestStatusArgs = new RequestStatusArgs
+            {
+                RequestId = Guid.NewGuid(),
+                Owner = owner,
+                RequestStatusType = RequestStatusType.Transfer
+            }
         });
 
         var fault = Substitute.For<MassTransit.ExecutionResult>();
@@ -473,8 +493,12 @@ public class SendInformationToReceiverWalletActivityTests
             ExternalEndpointId = externalEndpoint.Id,
             SliceId = transferredSlice.Id,
             WalletAttributes = [],
-            RequestId = Guid.NewGuid(),
-            Owner = owner
+            RequestStatusArgs = new RequestStatusArgs
+            {
+                RequestId = Guid.NewGuid(),
+                Owner = owner,
+                RequestStatusType = RequestStatusType.Transfer
+            }
         });
 
         var fault = Substitute.For<MassTransit.ExecutionResult>();

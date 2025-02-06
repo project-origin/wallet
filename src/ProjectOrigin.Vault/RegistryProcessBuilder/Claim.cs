@@ -27,7 +27,8 @@ public partial class RegistryProcessBuilder
             RequestStatusArgs = new RequestStatusArgs
             {
                 Owner = _owner,
-                RequestId = _routingSlipId
+                RequestId = _routingSlipId,
+                RequestStatusType = RequestStatusType.Claim
             }
         });
 
@@ -41,7 +42,8 @@ public partial class RegistryProcessBuilder
             RequestStatusArgs = new RequestStatusArgs
             {
                 Owner = _owner,
-                RequestId = _routingSlipId
+                RequestId = _routingSlipId,
+                RequestStatusType = RequestStatusType.Claim
             }
         });
 
@@ -59,18 +61,22 @@ public partial class RegistryProcessBuilder
         var productionId = productionSlice.GetFederatedStreamId();
         var consumptionId = consumptionSlice.GetFederatedStreamId();
 
+        var requestStatusArgs = new RequestStatusArgs { Owner = _owner, RequestId = _routingSlipId, RequestStatusType = RequestStatusType.Claim };
         var prodClaimedEvent = CreateClaimedEvent(allocationId, productionSlice.GetFederatedStreamId());
-        AddRegistryTransactionActivity(productionKey.SignRegistryTransaction(productionId, prodClaimedEvent), productionSlice.Id);
+        AddRegistryTransactionActivity(productionKey.SignRegistryTransaction(productionId, prodClaimedEvent), productionSlice.Id,
+            requestStatusArgs);
 
         var consClaimedEvent = CreateClaimedEvent(allocationId, consumptionSlice.GetFederatedStreamId());
-        AddRegistryTransactionActivity(consumptionKey.SignRegistryTransaction(consumptionId, consClaimedEvent), consumptionSlice.Id);
+        AddRegistryTransactionActivity(consumptionKey.SignRegistryTransaction(consumptionId, consClaimedEvent), consumptionSlice.Id,
+            requestStatusArgs);
 
         AddActivity<UpdateSliceStateActivity, UpdateSliceStateArguments>(new UpdateSliceStateArguments
         {
             SliceStates = new(){
                 {productionSlice.Id, WalletSliceState.Claimed},
                 {consumptionSlice.Id, WalletSliceState.Claimed},
-            }
+            },
+            RequestStatusArgs = requestStatusArgs
         });
 
         AddActivity<UpdateClaimStateActivity, UpdateClaimStateArguments>(new UpdateClaimStateArguments
@@ -80,7 +86,8 @@ public partial class RegistryProcessBuilder
             RequestStatusArgs = new RequestStatusArgs
             {
                 RequestId = _routingSlipId,
-                Owner = _owner
+                Owner = _owner,
+                RequestStatusType = RequestStatusType.Claim
             }
         });
     }

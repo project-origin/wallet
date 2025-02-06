@@ -163,6 +163,8 @@ public class ClaimsController : ControllerBase
         {
             RequestId = command.ClaimId,
             Owner = subject,
+            Type = RequestStatusType.Claim,
+            Created = DateTimeOffset.UtcNow,
             Status = RequestStatusState.Pending
         });
 
