@@ -8,9 +8,11 @@ using MassTransit;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
+using ProjectOrigin.Vault.Activities;
 using ProjectOrigin.Vault.CommandHandlers;
 using ProjectOrigin.Vault.Database;
 using ProjectOrigin.Vault.Exceptions;
+using ProjectOrigin.Vault.Metrics;
 using ProjectOrigin.Vault.Models;
 using Xunit;
 
@@ -23,6 +25,7 @@ public class ClaimCertificatesCommandHandlerTests
     private readonly string _owner;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IRegistryProcessBuilder _processBuilder;
+    private readonly IClaimMetrics _claimMetrics;
     private readonly ClaimCertificateCommandHandler _commandHandler;
     private readonly ConsumeContext<ClaimCertificateCommand> _context;
 
@@ -33,6 +36,7 @@ public class ClaimCertificatesCommandHandlerTests
         _owner = _fixture.Create<string>();
 
         _processBuilder = Substitute.For<IRegistryProcessBuilder>();
+        _claimMetrics = Substitute.For<IClaimMetrics>();
         var _processBuilderFactory = Substitute.For<IRegistryProcessBuilderFactory>();
         _processBuilderFactory.Create(Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<IUnitOfWork>()).Returns(_processBuilder);
 
@@ -41,7 +45,8 @@ public class ClaimCertificatesCommandHandlerTests
         _commandHandler = new ClaimCertificateCommandHandler(
             Substitute.For<ILogger<ClaimCertificateCommandHandler>>(),
             _unitOfWork,
-            _processBuilderFactory
+            _processBuilderFactory,
+            _claimMetrics
         );
         _context = Substitute.For<ConsumeContext<ClaimCertificateCommand>>();
     }
@@ -100,7 +105,7 @@ public class ClaimCertificatesCommandHandlerTests
         await _commandHandler.Consume(_context);
 
         // assert
-        await _processBuilder.Received(1).SplitSlice(Arg.Is(consSlices[0]), Arg.Is(80L));
+        await _processBuilder.Received(1).SplitSlice(Arg.Is(consSlices[0]), Arg.Is(80L), Arg.Any<RequestStatusArgs>());
         await _processBuilder.Received(1).Claim(Arg.Is(prodSlices[0]), Arg.Is(c1));
         await _processBuilder.Received(1).Claim(Arg.Is(prodSlices[1]), Arg.Is(c2));
         _processBuilder.Received(1).Build();
@@ -118,7 +123,7 @@ public class ClaimCertificatesCommandHandlerTests
         await _commandHandler.Consume(_context);
 
         // assert
-        await _processBuilder.Received(1).SplitSlice(Arg.Is(prodSlices[0]), Arg.Is(75L));
+        await _processBuilder.Received(1).SplitSlice(Arg.Is(prodSlices[0]), Arg.Is(75L), Arg.Any<RequestStatusArgs>());
         await _processBuilder.Received(1).Claim(Arg.Is(p1), Arg.Is(consSlices[0]));
         await _processBuilder.Received(1).Claim(Arg.Is(p2), Arg.Is(consSlices[1]));
         _processBuilder.Received(1).Build();
@@ -137,8 +142,8 @@ public class ClaimCertificatesCommandHandlerTests
         await _commandHandler.Consume(_context);
 
         // assert
-        await _processBuilder.Received(1).SplitSlice(Arg.Is(consSlices[0]), Arg.Is(65L));
-        await _processBuilder.Received(1).SplitSlice(Arg.Is(prodSlices[1]), Arg.Is(10L));
+        await _processBuilder.Received(1).SplitSlice(Arg.Is(consSlices[0]), Arg.Is(65L), Arg.Any<RequestStatusArgs>());
+        await _processBuilder.Received(1).SplitSlice(Arg.Is(prodSlices[1]), Arg.Is(10L), Arg.Any<RequestStatusArgs>());
         await _processBuilder.Received(1).Claim(Arg.Is(prodSlices[0]), Arg.Is(c1));
         await _processBuilder.Received(1).Claim(Arg.Is(p1), Arg.Is(c2));
         await _processBuilder.Received(1).Claim(Arg.Is(p2), Arg.Is(consSlices[1]));
@@ -157,13 +162,13 @@ public class ClaimCertificatesCommandHandlerTests
         await _commandHandler.Consume(_context);
 
         // assert
-        await _processBuilder.Received(1).SplitSlice(Arg.Is(consSlices[0]), Arg.Is(125L));
+        await _processBuilder.Received(1).SplitSlice(Arg.Is(consSlices[0]), Arg.Is(125L), Arg.Any<RequestStatusArgs>());
         await _processBuilder.Received(1).Claim(Arg.Is(prodSlices[0]), Arg.Is(c1));
         _processBuilder.Received(1).Build();
         _processBuilder.Received(1).SetWalletSliceStates(Arg.Is<Dictionary<Guid, WalletSliceState>>(x => x.SequenceEqual(new Dictionary<Guid, WalletSliceState>
         {
             { c2.Id, WalletSliceState.Available }
-        })));
+        })), Arg.Any<RequestStatusArgs>());
         _processBuilder.ReceivedCalls().Count().Should().Be(4);
     }
 
@@ -180,9 +185,9 @@ public class ClaimCertificatesCommandHandlerTests
         await _commandHandler.Consume(_context);
 
         // assert
-        await _processBuilder.Received(1).SplitSlice(Arg.Is(consSlices[0]), Arg.Is(100L));
-        await _processBuilder.Received(1).SplitSlice(Arg.Is(c1), Arg.Is(50L));
-        await _processBuilder.Received(1).SplitSlice(Arg.Is(c3), Arg.Is(25L));
+        await _processBuilder.Received(1).SplitSlice(Arg.Is(consSlices[0]), Arg.Is(100L), Arg.Any<RequestStatusArgs>());
+        await _processBuilder.Received(1).SplitSlice(Arg.Is(c1), Arg.Is(50L), Arg.Any<RequestStatusArgs>());
+        await _processBuilder.Received(1).SplitSlice(Arg.Is(c3), Arg.Is(25L), Arg.Any<RequestStatusArgs>());
         await _processBuilder.Received(1).Claim(Arg.Is(prodSlices[0]), Arg.Is(c2));
         await _processBuilder.Received(1).Claim(Arg.Is(prodSlices[1]), Arg.Is(c4));
         await _processBuilder.Received(1).Claim(Arg.Is(prodSlices[2]), Arg.Is(c5));
@@ -190,7 +195,7 @@ public class ClaimCertificatesCommandHandlerTests
         _processBuilder.Received(1).SetWalletSliceStates(Arg.Is<Dictionary<Guid, WalletSliceState>>(x => x.SequenceEqual(new Dictionary<Guid, WalletSliceState>
         {
             { cRemainder.Id, WalletSliceState.Available }
-        })));
+        })), Arg.Any<RequestStatusArgs>());
 
         _processBuilder.ReceivedCalls().Count().Should().Be(8);
     }
@@ -208,9 +213,9 @@ public class ClaimCertificatesCommandHandlerTests
         await _commandHandler.Consume(_context);
 
         // assert
-        await _processBuilder.Received(1).SplitSlice(Arg.Is(prodSlices[0]), Arg.Is(50L));
-        await _processBuilder.Received(1).SplitSlice(Arg.Is(p2), Arg.Is(25L));
-        await _processBuilder.Received(1).SplitSlice(Arg.Is(p4), Arg.Is(25L));
+        await _processBuilder.Received(1).SplitSlice(Arg.Is(prodSlices[0]), Arg.Is(50L), Arg.Any<RequestStatusArgs>());
+        await _processBuilder.Received(1).SplitSlice(Arg.Is(p2), Arg.Is(25L), Arg.Any<RequestStatusArgs>());
+        await _processBuilder.Received(1).SplitSlice(Arg.Is(p4), Arg.Is(25L), Arg.Any<RequestStatusArgs>());
         await _processBuilder.Received(1).Claim(Arg.Is(p1), Arg.Is(consSlices[0]));
         await _processBuilder.Received(1).Claim(Arg.Is(p3), Arg.Is(consSlices[1]));
         await _processBuilder.Received(1).Claim(Arg.Is(p5), Arg.Is(consSlices[2]));
@@ -218,7 +223,7 @@ public class ClaimCertificatesCommandHandlerTests
         _processBuilder.Received(1).SetWalletSliceStates(Arg.Is<Dictionary<Guid, WalletSliceState>>(x => x.SequenceEqual(new Dictionary<Guid, WalletSliceState>
         {
             { p6.Id, WalletSliceState.Available }
-        })));
+        })), Arg.Any<RequestStatusArgs>());
 
         _processBuilder.ReceivedCalls().Count().Should().Be(8);
     }
@@ -280,7 +285,7 @@ public class ClaimCertificatesCommandHandlerTests
             Id = Guid.NewGuid(),
             Quantity = slice.Quantity - quantity
         };
-        _processBuilder.SplitSlice(Arg.Is(slice), Arg.Is(quantity)).Returns((s1, s2));
+        _processBuilder.SplitSlice(Arg.Is(slice), Arg.Is(quantity), Arg.Any<RequestStatusArgs>()).Returns((s1, s2));
 
         return (s1, s2);
     }

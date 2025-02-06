@@ -65,8 +65,12 @@ public class TransferCertificateCommandHandler : IConsumer<TransferCertificateCo
                             SourceSliceId = slice.Id,
                             ExternalEndpointId = receiverEndpoint.Id,
                             HashedAttributes = msg.HashedAttributes,
-                            RequestId = msg.TransferRequestId,
-                            Owner = msg.Owner
+                            RequestStatusArgs = new RequestStatusArgs
+                            {
+                                RequestId = msg.TransferRequestId,
+                                Owner = msg.Owner,
+                                RequestStatusType = RequestStatusType.Transfer
+                            }
                         });
                     remainderToTransfer -= (uint)slice.Quantity;
                 }
@@ -79,8 +83,12 @@ public class TransferCertificateCommandHandler : IConsumer<TransferCertificateCo
                             ExternalEndpointId = receiverEndpoint.Id,
                             Quantity = remainderToTransfer,
                             HashedAttributes = msg.HashedAttributes,
-                            RequestId = msg.TransferRequestId,
-                            Owner = msg.Owner
+                            RequestStatusArgs = new RequestStatusArgs
+                            {
+                                RequestId = msg.TransferRequestId,
+                                Owner = msg.Owner,
+                                RequestStatusType = RequestStatusType.Transfer
+                            }
                         });
                 }
 

@@ -42,6 +42,34 @@ public class PostgresUpgrader : IRepositoryUpgrader
         }
     }
 
+    public async Task UpgradeToTarget(string? target)
+    {
+        var filter = (string scriptName) =>
+        {
+            return scriptName.ToLower().EndsWith(".sql") &&
+                   (target is null || String.Compare(scriptName.ToLower(), target.ToLower(), StringComparison.Ordinal) <= 0);
+        };
+
+        var upgradeEngine = DeployChanges.To
+            .PostgresqlDatabase(_connectionString)
+            .WithTransactionPerScript()
+            .WithScriptsEmbeddedInAssembly(typeof(PostgresUpgrader).Assembly, filter)
+            .LogTo(new LoggerWrapper(_logger))
+            .WithExecutionTimeout(_timeout)
+            .Build();
+
+        await TryConnectToDatabaseWithRetry(upgradeEngine);
+
+        EnsureDatabase.For.PostgresqlDatabase(_connectionString);
+
+        var databaseUpgradeResult = upgradeEngine.PerformUpgrade();
+
+        if (!databaseUpgradeResult.Successful)
+        {
+            throw databaseUpgradeResult.Error;
+        }
+    }
+
     private async Task TryConnectToDatabaseWithRetry(UpgradeEngine upgradeEngine)
     {
         var started = DateTime.UtcNow;
