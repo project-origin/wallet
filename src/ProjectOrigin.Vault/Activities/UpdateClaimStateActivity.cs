@@ -75,7 +75,7 @@ public class UpdateClaimStateActivity : IExecuteActivity<UpdateClaimStateArgumen
                 _unitOfWork.Commit();
             }
             _claimsMetrics.IncrementFailedClaims();
-            return context.Completed(ex);
+            return context.Faulted(ex);
         }
     }
 }

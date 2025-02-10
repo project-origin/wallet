@@ -69,7 +69,7 @@ public class UpdateSliceStateActivity : IExecuteActivity<UpdateSliceStateArgumen
                 }
             }
 
-            return context.Completed(ex);
+            return context.Faulted(ex);
         }
     }
 }
