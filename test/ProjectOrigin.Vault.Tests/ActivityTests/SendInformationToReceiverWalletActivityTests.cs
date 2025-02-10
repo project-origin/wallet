@@ -19,6 +19,7 @@ using WireMock.RequestBuilders;
 using WireMock.ResponseBuilders;
 using WireMock.Server;
 using Xunit;
+using ProjectOrigin.Vault.Exceptions;
 
 namespace ProjectOrigin.Vault.Tests.ActivityTests;
 
@@ -294,8 +295,7 @@ public class SendInformationToReceiverWalletActivityTests
         Func<Task> act = async () => await _activity.Execute(_context);
 
         // Assert
-        await act.Should().ThrowAsync<System.Net.Http.HttpRequestException>()
-            .WithMessage($"Response status code does not indicate success: 404 (Not Found).");
+        await act.Should().ThrowAsync<TransientException>();
 
         await _transferRepository.Received(0).SetTransferredSliceState(Arg.Any<Guid>(), TransferredSliceState.Transferred);
     }
