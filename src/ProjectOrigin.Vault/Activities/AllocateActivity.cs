@@ -87,7 +87,7 @@ public class AllocateActivity : IExecuteActivity<AllocateArguments>
                 "Error allocating certificate");
             _unitOfWork.Commit();
             _claimMetrics.IncrementFailedClaims();
-            return context.Faulted(ex);
+            throw;
         }
     }
 

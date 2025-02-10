@@ -119,7 +119,7 @@ public class WaitCommittedRegistryTransactionActivity : IExecuteActivity<WaitCom
                     _claimMetrics.IncrementFailedClaims();
                 }
             }
-            return context.Faulted(ex);
+            throw;
         }
     }
 }
