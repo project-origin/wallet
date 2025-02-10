@@ -15,6 +15,8 @@ public class TransferMetricsTests
 
     private readonly MetricCollector<long> _transferIntentsCollector;
     private readonly MetricCollector<long> _transfersCompletedCollector;
+    private readonly MetricCollector<long> _transfersFailedCollector;
+
 
     public TransferMetricsTests()
     {
@@ -35,6 +37,8 @@ public class TransferMetricsTests
             new MetricCollector<long>(meterFactory, "ProjectOrigin.Vault", "po_vault_transfer_intent_count");
         _transfersCompletedCollector =
             new MetricCollector<long>(meterFactory, "ProjectOrigin.Vault", "po_vault_transfer_completed_count");
+
+        _transfersFailedCollector = new MetricCollector<long>(meterFactory, "ProjectOrigin.Vault", "po_vault_transfer_failed_count");
     }
 
     [Fact]
@@ -69,6 +73,20 @@ public class TransferMetricsTests
         _transfersCompletedCollector.GetMeasurementSnapshot().EvaluateAsCounter().Should().Be(0);
     }
 
+    [Fact]
+    public void IncrementFailedTransfers_ShouldUpdateCounter()
+    {
+        _transferMetrics.IncrementFailedTransfers();
+        _transfersFailedCollector.GetMeasurementSnapshot().EvaluateAsCounter().Should().Be(1);
+    }
+
+    [Fact]
+    public void IncrementFailedClaims_ShouldNotAffectOtherCounters()
+    {
+        _transferMetrics.IncrementFailedTransfers();
+        _transferIntentsCollector.GetMeasurementSnapshot().EvaluateAsCounter().Should().Be(0);
+        _transfersCompletedCollector.GetMeasurementSnapshot().EvaluateAsCounter().Should().Be(0);
+    }
     private static IConfiguration CreateConfiguration()
     {
         return new ConfigurationBuilder()
