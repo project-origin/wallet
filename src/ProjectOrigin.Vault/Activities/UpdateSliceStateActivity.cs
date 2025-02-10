@@ -68,8 +68,7 @@ public class UpdateSliceStateActivity : IExecuteActivity<UpdateSliceStateArgumen
                     _claimMetrics.IncrementFailedClaims();
                 }
             }
-
-            return context.Completed(ex);
+            throw;
         }
     }
 }

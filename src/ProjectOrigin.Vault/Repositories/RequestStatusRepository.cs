@@ -66,6 +66,6 @@ public class RequestStatusRepository : IRequestStatusRepository
             });
 
         if (rowsChanged != 1)
-            throw new InvalidOperationException($"Transfer request with id {requestId} could not be found");
+            throw new InvalidOperationException($"Request status with id {requestId} could not be found");
     }
 }
