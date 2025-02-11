@@ -53,12 +53,12 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
 
             if (externalEndpoint.Endpoint.Equals(_ownEndpoint.ToString()))
             {
-                _logger.LogInformation("Sending to local wallet.");
+                _logger.LogInformation("Sending to local wallet. RequestId: {RequestId}", context.Arguments.RequestStatusArgs.RequestId);
                 return await InsertIntoLocalWallet(context, newSlice, externalEndpoint);
             }
             else
             {
-                _logger.LogInformation("Sending to external wallet.");
+                _logger.LogInformation("Sending to external wallet. RequestId: {RequestId}", context.Arguments.RequestStatusArgs.RequestId);
                 return await SendOverRestToExternalWallet(context, newSlice, externalEndpoint);
             }
         }
@@ -89,7 +89,7 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
         TransferredSlice newSlice,
         ExternalEndpoint externalEndpoint)
     {
-        _logger.LogInformation("Preparing to send slice to receiver");
+        _logger.LogInformation("Preparing to send slice to receiver. RequestId: {RequestId}", context.Arguments.RequestStatusArgs.RequestId);
 
         var request = new ReceiveRequest
         {
@@ -112,7 +112,7 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
         };
 
         var client = new HttpClient();
-        _logger.LogInformation("Sending slice to receiver");
+        _logger.LogInformation("Sending slice to receiver. RequestId: {RequestId}", context.Arguments.RequestStatusArgs.RequestId);
 
         var response = await client.PostAsJsonAsync(externalEndpoint.Endpoint, request);
         response.EnsureSuccessStatusCode();
@@ -122,7 +122,7 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
         _unitOfWork.Commit();
         _transferMetrics.IncrementCompleted();
 
-        _logger.LogInformation("Slice sent to receiver");
+        _logger.LogInformation("Slice sent to receiver. RequestId: {RequestId}", context.Arguments.RequestStatusArgs.RequestId);
         _logger.LogInformation("Ending ExternalWallet Activity: {Activity}, RequestId: {RequestId} ", nameof(SendInformationToReceiverWalletActivity), context.Arguments.RequestStatusArgs.RequestId);
 
         return context.Completed();
@@ -130,13 +130,11 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
 
     private async Task<ExecutionResult> InsertIntoLocalWallet(ExecuteContext<SendInformationToReceiverWalletArgument> context, TransferredSlice newSlice, ExternalEndpoint externalEndpoint)
     {
-        _logger.LogInformation("Receiver is local.");
-
         var walletEndpoint = await _unitOfWork.WalletRepository.GetWalletEndpoint(externalEndpoint.PublicKey);
 
         if (walletEndpoint is null)
         {
-            _logger.LogError("Local receiver wallet could not be found for reciever wallet {ReceiverWalletId}", externalEndpoint.Id);
+            _logger.LogError("Local receiver wallet could not be found for receiver wallet {ReceiverWalletId}. RequestId {RequestId}", externalEndpoint.Id, context.Arguments.RequestStatusArgs.RequestId);
             return context.Faulted(new Exception($"Local receiver wallet could not be found for reciever wallet {externalEndpoint.Id}"));
         }
 
@@ -162,7 +160,7 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
         _unitOfWork.Commit();
         _transferMetrics.IncrementCompleted();
 
-        _logger.LogInformation("Slice inserted locally into receiver wallet.");
+        _logger.LogInformation("Slice inserted locally into receiver wallet. RequestId: {RequestId}", context.Arguments.RequestStatusArgs.RequestId);
         _logger.LogInformation("Ending IntoLocalWallet Activity: {Activity}, RequestId: {RequestId} ", nameof(SendInformationToReceiverWalletActivity), context.Arguments.RequestStatusArgs.RequestId);
         return context.Completed();
     }
