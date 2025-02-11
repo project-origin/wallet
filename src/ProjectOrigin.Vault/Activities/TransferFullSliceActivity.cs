@@ -6,11 +6,14 @@ using System.Threading.Tasks;
 using Google.Protobuf;
 using MassTransit;
 using Microsoft.Extensions.Logging;
+using Npgsql;
 using ProjectOrigin.Electricity.V1;
 using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
 using ProjectOrigin.Registry.V1;
 using ProjectOrigin.Vault.Database;
+using ProjectOrigin.Vault.Exceptions;
 using ProjectOrigin.Vault.Extensions;
+using ProjectOrigin.Vault.Metrics;
 using ProjectOrigin.Vault.Models;
 
 namespace ProjectOrigin.Vault.Activities;
@@ -28,15 +31,18 @@ public class TransferFullSliceActivity : IExecuteActivity<TransferFullSliceArgum
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<TransferFullSliceActivity> _logger;
     private readonly IEndpointNameFormatter _formatter;
+    private readonly ITransferMetrics _transferMetrics;
 
     public TransferFullSliceActivity(
         IUnitOfWork unitOfWork,
         ILogger<TransferFullSliceActivity> logger,
-        IEndpointNameFormatter formatter)
+        IEndpointNameFormatter formatter,
+        ITransferMetrics transferMetrics)
     {
         _unitOfWork = unitOfWork;
         _logger = logger;
         _formatter = formatter;
+        _transferMetrics = transferMetrics;
     }
 
     public async Task<ExecutionResult> Execute(ExecuteContext<TransferFullSliceArguments> context)
@@ -81,14 +87,21 @@ public class TransferFullSliceActivity : IExecuteActivity<TransferFullSliceArgum
             };
             _logger.LogInformation("Ending Activity: {Activity}, RequestId: {RequestId} ", nameof(TransferFullSliceArguments), context.Arguments.RequestStatusArgs.RequestId);
 
-
             return AddTransferRequiredActivities(context, externalEndpoint, transferredSlice, transaction, states, walletAttributes);
+        }
+        catch (PostgresException ex)
+        {
+            _logger.LogError(ex, "Failed to communicate with the database.");
+            throw new TransientException("Failed to communicate with the database.", ex);
         }
         catch (Exception ex)
         {
             _unitOfWork.Rollback();
-            _logger.LogError(ex, "Error sending transactions to registry");
-            return context.Faulted(ex);
+            _logger.LogError(ex, "Error sending full slice transfer transactions to registry");
+            await _unitOfWork.RequestStatusRepository.SetRequestStatus(context.Arguments.RequestStatusArgs.RequestId, context.Arguments.RequestStatusArgs.Owner, RequestStatusState.Failed, failedReason: "Error sending full slice transfer transactions to registry.");
+            _unitOfWork.Commit();
+            _transferMetrics.IncrementFailedTransfers();
+            throw;
         }
     }
 
