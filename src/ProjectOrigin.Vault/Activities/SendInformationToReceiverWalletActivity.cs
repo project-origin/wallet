@@ -64,6 +64,7 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
         }
         catch (HttpRequestException ex)
         {
+            _unitOfWork.Rollback();
             _logger.LogError(ex, "Failed to send transfer to receiver wallet.");
             throw new TransientException("Failed to send transfer to receiver wallet.", ex);
         }
@@ -88,7 +89,7 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
         TransferredSlice newSlice,
         ExternalEndpoint externalEndpoint)
     {
-        _logger.LogInformation("Preparing to send information to receiver");
+        _logger.LogInformation("Preparing to send slice to receiver");
 
         var request = new ReceiveRequest
         {
@@ -111,7 +112,7 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
         };
 
         var client = new HttpClient();
-        _logger.LogInformation("Sending information to receiver");
+        _logger.LogInformation("Sending slice to receiver");
 
         var response = await client.PostAsJsonAsync(externalEndpoint.Endpoint, request);
         response.EnsureSuccessStatusCode();
@@ -121,7 +122,7 @@ public class SendInformationToReceiverWalletActivity : IExecuteActivity<SendInfo
         _unitOfWork.Commit();
         _transferMetrics.IncrementCompleted();
 
-        _logger.LogInformation("Information Sent to receiver");
+        _logger.LogInformation("Slice sent to receiver");
         _logger.LogInformation("Ending ExternalWallet Activity: {Activity}, RequestId: {RequestId} ", nameof(SendInformationToReceiverWalletActivity), context.Arguments.RequestStatusArgs.RequestId);
 
         return context.Completed();
