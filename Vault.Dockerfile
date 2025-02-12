@@ -15,7 +15,7 @@ RUN dotnet tool restore
 RUN dotnet publish src/ProjectOrigin.Vault -c Release -p:CustomAssemblyName=App -o /app/publish
 
 # ------- production image -------
-FROM mcr.microsoft.com/dotnet/aspnet:8.0.12-jammy-chiseled-extra AS production
+FROM mcr.microsoft.com/dotnet/aspnet:8.0.13-jammy-chiseled-extra AS production
 
 WORKDIR /app
 COPY --from=build /app/publish .
