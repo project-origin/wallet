@@ -31,13 +31,15 @@ public class WaitCommittedRegistryTransactionActivity : IExecuteActivity<WaitCom
     private readonly ILogger<WaitCommittedRegistryTransactionActivity> _logger;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IClaimMetrics _claimMetrics;
+    private readonly ITransferMetrics _transferMetrics;
 
-    public WaitCommittedRegistryTransactionActivity(IOptions<NetworkOptions> networkOptions, ILogger<WaitCommittedRegistryTransactionActivity> logger, IUnitOfWork unitOfWork, IClaimMetrics claimMetrics)
+    public WaitCommittedRegistryTransactionActivity(IOptions<NetworkOptions> networkOptions, ILogger<WaitCommittedRegistryTransactionActivity> logger, IUnitOfWork unitOfWork, IClaimMetrics claimMetrics, ITransferMetrics transferMetrics)
     {
         _networkOptions = networkOptions;
         _logger = logger;
         _unitOfWork = unitOfWork;
         _claimMetrics = claimMetrics;
+        _transferMetrics = transferMetrics;
     }
 
     public async Task<ExecutionResult> Execute(ExecuteContext<WaitCommittedTransactionArguments> context)
@@ -117,6 +119,10 @@ public class WaitCommittedRegistryTransactionActivity : IExecuteActivity<WaitCom
                 if (context.Arguments.RequestStatusArgs.RequestStatusType == RequestStatusType.Claim)
                 {
                     _claimMetrics.IncrementFailedClaims();
+                }
+                else if (context.Arguments.RequestStatusArgs.RequestStatusType == RequestStatusType.Transfer)
+                {
+                    _transferMetrics.IncrementFailedTransfers();
                 }
             }
             throw;

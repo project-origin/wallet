@@ -9,6 +9,7 @@ using NSubstitute.ExceptionExtensions;
 using ProjectOrigin.Vault.CommandHandlers;
 using ProjectOrigin.Vault.Database;
 using ProjectOrigin.Vault.Exceptions;
+using ProjectOrigin.Vault.Metrics;
 using ProjectOrigin.Vault.Models;
 using Xunit;
 
@@ -33,7 +34,8 @@ public class TransferCertificateCommandHandlerTests
         _commandHandler = new TransferCertificateCommandHandler(
             _unitOfWork,
             Substitute.For<ILogger<TransferCertificateCommandHandler>>(),
-            Substitute.For<IEndpointNameFormatter>());
+            Substitute.For<IEndpointNameFormatter>(),
+            Substitute.For<ITransferMetrics>());
         _context = Substitute.For<ConsumeContext<TransferCertificateCommand>>();
     }
 

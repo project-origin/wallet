@@ -22,12 +22,14 @@ public class UpdateSliceStateActivity : IExecuteActivity<UpdateSliceStateArgumen
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<UpdateSliceStateActivity> _logger;
     private readonly IClaimMetrics _claimMetrics;
+    private readonly ITransferMetrics _transferMetrics;
 
-    public UpdateSliceStateActivity(IUnitOfWork unitOfWork, ILogger<UpdateSliceStateActivity> logger, IClaimMetrics claimMetrics)
+    public UpdateSliceStateActivity(IUnitOfWork unitOfWork, ILogger<UpdateSliceStateActivity> logger, IClaimMetrics claimMetrics, ITransferMetrics transferMetrics)
     {
         _unitOfWork = unitOfWork;
         _logger = logger;
         _claimMetrics = claimMetrics;
+        _transferMetrics = transferMetrics;
     }
 
     public async Task<ExecutionResult> Execute(ExecuteContext<UpdateSliceStateArguments> context)
@@ -66,6 +68,10 @@ public class UpdateSliceStateActivity : IExecuteActivity<UpdateSliceStateArgumen
                 if (context.Arguments.RequestStatusArgs.RequestStatusType == RequestStatusType.Claim)
                 {
                     _claimMetrics.IncrementFailedClaims();
+                }
+                else if (context.Arguments.RequestStatusArgs.RequestStatusType == RequestStatusType.Transfer)
+                {
+                    _transferMetrics.IncrementFailedTransfers();
                 }
             }
             throw;
