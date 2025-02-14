@@ -28,6 +28,7 @@ using Microsoft.Extensions.Logging;
 using ProjectOrigin.Vault.Exceptions;
 using ProjectOrigin.Vault.Jobs;
 using ProjectOrigin.Vault.Metrics;
+using ProjectOrigin.Vault.Middleware;
 
 namespace ProjectOrigin.Vault;
 
@@ -169,6 +170,8 @@ public class Startup
         {
             endpoints.MapControllers();
         });
+
+        app.UseMiddleware<ExceptionLoggerMiddleware>();
 
         app.ConfigureSqlMappers();
     }
