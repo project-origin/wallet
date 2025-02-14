@@ -166,12 +166,11 @@ public class Startup
         app.UseAuthentication();
         app.UseAuthorization();
 
+        app.UseMiddleware<ExceptionLoggerMiddleware>();
         app.UseEndpoints(endpoints =>
         {
             endpoints.MapControllers();
         });
-
-        app.UseMiddleware<ExceptionLoggerMiddleware>();
 
         app.ConfigureSqlMappers();
     }
