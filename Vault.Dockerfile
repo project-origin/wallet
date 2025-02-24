@@ -22,4 +22,4 @@ COPY --from=build /app/publish .
 
 EXPOSE 5000
 
-ENTRYPOINT ["dotnet", "App.dll"]
+ENTRYPOINT ["dotnet", "Vault.dll"]
