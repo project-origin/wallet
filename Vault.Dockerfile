@@ -12,7 +12,7 @@ COPY protos protos
 COPY src src
 
 RUN dotnet tool restore
-RUN dotnet publish src/ProjectOrigin.Vault -c Release -p:CustomAssemblyName=App -o /app/publish
+RUN dotnet publish src/ProjectOrigin.Vault -c Release -p:CustomAssemblyName=Vault -o /app/publish
 
 # ------- production image -------
 FROM mcr.microsoft.com/dotnet/aspnet:8.0.13-jammy-chiseled-extra AS production
