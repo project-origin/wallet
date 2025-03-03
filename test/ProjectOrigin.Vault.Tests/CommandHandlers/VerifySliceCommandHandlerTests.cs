@@ -1,5 +1,6 @@
 using AutoFixture;
 using FluentAssertions;
+using Google.Protobuf;
 using Google.Protobuf.WellKnownTypes;
 using MassTransit;
 using MassTransit.Testing;

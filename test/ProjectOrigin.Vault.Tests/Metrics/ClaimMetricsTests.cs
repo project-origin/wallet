@@ -15,6 +15,7 @@ public class ClaimMetricsTests
 
     private readonly MetricCollector<long> _claimIntentsCollector;
     private readonly MetricCollector<long> _claimsClaimedCollector;
+    private readonly MetricCollector<long> _claimsFailedCollector;
 
     public ClaimMetricsTests()
     {
@@ -34,6 +35,7 @@ public class ClaimMetricsTests
 
         _claimsClaimedCollector = new MetricCollector<long>(meterFactory, "ProjectOrigin.Vault", "po_vault_claim_certificate_claimed_count");
         _claimIntentsCollector = new MetricCollector<long>(meterFactory, "ProjectOrigin.Vault", "po_vault_claim_certificate_intent_received_count");
+        _claimsFailedCollector = new MetricCollector<long>(meterFactory, "ProjectOrigin.Vault", "po_vault_claim_certificate_failed_count");
     }
 
     [Fact]
@@ -61,6 +63,21 @@ public class ClaimMetricsTests
     public void IncrementIntents_ShouldNotAffectRejectedCounter()
     {
         _claimMetrics.IncrementClaimIntents();
+        _claimsClaimedCollector.GetMeasurementSnapshot().EvaluateAsCounter().Should().Be(0);
+    }
+
+    [Fact]
+    public void IncrementFailedClaims_ShouldUpdateCounter()
+    {
+        _claimMetrics.IncrementFailedClaims();
+        _claimsFailedCollector.GetMeasurementSnapshot().EvaluateAsCounter().Should().Be(1);
+    }
+
+    [Fact]
+    public void IncrementFailedClaims_ShouldNotAffectOtherCounters()
+    {
+        _claimMetrics.IncrementFailedClaims();
+        _claimIntentsCollector.GetMeasurementSnapshot().EvaluateAsCounter().Should().Be(0);
         _claimsClaimedCollector.GetMeasurementSnapshot().EvaluateAsCounter().Should().Be(0);
     }
 

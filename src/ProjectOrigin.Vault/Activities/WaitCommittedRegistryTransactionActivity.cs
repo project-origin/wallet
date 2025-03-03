@@ -5,10 +5,12 @@ using Grpc.Net.Client;
 using MassTransit;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Npgsql;
 using ProjectOrigin.Registry.V1;
 using ProjectOrigin.Vault.Activities.Exceptions;
 using ProjectOrigin.Vault.Database;
 using ProjectOrigin.Vault.Exceptions;
+using ProjectOrigin.Vault.Metrics;
 using ProjectOrigin.Vault.Models;
 using ProjectOrigin.Vault.Options;
 
@@ -28,12 +30,16 @@ public class WaitCommittedRegistryTransactionActivity : IExecuteActivity<WaitCom
     private readonly IOptions<NetworkOptions> _networkOptions;
     private readonly ILogger<WaitCommittedRegistryTransactionActivity> _logger;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IClaimMetrics _claimMetrics;
+    private readonly ITransferMetrics _transferMetrics;
 
-    public WaitCommittedRegistryTransactionActivity(IOptions<NetworkOptions> networkOptions, ILogger<WaitCommittedRegistryTransactionActivity> logger, IUnitOfWork unitOfWork)
+    public WaitCommittedRegistryTransactionActivity(IOptions<NetworkOptions> networkOptions, ILogger<WaitCommittedRegistryTransactionActivity> logger, IUnitOfWork unitOfWork, IClaimMetrics claimMetrics, ITransferMetrics transferMetrics)
     {
         _networkOptions = networkOptions;
         _logger = logger;
         _unitOfWork = unitOfWork;
+        _claimMetrics = claimMetrics;
+        _transferMetrics = transferMetrics;
     }
 
     public async Task<ExecutionResult> Execute(ExecuteContext<WaitCommittedTransactionArguments> context)
@@ -76,6 +82,11 @@ public class WaitCommittedRegistryTransactionActivity : IExecuteActivity<WaitCom
                 {
                     await _unitOfWork.RequestStatusRepository.SetRequestStatus(context.Arguments.RequestStatusArgs.RequestId, context.Arguments.RequestStatusArgs.Owner, RequestStatusState.Failed, failedReason: "Transaction failed on registry.");
                     _unitOfWork.Commit();
+
+                    if (context.Arguments.RequestStatusArgs.RequestStatusType == RequestStatusType.Claim)
+                    {
+                        _claimMetrics.IncrementFailedClaims();
+                    }
                 }
                 return context.Faulted(new InvalidRegistryTransactionException($"Transaction failed on registry. Certificate id {context.Arguments.CertificateId}, slice id: {context.Arguments.SliceId}. Message: {status.Message}"));
             }
@@ -88,17 +99,33 @@ public class WaitCommittedRegistryTransactionActivity : IExecuteActivity<WaitCom
         catch (RpcException ex)
         {
             _logger.LogError(ex, "Failed to communicate with registry.");
-            return context.Faulted(new TransientException("Failed to communicate with registry.", ex));
+            _unitOfWork.Rollback();
+            throw new TransientException("Failed to communicate with registry.", ex);
+        }
+        catch (PostgresException ex)
+        {
+            _logger.LogError(ex, "Failed to communicate with the database.");
+            throw new TransientException("Failed to communicate with the database.", ex);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to get requestStatus from registry.");
+            _unitOfWork.Rollback();
             if (context.Arguments.RequestStatusArgs != null)
             {
                 await _unitOfWork.RequestStatusRepository.SetRequestStatus(context.Arguments.RequestStatusArgs.RequestId, context.Arguments.RequestStatusArgs.Owner, RequestStatusState.Failed, failedReason: "General error. Failed to get requestStatus from registry.");
                 _unitOfWork.Commit();
+
+                if (context.Arguments.RequestStatusArgs.RequestStatusType == RequestStatusType.Claim)
+                {
+                    _claimMetrics.IncrementFailedClaims();
+                }
+                else if (context.Arguments.RequestStatusArgs.RequestStatusType == RequestStatusType.Transfer)
+                {
+                    _transferMetrics.IncrementFailedTransfers();
+                }
             }
-            return context.Faulted(ex);
+            throw;
         }
     }
 }

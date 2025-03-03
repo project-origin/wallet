@@ -31,7 +31,6 @@ public class SendRegistryTransactionActivity : IExecuteActivity<SendRegistryTran
         _logger.LogDebug("RoutingSlip {TrackingNumber} - Executing {ActivityName}", context.TrackingNumber, context.ActivityName);
         _logger.LogInformation("Starting Activity: {Activity}, RequestId: {RequestId} ", nameof(SendRegistryTransactionActivity), null);
 
-
         try
         {
             var transaction = context.Arguments.Transaction;
@@ -56,7 +55,7 @@ public class SendRegistryTransactionActivity : IExecuteActivity<SendRegistryTran
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error sending transactions to registry");
-            return context.Faulted(ex);
+            throw;
         }
     }
 }

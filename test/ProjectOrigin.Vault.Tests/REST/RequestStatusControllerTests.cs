@@ -70,7 +70,9 @@ public class RequestStatusControllerTests : IClassFixture<PostgresDatabaseFixtur
         {
             RequestId = requestId,
             Owner = subject,
-            Status = RequestStatusState.Completed
+            Status = RequestStatusState.Completed,
+            Created = DateTimeOffset.UtcNow,
+            Type = RequestStatusType.Claim
         };
         await _dbFixture.CreateRequestStatus(status);
 

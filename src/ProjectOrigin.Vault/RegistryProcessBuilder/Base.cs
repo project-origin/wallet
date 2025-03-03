@@ -44,7 +44,7 @@ public partial class RegistryProcessBuilder : IRegistryProcessBuilder
         return _slipBuilder.Build();
     }
 
-    private void AddRegistryTransactionActivity(Transaction transaction, Guid sliceId)
+    private void AddRegistryTransactionActivity(Transaction transaction, Guid sliceId, RequestStatusArgs? requestStatusArgs)
     {
         AddActivity<SendRegistryTransactionActivity, SendRegistryTransactionArguments>(
         new SendRegistryTransactionArguments()
@@ -58,20 +58,17 @@ public partial class RegistryProcessBuilder : IRegistryProcessBuilder
             TransactionId = transaction.ToShaId(),
             CertificateId = new Guid(transaction.Header.FederatedStreamId.StreamId.Value),
             SliceId = sliceId,
-            RequestStatusArgs = new RequestStatusArgs
-            {
-                RequestId = _routingSlipId,
-                Owner = _owner
-            }
+            RequestStatusArgs = requestStatusArgs
         });
     }
 
-    public void SetWalletSliceStates(Dictionary<Guid, WalletSliceState> newStates)
+    public void SetWalletSliceStates(Dictionary<Guid, WalletSliceState> newStates, RequestStatusArgs requestStatusArgs)
     {
         AddActivity<UpdateSliceStateActivity, UpdateSliceStateArguments>(
             new UpdateSliceStateArguments
             {
-                SliceStates = newStates
+                SliceStates = newStates,
+                RequestStatusArgs = requestStatusArgs
             });
     }
 }
