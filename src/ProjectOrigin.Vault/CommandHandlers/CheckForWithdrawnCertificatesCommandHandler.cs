@@ -137,7 +137,8 @@ public class CheckForWithdrawnCertificatesCommandHandler : IConsumer<CheckForWit
                 SliceStates = new Dictionary<Guid, WalletSliceState>
                 {
                     { slice.Id, WalletSliceState.Available }
-                }
+                },
+                RequestStatusArgs = null
             });
 
         builder.AddActivity<UpdateClaimStateActivity, UpdateClaimStateArguments>(_formatter,

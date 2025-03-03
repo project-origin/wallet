@@ -6,12 +6,15 @@ using System.Threading.Tasks;
 using Google.Protobuf;
 using MassTransit;
 using Microsoft.Extensions.Logging;
+using Npgsql;
 using ProjectOrigin.Electricity.V1;
 using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
 using ProjectOrigin.PedersenCommitment;
 using ProjectOrigin.Registry.V1;
 using ProjectOrigin.Vault.Database;
+using ProjectOrigin.Vault.Exceptions;
 using ProjectOrigin.Vault.Extensions;
+using ProjectOrigin.Vault.Metrics;
 using ProjectOrigin.Vault.Models;
 
 namespace ProjectOrigin.Vault.Activities;
@@ -22,8 +25,7 @@ public record TransferPartialSliceArguments
     public required Guid ExternalEndpointId { get; init; }
     public required uint Quantity { get; init; }
     public required string[] HashedAttributes { get; init; }
-    public required Guid RequestId { get; init; }
-    public required string Owner { get; init; }
+    public required RequestStatusArgs RequestStatusArgs { get; init; }
 }
 
 public class TransferPartialSliceActivity : IExecuteActivity<TransferPartialSliceArguments>
@@ -31,22 +33,24 @@ public class TransferPartialSliceActivity : IExecuteActivity<TransferPartialSlic
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<TransferPartialSliceActivity> _logger;
     private readonly IEndpointNameFormatter _formatter;
+    private readonly ITransferMetrics _transferMetrics;
 
     public TransferPartialSliceActivity(
         IUnitOfWork unitOfWork,
         ILogger<TransferPartialSliceActivity> logger,
-        IEndpointNameFormatter formatter)
+        IEndpointNameFormatter formatter,
+        ITransferMetrics transferMetrics)
     {
         _unitOfWork = unitOfWork;
         _logger = logger;
         _formatter = formatter;
+        _transferMetrics = transferMetrics;
     }
 
     public async Task<ExecutionResult> Execute(ExecuteContext<TransferPartialSliceArguments> context)
     {
         _logger.LogDebug("RoutingSlip {TrackingNumber} - Executing {ActivityName}", context.TrackingNumber, context.ActivityName);
-        _logger.LogInformation("Starting Activity: {Activity}, RequestId: {RequestId} ", nameof(TransferPartialSliceArguments), context.Arguments.RequestId);
-
+        _logger.LogInformation("Starting Activity: {Activity}, RequestId: {RequestId} ", nameof(TransferPartialSliceArguments), context.Arguments.RequestStatusArgs.RequestId);
 
         try
         {
@@ -101,15 +105,23 @@ public class TransferPartialSliceActivity : IExecuteActivity<TransferPartialSlic
                 { sourceSlice.Id, WalletSliceState.Sliced },
                 { remainderSlice.Id, WalletSliceState.Available }
             };
-            _logger.LogInformation("Ending Activity: {Activity}, RequestId: {RequestId} ", nameof(TransferPartialSliceArguments), context.Arguments.RequestId);
+            _logger.LogInformation("Ending Activity: {Activity}, RequestId: {RequestId} ", nameof(TransferPartialSliceArguments), context.Arguments.RequestStatusArgs.RequestId);
 
             return AddTransferRequiredActivities(context, receiverEndpoints, transferredSlice, transaction, states, walletAttributes);
+        }
+        catch (PostgresException ex)
+        {
+            _logger.LogError(ex, "Failed to communicate with the database.");
+            throw new TransientException("Failed to communicate with the database.", ex);
         }
         catch (Exception ex)
         {
             _unitOfWork.Rollback();
-            _logger.LogError(ex, "Error sending transactions to registry");
-            return context.Faulted(ex);
+            _logger.LogError(ex, "Error sending partial slice transfer transactions to registry");
+            await _unitOfWork.RequestStatusRepository.SetRequestStatus(context.Arguments.RequestStatusArgs.RequestId, context.Arguments.RequestStatusArgs.Owner, RequestStatusState.Failed, failedReason: "Error sending partial slice transfer transactions to registry.");
+            _unitOfWork.Commit();
+            _transferMetrics.IncrementFailedTransfers();
+            throw;
         }
     }
 
@@ -130,17 +142,14 @@ public class TransferPartialSliceActivity : IExecuteActivity<TransferPartialSlic
                     TransactionId = transaction.ToShaId(),
                     CertificateId = transferredSlice.CertificateId,
                     SliceId = transferredSlice.Id,
-                    RequestStatusArgs = new RequestStatusArgs
-                    {
-                        RequestId = context.Arguments.RequestId,
-                        Owner = context.Arguments.Owner
-                    }
+                    RequestStatusArgs = context.Arguments.RequestStatusArgs
                 });
 
             builder.AddActivity<UpdateSliceStateActivity, UpdateSliceStateArguments>(_formatter,
                 new()
                 {
-                    SliceStates = states
+                    SliceStates = states,
+                    RequestStatusArgs = context.Arguments.RequestStatusArgs
                 });
 
             builder.AddActivity<SendInformationToReceiverWalletActivity, SendInformationToReceiverWalletArgument>(_formatter,
@@ -149,8 +158,7 @@ public class TransferPartialSliceActivity : IExecuteActivity<TransferPartialSlic
                     ExternalEndpointId = externalEndpoint.Id,
                     SliceId = transferredSlice.Id,
                     WalletAttributes = walletAttributes.ToArray(),
-                    RequestId = context.Arguments.RequestId,
-                    Owner = context.Arguments.Owner
+                    RequestStatusArgs = context.Arguments.RequestStatusArgs
                 });
 
             builder.AddActivitiesFromSourceItinerary();

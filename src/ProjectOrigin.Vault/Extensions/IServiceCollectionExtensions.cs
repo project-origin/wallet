@@ -1,5 +1,7 @@
 using System;
 using System.Reflection;
+using MassTransit.Logging;
+using MassTransit.Monitoring;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -80,25 +82,16 @@ public static class IServiceCollectionExtensions
                 .WithMetrics(metrics => metrics
                     .AddHttpClientInstrumentation()
                     .AddAspNetCoreInstrumentation()
-                    .AddMeter(MassTransit.Monitoring.InstrumentationOptions.MeterName)
+                    .AddMeter(InstrumentationOptions.MeterName)
                     .AddMeter(MeterBase.MeterName)
                     .AddRuntimeInstrumentation()
-                    .AddProcessInstrumentation()
                     .AddOtlpExporter(o => o.Endpoint = otlpOptions.Endpoint!))
                 .WithTracing(provider =>
                     provider
-                        .AddGrpcClientInstrumentation(grpcOptions =>
-                        {
-                            grpcOptions.EnrichWithHttpRequestMessage = (activity, httpRequestMessage) =>
-                                activity.SetTag("requestVersion", httpRequestMessage.Version);
-                            grpcOptions.EnrichWithHttpResponseMessage = (activity, httpResponseMessage) =>
-                                activity.SetTag("responseVersion", httpResponseMessage.Version);
-                            grpcOptions.SuppressDownstreamInstrumentation = true;
-                        })
                         .AddHttpClientInstrumentation()
                         .AddAspNetCoreInstrumentation()
                         .AddNpgsql()
-                        .AddSource(MassTransit.Logging.DiagnosticHeaders.DefaultListenerName)
+                        .AddSource(DiagnosticHeaders.DefaultListenerName)
                         .AddOtlpExporter(o => o.Endpoint = otlpOptions.Endpoint!));
         }
     }
