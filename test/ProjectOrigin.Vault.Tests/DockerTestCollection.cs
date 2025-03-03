@@ -50,7 +50,6 @@ public class DockerTestFixture : IAsyncLifetime
             .WithImage("postgres:15")
             .WithNetwork(StampAndRegistryFixture.Network)
             .WithNetworkAliases(WalletPostgresAlias)
-            .WithPortBinding(5432, true)
             .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(5432))
             .Build();
 
