@@ -11,6 +11,7 @@ using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
 using ProjectOrigin.PedersenCommitment;
 using ProjectOrigin.Vault.Projections;
 using Xunit;
+using ByteString = Google.Protobuf.ByteString;
 
 namespace ProjectOrigin.Vault.Tests;
 
