@@ -19,7 +19,6 @@ using WireMock.RequestBuilders;
 using WireMock.ResponseBuilders;
 using WireMock.Server;
 using Xunit;
-using ProjectOrigin.Vault.Exceptions;
 
 namespace ProjectOrigin.Vault.Tests.ActivityTests;
 
@@ -120,12 +119,8 @@ public class SendInformationToReceiverWalletActivityTests
                 attribute1,
                 attribute2
             ],
-            RequestStatusArgs = new RequestStatusArgs
-            {
-                RequestId = Guid.NewGuid(),
-                Owner = owner,
-                RequestStatusType = RequestStatusType.Transfer
-            }
+            RequestId = Guid.NewGuid(),
+            Owner = owner
         });
 
         // Act
@@ -226,12 +221,8 @@ public class SendInformationToReceiverWalletActivityTests
                 attribute1,
                 attribute2
             ],
-            RequestStatusArgs = new RequestStatusArgs
-            {
-                RequestId = Guid.NewGuid(),
-                Owner = owner,
-                RequestStatusType = RequestStatusType.Transfer
-            }
+            RequestId = Guid.NewGuid(),
+            Owner = owner
         });
 
         // Act
@@ -283,19 +274,16 @@ public class SendInformationToReceiverWalletActivityTests
             ExternalEndpointId = endpoint.Id,
             SliceId = transferredSlice.Id,
             WalletAttributes = [],
-            RequestStatusArgs = new RequestStatusArgs
-            {
-                RequestId = Guid.NewGuid(),
-                Owner = owner,
-                RequestStatusType = RequestStatusType.Transfer
-            }
+            RequestId = Guid.NewGuid(),
+            Owner = owner
         });
 
         // Act
         Func<Task> act = async () => await _activity.Execute(_context);
 
         // Assert
-        await act.Should().ThrowAsync<TransientException>();
+        await act.Should().ThrowAsync<System.Net.Http.HttpRequestException>()
+            .WithMessage($"Response status code does not indicate success: 404 (Not Found).");
 
         await _transferRepository.Received(0).SetTransferredSliceState(Arg.Any<Guid>(), TransferredSliceState.Transferred);
     }
@@ -367,12 +355,8 @@ public class SendInformationToReceiverWalletActivityTests
                 attribute1,
                 attribute2
             ],
-            RequestStatusArgs = new RequestStatusArgs
-            {
-                RequestId = Guid.NewGuid(),
-                Owner = owner,
-                RequestStatusType = RequestStatusType.Transfer
-            }
+            RequestId = Guid.NewGuid(),
+            Owner = owner
         });
 
         // Act
@@ -433,12 +417,8 @@ public class SendInformationToReceiverWalletActivityTests
             ExternalEndpointId = externalEndpoint.Id,
             SliceId = transferredSlice.Id,
             WalletAttributes = [],
-            RequestStatusArgs = new RequestStatusArgs
-            {
-                RequestId = Guid.NewGuid(),
-                Owner = owner,
-                RequestStatusType = RequestStatusType.Transfer
-            }
+            RequestId = Guid.NewGuid(),
+            Owner = owner
         });
 
         var fault = Substitute.For<MassTransit.ExecutionResult>();
@@ -493,12 +473,8 @@ public class SendInformationToReceiverWalletActivityTests
             ExternalEndpointId = externalEndpoint.Id,
             SliceId = transferredSlice.Id,
             WalletAttributes = [],
-            RequestStatusArgs = new RequestStatusArgs
-            {
-                RequestId = Guid.NewGuid(),
-                Owner = owner,
-                RequestStatusType = RequestStatusType.Transfer
-            }
+            RequestId = Guid.NewGuid(),
+            Owner = owner
         });
 
         var fault = Substitute.For<MassTransit.ExecutionResult>();

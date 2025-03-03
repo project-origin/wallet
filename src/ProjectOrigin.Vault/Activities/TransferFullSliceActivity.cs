@@ -6,14 +6,11 @@ using System.Threading.Tasks;
 using Google.Protobuf;
 using MassTransit;
 using Microsoft.Extensions.Logging;
-using Npgsql;
 using ProjectOrigin.Electricity.V1;
 using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
 using ProjectOrigin.Registry.V1;
 using ProjectOrigin.Vault.Database;
-using ProjectOrigin.Vault.Exceptions;
 using ProjectOrigin.Vault.Extensions;
-using ProjectOrigin.Vault.Metrics;
 using ProjectOrigin.Vault.Models;
 
 namespace ProjectOrigin.Vault.Activities;
@@ -23,7 +20,8 @@ public record TransferFullSliceArguments
     public required Guid SourceSliceId { get; init; }
     public required Guid ExternalEndpointId { get; init; }
     public required string[] HashedAttributes { get; init; }
-    public required RequestStatusArgs RequestStatusArgs { get; init; }
+    public required Guid RequestId { get; init; }
+    public required string Owner { get; init; }
 }
 
 public class TransferFullSliceActivity : IExecuteActivity<TransferFullSliceArguments>
@@ -31,24 +29,22 @@ public class TransferFullSliceActivity : IExecuteActivity<TransferFullSliceArgum
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<TransferFullSliceActivity> _logger;
     private readonly IEndpointNameFormatter _formatter;
-    private readonly ITransferMetrics _transferMetrics;
 
     public TransferFullSliceActivity(
         IUnitOfWork unitOfWork,
         ILogger<TransferFullSliceActivity> logger,
-        IEndpointNameFormatter formatter,
-        ITransferMetrics transferMetrics)
+        IEndpointNameFormatter formatter)
     {
         _unitOfWork = unitOfWork;
         _logger = logger;
         _formatter = formatter;
-        _transferMetrics = transferMetrics;
     }
 
     public async Task<ExecutionResult> Execute(ExecuteContext<TransferFullSliceArguments> context)
     {
         _logger.LogDebug("RoutingSlip {TrackingNumber} - Executing {ActivityName}", context.TrackingNumber, context.ActivityName);
-        _logger.LogInformation("Starting Activity: {Activity}, RequestId: {RequestId} ", nameof(TransferFullSliceArguments), context.Arguments.RequestStatusArgs.RequestId);
+        _logger.LogInformation("Starting Activity: {Activity}, RequestId: {RequestId} ", nameof(TransferFullSliceArguments), context.Arguments.RequestId);
+
 
         try
         {
@@ -85,23 +81,16 @@ public class TransferFullSliceActivity : IExecuteActivity<TransferFullSliceArgum
             var states = new Dictionary<Guid, WalletSliceState>() {
                 { sourceSlice.Id, WalletSliceState.Sliced }
             };
-            _logger.LogInformation("Ending Activity: {Activity}, RequestId: {RequestId} ", nameof(TransferFullSliceArguments), context.Arguments.RequestStatusArgs.RequestId);
+            _logger.LogInformation("Ending Activity: {Activity}, RequestId: {RequestId} ", nameof(TransferFullSliceArguments), context.Arguments.RequestId);
+
 
             return AddTransferRequiredActivities(context, externalEndpoint, transferredSlice, transaction, states, walletAttributes);
-        }
-        catch (PostgresException ex)
-        {
-            _logger.LogError(ex, "Failed to communicate with the database.");
-            throw new TransientException("Failed to communicate with the database.", ex);
         }
         catch (Exception ex)
         {
             _unitOfWork.Rollback();
-            _logger.LogError(ex, "Error sending full slice transfer transactions to registry");
-            await _unitOfWork.RequestStatusRepository.SetRequestStatus(context.Arguments.RequestStatusArgs.RequestId, context.Arguments.RequestStatusArgs.Owner, RequestStatusState.Failed, failedReason: "Error sending full slice transfer transactions to registry.");
-            _unitOfWork.Commit();
-            _transferMetrics.IncrementFailedTransfers();
-            throw;
+            _logger.LogError(ex, "Error sending transactions to registry");
+            return context.Faulted(ex);
         }
     }
 
@@ -122,14 +111,17 @@ public class TransferFullSliceActivity : IExecuteActivity<TransferFullSliceArgum
                     TransactionId = transaction.ToShaId(),
                     CertificateId = transferredSlice.CertificateId,
                     SliceId = transferredSlice.Id,
-                    RequestStatusArgs = context.Arguments.RequestStatusArgs
+                    RequestStatusArgs = new RequestStatusArgs
+                    {
+                        RequestId = context.Arguments.RequestId,
+                        Owner = context.Arguments.Owner
+                    }
                 });
 
             builder.AddActivity<UpdateSliceStateActivity, UpdateSliceStateArguments>(_formatter,
                 new()
                 {
-                    SliceStates = states,
-                    RequestStatusArgs = context.Arguments.RequestStatusArgs
+                    SliceStates = states
                 });
 
             builder.AddActivity<SendInformationToReceiverWalletActivity, SendInformationToReceiverWalletArgument>(_formatter,
@@ -138,7 +130,8 @@ public class TransferFullSliceActivity : IExecuteActivity<TransferFullSliceArgum
                     ExternalEndpointId = externalEndpoint.Id,
                     SliceId = transferredSlice.Id,
                     WalletAttributes = walletAttributes.ToArray(),
-                    RequestStatusArgs = context.Arguments.RequestStatusArgs
+                    RequestId = context.Arguments.RequestId,
+                    Owner = context.Arguments.Owner
                 });
 
             builder.AddActivitiesFromSourceItinerary();

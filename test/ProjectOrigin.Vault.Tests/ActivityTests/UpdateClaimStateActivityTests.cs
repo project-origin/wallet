@@ -2,11 +2,9 @@ using System;
 using System.Threading.Tasks;
 using MassTransit;
 using Microsoft.Extensions.Logging;
-using Npgsql;
 using NSubstitute;
 using ProjectOrigin.Vault.Activities;
 using ProjectOrigin.Vault.Database;
-using ProjectOrigin.Vault.Exceptions;
 using ProjectOrigin.Vault.Metrics;
 using ProjectOrigin.Vault.Models;
 using Xunit;
@@ -44,8 +42,7 @@ public class UpdateClaimStateActivityTests
             RequestStatusArgs = new RequestStatusArgs
             {
                 RequestId = Guid.NewGuid(),
-                Owner = Guid.NewGuid().ToString(),
-                RequestStatusType = RequestStatusType.Claim
+                Owner = Guid.NewGuid().ToString()
             }
         });
 
@@ -69,8 +66,7 @@ public class UpdateClaimStateActivityTests
             RequestStatusArgs = new RequestStatusArgs
             {
                 RequestId = Guid.NewGuid(),
-                Owner = Guid.NewGuid().ToString(),
-                RequestStatusType = RequestStatusType.Claim
+                Owner = Guid.NewGuid().ToString()
             }
         });
 
@@ -85,10 +81,10 @@ public class UpdateClaimStateActivityTests
     }
 
     [Fact]
-    public async Task Execute_WhenSetClaimThrowsPostgresException_ShouldThrowTransientException()
+    public async Task Execute_WhenSetClaimThrowsException_ShouldThrowException()
     {
         // Arrange
-        var exceptionToBeThrown = new PostgresException("", "", "", "");
+        var exceptionToBeThrown = new Exception();
         _context.Arguments.Returns(new UpdateClaimStateArguments()
         {
             Id = Guid.NewGuid(),
@@ -96,16 +92,18 @@ public class UpdateClaimStateActivityTests
             RequestStatusArgs = new RequestStatusArgs
             {
                 RequestId = Guid.NewGuid(),
-                Owner = Guid.NewGuid().ToString(),
-                RequestStatusType = RequestStatusType.Claim
+                Owner = Guid.NewGuid().ToString()
             }
         });
         _unitOfWork.ClaimRepository.When(x => x.SetClaimState(Arg.Any<Guid>(), Arg.Any<ClaimState>())).Do(x => throw exceptionToBeThrown);
 
         // Act
-        await Assert.ThrowsAsync<TransientException>(async () => await _activity.Execute(_context));
+        await _activity.Execute(_context);
 
         // Assert
+        _context.Received(1).Faulted(Arg.Is(exceptionToBeThrown));
+        _unitOfWork.Received(1).Rollback();
+        _unitOfWork.DidNotReceive().Commit();
         _context.DidNotReceive().Completed();
     }
 }

@@ -14,7 +14,6 @@ using ProjectOrigin.Vault.Database;
 using ProjectOrigin.Vault.Models;
 using Xunit;
 using System.Collections.Generic;
-using ProjectOrigin.Vault.Activities;
 using ProjectOrigin.Vault.Options;
 
 namespace ProjectOrigin.Vault.Tests;
@@ -66,8 +65,7 @@ public class SplitTests : IClassFixture<PostgresDatabaseFixture>
         var publicKey = endpoint.PublicKey.Derive(sourceSlice.WalletEndpointPosition).GetPublicKey();
 
         // Act
-        var (newSlice1, newSlice2) = await _processBuilder.SplitSlice(sourceSlice, 100,
-            new RequestStatusArgs { Owner = Guid.NewGuid().ToString(), RequestId = Guid.NewGuid(), RequestStatusType = RequestStatusType.Claim });
+        var (newSlice1, newSlice2) = await _processBuilder.SplitSlice(sourceSlice, 100);
         var slip = _processBuilder.Build();
 
         // Assert
@@ -114,8 +112,7 @@ public class SplitTests : IClassFixture<PostgresDatabaseFixture>
         var slice = await _dbFixture.CreateSlice(endpoint, cert, secret);
 
         // Act
-        Func<Task> act = async () => await _processBuilder.SplitSlice(slice, splitQuanity,
-            new RequestStatusArgs { Owner = Guid.NewGuid().ToString(), RequestId = Guid.NewGuid(), RequestStatusType = RequestStatusType.Claim });
+        Func<Task> act = async () => await _processBuilder.SplitSlice(slice, splitQuanity);
 
         // Assert
         await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("Cannot split slice with quantity less than or equal to the requested quantity");

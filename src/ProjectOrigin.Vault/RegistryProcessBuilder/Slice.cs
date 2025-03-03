@@ -16,7 +16,7 @@ namespace ProjectOrigin.Vault;
 
 public partial class RegistryProcessBuilder
 {
-    public async Task<(WalletSlice, WalletSlice)> SplitSlice(WalletSlice source, long quantity, RequestStatusArgs requestStatusArgs)
+    public async Task<(WalletSlice, WalletSlice)> SplitSlice(WalletSlice source, long quantity)
     {
         if (source.Quantity <= quantity)
             throw new InvalidOperationException("Cannot split slice with quantity less than or equal to the requested quantity");
@@ -30,7 +30,7 @@ public partial class RegistryProcessBuilder
 
         var privateKey = await _unitOfWork.WalletRepository.GetPrivateKeyForSlice(source.Id);
 
-        BuildSliceRoutingSlip(remainderEndpoint, source, privateKey, requestStatusArgs, claimSlice, remainderSlice);
+        BuildSliceRoutingSlip(remainderEndpoint, source, privateKey, claimSlice, remainderSlice);
 
         return (claimSlice, remainderSlice);
     }
@@ -52,7 +52,7 @@ public partial class RegistryProcessBuilder
         return newSlice;
     }
 
-    private void BuildSliceRoutingSlip(WalletEndpoint remainderEndpoint, WalletSlice sourceSlice, IHDPrivateKey privateKey, RequestStatusArgs requestStatusArgs, params WalletSlice[] newSlices)
+    private void BuildSliceRoutingSlip(WalletEndpoint remainderEndpoint, WalletSlice sourceSlice, IHDPrivateKey privateKey, params WalletSlice[] newSlices)
     {
         var mappedSlices = newSlices.Select(s =>
         {
@@ -64,14 +64,13 @@ public partial class RegistryProcessBuilder
         var sliceEvent = CreateSliceEvent(sourceSlice, mappedSlices);
         var transaction = privateKey.SignRegistryTransaction(sliceEvent.CertificateId, sliceEvent);
 
-        AddRegistryTransactionActivity(transaction, sourceSlice.Id, requestStatusArgs);
+        AddRegistryTransactionActivity(transaction, sourceSlice.Id);
         AddActivity<UpdateSliceStateActivity, UpdateSliceStateArguments>(new UpdateSliceStateArguments
         {
             SliceStates = newSlices
                 .Select(s => KeyValuePair.Create(s.Id, WalletSliceState.Reserved))
                 .Append(KeyValuePair.Create(sourceSlice.Id, WalletSliceState.Sliced))
-                .ToDictionary(x => x.Key, x => x.Value),
-            RequestStatusArgs = requestStatusArgs
+                .ToDictionary(x => x.Key, x => x.Value)
         });
     }
 

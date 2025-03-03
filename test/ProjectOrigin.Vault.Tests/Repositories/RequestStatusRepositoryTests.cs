@@ -4,7 +4,6 @@ using ProjectOrigin.Vault.Repositories;
 using System.Threading.Tasks;
 using System;
 using FluentAssertions;
-using ProjectOrigin.Vault.Extensions;
 using Xunit;
 
 namespace ProjectOrigin.Vault.Tests.Repositories;
@@ -26,9 +25,7 @@ public class RequestStatusRepositoryTests : AbstractRepositoryTests
             RequestId = Guid.NewGuid(),
             Owner = Guid.NewGuid().ToString(),
             Status = RequestStatusState.Pending,
-            FailedReason = "Test failed message",
-            Created = DateTimeOffset.Now.ToUtcTime(),
-            Type = RequestStatusType.Claim
+            FailedReason = "Test failed message"
         };
 
         await _requestStatusRepository.InsertRequestStatus(status);
@@ -45,9 +42,7 @@ public class RequestStatusRepositoryTests : AbstractRepositoryTests
         {
             RequestId = Guid.NewGuid(),
             Owner = Guid.NewGuid().ToString(),
-            Status = RequestStatusState.Pending,
-            Created = DateTimeOffset.Now.ToUtcTime(),
-            Type = RequestStatusType.Transfer
+            Status = RequestStatusState.Pending
         };
 
         await _requestStatusRepository.InsertRequestStatus(status);

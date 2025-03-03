@@ -4,12 +4,9 @@ using System.Threading.Tasks;
 using MassTransit;
 using MassTransit.Courier.Contracts;
 using Microsoft.Extensions.Logging;
-using Npgsql;
-using ProjectOrigin.Vault.Activities;
 using ProjectOrigin.Vault.Database;
 using ProjectOrigin.Vault.Exceptions;
 using ProjectOrigin.Vault.Extensions;
-using ProjectOrigin.Vault.Metrics;
 using ProjectOrigin.Vault.Models;
 
 namespace ProjectOrigin.Vault.CommandHandlers;
@@ -30,18 +27,15 @@ public class ClaimCertificateCommandHandler : IConsumer<ClaimCertificateCommand>
     private readonly ILogger<ClaimCertificateCommandHandler> _logger;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IRegistryProcessBuilderFactory _processBuilderFactory;
-    private readonly IClaimMetrics _claimMetrics;
 
     public ClaimCertificateCommandHandler(
         ILogger<ClaimCertificateCommandHandler> logger,
         IUnitOfWork unitOfWork,
-        IRegistryProcessBuilderFactory registryProcessBuilderFactory,
-        IClaimMetrics claimMetrics)
+        IRegistryProcessBuilderFactory registryProcessBuilderFactory)
     {
         _logger = logger;
         _unitOfWork = unitOfWork;
         _processBuilderFactory = registryProcessBuilderFactory;
-        _claimMetrics = claimMetrics;
     }
 
     public async Task Consume(ConsumeContext<ClaimCertificateCommand> context)
@@ -57,7 +51,7 @@ public class ClaimCertificateCommandHandler : IConsumer<ClaimCertificateCommand>
 
             var processBuilder = _processBuilderFactory.Create(msg.ClaimId, msg.Owner, _unitOfWork);
 
-            var routingSlip = await BuildClaimRoutingSlip(processBuilder, msg.Quantity, reservedConsumptionSlices, reservedProductionSlices, new RequestStatusArgs { Owner = msg.Owner, RequestId = msg.ClaimId, RequestStatusType = RequestStatusType.Claim });
+            var routingSlip = await BuildClaimRoutingSlip(processBuilder, msg.Quantity, reservedConsumptionSlices, reservedProductionSlices);
 
             await context.Execute(routingSlip);
             _unitOfWork.Commit();
@@ -67,30 +61,17 @@ public class ClaimCertificateCommandHandler : IConsumer<ClaimCertificateCommand>
         {
             _unitOfWork.Rollback();
             _logger.LogWarning(ex, "Claim is not allowed.");
-            await _unitOfWork.RequestStatusRepository.SetRequestStatus(context.Message.ClaimId, context.Message.Owner, RequestStatusState.Failed, failedReason: "Claim is not allowed.");
-            _unitOfWork.Commit();
-            _claimMetrics.IncrementFailedClaims();
         }
         catch (QuantityNotYetAvailableToReserveException ex)
         {
             _unitOfWork.Rollback();
-            // Add jitter to delay the retry
-            await Task.Delay(TimeSpan.FromSeconds(Random.Shared.Next(5, 10)));
             _logger.LogWarning(ex, "Failed to handle claim at this time.");
             throw;
-        }
-        catch (PostgresException ex)
-        {
-            _logger.LogError(ex, "Failed to communicate with the database.");
-            throw new TransientException("Failed to communicate with the database.", ex);
         }
         catch (Exception ex)
         {
             _unitOfWork.Rollback();
             _logger.LogError(ex, "failed to handle claim");
-            await _unitOfWork.RequestStatusRepository.SetRequestStatus(context.Message.ClaimId, context.Message.Owner, RequestStatusState.Failed, failedReason: "failed to handle claim");
-            _unitOfWork.Commit();
-            _claimMetrics.IncrementFailedClaims();
         }
     }
 
@@ -102,9 +83,8 @@ public class ClaimCertificateCommandHandler : IConsumer<ClaimCertificateCommand>
     /// <param name="quantity">The quantity to claim</param>
     /// <param name="reservedConsumptionSlices">List of slices on consumption certificates</param>
     /// <param name="reservedProductionSlices">List of slices on production certificates</param>
-    /// <param name="requestStatusArgs"></param>
     /// <returns></returns>
-    private static async Task<RoutingSlip> BuildClaimRoutingSlip(IRegistryProcessBuilder processBuilder, long quantity, IList<WalletSlice> reservedConsumptionSlices, IList<WalletSlice> reservedProductionSlices, RequestStatusArgs requestStatusArgs)
+    private static async Task<RoutingSlip> BuildClaimRoutingSlip(IRegistryProcessBuilder processBuilder, long quantity, IList<WalletSlice> reservedConsumptionSlices, IList<WalletSlice> reservedProductionSlices)
     {
         var remainderToClaim = quantity;
         WalletSlice? productionRemainderSlice = null;
@@ -121,14 +101,14 @@ public class ClaimCertificateCommandHandler : IConsumer<ClaimCertificateCommand>
 
                 if (consumptionRemainderSlice.Quantity > remainderToClaim)
                 {
-                    var (quantitySlice, remainderSlice) = await processBuilder.SplitSlice(consumptionRemainderSlice, remainderToClaim, requestStatusArgs);
-                    processBuilder.SetWalletSliceStates(new() { { remainderSlice.Id, WalletSliceState.Available } }, requestStatusArgs);
+                    var (quantitySlice, remainderSlice) = await processBuilder.SplitSlice(consumptionRemainderSlice, remainderToClaim);
+                    processBuilder.SetWalletSliceStates(new() { { remainderSlice.Id, WalletSliceState.Available } });
                     consumptionRemainderSlice = quantitySlice;
                 }
 
                 if (productionRemainderSlice.Quantity < consumptionRemainderSlice.Quantity)
                 {
-                    var (quantitySlice, remainderSlice) = await processBuilder.SplitSlice(consumptionRemainderSlice, productionRemainderSlice.Quantity, requestStatusArgs);
+                    var (quantitySlice, remainderSlice) = await processBuilder.SplitSlice(consumptionRemainderSlice, productionRemainderSlice.Quantity);
                     await processBuilder.Claim(productionRemainderSlice, quantitySlice);
 
                     remainderToClaim -= quantitySlice.Quantity;
@@ -137,7 +117,7 @@ public class ClaimCertificateCommandHandler : IConsumer<ClaimCertificateCommand>
                 }
                 else if (productionRemainderSlice.Quantity > consumptionRemainderSlice.Quantity)
                 {
-                    var (quantitySlice, remainderSlice) = await processBuilder.SplitSlice(productionRemainderSlice, consumptionRemainderSlice.Quantity, requestStatusArgs);
+                    var (quantitySlice, remainderSlice) = await processBuilder.SplitSlice(productionRemainderSlice, consumptionRemainderSlice.Quantity);
                     await processBuilder.Claim(quantitySlice, consumptionRemainderSlice);
 
                     remainderToClaim -= consumptionRemainderSlice.Quantity;
@@ -158,7 +138,7 @@ public class ClaimCertificateCommandHandler : IConsumer<ClaimCertificateCommand>
         if (productionRemainderSlice is not null)
         {
             // if last production slice has remainder, it should be returned to the available
-            processBuilder.SetWalletSliceStates(new() { { productionRemainderSlice.Id, WalletSliceState.Available } }, requestStatusArgs);
+            processBuilder.SetWalletSliceStates(new() { { productionRemainderSlice.Id, WalletSliceState.Available } });
         }
 
         return processBuilder.Build();

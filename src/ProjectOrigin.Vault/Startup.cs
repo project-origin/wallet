@@ -28,7 +28,6 @@ using Microsoft.Extensions.Logging;
 using ProjectOrigin.Vault.Exceptions;
 using ProjectOrigin.Vault.Jobs;
 using ProjectOrigin.Vault.Metrics;
-using ProjectOrigin.Vault.Middleware;
 
 namespace ProjectOrigin.Vault;
 
@@ -95,18 +94,19 @@ public class Startup
                 {
                     if (cfg is IRabbitMqReceiveEndpointConfigurator rmq)
                         rmq.SetQuorumQueue(options.RabbitMq.Replicas);
-
-                    cfg.UseMessageRetry(r => r.Interval(5, TimeSpan.FromSeconds(10))
-                        .Handle<TransientException>());
                 });
             }
-
-            o.AddConsumer<VerifySliceCommandHandler>();
 
             o.AddConsumer<TransferCertificateCommandHandler>(cfg =>
             {
                 cfg.UseMessageRetry(r => r.Interval(20, TimeSpan.FromSeconds(5))
                     .Handle<QuantityNotYetAvailableToReserveException>());
+            });
+
+            o.AddConsumer<VerifySliceCommandHandler>(cfg =>
+            {
+                cfg.UseMessageRetry(r => r.Interval(5, TimeSpan.FromSeconds(10))
+                    .Handle<TransientException>());
             });
 
             o.AddConsumer<ClaimCertificateCommandHandler>(cfg =>
@@ -166,7 +166,6 @@ public class Startup
         app.UseAuthentication();
         app.UseAuthorization();
 
-        app.UseMiddleware<ExceptionLoggerMiddleware>();
         app.UseEndpoints(endpoints =>
         {
             endpoints.MapControllers();

@@ -4,14 +4,11 @@ using System.Threading.Tasks;
 using Google.Protobuf;
 using MassTransit;
 using Microsoft.Extensions.Logging;
-using Npgsql;
 using ProjectOrigin.Common.V1;
 using ProjectOrigin.PedersenCommitment;
 using ProjectOrigin.Registry.V1;
 using ProjectOrigin.Vault.Database;
-using ProjectOrigin.Vault.Exceptions;
 using ProjectOrigin.Vault.Extensions;
-using ProjectOrigin.Vault.Metrics;
 using ProjectOrigin.Vault.Models;
 
 namespace ProjectOrigin.Vault.Activities;
@@ -23,7 +20,8 @@ public record AllocateArguments
     public required Guid ProductionSliceId { get; init; }
     public Guid? ChroniclerRequestId { get; init; }
     public required FederatedStreamId CertificateId { get; init; }
-    public required RequestStatusArgs RequestStatusArgs { get; init; }
+    public required Guid RequestId { get; init; }
+    public required string Owner { get; init; }
 }
 
 public class AllocateActivity : IExecuteActivity<AllocateArguments>
@@ -31,25 +29,22 @@ public class AllocateActivity : IExecuteActivity<AllocateArguments>
     private readonly ILogger<AllocateActivity> _logger;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IEndpointNameFormatter _formatter;
-    private readonly IClaimMetrics _claimMetrics;
 
     public AllocateActivity(
         ILogger<AllocateActivity> logger,
         IUnitOfWork unitOfWork,
-        IEndpointNameFormatter formatter,
-        IClaimMetrics claimMetrics)
+        IEndpointNameFormatter formatter)
     {
         _logger = logger;
         _unitOfWork = unitOfWork;
         _formatter = formatter;
-        _claimMetrics = claimMetrics;
     }
 
     public async Task<ExecutionResult> Execute(ExecuteContext<AllocateArguments> context)
     {
         try
         {
-            _logger.LogInformation("Starting Activity: {Activity}, RequestId: {RequestId} ", nameof(AllocateActivity), context.Arguments.RequestStatusArgs.RequestId);
+            _logger.LogInformation("Starting Activity: {Activity}, RequestId: {RequestId} ", nameof(SendRegistryTransactionActivity), context.Arguments.RequestId);
             var cons = await _unitOfWork.CertificateRepository.GetWalletSlice(context.Arguments.ConsumptionSliceId);
             var prod = await _unitOfWork.CertificateRepository.GetWalletSlice(context.Arguments.ProductionSliceId);
 
@@ -72,22 +67,10 @@ public class AllocateActivity : IExecuteActivity<AllocateArguments>
 
             return AddTransferRequiredActivities(context, transaction, slice.Id);
         }
-        catch (PostgresException ex)
-        {
-            _logger.LogError(ex, "Failed to communicate with the database.");
-            throw new TransientException("Failed to communicate with the database.", ex);
-        }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error allocating certificate");
-            _unitOfWork.Rollback();
-            await _unitOfWork.RequestStatusRepository.SetRequestStatus(context.Arguments.RequestStatusArgs.RequestId,
-                context.Arguments.RequestStatusArgs.Owner,
-                RequestStatusState.Failed,
-                "Error allocating certificate");
-            _unitOfWork.Commit();
-            _claimMetrics.IncrementFailedClaims();
-            throw;
+            _logger.LogError(ex, "Error registering claim intent with Chronicler");
+            return context.Faulted(ex);
         }
     }
 

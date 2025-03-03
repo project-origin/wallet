@@ -19,7 +19,6 @@ using Microsoft.Extensions.Options;
 using ProjectOrigin.Vault.Models;
 using ProjectOrigin.HierarchicalDeterministicKeys.Implementations;
 using FluentAssertions;
-using ProjectOrigin.Vault.Metrics;
 
 namespace ProjectOrigin.Vault.Tests;
 
@@ -63,7 +62,6 @@ public class ChroniclerExecutionTest
         });
         sc.AddTransient(x => Substitute.For<ILogger<SendClaimIntentToChroniclerActivity>>());
         sc.AddTransient(x => Substitute.For<ILogger<AllocateActivity>>());
-        sc.AddTransient(x => Substitute.For<IClaimMetrics>());
         sc.AddSingleton(unitOfWork);
 
         var asyncUnaryCall = new AsyncUnaryCall<ClaimIntentResponse>(
@@ -115,12 +113,8 @@ public class ChroniclerExecutionTest
             AllocationId = Guid.NewGuid(),
             ChroniclerRequestId = chroniclerId,
             CertificateId = certId,
-            RequestStatusArgs = new RequestStatusArgs
-            {
-                Owner = "",
-                RequestId = Guid.NewGuid(),
-                RequestStatusType = RequestStatusType.Claim
-            },
+            Owner = "",
+            RequestId = Guid.NewGuid(),
             ConsumptionSliceId = Guid.NewGuid(),
             ProductionSliceId = Guid.NewGuid(),
         });

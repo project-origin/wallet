@@ -2,9 +2,7 @@ using System;
 using System.Threading.Tasks;
 using MassTransit;
 using Microsoft.Extensions.Logging;
-using Npgsql;
 using ProjectOrigin.Vault.Database;
-using ProjectOrigin.Vault.Exceptions;
 using ProjectOrigin.Vault.Metrics;
 using ProjectOrigin.Vault.Models;
 
@@ -55,27 +53,11 @@ public class UpdateClaimStateActivity : IExecuteActivity<UpdateClaimStateArgumen
             _claimsMetrics.IncrementClaimed();
             return context.Completed();
         }
-        catch (PostgresException ex)
-        {
-            _logger.LogError(ex, "Failed to communicate with the database.");
-            throw new TransientException("Failed to communicate with the database.", ex);
-        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error while updating claim state");
             _unitOfWork.Rollback();
-            if (context.Arguments.RequestStatusArgs != null)
-            {
-                await _unitOfWork.RequestStatusRepository.SetRequestStatus(
-                    context.Arguments.RequestStatusArgs.RequestId,
-                    context.Arguments.RequestStatusArgs.Owner,
-                    RequestStatusState.Failed,
-                    "Error while updating claim state");
-
-                _unitOfWork.Commit();
-            }
-            _claimsMetrics.IncrementFailedClaims();
-            throw;
+            return context.Faulted(ex);
         }
     }
 }

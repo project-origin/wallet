@@ -3,12 +3,10 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using MassTransit;
 using Microsoft.Extensions.Logging;
-using Npgsql;
 using ProjectOrigin.Vault.Activities;
 using ProjectOrigin.Vault.Database;
 using ProjectOrigin.Vault.Exceptions;
 using ProjectOrigin.Vault.Extensions;
-using ProjectOrigin.Vault.Metrics;
 using ProjectOrigin.Vault.Models;
 
 namespace ProjectOrigin.Vault.CommandHandlers;
@@ -29,18 +27,15 @@ public class TransferCertificateCommandHandler : IConsumer<TransferCertificateCo
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<TransferCertificateCommandHandler> _logger;
     private readonly IEndpointNameFormatter _formatter;
-    private readonly ITransferMetrics _transferMetrics;
 
     public TransferCertificateCommandHandler(
         IUnitOfWork unitOfWork,
         ILogger<TransferCertificateCommandHandler> logger,
-        IEndpointNameFormatter formatter,
-        ITransferMetrics transferMetrics)
+        IEndpointNameFormatter formatter)
     {
         _unitOfWork = unitOfWork;
         _logger = logger;
         _formatter = formatter;
-        _transferMetrics = transferMetrics;
     }
 
     public async Task Consume(ConsumeContext<TransferCertificateCommand> context)
@@ -70,12 +65,8 @@ public class TransferCertificateCommandHandler : IConsumer<TransferCertificateCo
                             SourceSliceId = slice.Id,
                             ExternalEndpointId = receiverEndpoint.Id,
                             HashedAttributes = msg.HashedAttributes,
-                            RequestStatusArgs = new RequestStatusArgs
-                            {
-                                RequestId = msg.TransferRequestId,
-                                Owner = msg.Owner,
-                                RequestStatusType = RequestStatusType.Transfer
-                            }
+                            RequestId = msg.TransferRequestId,
+                            Owner = msg.Owner
                         });
                     remainderToTransfer -= (uint)slice.Quantity;
                 }
@@ -88,12 +79,8 @@ public class TransferCertificateCommandHandler : IConsumer<TransferCertificateCo
                             ExternalEndpointId = receiverEndpoint.Id,
                             Quantity = remainderToTransfer,
                             HashedAttributes = msg.HashedAttributes,
-                            RequestStatusArgs = new RequestStatusArgs
-                            {
-                                RequestId = msg.TransferRequestId,
-                                Owner = msg.Owner,
-                                RequestStatusType = RequestStatusType.Transfer
-                            }
+                            RequestId = msg.TransferRequestId,
+                            Owner = msg.Owner
                         });
                 }
 
@@ -109,10 +96,8 @@ public class TransferCertificateCommandHandler : IConsumer<TransferCertificateCo
         catch (InvalidOperationException ex)
         {
             _unitOfWork.Rollback();
+
             _logger.LogWarning(ex, "Transfer is not allowed.");
-            await _unitOfWork.RequestStatusRepository.SetRequestStatus(context.Message.TransferRequestId, context.Message.Owner, RequestStatusState.Failed, failedReason: "Transfer is not allowed.");
-            _unitOfWork.Commit();
-            _transferMetrics.IncrementFailedTransfers();
         }
         catch (QuantityNotYetAvailableToReserveException ex)
         {
@@ -120,18 +105,10 @@ public class TransferCertificateCommandHandler : IConsumer<TransferCertificateCo
             _logger.LogWarning(ex, "Failed to handle transfer at this time.");
             throw;
         }
-        catch (PostgresException ex)
-        {
-            _logger.LogError(ex, "Failed to communicate with the database.");
-            throw new TransientException("Failed to communicate with the database.", ex);
-        }
         catch (Exception ex)
         {
             _unitOfWork.Rollback();
-            _logger.LogError(ex, "Failed to handle transfer.");
-            await _unitOfWork.RequestStatusRepository.SetRequestStatus(context.Message.TransferRequestId, context.Message.Owner, RequestStatusState.Failed, failedReason: "Failed to handle transfer.");
-            _unitOfWork.Commit();
-            _transferMetrics.IncrementFailedTransfers();
+            _logger.LogError(ex, "failed to handle transfer");
         }
     }
 }

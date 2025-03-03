@@ -24,12 +24,8 @@ public partial class RegistryProcessBuilder
             ProductionSliceId = productionSlice.Id,
             ConsumptionSliceId = consumptionSlice.Id,
             ChroniclerRequestId = await GetClaimIntentId(productionSlice),
-            RequestStatusArgs = new RequestStatusArgs
-            {
-                Owner = _owner,
-                RequestId = _routingSlipId,
-                RequestStatusType = RequestStatusType.Claim
-            }
+            Owner = _owner,
+            RequestId = _routingSlipId
         });
 
         AddActivity<AllocateActivity, AllocateArguments>(new AllocateArguments
@@ -39,12 +35,8 @@ public partial class RegistryProcessBuilder
             ProductionSliceId = productionSlice.Id,
             ConsumptionSliceId = consumptionSlice.Id,
             ChroniclerRequestId = await GetClaimIntentId(consumptionSlice),
-            RequestStatusArgs = new RequestStatusArgs
-            {
-                Owner = _owner,
-                RequestId = _routingSlipId,
-                RequestStatusType = RequestStatusType.Claim
-            }
+            Owner = _owner,
+            RequestId = _routingSlipId
         });
 
         await _unitOfWork.ClaimRepository.InsertClaim(new Claim
@@ -61,22 +53,18 @@ public partial class RegistryProcessBuilder
         var productionId = productionSlice.GetFederatedStreamId();
         var consumptionId = consumptionSlice.GetFederatedStreamId();
 
-        var requestStatusArgs = new RequestStatusArgs { Owner = _owner, RequestId = _routingSlipId, RequestStatusType = RequestStatusType.Claim };
         var prodClaimedEvent = CreateClaimedEvent(allocationId, productionSlice.GetFederatedStreamId());
-        AddRegistryTransactionActivity(productionKey.SignRegistryTransaction(productionId, prodClaimedEvent), productionSlice.Id,
-            requestStatusArgs);
+        AddRegistryTransactionActivity(productionKey.SignRegistryTransaction(productionId, prodClaimedEvent), productionSlice.Id);
 
         var consClaimedEvent = CreateClaimedEvent(allocationId, consumptionSlice.GetFederatedStreamId());
-        AddRegistryTransactionActivity(consumptionKey.SignRegistryTransaction(consumptionId, consClaimedEvent), consumptionSlice.Id,
-            requestStatusArgs);
+        AddRegistryTransactionActivity(consumptionKey.SignRegistryTransaction(consumptionId, consClaimedEvent), consumptionSlice.Id);
 
         AddActivity<UpdateSliceStateActivity, UpdateSliceStateArguments>(new UpdateSliceStateArguments
         {
             SliceStates = new(){
                 {productionSlice.Id, WalletSliceState.Claimed},
                 {consumptionSlice.Id, WalletSliceState.Claimed},
-            },
-            RequestStatusArgs = requestStatusArgs
+            }
         });
 
         AddActivity<UpdateClaimStateActivity, UpdateClaimStateArguments>(new UpdateClaimStateArguments
@@ -86,8 +74,7 @@ public partial class RegistryProcessBuilder
             RequestStatusArgs = new RequestStatusArgs
             {
                 RequestId = _routingSlipId,
-                Owner = _owner,
-                RequestStatusType = RequestStatusType.Claim
+                Owner = _owner
             }
         });
     }
