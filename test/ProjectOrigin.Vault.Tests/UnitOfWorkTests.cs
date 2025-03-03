@@ -38,7 +38,7 @@ public class UnitOfWorkTests : IClassFixture<PostgresDatabaseFixture>
         {
             await uof.WalletRepository.Create(model);
             uof.Commit();
-        };
+        }
 
         using (var uof = new UnitOfWork(dbConnectionFactory))
         {
@@ -75,7 +75,7 @@ public class UnitOfWorkTests : IClassFixture<PostgresDatabaseFixture>
 
             wallet = await uof.WalletRepository.GetWallet(owner);
             wallet.Should().BeNull();
-        };
+        }
 
         using (var uof = new UnitOfWork(dbConnectionFactory))
         {
