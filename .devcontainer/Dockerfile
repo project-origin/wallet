@@ -5,7 +5,7 @@ RUN apt-get update && apt-get install -y wget ca-certificates
 
 # Download and install the .NET 9.0.200 SDK tarball (example link; you'll need the actual URL)
 # Check https://dotnet.microsoft.com/en-us/download/dotnet for the correct tar.gz link.
-RUN wget -O /tmp/dotnet.tar.gz https://download.visualstudio.microsoft.com/download/pr/<some-guid>/dotnet-sdk-9.0.200-linux-x64.tar.gz \
+RUN wget -O /tmp/dotnet.tar.gz https://download.visualstudio.microsoft.com/download/pr/6b0e1b1e-1e1e-4b1e-8b1e-1e1e4b1e8b1e/dotnet-sdk-9.0.200-linux-x64.tar.gz \
     && mkdir -p /usr/share/dotnet \
     && tar -xzf /tmp/dotnet.tar.gz -C /usr/share/dotnet \
     && rm /tmp/dotnet.tar.gz
