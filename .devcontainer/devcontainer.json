@@ -7,7 +7,11 @@
     "features": {
         "ghcr.io/devcontainers/features/docker-in-docker:2": {},
         "ghcr.io/mpriscella/features/kind:1": {},
-        "ghcr.io/devcontainers/features/kubectl-helm-minikube:1": {}
+        "ghcr.io/devcontainers/features/kubectl-helm-minikube:1": {},
+        "ghcr.io/devcontainers/features/common-utils:2": {
+            "installGit": true,
+            "additionalPackages": "make"
+        }
     },
     // Use 'forwardPorts' to make a list of ports inside the container available locally.
     // "forwardPorts": [5000, 5001],
