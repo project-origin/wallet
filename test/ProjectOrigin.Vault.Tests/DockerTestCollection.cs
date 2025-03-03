@@ -50,6 +50,7 @@ public class DockerTestFixture : IAsyncLifetime
             .WithImage("postgres:15")
             .WithNetwork(StampAndRegistryFixture.Network)
             .WithNetworkAliases(WalletPostgresAlias)
+            .WithPortBinding(5432, true)
             .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(5432))
             .Build();
 
@@ -116,7 +117,9 @@ public class DockerTestFixture : IAsyncLifetime
         if (WalletContainer.IsValueCreated)
         {
             await WalletContainer.Value.StopAsync();
+            await WalletContainer.Value.DisposeAsync();
             await PostgresFixture.StopAsync();
+            await PostgresFixture.DisposeAsync();
             await ImageFixture.DisposeAsync();
             JwtTokenIssuerFixture.Dispose();
         }
