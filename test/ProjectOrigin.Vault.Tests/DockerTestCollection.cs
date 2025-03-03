@@ -115,11 +115,12 @@ public class DockerTestFixture : IAsyncLifetime
     {
         if (WalletContainer.IsValueCreated)
         {
-            await WalletContainer.Value.StopAsync();
-            await PostgresFixture.StopAsync();
-            await ImageFixture.DisposeAsync();
-            JwtTokenIssuerFixture.Dispose();
+            await WalletContainer.Value.DisposeAsync();
         }
+
+        await PostgresFixture.DisposeAsync();
+        await ImageFixture.DisposeAsync();
+        JwtTokenIssuerFixture.Dispose();
     }
 
     public HttpClient CreateAuthenticatedHttpClient(string subject, string name, string[]? scopes = null)
