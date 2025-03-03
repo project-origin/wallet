@@ -117,9 +117,7 @@ public class DockerTestFixture : IAsyncLifetime
         if (WalletContainer.IsValueCreated)
         {
             await WalletContainer.Value.StopAsync();
-            await WalletContainer.Value.DisposeAsync();
             await PostgresFixture.StopAsync();
-            await PostgresFixture.DisposeAsync();
             await ImageFixture.DisposeAsync();
             JwtTokenIssuerFixture.Dispose();
         }
