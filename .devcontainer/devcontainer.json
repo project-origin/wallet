@@ -6,7 +6,7 @@
     // Features to add to the dev container. More info: https://containers.dev/features.
     "features": {
         "dotnet": {
-            "version": "9.0.102"
+            "version": "9.0.200"
         },
         "ghcr.io/devcontainers/features/docker-in-docker:2": {},
         "ghcr.io/mpriscella/features/kind:1": {},
