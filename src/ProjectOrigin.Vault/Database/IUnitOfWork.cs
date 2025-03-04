@@ -14,4 +14,6 @@ public interface IUnitOfWork
     IRequestStatusRepository RequestStatusRepository { get; }
     IWithdrawnCursorRepository WithdrawnCursorRepository { get; }
     IJobExecutionRepository JobExecutionRepository { get; }
+
+    IOutboxMessageRepository OutboxMessageRepository { get; }
 }

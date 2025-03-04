@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text.Json;
 using System.Threading.Tasks;
 using MassTransit;
 using Microsoft.Extensions.Logging;
@@ -98,6 +99,13 @@ public class TransferCertificateCommandHandler : IConsumer<TransferCertificateCo
                 }
 
                 var routingSlip = builder.Build();
+                await _unitOfWork.OutboxMessageRepository.Create(new OutboxMessage
+                {
+                    Created = DateTimeOffset.UtcNow.ToUtcTime(),
+                    Id = Guid.NewGuid(),
+                    MessageType = typeof(TransferCertificateCommand).ToString(),
+                    JsonPayload = JsonSerializer.Serialize(context.Message)
+                });
                 tasks.Add(context.Execute(routingSlip));
             }
 

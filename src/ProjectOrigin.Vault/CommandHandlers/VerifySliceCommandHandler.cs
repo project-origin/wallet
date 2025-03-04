@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Google.Protobuf;
 using MassTransit;
@@ -72,6 +73,14 @@ public class VerifySliceCommandHandler : IConsumer<VerifySliceCommand>
                     _logger.LogWarning("Not correct publicKey on {certificateId}", receivedSlice.CertificateId);
                     return;
                 }
+
+                await _unitOfWork.OutboxMessageRepository.Create(new OutboxMessage
+                {
+                    Created = DateTimeOffset.UtcNow.ToUtcTime(),
+                    Id = Guid.NewGuid(),
+                    MessageType = typeof(VerifySliceCommand).ToString(),
+                    JsonPayload = JsonSerializer.Serialize(context.Message)
+                });
 
                 await InsertIntoWallet(receivedSlice, success.GranularCertificate);
                 return;
