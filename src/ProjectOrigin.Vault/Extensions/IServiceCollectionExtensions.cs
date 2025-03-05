@@ -1,5 +1,4 @@
 using System;
-using System.Reflection;
 using MassTransit.Logging;
 using MassTransit.Monitoring;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -70,14 +69,12 @@ public static class IServiceCollectionExtensions
 
     public static void ConfigureOtlp(this IServiceCollection services, OtlpOptions otlpOptions)
     {
-        var assemblyName = Assembly.GetEntryAssembly()?.FullName ?? throw new InvalidOperationException("Entry assembly name not found");
-
         if (otlpOptions.Enabled)
         {
             services.AddOpenTelemetry()
                 .ConfigureResource(r =>
                 {
-                    r.AddService(assemblyName, serviceInstanceId: Environment.MachineName);
+                    r.AddService("ProjectOrigin.Vault", serviceInstanceId: Environment.MachineName);
                 })
                 .WithMetrics(metrics => metrics
                     .AddHttpClientInstrumentation()
