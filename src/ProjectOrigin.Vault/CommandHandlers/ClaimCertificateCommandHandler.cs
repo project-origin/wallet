@@ -66,7 +66,7 @@ public class ClaimCertificateCommandHandler : IConsumer<ClaimCertificateCommand>
                 Created = DateTimeOffset.UtcNow.ToUtcTime(),
                 Id = Guid.NewGuid(),
                 MessageType = typeof(ClaimCertificateCommand).ToString(),
-                JsonPayload = JsonSerializer.Serialize(context.Message)
+                JsonPayload = JsonSerializer.Serialize(msg)
             });
 
             _unitOfWork.Commit();

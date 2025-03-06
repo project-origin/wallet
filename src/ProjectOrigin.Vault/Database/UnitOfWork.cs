@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
-using MassTransit.Futures.Contracts;
 using ProjectOrigin.Vault.Repositories;
 
 namespace ProjectOrigin.Vault.Database;

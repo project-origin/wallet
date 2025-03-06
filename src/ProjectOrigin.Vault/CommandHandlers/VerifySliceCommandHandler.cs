@@ -79,7 +79,7 @@ public class VerifySliceCommandHandler : IConsumer<VerifySliceCommand>
                     Created = DateTimeOffset.UtcNow.ToUtcTime(),
                     Id = Guid.NewGuid(),
                     MessageType = typeof(VerifySliceCommand).ToString(),
-                    JsonPayload = JsonSerializer.Serialize(context.Message)
+                    JsonPayload = JsonSerializer.Serialize(receivedSlice)
                 });
 
                 await InsertIntoWallet(receivedSlice, success.GranularCertificate);
