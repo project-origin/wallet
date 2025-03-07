@@ -7,7 +7,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Diagnostics.Testing" Version="9.2.0" />
-    <PackageReference Include="ProjectOrigin.TestCommon" Version="1.0.0" />
+    <PackageReference Include="ProjectOrigin.TestCommon" Version="2.0.0" />
     <PackageReference Include="FluentAssertions" Version="[7.1.0]" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
     <PackageReference Include="Testcontainers.PostgreSql" Version="4.3.0" />
