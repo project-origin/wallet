@@ -74,14 +74,6 @@ public class VerifySliceCommandHandler : IConsumer<VerifySliceCommand>
                     return;
                 }
 
-                await _unitOfWork.OutboxMessageRepository.Create(new OutboxMessage
-                {
-                    Created = DateTimeOffset.UtcNow.ToUtcTime(),
-                    Id = Guid.NewGuid(),
-                    MessageType = typeof(VerifySliceCommand).ToString(),
-                    JsonPayload = JsonSerializer.Serialize(receivedSlice)
-                });
-
                 await InsertIntoWallet(receivedSlice, success.GranularCertificate);
                 return;
 

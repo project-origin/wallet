@@ -99,13 +99,6 @@ public class TransferCertificateCommandHandler : IConsumer<TransferCertificateCo
                 }
 
                 var routingSlip = builder.Build();
-                await _unitOfWork.OutboxMessageRepository.Create(new OutboxMessage
-                {
-                    Created = DateTimeOffset.UtcNow.ToUtcTime(),
-                    Id = Guid.NewGuid(),
-                    MessageType = typeof(TransferCertificateCommand).ToString(),
-                    JsonPayload = JsonSerializer.Serialize(msg)
-                });
                 tasks.Add(context.Execute(routingSlip));
             }
 

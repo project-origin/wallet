@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Text.Json;
 using System.Threading.Tasks;
 using MassTransit;
 using Microsoft.AspNetCore.Authorization;
@@ -168,7 +169,13 @@ public class ClaimsController : ControllerBase
             Status = RequestStatusState.Pending
         });
 
-        await bus.Publish(command);
+        await unitOfWork.OutboxMessageRepository.Create(new OutboxMessage
+        {
+            Created = DateTimeOffset.UtcNow.ToUtcTime(),
+            Id = Guid.NewGuid(),
+            MessageType = typeof(ClaimCertificateCommand).ToString(),
+            JsonPayload = JsonSerializer.Serialize(command)
+        });
 
         unitOfWork.Commit();
         _claimMetrics.IncrementClaimIntents();

@@ -96,13 +96,7 @@ public class CheckForWithdrawnCertificatesCommandHandler : IConsumer<CheckForWit
             matchingCursor.SyncPosition = response.Result.Max(x => x.Id);
             matchingCursor.LastSyncDate = DateTimeOffset.UtcNow;
             await _unitOfWork.WithdrawnCursorRepository.UpdateWithdrawnCursor(matchingCursor);
-            await _unitOfWork.OutboxMessageRepository.Create(new OutboxMessage
-            {
-                Created = DateTimeOffset.UtcNow.ToUtcTime(),
-                Id = Guid.NewGuid(),
-                MessageType = typeof(CheckForWithdrawnCertificatesCommand).ToString(),
-                JsonPayload = JsonSerializer.Serialize(context.Message)
-            });
+
             _unitOfWork.Commit();
         }
         client.Dispose();

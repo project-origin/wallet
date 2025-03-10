@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using System.ComponentModel;
+using System.Text.Json;
 using MassTransit;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -193,9 +194,16 @@ public class TransfersController : ControllerBase
             Status = RequestStatusState.Pending
         });
 
-        await bus.Publish(command);
+        await unitOfWork.OutboxMessageRepository.Create(new OutboxMessage
+        {
+            Created = DateTimeOffset.UtcNow.ToUtcTime(),
+            Id = Guid.NewGuid(),
+            MessageType = typeof(TransferCertificateCommand).ToString(),
+            JsonPayload = JsonSerializer.Serialize(command)
+        });
 
         unitOfWork.Commit();
+
         _transferMetrics.IncrementTransferIntents();
 
         return Accepted(serviceOptions.Value.PathBase + "/v1/request-status/" + command.TransferRequestId, new TransferResponse()

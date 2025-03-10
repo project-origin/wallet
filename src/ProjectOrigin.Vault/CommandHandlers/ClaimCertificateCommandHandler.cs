@@ -61,13 +61,6 @@ public class ClaimCertificateCommandHandler : IConsumer<ClaimCertificateCommand>
             var routingSlip = await BuildClaimRoutingSlip(processBuilder, msg.Quantity, reservedConsumptionSlices, reservedProductionSlices, new RequestStatusArgs { Owner = msg.Owner, RequestId = msg.ClaimId, RequestStatusType = RequestStatusType.Claim });
 
             await context.Execute(routingSlip);
-            await _unitOfWork.OutboxMessageRepository.Create(new OutboxMessage
-            {
-                Created = DateTimeOffset.UtcNow.ToUtcTime(),
-                Id = Guid.NewGuid(),
-                MessageType = typeof(ClaimCertificateCommand).ToString(),
-                JsonPayload = JsonSerializer.Serialize(msg)
-            });
 
             _unitOfWork.Commit();
             _logger.LogDebug($"Claim command complete.");
