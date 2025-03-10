@@ -1,7 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using System.ComponentModel;
-using MassTransit;
+using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -165,7 +165,6 @@ public class TransfersController : ControllerBase
     [ProducesResponseType(typeof(TransferResponse), StatusCodes.Status202Accepted)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<TransferResponse>> TransferCertificate(
-        [FromServices] IBus bus,
         [FromServices] IUnitOfWork unitOfWork,
         [FromServices] IOptions<ServiceOptions> serviceOptions,
         [FromBody] TransferRequest request
@@ -193,9 +192,16 @@ public class TransfersController : ControllerBase
             Status = RequestStatusState.Pending
         });
 
-        await bus.Publish(command);
+        await unitOfWork.OutboxMessageRepository.Create(new OutboxMessage
+        {
+            Created = DateTimeOffset.UtcNow.ToUtcTime(),
+            Id = Guid.NewGuid(),
+            MessageType = typeof(TransferCertificateCommand).ToString(),
+            JsonPayload = JsonSerializer.Serialize(command)
+        });
 
         unitOfWork.Commit();
+
         _transferMetrics.IncrementTransferIntents();
 
         return Accepted(serviceOptions.Value.PathBase + "/v1/request-status/" + command.TransferRequestId, new TransferResponse()

@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Text.Json;
 using System.Threading.Tasks;
-using MassTransit;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -140,7 +140,6 @@ public class ClaimsController : ControllerBase
     [ProducesResponseType(typeof(ClaimResponse), StatusCodes.Status202Accepted)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ClaimResponse>> ClaimCertificate(
-        [FromServices] IBus bus,
         [FromServices] IUnitOfWork unitOfWork,
         [FromServices] IOptions<ServiceOptions> serviceOptions,
         [FromBody] ClaimRequest request
@@ -168,7 +167,13 @@ public class ClaimsController : ControllerBase
             Status = RequestStatusState.Pending
         });
 
-        await bus.Publish(command);
+        await unitOfWork.OutboxMessageRepository.Create(new OutboxMessage
+        {
+            Created = DateTimeOffset.UtcNow.ToUtcTime(),
+            Id = Guid.NewGuid(),
+            MessageType = typeof(ClaimCertificateCommand).ToString(),
+            JsonPayload = JsonSerializer.Serialize(command)
+        });
 
         unitOfWork.Commit();
         _claimMetrics.IncrementClaimIntents();

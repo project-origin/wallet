@@ -13,7 +13,6 @@ using NSubstitute;
 using MsOptions = Microsoft.Extensions.Options;
 using ProjectOrigin.Vault.Tests.TestClassFixtures;
 using ProjectOrigin.Vault.Tests.TestExtensions;
-using ProjectOrigin.Vault.CommandHandlers;
 using ProjectOrigin.Vault.Database;
 using ProjectOrigin.Vault.Metrics;
 using ProjectOrigin.Vault.Options;
@@ -237,7 +236,6 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
 
         // Act
         var result = await controller.TransferCertificate(
-            provider.GetRequiredService<ITestHarness>().Bus,
             _unitOfWork,
             _options,
             _fixture.Create<TransferRequest>());
@@ -260,7 +258,6 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
 
         // Act
         var result = await controller.TransferCertificate(
-            provider.GetRequiredService<ITestHarness>().Bus,
             _unitOfWork,
             _options,
             _fixture.Create<TransferRequest>());
@@ -271,7 +268,7 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
     }
 
     [Fact]
-    public async Task TransferCertificate_PublishesCommand()
+    public async Task TransferCertificate_TransferCommand_AcceptedResult()
     {
         // Arrange
         var subject = _fixture.Create<string>();
@@ -293,7 +290,6 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
 
         // Act
         var result = await controller.TransferCertificate(
-            harness.Bus,
             _unitOfWork,
             _options,
             request);
@@ -307,15 +303,6 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
 
         var response = acceptedResult.Value as TransferResponse;
         response.Should().NotBeNull();
-        var sentMessage = harness.Published.Select<TransferCertificateCommand>().Should().ContainSingle();
-        var sentCommand = sentMessage.Which.Context.Message;
-
-        sentCommand.TransferRequestId.Should().Be(response!.TransferRequestId);
-        sentCommand.Owner.Should().Be(subject);
-        sentCommand.Registry.Should().Be(request.CertificateId.Registry);
-        sentCommand.CertificateId.Should().Be(request.CertificateId.StreamId);
-        sentCommand.Quantity.Should().Be(request.Quantity);
-        sentCommand.Receiver.Should().Be(request.ReceiverId);
     }
 
     [Fact]
@@ -341,7 +328,6 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
 
         // Act
         var result = await controller.TransferCertificate(
-            harness.Bus,
             _unitOfWork,
             _options,
             request);

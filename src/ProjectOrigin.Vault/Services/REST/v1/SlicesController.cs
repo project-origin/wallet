@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
-using MassTransit;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -43,7 +43,6 @@ public class SlicesController : ControllerBase
     public async Task<ActionResult<ReceiveResponse>> ReceiveSlice(
         [FromServices] IUnitOfWork unitOfWork,
         [FromServices] IHDAlgorithm hdAlgorithm,
-        [FromServices] IBus bus,
         [FromBody] ReceiveRequest request
     )
     {
@@ -74,7 +73,14 @@ public class SlicesController : ControllerBase
             }).ToList()
         };
 
-        await bus.Publish(newSliceCommand);
+        await unitOfWork.OutboxMessageRepository.Create(new OutboxMessage
+        {
+            Created = DateTimeOffset.UtcNow.ToUtcTime(),
+            Id = Guid.NewGuid(),
+            MessageType = typeof(VerifySliceCommand).ToString(),
+            JsonPayload = JsonSerializer.Serialize(newSliceCommand)
+        });
+        unitOfWork.Commit();
 
         return Accepted(new ReceiveResponse());
     }
