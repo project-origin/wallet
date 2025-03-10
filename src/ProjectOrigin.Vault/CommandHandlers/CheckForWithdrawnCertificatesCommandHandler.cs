@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
+using System.Text.Json;
 using System.Threading.Tasks;
 using MassTransit;
 using MassTransit.Courier.Contracts;
@@ -84,8 +85,10 @@ public class CheckForWithdrawnCertificatesCommandHandler : IConsumer<CheckForWit
 
                     _logger.LogInformation("Unclaiming slice {sliceId} on certificate {registry}, {certificiateId}", sliceToUnclaim.Id, sliceToUnclaim.RegistryName, sliceToUnclaim.CertificateId);
                     var routingSlip = await BuildUnclaimRoutingSlip(sliceToUnclaim, claim);
+
                     tasks.Add(context.Execute(routingSlip));
                 }
+
                 await _unitOfWork.CertificateRepository.WithdrawCertificate(withdrawnCertificate.RegistryName, withdrawnCertificate.CertificateId);
             }
 
@@ -93,6 +96,13 @@ public class CheckForWithdrawnCertificatesCommandHandler : IConsumer<CheckForWit
             matchingCursor.SyncPosition = response.Result.Max(x => x.Id);
             matchingCursor.LastSyncDate = DateTimeOffset.UtcNow;
             await _unitOfWork.WithdrawnCursorRepository.UpdateWithdrawnCursor(matchingCursor);
+            await _unitOfWork.OutboxMessageRepository.Create(new OutboxMessage
+            {
+                Created = DateTimeOffset.UtcNow.ToUtcTime(),
+                Id = Guid.NewGuid(),
+                MessageType = typeof(CheckForWithdrawnCertificatesCommand).ToString(),
+                JsonPayload = JsonSerializer.Serialize(context.Message)
+            });
             _unitOfWork.Commit();
         }
         client.Dispose();
