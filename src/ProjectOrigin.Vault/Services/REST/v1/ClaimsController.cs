@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Text.Json;
 using System.Threading.Tasks;
-using MassTransit;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -141,7 +140,6 @@ public class ClaimsController : ControllerBase
     [ProducesResponseType(typeof(ClaimResponse), StatusCodes.Status202Accepted)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ClaimResponse>> ClaimCertificate(
-        [FromServices] IBus bus,
         [FromServices] IUnitOfWork unitOfWork,
         [FromServices] IOptions<ServiceOptions> serviceOptions,
         [FromBody] ClaimRequest request

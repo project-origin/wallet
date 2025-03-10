@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
-using MassTransit;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -44,7 +43,6 @@ public class SlicesController : ControllerBase
     public async Task<ActionResult<ReceiveResponse>> ReceiveSlice(
         [FromServices] IUnitOfWork unitOfWork,
         [FromServices] IHDAlgorithm hdAlgorithm,
-        [FromServices] IBus bus,
         [FromBody] ReceiveRequest request
     )
     {
