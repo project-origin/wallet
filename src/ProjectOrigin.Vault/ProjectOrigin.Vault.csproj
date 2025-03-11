@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="ProjectOrigin.ServiceCommon" Version="2.0.0" />
+    <PackageReference Include="ProjectOrigin.ServiceCommon" Version="2.0.1" />
     <PackageReference Include="Dapper" Version="2.1.66" />
     <PackageReference Include="dbup-postgresql" Version="6.0.3" />
     <PackageReference Include="Grpc.AspNetCore" Version="2.70.0" />
