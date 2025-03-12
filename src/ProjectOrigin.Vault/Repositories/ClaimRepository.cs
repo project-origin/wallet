@@ -91,32 +91,37 @@ public class ClaimRepository : IClaimRepository
 		  AND (wallet_id IS NULL OR wallet_id in (SELECT DISTINCT(wallet_id) FROM claims_work_table)));
         ";
 
-        using (var gridReader = await _connection.QueryMultipleAsync(sql, filter))
+        await using var gridReader = await _connection.QueryMultipleAsync(sql, filter);
+
+        var totalCount = await gridReader.ReadSingleAsync<int>();
+        var claims = await gridReader.ReadAsync<ClaimViewModel>();
+        var attributes = await gridReader.ReadAsync<AttributeViewModel>();
+
+        var attributeMap = attributes
+            .GroupBy(attr => (attr.RegistryName, attr.CertificateId))
+            .ToDictionary(group => group.Key, group => group.ToList());
+
+        foreach (var claim in claims)
         {
-            var totalCount = await gridReader.ReadSingleAsync<int>();
-            var claims = await gridReader.ReadAsync<ClaimViewModel>();
-            var attributes = await gridReader.ReadAsync<AttributeViewModel>();
-
-            foreach (var claim in claims)
+            if (attributeMap.TryGetValue((claim.ProductionRegistryName, claim.ProductionCertificateId), out var productionAttributes))
             {
-                claim.ProductionAttributes.AddRange(attributes
-                    .Where(attr => attr.RegistryName == claim.ProductionRegistryName
-                                   && attr.CertificateId == claim.ProductionCertificateId));
-
-                claim.ConsumptionAttributes.AddRange(attributes
-                    .Where(attr => attr.RegistryName == claim.ConsumptionRegistryName
-                                   && attr.CertificateId == claim.ConsumptionCertificateId));
+                claim.ProductionAttributes.AddRange(productionAttributes);
             }
 
-            return new PageResultCursor<ClaimViewModel>
+            if (attributeMap.TryGetValue((claim.ConsumptionRegistryName, claim.ConsumptionCertificateId), out var consumptionAttributes))
             {
-                Items = claims,
-                TotalCount = totalCount,
-                Count = claims.Count(),
-                updatedAt = filter.UpdatedSince?.ToUnixTimeSeconds(),
-                Limit = filter.Limit
-            };
+                claim.ConsumptionAttributes.AddRange(consumptionAttributes);
+            }
         }
+
+        return new PageResultCursor<ClaimViewModel>
+        {
+            Items = claims,
+            TotalCount = totalCount,
+            Count = claims.Count(),
+            updatedAt = filter.UpdatedSince?.ToUnixTimeSeconds(),
+            Limit = filter.Limit
+        };
     }
 
     public async Task<PageResult<ClaimViewModel>> QueryClaims(QueryClaimsFilter filter)
@@ -134,8 +139,11 @@ public class ClaimRepository : IClaimRepository
                 AND (@start IS NULL OR consumption_start >= @start)
                 AND (@end IS NULL OR consumption_end <= @end)
         );
+
         SELECT count(*) FROM claims_work_table;
+
         SELECT * FROM claims_work_table LIMIT @limit OFFSET @skip;
+
         SELECT attributes.registry_name, attributes.certificate_id, attributes.attribute_key as key, attributes.attribute_value as value, attributes.attribute_type as type
         FROM attributes_view attributes
         WHERE ((registry_name, certificate_id) IN (SELECT consumption_registry_name, consumption_certificate_id FROM claims_work_table)
@@ -144,32 +152,37 @@ public class ClaimRepository : IClaimRepository
 		  AND (wallet_id IS NULL OR wallet_id in (SELECT DISTINCT(wallet_id) FROM claims_work_table)));
         ";
 
-        using (var gridReader = await _connection.QueryMultipleAsync(sql, filter))
+        await using var gridReader = await _connection.QueryMultipleAsync(sql, filter);
+
+        var totalCount = await gridReader.ReadSingleAsync<int>();
+        var claims = (await gridReader.ReadAsync<ClaimViewModel>()).ToArray();
+        var attributes = await gridReader.ReadAsync<AttributeViewModel>();
+
+        var attributeMap = attributes
+            .GroupBy(attr => (attr.RegistryName, attr.CertificateId))
+            .ToDictionary(group => group.Key, group => group.ToList());
+
+        foreach (var claim in claims)
         {
-            var totalCount = await gridReader.ReadSingleAsync<int>();
-            var claims = await gridReader.ReadAsync<ClaimViewModel>();
-            var attributes = await gridReader.ReadAsync<AttributeViewModel>();
-
-            foreach (var claim in claims)
+            if (attributeMap.TryGetValue((claim.ProductionRegistryName, claim.ProductionCertificateId), out var productionAttributes))
             {
-                claim.ProductionAttributes.AddRange(attributes
-                    .Where(attr => attr.RegistryName == claim.ProductionRegistryName
-                                   && attr.CertificateId == claim.ProductionCertificateId));
-
-                claim.ConsumptionAttributes.AddRange(attributes
-                    .Where(attr => attr.RegistryName == claim.ConsumptionRegistryName
-                                   && attr.CertificateId == claim.ConsumptionCertificateId));
+                claim.ProductionAttributes.AddRange(productionAttributes);
             }
 
-            return new PageResult<ClaimViewModel>
+            if (attributeMap.TryGetValue((claim.ConsumptionRegistryName, claim.ConsumptionCertificateId), out var consumptionAttributes))
             {
-                Items = claims,
-                TotalCount = totalCount,
-                Count = claims.Count(),
-                Offset = filter.Skip,
-                Limit = filter.Limit
-            };
+                claim.ConsumptionAttributes.AddRange(consumptionAttributes);
+            }
         }
+
+        return new PageResult<ClaimViewModel>
+        {
+            Items = claims,
+            TotalCount = totalCount,
+            Count = claims.Length,
+            Offset = filter.Skip,
+            Limit = filter.Limit
+        };
     }
 
     public async Task<PageResult<AggregatedClaimViewModel>> QueryAggregatedClaims(QueryAggregatedClaimsFilter filter)
