@@ -122,6 +122,32 @@ public class ClaimRepositoryTests : AbstractRepositoryTests
         result.Items.Should().HaveCount(48);
         result.Items.Sum(x => x.Quantity).Should().Be(16500);
         result.Items.First().ClaimId.Should().NotBe(Guid.Empty);
+        result.Items.First().ConsumptionAttributes.Count().Should().Be(2);
+        result.Items.First().ProductionAttributes.Count().Should().Be(2);
+    }
+
+    [Fact]
+    public async Task QueryClaims_ClaimsHasAttributes_ReturnsCorrectConsumptionAndProductionAttributes()
+    {
+        // Arrange
+        var owner = _fixture.Create<string>();
+        var startDate = new DateTimeOffset(2023, 7, 1, 0, 0, 0, TimeSpan.Zero);
+        await CreateClaimsAndCerts(owner, 48, startDate);
+
+        // Act
+        var result = await _claimRepository.QueryClaims(new QueryClaimsFilter
+        {
+            Owner = owner
+        });
+
+        // Assert
+        var firstItem = result.Items.First();
+        firstItem.ConsumptionAttributes.Count.Should().Be(2);
+        firstItem.ConsumptionAttributes.Should().Contain(x => x.Key == "TechCode" && x.Value == "T070000");
+        firstItem.ConsumptionAttributes.Should().Contain(x => x.Key == "FuelCode" && x.Value == "F00000000");
+        firstItem.ProductionAttributes.Count.Should().Be(2);
+        firstItem.ProductionAttributes.Should().Contain(x => x.Key == "TechCode" && x.Value == "T070000");
+        firstItem.ProductionAttributes.Should().Contain(x => x.Key == "FuelCode" && x.Value == "F00000000");
     }
 
     [Fact]
@@ -274,6 +300,33 @@ public class ClaimRepositoryTests : AbstractRepositoryTests
             Limit = 3,
         });
         result2.Items.First().UpdatedAt.Should().BeAfter(cursor);
+    }
+
+    [Fact]
+    public async Task QueryClaimsCursor_ClaimsHasAttributes_ReturnsCorrectConsumptionAndProductionAttributes()
+    {
+        // Arrange
+        var owner = _fixture.Create<string>();
+        var numberOfClaims = 31 * 24;
+        var startDate = new DateTimeOffset(2020, 6, 1, 0, 0, 0, TimeSpan.Zero);
+        await CreateClaimsAndCerts(owner, numberOfClaims, startDate, 10);
+
+        // Act
+        var result = await _claimRepository.QueryClaimsCursor(new QueryClaimsFilterCursor()
+        {
+            Owner = owner,
+            UpdatedSince = startDate,
+            Limit = 3,
+        });
+
+        // Assert
+        var firstItem = result.Items.First();
+        firstItem.ConsumptionAttributes.Count.Should().Be(2);
+        firstItem.ConsumptionAttributes.Should().Contain(x => x.Key == "TechCode" && x.Value == "T070000");
+        firstItem.ConsumptionAttributes.Should().Contain(x => x.Key == "FuelCode" && x.Value == "F00000000");
+        firstItem.ProductionAttributes.Count.Should().Be(2);
+        firstItem.ProductionAttributes.Should().Contain(x => x.Key == "TechCode" && x.Value == "T070000");
+        firstItem.ProductionAttributes.Should().Contain(x => x.Key == "FuelCode" && x.Value == "F00000000");
     }
 
     [Theory]
