@@ -1067,7 +1067,7 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
     }
 
     [Fact]
-    public async Task QueryCertificates_UpdatedSinceNull_Attributes()
+    public async Task QueryCertificates_WithAttributes_ShouldReturnAttributesForCertificates()
     {
         // Arrange
         var owner = _fixture.Create<string>();

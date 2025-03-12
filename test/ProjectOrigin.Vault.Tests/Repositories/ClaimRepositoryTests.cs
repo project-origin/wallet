@@ -127,7 +127,7 @@ public class ClaimRepositoryTests : AbstractRepositoryTests
     }
 
     [Fact]
-    public async Task Claims_Query_Attributes_Success()
+    public async Task QueryClaims_ClaimsHasAttributes_ReturnsCorrectConsumptionAndProductionAttributes()
     {
         // Arrange
         var owner = _fixture.Create<string>();
@@ -303,7 +303,7 @@ public class ClaimRepositoryTests : AbstractRepositoryTests
     }
 
     [Fact]
-    public async Task QueryClaims_Cursor_Attributes()
+    public async Task QueryClaimsCursor_ClaimsHasAttributes_ReturnsCorrectConsumptionAndProductionAttributes()
     {
         // Arrange
         var owner = _fixture.Create<string>();
