@@ -8,7 +8,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using ProjectOrigin.Vault.Database;
 
-namespace ProjectOrigin.Vault.BackgroundServices;
+namespace ProjectOrigin.Vault.Jobs;
 
 public class OutboxPollingWorker : BackgroundService
 {
