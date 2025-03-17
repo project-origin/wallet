@@ -173,28 +173,32 @@ public class CertificateRepository : ICertificateRepository
 
             ";
 
-        using (var gridReader = await _connection.QueryMultipleAsync(sql, filter))
+        await using var gridReader = await _connection.QueryMultipleAsync(sql, filter);
+
+        var totalCount = await gridReader.ReadSingleAsync<int>();
+        var certificates = (await gridReader.ReadAsync<CertificateViewModel>()).ToArray();
+        var attributes = await gridReader.ReadAsync<AttributeViewModel>();
+
+        var attributeMap = attributes
+            .GroupBy(attr => (attr.RegistryName, attr.CertificateId))
+            .ToDictionary(group => group.Key, group => group.ToList());
+
+        foreach (var certificate in certificates)
         {
-            var totalCouunt = await gridReader.ReadSingleAsync<int>();
-            var certificates = await gridReader.ReadAsync<CertificateViewModel>();
-            var attributes = await gridReader.ReadAsync<AttributeViewModel>();
-
-            foreach (var certificate in certificates)
+            if (attributeMap.TryGetValue((certificate.RegistryName, certificate.CertificateId), out var certificateAttributes))
             {
-                certificate.Attributes.AddRange(attributes
-                    .Where(attr => attr.RegistryName == certificate.RegistryName
-                                   && attr.CertificateId == certificate.CertificateId));
+                certificate.Attributes.AddRange(certificateAttributes);
             }
-
-            return new PageResultCursor<CertificateViewModel>()
-            {
-                Items = certificates,
-                TotalCount = totalCouunt,
-                Count = certificates.Count(),
-                updatedAt = filter.UpdatedSince?.ToUnixTimeSeconds(),
-                Limit = filter.Limit
-            };
         }
+
+        return new PageResultCursor<CertificateViewModel>()
+        {
+            Items = certificates,
+            TotalCount = totalCount,
+            Count = certificates.Length,
+            updatedAt = filter.UpdatedSince?.ToUnixTimeSeconds(),
+            Limit = filter.Limit
+        };
     }
 
     public async Task<PageResult<CertificateViewModel>> QueryAvailableCertificates(QueryCertificatesFilter filter)
@@ -237,28 +241,32 @@ public class CertificateRepository : ICertificateRepository
 			  AND (wallet_id IS NULL OR wallet_id in (SELECT DISTINCT(wallet_id) FROM certificates_work_table))
             ";
 
-        using (var gridReader = await _connection.QueryMultipleAsync(sql, filter))
+        await using var gridReader = await _connection.QueryMultipleAsync(sql, filter);
+
+        var totalCount = await gridReader.ReadSingleAsync<int>();
+        var certificates = (await gridReader.ReadAsync<CertificateViewModel>()).ToArray();
+        var attributes = await gridReader.ReadAsync<AttributeViewModel>();
+
+        var attributeMap = attributes
+            .GroupBy(attr => (attr.RegistryName, attr.CertificateId))
+            .ToDictionary(group => group.Key, group => group.ToList());
+
+        foreach (var certificate in certificates)
         {
-            var totalCount = await gridReader.ReadSingleAsync<int>();
-            var certificates = await gridReader.ReadAsync<CertificateViewModel>();
-            var attributes = await gridReader.ReadAsync<AttributeViewModel>();
-
-            foreach (var certificate in certificates)
+            if (attributeMap.TryGetValue((certificate.RegistryName, certificate.CertificateId), out var certificateAttributes))
             {
-                certificate.Attributes.AddRange(attributes
-                    .Where(attr => attr.RegistryName == certificate.RegistryName
-                                   && attr.CertificateId == certificate.CertificateId));
+                certificate.Attributes.AddRange(certificateAttributes);
             }
-
-            return new PageResult<CertificateViewModel>()
-            {
-                Items = certificates,
-                TotalCount = totalCount,
-                Count = certificates.Count(),
-                Offset = filter.Skip,
-                Limit = filter.Limit
-            };
         }
+
+        return new PageResult<CertificateViewModel>()
+        {
+            Items = certificates,
+            TotalCount = totalCount,
+            Count = certificates.Count(),
+            Offset = filter.Skip,
+            Limit = filter.Limit
+        };
     }
 
     public async Task<PageResult<AggregatedCertificatesViewModel>> QueryAggregatedAvailableCertificates(
