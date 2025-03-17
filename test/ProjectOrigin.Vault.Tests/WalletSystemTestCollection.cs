@@ -97,7 +97,6 @@ public class WalletSystemTestFixture : IAsyncLifetime
         config = config.Concat(_inMemoryFixture.Configuration).ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
         ServerFixture.ConfigureHostConfiguration(config);
         ServerFixture.ConfigureTestServices += services => services.Remove(services.First(s => s.ImplementationType == typeof(PublishCheckForWithdrawnCertificatesCommandJob)));
-        ServerFixture.ConfigureTestServices += services => services.Remove(services.First(s => s.ImplementationType == typeof(OutboxPollingWorker)));
         ServerFixture.ConfigureTestServices += services => services.Remove(services.First(s => s.ImplementationType == typeof(ExpireCertificatesJob)));
     }
 
