@@ -25,6 +25,7 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
+using ProjectOrigin.Vault.BackgroundServices;
 using ProjectOrigin.Vault.Exceptions;
 using ProjectOrigin.Vault.Jobs;
 using ProjectOrigin.Vault.Metrics;
@@ -56,6 +57,7 @@ public class Startup
         services.AddTransient<IStreamProjector<GranularCertificate>, GranularCertificateProjector>();
         services.AddTransient<IRegistryProcessBuilderFactory, RegistryProcessBuilderFactory>();
         services.AddTransient<IRegistryService, RegistryService>();
+        services.AddHostedService<OutboxPollingWorker>();
 
         services.AddOptions<ServiceOptions>()
             .Bind(_configuration.GetSection("ServiceOptions"))
