@@ -150,6 +150,7 @@ public class Startup
 
         services.AddHostedService<PublishCheckForWithdrawnCertificatesCommandJob>();
         services.AddHostedService<ExpireCertificatesJob>();
+        services.AddHostedService<OutboxPollingWorker>();
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

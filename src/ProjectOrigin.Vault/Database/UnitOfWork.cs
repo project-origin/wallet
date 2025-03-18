@@ -11,6 +11,7 @@ public class UnitOfWork : IUnitOfWork, IDisposable
     public ICertificateRepository CertificateRepository => GetRepository(connection => new CertificateRepository(connection));
     public ITransferRepository TransferRepository => GetRepository(connection => new TransferRepository(connection));
     public IClaimRepository ClaimRepository => GetRepository(connection => new ClaimRepository(connection));
+    public IOutboxMessageRepository OutboxMessageRepository => GetRepository(connection => new OutboxMessageRepository(connection));
     public IRequestStatusRepository RequestStatusRepository => GetRepository(connection => new RequestStatusRepository(connection));
     public IWithdrawnCursorRepository WithdrawnCursorRepository => GetRepository(connection => new WithdrawnCursorRepository(connection));
     public IJobExecutionRepository JobExecutionRepository => GetRepository(connection => new JobExecutionRepository(connection));
