@@ -37,7 +37,8 @@ public class OutboxPollingWorker : BackgroundService
                 try
                 {
                     _logger.LogInformation("Processing outbox message {msgId}.", msg.Id);
-                    var type = Type.GetType($"{msg.MessageType}, ProjectOrigin.Vault");
+                    var type = Type.GetType(msg.MessageType);
+
                     var loadedObject = JsonSerializer.Deserialize(msg.JsonPayload, type!);
 
                     await bus.Publish(loadedObject!, stoppingToken);

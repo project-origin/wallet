@@ -152,7 +152,6 @@ public class TransfersController : ControllerBase
     /// <summary>
     /// Queues a request to transfer a certificate to another wallet for the authenticated user.
     /// </summary>
-    /// <param name="bus"></param>
     /// <param name="unitOfWork"></param>
     /// <param name="serviceOptions"></param>
     /// <param name="request"></param>

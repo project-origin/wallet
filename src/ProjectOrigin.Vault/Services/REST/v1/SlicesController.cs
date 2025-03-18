@@ -29,7 +29,6 @@ public class SlicesController : ControllerBase
     /// </remarks>
     /// <param name = "unitOfWork" ></param>
     /// <param name = "hdAlgorithm" ></param>
-    /// <param name = "bus" ></param>
     /// <param name = "request" >Contains the data </param>
     /// <response code="202">The slice was accepted.</response>
     /// <response code="400">Public key could not be decoded.</response>

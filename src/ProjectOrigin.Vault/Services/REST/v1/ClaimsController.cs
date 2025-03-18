@@ -127,7 +127,6 @@ public class ClaimsController : ControllerBase
     /// <summary>
     /// Queues a request to claim two certificate for a given quantity.
     /// </summary>
-    /// <param name="bus">The masstransit bus to queue the request to</param>
     /// <param name="unitOfWork"></param>
     /// <param name="serviceOptions"></param>
     /// <param name="request">The claim request</param>
