@@ -14,7 +14,7 @@ using ProjectOrigin.Vault.Models;
 using ProjectOrigin.Vault.Repositories;
 using Xunit;
 
-namespace ProjectOrigin.Vault.Tests.BackgroundServices;
+namespace ProjectOrigin.Vault.Tests.JobTests;
 
 public class OutboxPollingWorkerTests
 {

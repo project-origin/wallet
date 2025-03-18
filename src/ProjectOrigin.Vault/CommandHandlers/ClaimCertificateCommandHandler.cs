@@ -60,7 +60,6 @@ public class ClaimCertificateCommandHandler : IConsumer<ClaimCertificateCommand>
             var routingSlip = await BuildClaimRoutingSlip(processBuilder, msg.Quantity, reservedConsumptionSlices, reservedProductionSlices, new RequestStatusArgs { Owner = msg.Owner, RequestId = msg.ClaimId, RequestStatusType = RequestStatusType.Claim });
 
             await context.Execute(routingSlip);
-
             _unitOfWork.Commit();
             _logger.LogDebug($"Claim command complete.");
         }

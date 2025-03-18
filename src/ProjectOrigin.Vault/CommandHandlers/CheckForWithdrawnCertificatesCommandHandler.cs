@@ -84,10 +84,8 @@ public class CheckForWithdrawnCertificatesCommandHandler : IConsumer<CheckForWit
 
                     _logger.LogInformation("Unclaiming slice {sliceId} on certificate {registry}, {certificiateId}", sliceToUnclaim.Id, sliceToUnclaim.RegistryName, sliceToUnclaim.CertificateId);
                     var routingSlip = await BuildUnclaimRoutingSlip(sliceToUnclaim, claim);
-
                     tasks.Add(context.Execute(routingSlip));
                 }
-
                 await _unitOfWork.CertificateRepository.WithdrawCertificate(withdrawnCertificate.RegistryName, withdrawnCertificate.CertificateId);
             }
 
@@ -95,7 +93,6 @@ public class CheckForWithdrawnCertificatesCommandHandler : IConsumer<CheckForWit
             matchingCursor.SyncPosition = response.Result.Max(x => x.Id);
             matchingCursor.LastSyncDate = DateTimeOffset.UtcNow;
             await _unitOfWork.WithdrawnCursorRepository.UpdateWithdrawnCursor(matchingCursor);
-
             _unitOfWork.Commit();
         }
         client.Dispose();
