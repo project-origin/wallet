@@ -4,11 +4,14 @@ using Xunit;
 using ProjectOrigin.PedersenCommitment;
 using FluentAssertions;
 using System.Linq;
+using System.Net;
 using System.Net.Http.Headers;
 using ProjectOrigin.Electricity.V1;
 using ProjectOrigin.Registry.V1;
 using ProjectOrigin.Vault.Services.REST.v1;
 using Claim = ProjectOrigin.Vault.Services.REST.v1.Claim;
+using NSubstitute.ReceivedExtensions;
+using System.Net.Http.Json;
 
 namespace ProjectOrigin.Vault.Tests.FlowTests;
 
@@ -99,7 +102,7 @@ public class ClaimTests : AbstractFlowTests
     }
 
     [Fact]
-    public async Task WhenClaimingMoreThanPossible_ClaimRequestSetToFailed()
+    public async Task WhenClaimingMoreProductionThanPossible_BadRequest()
     {
         var position = 1;
         var endDate = DateTimeOffset.UtcNow;
@@ -112,20 +115,48 @@ public class ClaimTests : AbstractFlowTests
         var endpoint = await client.CreateWalletEndpoint(wallet.WalletId);
 
         var productionId = await IssueCertificateToEndpoint(endpoint.WalletReference, Electricity.V1.GranularCertificateType.Production, new SecretCommitmentInfo(200), position++, startDate, endDate);
-        var consumptionId = await IssueCertificateToEndpoint(endpoint.WalletReference, Electricity.V1.GranularCertificateType.Consumption, new SecretCommitmentInfo(300), position++, startDate, endDate);
+        var consumptionId = await IssueCertificateToEndpoint(endpoint.WalletReference, Electricity.V1.GranularCertificateType.Consumption, new SecretCommitmentInfo(500), position++, startDate, endDate);
 
         await client.GetCertificatesWithTimeout(2, TimeSpan.FromMinutes(1));
 
-        var response = await client.CreateClaim(
-            consumptionId,
-            productionId,
-            400u);
+        var request = new ClaimRequest
+        {
+            ConsumptionCertificateId = consumptionId,
+            ProductionCertificateId = productionId,
+            Quantity = 400u
+        };
+        var response = await client.PostAsync("v1/claims", JsonContent.Create(request));
 
-        await Task.Delay(TimeSpan.FromSeconds(5));
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
 
-        var requestStatus = await client.GetRequestStatus(response.ClaimRequestId);
+    [Fact]
+    public async Task WhenClaimingMoreConsumptionThanPossible_BadRequest()
+    {
+        var position = 1;
+        var endDate = DateTimeOffset.UtcNow;
+        var startDate = endDate.AddHours(-1);
 
-        Assert.Equal(RequestStatus.Failed, requestStatus.Status);
+        var client = WalletTestFixture.ServerFixture.CreateHttpClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", WalletTestFixture.JwtTokenIssuerFixture.GenerateRandomToken());
+
+        var wallet = await client.CreateWallet();
+        var endpoint = await client.CreateWalletEndpoint(wallet.WalletId);
+
+        var productionId = await IssueCertificateToEndpoint(endpoint.WalletReference, Electricity.V1.GranularCertificateType.Production, new SecretCommitmentInfo(500), position++, startDate, endDate);
+        var consumptionId = await IssueCertificateToEndpoint(endpoint.WalletReference, Electricity.V1.GranularCertificateType.Consumption, new SecretCommitmentInfo(200), position++, startDate, endDate);
+
+        await client.GetCertificatesWithTimeout(2, TimeSpan.FromMinutes(1));
+
+        var request = new ClaimRequest
+        {
+            ConsumptionCertificateId = consumptionId,
+            ProductionCertificateId = productionId,
+            Quantity = 400u
+        };
+        var response = await client.PostAsync("v1/claims", JsonContent.Create(request));
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     [Fact]

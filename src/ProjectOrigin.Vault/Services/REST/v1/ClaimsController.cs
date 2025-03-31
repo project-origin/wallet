@@ -146,6 +146,18 @@ public class ClaimsController : ControllerBase
     {
         if (!User.TryGetSubject(out var subject)) return Unauthorized();
 
+        var prodWillBeAvailable = await unitOfWork.CertificateRepository.GetRegisteringAndAvailableQuantity(request.ProductionCertificateId.Registry, request.ProductionCertificateId.StreamId, subject);
+        var conWillBeAvailable = await unitOfWork.CertificateRepository.GetRegisteringAndAvailableQuantity(request.ConsumptionCertificateId.Registry, request.ConsumptionCertificateId.StreamId, subject);
+
+        if (prodWillBeAvailable < request.Quantity)
+        {
+            return BadRequest($"Claim is not allowed. Production certificate does not have enough quantity to claim requested amount. Production certificate amount: {prodWillBeAvailable}. Requested claim quantity: {request.Quantity}");
+        }
+        if (conWillBeAvailable < request.Quantity)
+        {
+            return BadRequest($"Claim is not allowed. Consumption certificate does not have enough quantity to claim requested amount. Consumption certificate amount: {conWillBeAvailable}. Requested claim quantity: {request.Quantity}");
+        }
+
         var command = new ClaimCertificateCommand
         {
             Owner = subject,
