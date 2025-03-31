@@ -14,7 +14,6 @@ using NSubstitute.ReceivedExtensions;
 using MsOptions = Microsoft.Extensions.Options;
 using ProjectOrigin.Vault.Tests.TestClassFixtures;
 using ProjectOrigin.Vault.Tests.TestExtensions;
-using ProjectOrigin.Vault.CommandHandlers;
 using ProjectOrigin.Vault.Database;
 using ProjectOrigin.Vault.Metrics;
 using ProjectOrigin.Vault.Options;
@@ -199,7 +198,6 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
 
         // Act
         var result = await controller.ClaimCertificate(
-            provider.GetRequiredService<ITestHarness>().Bus,
             _unitOfWork,
             _options,
             _fixture.Create<ClaimRequest>());
@@ -209,7 +207,7 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
     }
 
     [Fact]
-    public async Task ClaimCertificate_PublishesCommand()
+    public async Task ClaimCertificate_ClaimCommand_AcceptedResult()
     {
         // Arrange
         var subject = _fixture.Create<string>();
@@ -229,7 +227,6 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
 
         // Act
         var result = await controller.ClaimCertificate(
-            harness.Bus,
             _unitOfWork,
             _options,
             request);
@@ -243,16 +240,6 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
 
         var response = acceptedResult.Value as ClaimResponse;
         response.Should().NotBeNull();
-        var sentMessage = harness.Published.Select<ClaimCertificateCommand>().Should().ContainSingle();
-        var sentCommand = sentMessage.Which.Context.Message;
-
-        sentCommand.ClaimId.Should().Be(response!.ClaimRequestId);
-        sentCommand.Owner.Should().Be(subject);
-        sentCommand.ConsumptionRegistry.Should().Be(request.ConsumptionCertificateId.Registry);
-        sentCommand.ConsumptionCertificateId.Should().Be(request.ConsumptionCertificateId.StreamId);
-        sentCommand.ProductionRegistry.Should().Be(request.ProductionCertificateId.Registry);
-        sentCommand.ProductionCertificateId.Should().Be(request.ProductionCertificateId.StreamId);
-        sentCommand.Quantity.Should().Be(request.Quantity);
     }
 
     [Fact]
@@ -276,7 +263,6 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
 
         // Act
         await controller.ClaimCertificate(
-            harness.Bus,
             _unitOfWork,
             _options,
             request);
@@ -297,7 +283,6 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
 
         // Act
         var result = await controller.ClaimCertificate(
-            provider.GetRequiredService<ITestHarness>().Bus,
             _unitOfWork,
             _options,
             _fixture.Create<ClaimRequest>());

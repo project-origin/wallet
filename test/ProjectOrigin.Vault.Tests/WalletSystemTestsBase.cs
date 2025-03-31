@@ -101,7 +101,6 @@ public abstract class WalletSystemTestsBase : IClassFixture<TestServerFixture<St
         config = config.Concat(_messageBrokerFixture.Configuration).ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
         serverFixture.ConfigureHostConfiguration(config);
         serverFixture.ConfigureTestServices += services => services.Remove(services.First(s => s.ImplementationType == typeof(PublishCheckForWithdrawnCertificatesCommandJob)));
-
     }
 
     protected virtual void Dispose(bool disposing)
