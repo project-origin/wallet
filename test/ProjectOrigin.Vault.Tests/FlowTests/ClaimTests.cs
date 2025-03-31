@@ -10,7 +10,6 @@ using ProjectOrigin.Electricity.V1;
 using ProjectOrigin.Registry.V1;
 using ProjectOrigin.Vault.Services.REST.v1;
 using Claim = ProjectOrigin.Vault.Services.REST.v1.Claim;
-using NSubstitute.ReceivedExtensions;
 using System.Net.Http.Json;
 
 namespace ProjectOrigin.Vault.Tests.FlowTests;
