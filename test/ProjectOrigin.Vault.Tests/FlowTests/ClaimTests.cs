@@ -160,7 +160,7 @@ public class ClaimTests : AbstractFlowTests
     }
 
     [Fact]
-    public async Task WhenTryingToClaimUnknownCertificate_ClaimRequestSetToFailed()
+    public async Task WhenTryingToClaimUnknownCertificate_BadRequest()
     {
         var position = 1;
         var endDate = DateTimeOffset.UtcNow;
@@ -176,15 +176,14 @@ public class ClaimTests : AbstractFlowTests
 
         await client.GetCertificatesWithTimeout(1, TimeSpan.FromMinutes(1));
 
-        var response = await client.CreateClaim(
-            consumptionId,
-            consumptionId with { StreamId = Guid.NewGuid() },
-            400u);
+        var request = new ClaimRequest
+        {
+            ConsumptionCertificateId = consumptionId,
+            ProductionCertificateId = consumptionId with { StreamId = Guid.NewGuid() },
+            Quantity = 400u
+        };
+        var response = await client.PostAsync("v1/claims", JsonContent.Create(request));
 
-        await Task.Delay(TimeSpan.FromSeconds(5));
-
-        var requestStatus = await client.GetRequestStatus(response.ClaimRequestId);
-
-        Assert.Equal(RequestStatus.Failed, requestStatus.Status);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 }
