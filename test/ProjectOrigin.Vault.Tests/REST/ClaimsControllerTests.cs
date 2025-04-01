@@ -206,12 +206,47 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
         result.Result.Should().BeOfType<UnauthorizedResult>();
     }
 
+    private async Task<(FederatedStreamId prodCertId, FederatedStreamId conCertId)> CreateCertificates(DateTimeOffset issuerStartDate, DateTimeOffset issuerEndDate, WalletEndpoint walletEndpoint)
+    {
+        var prodCert = await _dbFixture.CreateCertificate(
+            Guid.NewGuid(),
+            _fixture.Create<string>(),
+            Models.GranularCertificateType.Production,
+            start: issuerStartDate,
+            end: issuerEndDate.AddHours(1));
+        var prodSlice =
+            await _dbFixture.CreateSlice(walletEndpoint, prodCert, new PedersenCommitment.SecretCommitmentInfo(100));
+
+        var conCert = await _dbFixture.CreateCertificate(
+            Guid.NewGuid(),
+            _fixture.Create<string>(),
+            Models.GranularCertificateType.Consumption,
+            start: issuerStartDate,
+            end: issuerEndDate.AddHours(1));
+        var consSlice =
+            await _dbFixture.CreateSlice(walletEndpoint, conCert, new PedersenCommitment.SecretCommitmentInfo(100));
+
+        return (new FederatedStreamId { Registry = prodCert.RegistryName, StreamId = prodCert.Id },
+            new FederatedStreamId { Registry = conCert.RegistryName, StreamId = conCert.Id });
+    }
+
     [Fact]
     public async Task ClaimCertificate_ClaimCommand_AcceptedResult()
     {
         // Arrange
         var subject = _fixture.Create<string>();
-        var request = _fixture.Create<ClaimRequest>();
+        var wallet = await _dbFixture.CreateWallet(subject);
+        var endpoint = await _dbFixture.CreateWalletEndpoint(wallet);
+        var issuerStartDate = new DateTimeOffset(2020, 6, 1, 12, 0, 0, TimeSpan.Zero);
+
+        var (prodCertId, conCertId) = await CreateCertificates(issuerStartDate, issuerStartDate.AddHours(1), endpoint);
+
+        var request = new ClaimRequest
+        {
+            ConsumptionCertificateId = prodCertId,
+            ProductionCertificateId = conCertId,
+            Quantity = 100
+        };
 
         await using var provider = new ServiceCollection()
             .AddMassTransitTestHarness(x => { })
@@ -247,7 +282,18 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
     {
         // Arrange
         var subject = _fixture.Create<string>();
-        var request = _fixture.Create<ClaimRequest>();
+        var wallet = await _dbFixture.CreateWallet(subject);
+        var endpoint = await _dbFixture.CreateWalletEndpoint(wallet);
+        var issuerStartDate = new DateTimeOffset(2020, 6, 1, 12, 0, 0, TimeSpan.Zero);
+
+        var (prodCertId, conCertId) = await CreateCertificates(issuerStartDate, issuerStartDate.AddHours(1), endpoint);
+
+        var request = new ClaimRequest
+        {
+            ConsumptionCertificateId = prodCertId,
+            ProductionCertificateId = conCertId,
+            Quantity = 100
+        };
 
         await using var provider = new ServiceCollection()
             .AddMassTransitTestHarness(x => { })
