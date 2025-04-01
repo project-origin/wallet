@@ -21,6 +21,7 @@ public interface ICertificateRepository
     Task<WalletSlice> GetWalletSlice(Guid sliceId);
     Task<IEnumerable<WalletSlice>> GetOwnersAvailableSlices(string registryName, Guid certificateId, string owner);
     Task<IList<WalletSlice>> ReserveQuantity(string owner, string registryName, Guid certificateId, uint reserveQuantity);
+    Task<long> GetRegisteringAndAvailableQuantity(string registryName, Guid certificateId, string owner);
     Task SetWalletSliceState(Guid sliceId, WalletSliceState state);
 
     Task InsertWalletAttribute(Guid walletId, WalletAttribute walletAttribute);
