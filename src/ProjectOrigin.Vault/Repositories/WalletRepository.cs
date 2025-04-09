@@ -52,7 +52,7 @@ public class WalletRepository : IWalletRepository
     {
         var rowsChanged = await _connection.ExecuteAsync(
             @"UPDATE wallets
-              SET disabled = @disabledDate
+              SET disabled = @disabledDateUtc
               WHERE id = @walletId",
             new
             {
