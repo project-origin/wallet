@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using Dapper;
 using Npgsql;
 using ProjectOrigin.HierarchicalDeterministicKeys.Implementations;
-using ProjectOrigin.Vault.Models;
 using ProjectOrigin.Vault.Repositories;
 using ProjectOrigin.Vault.Tests.TestClassFixtures;
 using Xunit;
