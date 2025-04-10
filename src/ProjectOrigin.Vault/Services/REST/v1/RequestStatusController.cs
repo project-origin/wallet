@@ -32,6 +32,8 @@ public class RequestStatusController : ControllerBase
         [FromRoute] Guid requestId)
     {
         if (!User.TryGetSubject(out var subject)) return Unauthorized();
+        var wallet = await unitOfWork.WalletRepository.GetWallet(subject);
+        if (wallet!.IsDisabled()) return BadRequest("Unable to interact with a disabled wallet.");
 
         var requestStatus = await unitOfWork.RequestStatusRepository.GetRequestStatus(requestId, subject);
 

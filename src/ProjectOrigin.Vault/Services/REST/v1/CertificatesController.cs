@@ -36,6 +36,11 @@ public class CertificatesController : ControllerBase
         [FromRoute] string registry, Guid streamId)
     {
         if (!User.TryGetSubject(out var subject)) return Unauthorized();
+
+        var wallet = await unitOfWork.WalletRepository.GetWallet(subject);
+
+        if (wallet!.IsDisabled()) return BadRequest("Unable to interact with a disabled wallet.");
+
         var certificate = await unitOfWork.CertificateRepository.QueryCertificate(subject, registry, streamId);
 
         return certificate != null ? certificate.MapToV1() : NotFound();
@@ -57,6 +62,10 @@ public class CertificatesController : ControllerBase
         [FromQuery] GetCertificatesQueryParametersCursor param)
     {
         if (!User.TryGetSubject(out var subject)) return Unauthorized();
+
+        var wallet = await unitOfWork.WalletRepository.GetWallet(subject);
+
+        if (wallet!.IsDisabled()) return BadRequest("Unable to interact with a disabled wallet.");
 
         var certificates = await unitOfWork.CertificateRepository.QueryCertificates(new QueryCertificatesFilterCursor
         {
@@ -87,6 +96,10 @@ public class CertificatesController : ControllerBase
         [FromQuery] GetCertificatesQueryParameters param)
     {
         if (!User.TryGetSubject(out var subject)) return Unauthorized();
+
+        var wallet = await unitOfWork.WalletRepository.GetWallet(subject);
+
+        if (wallet!.IsDisabled()) return BadRequest("Unable to interact with a disabled wallet.");
 
         var certificates = await unitOfWork.CertificateRepository.QueryAvailableCertificates(new QueryCertificatesFilter
         {
@@ -122,6 +135,8 @@ public class CertificatesController : ControllerBase
     {
         if (!User.TryGetSubject(out var subject)) return Unauthorized();
         if (!param.TimeZone.TryParseTimeZone(out var timeZoneInfo)) return BadRequest("Invalid time zone");
+        var wallet = await unitOfWork.WalletRepository.GetWallet(subject);
+        if (wallet!.IsDisabled()) return BadRequest("Unable to interact with a disabled wallet.");
 
         var certificates = await unitOfWork.CertificateRepository.QueryAggregatedAvailableCertificates(new QueryAggregatedCertificatesFilter
         {

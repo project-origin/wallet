@@ -52,6 +52,9 @@ public class SlicesController : ControllerBase
         if (endpoint == null)
             return NotFound("Endpoint not found for public key.");
 
+        var wallet = await unitOfWork.WalletRepository.GetWallet(endpoint.WalletId);
+        if (wallet!.IsDisabled()) return BadRequest("Unable to interact with a disabled wallet.");
+
         var newSliceCommand = new VerifySliceCommand
         {
             Id = Guid.NewGuid(),

@@ -9,4 +9,9 @@ public record Wallet
     public required string Owner { get; init; }
     public required IHDPrivateKey PrivateKey { get; init; }
     public DateTimeOffset? Disabled { get; init; }
+
+    public bool IsDisabled()
+    {
+        return Disabled != null;
+    }
 }

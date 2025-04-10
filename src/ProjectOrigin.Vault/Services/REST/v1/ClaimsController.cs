@@ -44,6 +44,9 @@ public class ClaimsController : ControllerBase
     {
         if (!User.TryGetSubject(out var subject)) return Unauthorized();
 
+        var wallet = await unitOfWork.WalletRepository.GetWallet(subject);
+        if (wallet!.IsDisabled()) return BadRequest("Unable to interact with a disabled wallet.");
+
         var claims = await unitOfWork.ClaimRepository.QueryClaims(new QueryClaimsFilter
         {
             Owner = subject,
@@ -72,6 +75,9 @@ public class ClaimsController : ControllerBase
         [FromQuery] GetClaimsQueryParametersCursor param)
     {
         if (!User.TryGetSubject(out var subject)) return Unauthorized();
+
+        var wallet = await unitOfWork.WalletRepository.GetWallet(subject);
+        if (wallet!.IsDisabled()) return BadRequest("Unable to interact with a disabled wallet.");
 
         var claims = await unitOfWork.ClaimRepository.QueryClaimsCursor(new QueryClaimsFilterCursor
         {
@@ -103,6 +109,9 @@ public class ClaimsController : ControllerBase
         [FromQuery] AggregateClaimsQueryParameters param)
     {
         if (!User.TryGetSubject(out var subject)) return Unauthorized();
+        var wallet = await unitOfWork.WalletRepository.GetWallet(subject);
+        if (wallet!.IsDisabled()) return BadRequest("Unable to interact with a disabled wallet.");
+
         if (!param.TimeZone.TryParseTimeZone(out var timeZoneInfo)) return BadRequest("Invalid time zone");
 
         var result = await unitOfWork.ClaimRepository.QueryAggregatedClaims(new QueryAggregatedClaimsFilter
@@ -145,6 +154,8 @@ public class ClaimsController : ControllerBase
     )
     {
         if (!User.TryGetSubject(out var subject)) return Unauthorized();
+        var wallet = await unitOfWork.WalletRepository.GetWallet(subject);
+        if (wallet!.IsDisabled()) return BadRequest("Unable to interact with a disabled wallet.");
 
         var prodCert = await unitOfWork.CertificateRepository.GetCertificate(request.ProductionCertificateId.Registry, request.ProductionCertificateId.StreamId);
         var conCert = await unitOfWork.CertificateRepository.GetCertificate(request.ConsumptionCertificateId.Registry, request.ConsumptionCertificateId.StreamId);

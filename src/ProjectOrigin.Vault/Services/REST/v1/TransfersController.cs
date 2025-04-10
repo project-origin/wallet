@@ -43,6 +43,8 @@ public class TransfersController : ControllerBase
         [FromQuery] GetTransfersQueryParametersCursor param)
     {
         if (!User.TryGetSubject(out var subject)) return Unauthorized();
+        var wallet = await unitOfWork.WalletRepository.GetWallet(subject);
+        if (wallet!.IsDisabled()) return BadRequest("Unable to interact with a disabled wallet.");
 
         var transfers = await unitOfWork.TransferRepository.QueryTransfers(new QueryTransfersFilterCursor()
         {
@@ -85,6 +87,8 @@ public class TransfersController : ControllerBase
         [FromQuery] GetTransfersQueryParameters param)
     {
         if (!User.TryGetSubject(out var subject)) return Unauthorized();
+        var wallet = await unitOfWork.WalletRepository.GetWallet(subject);
+        if (wallet!.IsDisabled()) return BadRequest("Unable to interact with a disabled wallet.");
 
         var transfers = await unitOfWork.TransferRepository.QueryTransfers(new QueryTransfersFilter
         {
@@ -128,6 +132,8 @@ public class TransfersController : ControllerBase
         [FromQuery] AggregateTransfersQueryParameters param)
     {
         if (!User.TryGetSubject(out var subject)) return Unauthorized();
+        var wallet = await unitOfWork.WalletRepository.GetWallet(subject);
+        if (wallet!.IsDisabled()) return BadRequest("Unable to interact with a disabled wallet.");
         if (!param.TimeZone.TryParseTimeZone(out var timeZoneInfo)) return BadRequest("Invalid time zone");
 
         var transfers = await unitOfWork.TransferRepository.QueryAggregatedTransfers(new QueryAggregatedTransfersFilter
@@ -170,6 +176,8 @@ public class TransfersController : ControllerBase
     )
     {
         if (!User.TryGetSubject(out var subject)) return Unauthorized();
+        var wallet = await unitOfWork.WalletRepository.GetWallet(subject);
+        if (wallet!.IsDisabled()) return BadRequest("Unable to interact with a disabled wallet.");
 
         var command = new TransferCertificateCommand
         {
