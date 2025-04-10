@@ -31,12 +31,14 @@ public class ClaimsController : ControllerBase
     /// Gets all claims in the wallet
     /// </summary>
     /// <response code="200">Returns all the indiviual claims.</response>
+    /// <response code="400">If the wallet is disabled.</response>
     /// <response code="401">If the user is not authenticated.</response>
     [HttpGet]
     [Route("v1/claims")]
     [RequiredScope("po:claims:read")]
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ResultList<Claim, PageInfo>>> GetClaims(
         [FromServices] IUnitOfWork unitOfWork,
@@ -63,12 +65,14 @@ public class ClaimsController : ControllerBase
     /// Gets all claims in the wallet
     /// </summary>
     /// <response code="200">Returns all the indiviual claims.</response>
+    /// <response code="400">If the wallet is disabled.</response>
     /// <response code="401">If the user is not authenticated.</response>
     [HttpGet]
     [Route("v1/claims/cursor")]
     [RequiredScope("po:claims:read")]
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ResultList<Claim, PageInfoCursor>>> GetClaimsCursor(
         [FromServices] IUnitOfWork unitOfWork,
@@ -95,7 +99,7 @@ public class ClaimsController : ControllerBase
     /// Returns a list of aggregates claims for the authenticated user based on the specified time zone and time range.
     /// </summary>
     /// <response code="200">Returns the aggregated claims.</response>
-    /// <response code="400">If the time zone is invalid.</response>
+    /// <response code="400">If the time zone is invalid or wallet is disabled.</response>
     /// <response code="401">If the user is not authenticated.</response>
     [HttpGet]
     [Route("v1/aggregate-claims")]
@@ -140,12 +144,14 @@ public class ClaimsController : ControllerBase
     /// <param name="serviceOptions"></param>
     /// <param name="request">The claim request</param>
     /// <response code="202">Claim request has been queued for processing.</response>
+    /// <response code="400">If the wallet is disabled.</response>
     /// <response code="401">If the user is not authenticated.</response>
     [HttpPost]
     [Route("v1/claims")]
     [RequiredScope("po:claims:create")]
     [Produces("application/json")]
     [ProducesResponseType(typeof(ClaimResponse), StatusCodes.Status202Accepted)]
+    [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ClaimResponse>> ClaimCertificate(
         [FromServices] IUnitOfWork unitOfWork,

@@ -19,12 +19,14 @@ public class RequestStatusController : ControllerBase
     /// <param name="unitOfWork"></param>
     /// <param name="requestId">The ID of the request.</param>
     /// <response code="200">The request status was found.</response>
+    /// <response code="400">If the wallet is disabled.</response>
     /// <response code="401">If the user is not authenticated.</response>
     /// <response code="404">If the request specified is not found for the user.</response>
     [HttpGet]
     [Route("v1/request-status/{requestId}")]
     [RequiredScope("po:requestStatus:read")]
     [ProducesResponseType(typeof(RequestStatusResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<RequestStatusResponse>> GetRequestStatus(

@@ -197,7 +197,7 @@ public class WalletController : ControllerBase
     /// <param name = "serviceOptions" ></param>
     /// <param name = "walletId" > The ID of the wallet to create the endpoint on.</param>
     /// <response code="201">The wallet endpoint was created.</response>
-    /// <response code="401">If the wallet is disabled.</response>
+    /// <response code="400">If the wallet is disabled.</response>
     /// <response code="401">If the user is not authenticated.</response>
     /// <response code="404">If the wallet specified is not found for the user.</response>
     [HttpPost]
@@ -244,7 +244,7 @@ public class WalletController : ControllerBase
     /// <param name="unitOfWork"></param>
     /// <param name="request">The request to create the external endpoint.</param>
     /// <response code="201">The external endpoint was created.</response>
-    /// <response code="400">If the wallet reference is invalid or if the wallet reference is to the same wallet as the user.</response>
+    /// <response code="400">If the wallet reference is invalid, if the wallet reference is to the same wallet as the user or if wallet is disabled.</response>
     /// <response code="401">If the user is not authenticated.</response>
     [HttpPost]
     [Route("v1/external-endpoints")]

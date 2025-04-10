@@ -23,12 +23,14 @@ public class CertificatesController : ControllerBase
     /// Gets a single certificate
     /// </summary>
     /// <response code="200">Returns a certificate.</response>
+    /// <response code="400">If the wallet is disabled.</response>
     /// <response code="401">If the user is not authenticated.</response>
     [HttpGet]
     [Route("v1/certificates/{registry}/{streamId}")]
     [RequiredScope("po:certificates:read")]
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<GranularCertificate>> GetCertificate(
@@ -50,12 +52,14 @@ public class CertificatesController : ControllerBase
     /// Gets all certificates in the wallet that are <b>available</b> for use.
     /// </summary>
     /// <response code="200">Returns the aggregated certificates.</response>
+    /// <response code="400">If the wallet is disabled.</response>
     /// <response code="401">If the user is not authenticated.</response>
     [HttpGet]
     [Route("v1/certificates/cursor")]
     [RequiredScope("po:certificates:read")]
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ResultList<GranularCertificate, PageInfoCursor>>> GetCertificatesCursor(
         [FromServices] IUnitOfWork unitOfWork,
@@ -84,12 +88,14 @@ public class CertificatesController : ControllerBase
     /// Gets all certificates in the wallet that are <b>available</b> for use.
     /// </summary>
     /// <response code="200">Returns the aggregated certificates.</response>
+    /// <response code="400">If the wallet is disabled.</response>
     /// <response code="401">If the user is not authenticated.</response>
     [HttpGet]
     [Route("v1/certificates")]
     [RequiredScope("po:certificates:read")]
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ResultList<GranularCertificate, PageInfo>>> GetCertificates(
         [FromServices] IUnitOfWork unitOfWork,
@@ -120,7 +126,7 @@ public class CertificatesController : ControllerBase
     /// Returns aggregates certificates that are <b>available</b> to use, based on the specified time zone and time range.
     /// </summary>
     /// <response code="200">Returns the aggregated certificates.</response>
-    /// <response code="400">If the time zone is invalid.</response>
+    /// <response code="400">If the time zone is invalid or wallet is disabled.</response>
     /// <response code="401">If the user is not authenticated.</response>
     [HttpGet]
     [Route("v1/aggregate-certificates")]
