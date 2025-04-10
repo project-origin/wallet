@@ -41,6 +41,9 @@
               }
             }
           },
+          "400": {
+            "description": "If the wallet is disabled."
+          },
           "404": {
             "description": "Not Found",
             "content": {
@@ -119,6 +122,9 @@
                 }
               }
             }
+          },
+          "400": {
+            "description": "If the wallet is disabled."
           },
           "401": {
             "description": "If the user is not authenticated."
@@ -205,6 +211,9 @@
                 }
               }
             }
+          },
+          "400": {
+            "description": "If the wallet is disabled."
           },
           "401": {
             "description": "If the user is not authenticated."
@@ -295,7 +304,7 @@
             }
           },
           "400": {
-            "description": "If the time zone is invalid."
+            "description": "If the time zone is invalid or wallet is disabled."
           },
           "401": {
             "description": "If the user is not authenticated."
@@ -359,6 +368,9 @@
               }
             }
           },
+          "400": {
+            "description": "If the wallet is disabled."
+          },
           "401": {
             "description": "If the user is not authenticated."
           }
@@ -399,6 +411,9 @@
                 }
               }
             }
+          },
+          "400": {
+            "description": "If the wallet is disabled."
           },
           "401": {
             "description": "If the user is not authenticated."
@@ -468,6 +483,9 @@
                 }
               }
             }
+          },
+          "400": {
+            "description": "If the wallet is disabled."
           },
           "401": {
             "description": "If the user is not authenticated."
@@ -550,7 +568,7 @@
             }
           },
           "400": {
-            "description": "If the time zone is invalid."
+            "description": "If the time zone is invalid or wallet is disabled."
           },
           "401": {
             "description": "If the user is not authenticated."
@@ -597,6 +615,9 @@
               }
             }
           },
+          "400": {
+            "description": "If the wallet is disabled."
+          },
           "401": {
             "description": "If the user is not authenticated."
           },
@@ -638,7 +659,7 @@
             "description": "The slice was accepted."
           },
           "400": {
-            "description": "Public key could not be decoded.",
+            "description": "Public key could not be decoded or if the wallet is disabled.",
             "content": {
               "application/json": {
                 "schema": {
@@ -715,6 +736,9 @@
               }
             }
           },
+          "400": {
+            "description": "If the wallet is disabled."
+          },
           "401": {
             "description": "If the user is not authenticated."
           }
@@ -777,6 +801,9 @@
               }
             }
           },
+          "400": {
+            "description": "If the wallet is disabled."
+          },
           "401": {
             "description": "If the user is not authenticated."
           }
@@ -817,6 +844,9 @@
                 }
               }
             }
+          },
+          "400": {
+            "description": "If the wallet is disabled."
           },
           "401": {
             "description": "If the user is not authenticated."
@@ -899,7 +929,7 @@
             }
           },
           "400": {
-            "description": "If the time zone is invalid."
+            "description": "If the time zone is invalid or wallet is disabled."
           },
           "401": {
             "description": "If the user is not authenticated."
@@ -1018,6 +1048,35 @@
             "description": "If the wallet specified is not found for the user."
           }
         }
+      },
+      "delete": {
+        "tags": [
+          "Wallet"
+        ],
+        "summary": "Disables a wallet, so that it is not possible to interact with the wallet by transfer, claim, querying, etc.",
+        "parameters": [
+          {
+            "name": "walletId",
+            "in": "path",
+            "description": "The ID of the wallet to disable.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The wallet was found and disabled."
+          },
+          "401": {
+            "description": "If the user is not authenticated."
+          },
+          "404": {
+            "description": "If the wallet specified is not found."
+          }
+        }
       }
     },
     "/v1/wallets/{walletId}/endpoints": {
@@ -1048,6 +1107,9 @@
                 }
               }
             }
+          },
+          "400": {
+            "description": "If the wallet is disabled."
           },
           "401": {
             "description": "If the user is not authenticated."
@@ -1096,7 +1158,7 @@
             }
           },
           "400": {
-            "description": "If the wallet reference is invalid or if the wallet reference is to the same wallet as the user.",
+            "description": "If the wallet reference is invalid, if the wallet reference is to the same wallet as the user or if wallet is disabled.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1938,6 +2000,7 @@
       },
       "WalletRecord": {
         "required": [
+          "disabledDate",
           "id",
           "publicKey"
         ],
@@ -1949,6 +2012,11 @@
           },
           "publicKey": {
             "$ref": "#/components/schemas/IHDPublicKey"
+          },
+          "disabledDate": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true
           }
         },
         "additionalProperties": false,
