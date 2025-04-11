@@ -6,6 +6,7 @@ using ProjectOrigin.Vault.Repositories;
 using System;
 using System.Threading.Tasks;
 using Xunit;
+using ProjectOrigin.Vault.Extensions;
 
 namespace ProjectOrigin.Vault.Tests.Repositories;
 
@@ -184,5 +185,26 @@ public class WalletRepositoryTests : AbstractRepositoryTests
 
         // Assert
         number.Should().Be(3);
+    }
+
+    [Fact]
+    public async Task DisableWallet()
+    {
+        var wallet = new Wallet
+        {
+            Id = Guid.NewGuid(),
+            Owner = Guid.NewGuid().ToString(),
+            PrivateKey = _algorithm.GenerateNewPrivateKey()
+        };
+
+        await _repository.Create(wallet);
+
+        var now = DateTimeOffset.Now.ToUtcTime();
+        await _repository.DisableWallet(wallet.Id, now);
+
+        var walletDb = await _repository.GetWallet(wallet.Id);
+
+        Assert.NotNull(walletDb);
+        Assert.Equal(now, walletDb.Disabled);
     }
 }
