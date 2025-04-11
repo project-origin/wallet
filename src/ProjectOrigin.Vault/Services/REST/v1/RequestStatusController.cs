@@ -21,7 +21,7 @@ public class RequestStatusController : ControllerBase
     /// <response code="200">The request status was found.</response>
     /// <response code="400">If the wallet is disabled.</response>
     /// <response code="401">If the user is not authenticated.</response>
-    /// <response code="404">If the request specified is not found for the user.</response>
+    /// <response code="404">If the request specified is not found for the user or if the user does not own a wallet.</response>
     [HttpGet]
     [Route("v1/request-status/{requestId}")]
     [RequiredScope("po:requestStatus:read")]
@@ -35,7 +35,8 @@ public class RequestStatusController : ControllerBase
     {
         if (!User.TryGetSubject(out var subject)) return Unauthorized();
         var wallet = await unitOfWork.WalletRepository.GetWallet(subject);
-        if (wallet!.IsDisabled()) return BadRequest("Unable to interact with a disabled wallet.");
+        if (wallet == null) return NotFound("You don't own a wallet. Create a wallet first.");
+        if (wallet.IsDisabled()) return BadRequest("Unable to interact with a disabled wallet.");
 
         var requestStatus = await unitOfWork.RequestStatusRepository.GetRequestStatus(requestId, subject);
 

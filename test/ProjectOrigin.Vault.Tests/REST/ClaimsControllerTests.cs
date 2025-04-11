@@ -62,6 +62,24 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
     }
 
     [Fact]
+    public async Task GetClaims_DisabledWallet_BadRequest()
+    {
+        var subject = _fixture.Create<string>();
+        var controller = new ClaimsController(_claimMetrics)
+        {
+            ControllerContext = CreateContextWithUser(subject)
+        };
+        var wallet = await _dbFixture.CreateWallet(subject);
+        await _dbFixture.DisableWallet(wallet.Id);
+
+        var result = await controller.GetClaims(
+            _unitOfWork,
+            new GetClaimsQueryParameters());
+
+        result.Result.Should().BeOfType<BadRequestObjectResult>();
+    }
+
+    [Fact]
     public async Task Test_ClaimsCursor()
     {
         // Arrange
@@ -92,6 +110,24 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
         resultList.Should().BeInAscendingOrder(x => x.UpdatedAt);
         var updatedAt = DateTimeOffset.FromUnixTimeSeconds(resultList.Last().UpdatedAt);
         updatedAt.Should().BeOnOrAfter(DateTimeOffset.FromUnixTimeSeconds(queryUpdatedSince));
+    }
+
+    [Fact]
+    public async Task GetClaimsCursor_DisabledWallet_BadRequest()
+    {
+        var subject = _fixture.Create<string>();
+        var controller = new ClaimsController(_claimMetrics)
+        {
+            ControllerContext = CreateContextWithUser(subject)
+        };
+        var wallet = await _dbFixture.CreateWallet(subject);
+        await _dbFixture.DisableWallet(wallet.Id);
+
+        var result = await controller.GetClaimsCursor(
+            _unitOfWork,
+            new GetClaimsQueryParametersCursor());
+
+        result.Result.Should().BeOfType<BadRequestObjectResult>();
     }
 
     [Theory]
@@ -187,6 +223,29 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
     }
 
     [Fact]
+    public async Task AggregateClaims_DisabledWallet_BadRequest()
+    {
+        var subject = _fixture.Create<string>();
+        var controller = new ClaimsController(_claimMetrics)
+        {
+            ControllerContext = CreateContextWithUser(subject)
+        };
+        var wallet = await _dbFixture.CreateWallet(subject);
+        await _dbFixture.DisableWallet(wallet.Id);
+
+        var result = await controller.AggregateClaims(
+            _unitOfWork,
+            new AggregateClaimsQueryParameters
+            {
+                TimeAggregate = TimeAggregate.Day,
+                TimeZone = "invalid-time-zone"
+            });
+
+
+        result.Result.Should().BeOfType<BadRequestObjectResult>();
+    }
+
+    [Fact]
     public async Task ClaimCertificate_Unauthorized()
     {
         // Arrange
@@ -228,6 +287,47 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
 
         return (new FederatedStreamId { Registry = prodCert.RegistryName, StreamId = prodCert.Id },
             new FederatedStreamId { Registry = conCert.RegistryName, StreamId = conCert.Id });
+    }
+
+    [Fact]
+    public async Task ClaimCertificate_DisabledWallet_BadRequest()
+    {
+        // Arrange
+        var subject = _fixture.Create<string>();
+        var wallet = await _dbFixture.CreateWallet(subject);
+        await _dbFixture.DisableWallet(wallet.Id);
+        var endpoint = await _dbFixture.CreateWalletEndpoint(wallet);
+        var issuerStartDate = new DateTimeOffset(2020, 6, 1, 12, 0, 0, TimeSpan.Zero);
+
+        var (prodCertId, conCertId) = await CreateCertificates(issuerStartDate, issuerStartDate.AddHours(1), endpoint);
+
+        var request = new ClaimRequest
+        {
+            ConsumptionCertificateId = prodCertId,
+            ProductionCertificateId = conCertId,
+            Quantity = 100
+        };
+
+        await using var provider = new ServiceCollection()
+            .AddMassTransitTestHarness(x => { })
+            .BuildServiceProvider(true);
+
+        var harness = provider.GetRequiredService<ITestHarness>();
+
+        await harness.Start();
+        var controller = new ClaimsController(_claimMetrics)
+        {
+            ControllerContext = CreateContextWithUser(subject)
+        };
+
+        // Act
+        var result = await controller.ClaimCertificate(
+            _unitOfWork,
+            _options,
+            request);
+
+        // Assert
+        result.Result.Should().BeOfType<BadRequestObjectResult>();
     }
 
     [Fact]

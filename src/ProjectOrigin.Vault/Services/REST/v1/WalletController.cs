@@ -39,7 +39,7 @@ public class WalletController : ControllerBase
     [RequiredScope("po:wallets:create")]
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<CreateWalletResponse>> CreateWallet(
         [FromServices] IUnitOfWork unitOfWork,

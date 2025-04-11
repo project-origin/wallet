@@ -25,13 +25,14 @@ public class CertificatesController : ControllerBase
     /// <response code="200">Returns a certificate.</response>
     /// <response code="400">If the wallet is disabled.</response>
     /// <response code="401">If the user is not authenticated.</response>
+    /// <response code="404">If the user does not own a wallet.</response>
     [HttpGet]
     [Route("v1/certificates/{registry}/{streamId}")]
     [RequiredScope("po:certificates:read")]
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<GranularCertificate>> GetCertificate(
         [FromServices] IUnitOfWork unitOfWork,
@@ -41,7 +42,9 @@ public class CertificatesController : ControllerBase
 
         var wallet = await unitOfWork.WalletRepository.GetWallet(subject);
 
-        if (wallet!.IsDisabled()) return BadRequest("Unable to interact with a disabled wallet.");
+        if (wallet == null) return NotFound("You don't own a wallet. Create a wallet first.");
+
+        if (wallet.IsDisabled()) return BadRequest("Unable to interact with a disabled wallet.");
 
         var certificate = await unitOfWork.CertificateRepository.QueryCertificate(subject, registry, streamId);
 
@@ -54,6 +57,7 @@ public class CertificatesController : ControllerBase
     /// <response code="200">Returns the aggregated certificates.</response>
     /// <response code="400">If the wallet is disabled.</response>
     /// <response code="401">If the user is not authenticated.</response>
+    /// <response code="404">If the user does not own a wallet.</response>
     [HttpGet]
     [Route("v1/certificates/cursor")]
     [RequiredScope("po:certificates:read")]
@@ -61,6 +65,7 @@ public class CertificatesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ResultList<GranularCertificate, PageInfoCursor>>> GetCertificatesCursor(
         [FromServices] IUnitOfWork unitOfWork,
         [FromQuery] GetCertificatesQueryParametersCursor param)
@@ -69,7 +74,9 @@ public class CertificatesController : ControllerBase
 
         var wallet = await unitOfWork.WalletRepository.GetWallet(subject);
 
-        if (wallet!.IsDisabled()) return BadRequest("Unable to interact with a disabled wallet.");
+        if (wallet == null) return NotFound("You don't own a wallet. Create a wallet first.");
+
+        if (wallet.IsDisabled()) return BadRequest("Unable to interact with a disabled wallet.");
 
         var certificates = await unitOfWork.CertificateRepository.QueryCertificates(new QueryCertificatesFilterCursor
         {
@@ -90,6 +97,7 @@ public class CertificatesController : ControllerBase
     /// <response code="200">Returns the aggregated certificates.</response>
     /// <response code="400">If the wallet is disabled.</response>
     /// <response code="401">If the user is not authenticated.</response>
+    /// <response code="404">If the user does not own a wallet.</response>
     [HttpGet]
     [Route("v1/certificates")]
     [RequiredScope("po:certificates:read")]
@@ -97,6 +105,7 @@ public class CertificatesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ResultList<GranularCertificate, PageInfo>>> GetCertificates(
         [FromServices] IUnitOfWork unitOfWork,
         [FromQuery] GetCertificatesQueryParameters param)
@@ -105,7 +114,9 @@ public class CertificatesController : ControllerBase
 
         var wallet = await unitOfWork.WalletRepository.GetWallet(subject);
 
-        if (wallet!.IsDisabled()) return BadRequest("Unable to interact with a disabled wallet.");
+        if (wallet == null) return NotFound("You don't own a wallet. Create a wallet first.");
+
+        if (wallet.IsDisabled()) return BadRequest("Unable to interact with a disabled wallet.");
 
         var certificates = await unitOfWork.CertificateRepository.QueryAvailableCertificates(new QueryCertificatesFilter
         {
@@ -128,6 +139,7 @@ public class CertificatesController : ControllerBase
     /// <response code="200">Returns the aggregated certificates.</response>
     /// <response code="400">If the time zone is invalid or wallet is disabled.</response>
     /// <response code="401">If the user is not authenticated.</response>
+    /// <response code="404">If the user does not own a wallet.</response>
     [HttpGet]
     [Route("v1/aggregate-certificates")]
     [RequiredScope("po:certificates:read")]
@@ -135,6 +147,7 @@ public class CertificatesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ResultList<AggregatedCertificates, PageInfo>>> AggregateCertificates(
         [FromServices] IUnitOfWork unitOfWork,
         [FromQuery] AggregateCertificatesQueryParameters param)
@@ -142,7 +155,8 @@ public class CertificatesController : ControllerBase
         if (!User.TryGetSubject(out var subject)) return Unauthorized();
         if (!param.TimeZone.TryParseTimeZone(out var timeZoneInfo)) return BadRequest("Invalid time zone");
         var wallet = await unitOfWork.WalletRepository.GetWallet(subject);
-        if (wallet!.IsDisabled()) return BadRequest("Unable to interact with a disabled wallet.");
+        if (wallet == null) return NotFound("You don't own a wallet. Create a wallet first.");
+        if (wallet.IsDisabled()) return BadRequest("Unable to interact with a disabled wallet.");
 
         var certificates = await unitOfWork.CertificateRepository.QueryAggregatedAvailableCertificates(new QueryAggregatedCertificatesFilter
         {

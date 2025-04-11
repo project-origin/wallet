@@ -33,6 +33,7 @@ public class ClaimsController : ControllerBase
     /// <response code="200">Returns all the indiviual claims.</response>
     /// <response code="400">If the wallet is disabled.</response>
     /// <response code="401">If the user is not authenticated.</response>
+    /// <response code="404">If the user does not own a wallet.</response>
     [HttpGet]
     [Route("v1/claims")]
     [RequiredScope("po:claims:read")]
@@ -40,6 +41,7 @@ public class ClaimsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ResultList<Claim, PageInfo>>> GetClaims(
         [FromServices] IUnitOfWork unitOfWork,
         [FromQuery] GetClaimsQueryParameters param)
@@ -47,7 +49,8 @@ public class ClaimsController : ControllerBase
         if (!User.TryGetSubject(out var subject)) return Unauthorized();
 
         var wallet = await unitOfWork.WalletRepository.GetWallet(subject);
-        if (wallet!.IsDisabled()) return BadRequest("Unable to interact with a disabled wallet.");
+        if (wallet == null) return NotFound("You don't own a wallet. Create a wallet first.");
+        if (wallet.IsDisabled()) return BadRequest("Unable to interact with a disabled wallet.");
 
         var claims = await unitOfWork.ClaimRepository.QueryClaims(new QueryClaimsFilter
         {
@@ -67,6 +70,7 @@ public class ClaimsController : ControllerBase
     /// <response code="200">Returns all the indiviual claims.</response>
     /// <response code="400">If the wallet is disabled.</response>
     /// <response code="401">If the user is not authenticated.</response>
+    /// <response code="404">If the user does not own a wallet.</response>
     [HttpGet]
     [Route("v1/claims/cursor")]
     [RequiredScope("po:claims:read")]
@@ -74,6 +78,7 @@ public class ClaimsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ResultList<Claim, PageInfoCursor>>> GetClaimsCursor(
         [FromServices] IUnitOfWork unitOfWork,
         [FromQuery] GetClaimsQueryParametersCursor param)
@@ -81,7 +86,8 @@ public class ClaimsController : ControllerBase
         if (!User.TryGetSubject(out var subject)) return Unauthorized();
 
         var wallet = await unitOfWork.WalletRepository.GetWallet(subject);
-        if (wallet!.IsDisabled()) return BadRequest("Unable to interact with a disabled wallet.");
+        if (wallet == null) return NotFound("You don't own a wallet. Create a wallet first.");
+        if (wallet.IsDisabled()) return BadRequest("Unable to interact with a disabled wallet.");
 
         var claims = await unitOfWork.ClaimRepository.QueryClaimsCursor(new QueryClaimsFilterCursor
         {
@@ -101,6 +107,7 @@ public class ClaimsController : ControllerBase
     /// <response code="200">Returns the aggregated claims.</response>
     /// <response code="400">If the time zone is invalid or wallet is disabled.</response>
     /// <response code="401">If the user is not authenticated.</response>
+    /// <response code="404">If the user does not own a wallet.</response>
     [HttpGet]
     [Route("v1/aggregate-claims")]
     [RequiredScope("po:claims:read")]
@@ -108,15 +115,17 @@ public class ClaimsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ResultList<AggregatedClaims, PageInfo>>> AggregateClaims(
         [FromServices] IUnitOfWork unitOfWork,
         [FromQuery] AggregateClaimsQueryParameters param)
     {
         if (!User.TryGetSubject(out var subject)) return Unauthorized();
-        var wallet = await unitOfWork.WalletRepository.GetWallet(subject);
-        if (wallet!.IsDisabled()) return BadRequest("Unable to interact with a disabled wallet.");
-
         if (!param.TimeZone.TryParseTimeZone(out var timeZoneInfo)) return BadRequest("Invalid time zone");
+
+        var wallet = await unitOfWork.WalletRepository.GetWallet(subject);
+        if (wallet == null) return NotFound("You don't own a wallet. Create a wallet first.");
+        if (wallet.IsDisabled()) return BadRequest("Unable to interact with a disabled wallet.");
 
         var result = await unitOfWork.ClaimRepository.QueryAggregatedClaims(new QueryAggregatedClaimsFilter
         {
@@ -146,6 +155,7 @@ public class ClaimsController : ControllerBase
     /// <response code="202">Claim request has been queued for processing.</response>
     /// <response code="400">If the wallet is disabled.</response>
     /// <response code="401">If the user is not authenticated.</response>
+    /// <response code="404">If the user does not own a wallet.</response>
     [HttpPost]
     [Route("v1/claims")]
     [RequiredScope("po:claims:create")]
@@ -153,6 +163,7 @@ public class ClaimsController : ControllerBase
     [ProducesResponseType(typeof(ClaimResponse), StatusCodes.Status202Accepted)]
     [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ClaimResponse>> ClaimCertificate(
         [FromServices] IUnitOfWork unitOfWork,
         [FromServices] IOptions<ServiceOptions> serviceOptions,
@@ -161,7 +172,8 @@ public class ClaimsController : ControllerBase
     {
         if (!User.TryGetSubject(out var subject)) return Unauthorized();
         var wallet = await unitOfWork.WalletRepository.GetWallet(subject);
-        if (wallet!.IsDisabled()) return BadRequest("Unable to interact with a disabled wallet.");
+        if (wallet == null) return NotFound("You don't own a wallet. Create a wallet first.");
+        if (wallet.IsDisabled()) return BadRequest("Unable to interact with a disabled wallet.");
 
         var prodCert = await unitOfWork.CertificateRepository.GetCertificate(request.ProductionCertificateId.Registry, request.ProductionCertificateId.StreamId);
         var conCert = await unitOfWork.CertificateRepository.GetCertificate(request.ConsumptionCertificateId.Registry, request.ConsumptionCertificateId.StreamId);

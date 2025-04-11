@@ -32,7 +32,7 @@ public class SlicesController : ControllerBase
     /// <param name = "request" >Contains the data </param>
     /// <response code="202">The slice was accepted.</response>
     /// <response code="400">Public key could not be decoded or if the wallet is disabled.</response>
-    /// <response code="404">Receiver endpoint not found.</response>
+    /// <response code="404">Receiver endpoint not found or wallet not found for the user.</response>
     [HttpPost]
     [Route("v1/slices")]
     [Produces("application/json")]
@@ -53,7 +53,8 @@ public class SlicesController : ControllerBase
             return NotFound("Endpoint not found for public key.");
 
         var wallet = await unitOfWork.WalletRepository.GetWallet(endpoint.WalletId);
-        if (wallet!.IsDisabled()) return BadRequest("Unable to interact with a disabled wallet.");
+        if (wallet == null) return NotFound("You don't own a wallet. Create a wallet first.");
+        if (wallet.IsDisabled()) return BadRequest("Unable to interact with a disabled wallet.");
 
         var newSliceCommand = new VerifySliceCommand
         {

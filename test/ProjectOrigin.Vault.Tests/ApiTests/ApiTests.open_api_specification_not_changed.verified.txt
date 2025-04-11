@@ -45,14 +45,7 @@
             "description": "If the wallet is disabled."
           },
           "404": {
-            "description": "Not Found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
+            "description": "If the user does not own a wallet."
           },
           "401": {
             "description": "If the user is not authenticated."
@@ -128,6 +121,9 @@
           },
           "401": {
             "description": "If the user is not authenticated."
+          },
+          "404": {
+            "description": "If the user does not own a wallet."
           }
         }
       }
@@ -217,6 +213,9 @@
           },
           "401": {
             "description": "If the user is not authenticated."
+          },
+          "404": {
+            "description": "If the user does not own a wallet."
           }
         }
       }
@@ -308,6 +307,9 @@
           },
           "401": {
             "description": "If the user is not authenticated."
+          },
+          "404": {
+            "description": "If the user does not own a wallet."
           }
         }
       }
@@ -373,6 +375,9 @@
           },
           "401": {
             "description": "If the user is not authenticated."
+          },
+          "404": {
+            "description": "If the user does not own a wallet."
           }
         }
       },
@@ -417,6 +422,9 @@
           },
           "401": {
             "description": "If the user is not authenticated."
+          },
+          "404": {
+            "description": "If the user does not own a wallet."
           }
         }
       }
@@ -489,6 +497,9 @@
           },
           "401": {
             "description": "If the user is not authenticated."
+          },
+          "404": {
+            "description": "If the user does not own a wallet."
           }
         }
       }
@@ -572,6 +583,9 @@
           },
           "401": {
             "description": "If the user is not authenticated."
+          },
+          "404": {
+            "description": "If the user does not own a wallet."
           }
         }
       }
@@ -622,7 +636,7 @@
             "description": "If the user is not authenticated."
           },
           "404": {
-            "description": "If the request specified is not found for the user."
+            "description": "If the request specified is not found for the user or if the user does not own a wallet."
           }
         }
       }
@@ -669,7 +683,7 @@
             }
           },
           "404": {
-            "description": "Receiver endpoint not found.",
+            "description": "Receiver endpoint not found or wallet not found for the user.",
             "content": {
               "application/json": {
                 "schema": {
@@ -741,6 +755,9 @@
           },
           "401": {
             "description": "If the user is not authenticated."
+          },
+          "404": {
+            "description": "If the user does not own a wallet."
           }
         }
       }
@@ -806,6 +823,9 @@
           },
           "401": {
             "description": "If the user is not authenticated."
+          },
+          "404": {
+            "description": "If the user does not own a wallet."
           }
         }
       },
@@ -850,6 +870,9 @@
           },
           "401": {
             "description": "If the user is not authenticated."
+          },
+          "404": {
+            "description": "If the user does not own a wallet."
           }
         }
       }
@@ -933,6 +956,9 @@
           },
           "401": {
             "description": "If the user is not authenticated."
+          },
+          "404": {
+            "description": "If the user does not own a wallet."
           }
         }
       }
@@ -976,14 +1002,7 @@
             }
           },
           "400": {
-            "description": "If private key is invalid or if wallet for user already exists.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
+            "description": "If private key is invalid or if wallet for user already exists."
           },
           "401": {
             "description": "If the user is not authenticated."
