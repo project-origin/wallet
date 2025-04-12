@@ -30,13 +30,18 @@ public class ClaimTests : AbstractFlowTests
         var startDate = endDate.AddHours(-1);
 
         var client = WalletTestFixture.ServerFixture.CreateHttpClient();
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", WalletTestFixture.JwtTokenIssuerFixture.GenerateRandomToken());
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer",
+            WalletTestFixture.JwtTokenIssuerFixture.GenerateRandomToken());
 
         var wallet = await client.CreateWallet();
         var endpoint = await client.CreateWalletEndpoint(wallet.WalletId);
 
-        var productionId = await IssueCertificateToEndpoint(endpoint.WalletReference, Electricity.V1.GranularCertificateType.Production, new SecretCommitmentInfo(200), position++, startDate, endDate);
-        var consumptionId = await IssueCertificateToEndpoint(endpoint.WalletReference, Electricity.V1.GranularCertificateType.Consumption, new SecretCommitmentInfo(300), position++, startDate, endDate);
+        var productionId = await IssueCertificateToEndpoint(endpoint.WalletReference,
+            Electricity.V1.GranularCertificateType.Production, new SecretCommitmentInfo(200), position++, startDate,
+            endDate);
+        var consumptionId = await IssueCertificateToEndpoint(endpoint.WalletReference,
+            Electricity.V1.GranularCertificateType.Consumption, new SecretCommitmentInfo(300), position++, startDate,
+            endDate);
 
         await client.GetCertificatesWithTimeout(2, TimeSpan.FromMinutes(1));
 
@@ -67,7 +72,8 @@ public class ClaimTests : AbstractFlowTests
         var endDate = sixtyDaysAgo;
 
         var client = WalletTestFixture.ServerFixture.CreateHttpClient();
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", WalletTestFixture.JwtTokenIssuerFixture.GenerateRandomToken());
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer",
+            WalletTestFixture.JwtTokenIssuerFixture.GenerateRandomToken());
 
         var wallet = await client.CreateWallet();
         var endpoint = await client.CreateWalletEndpoint(wallet.WalletId);
@@ -101,6 +107,48 @@ public class ClaimTests : AbstractFlowTests
     }
 
     [Fact]
+    public async Task CanClaim_WhenCertificatesAreMoreThanOneHourApart()
+    {
+        var oneYearAgo = DateTimeOffset.UtcNow.AddDays(-WalletTestFixture.DaysBeforeCertificatesExpire!.Value);
+        var startDate = oneYearAgo.AddHours(-1);
+        var endDate = oneYearAgo;
+
+        var client = WalletTestFixture.ServerFixture.CreateHttpClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer",
+            WalletTestFixture.JwtTokenIssuerFixture.GenerateRandomToken());
+
+        var wallet = await client.CreateWallet();
+        var endpoint = await client.CreateWalletEndpoint(wallet.WalletId);
+
+        var prodCommitmentInfo = new SecretCommitmentInfo(200);
+        var prodEvent = await WalletTestFixture.StampAndRegistryFixture.IssueCertificate(
+            GranularCertificateType.Production,
+            prodCommitmentInfo,
+            endpoint.WalletReference.PublicKey.Derive(1).GetPublicKey(),
+            startDate,
+            endDate,
+            null);
+
+        var conCommitmentInfo = new SecretCommitmentInfo(200);
+        var conEvent = await WalletTestFixture.StampAndRegistryFixture.IssueCertificate(
+            GranularCertificateType.Consumption,
+            conCommitmentInfo,
+            endpoint.WalletReference.PublicKey.Derive(2).GetPublicKey(),
+            startDate.AddDays(364), // Move Consumption 364 days after production
+            endDate.AddDays(364),
+            null);
+
+        var allocateEventStatus = await WalletTestFixture.StampAndRegistryFixture.AllocateEvent(Guid.NewGuid(),
+            prodEvent.CertificateId,
+            conEvent.CertificateId,
+            prodCommitmentInfo,
+            conCommitmentInfo);
+
+        allocateEventStatus.Status.Should().Be(TransactionState.Failed);
+        allocateEventStatus.Message.Should().Be("Certificate has expired");
+    }
+
+    [Fact]
     public async Task WhenClaimingMoreProductionThanPossible_BadRequest()
     {
         var position = 1;
@@ -108,13 +156,18 @@ public class ClaimTests : AbstractFlowTests
         var startDate = endDate.AddHours(-1);
 
         var client = WalletTestFixture.ServerFixture.CreateHttpClient();
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", WalletTestFixture.JwtTokenIssuerFixture.GenerateRandomToken());
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer",
+            WalletTestFixture.JwtTokenIssuerFixture.GenerateRandomToken());
 
         var wallet = await client.CreateWallet();
         var endpoint = await client.CreateWalletEndpoint(wallet.WalletId);
 
-        var productionId = await IssueCertificateToEndpoint(endpoint.WalletReference, Electricity.V1.GranularCertificateType.Production, new SecretCommitmentInfo(200), position++, startDate, endDate);
-        var consumptionId = await IssueCertificateToEndpoint(endpoint.WalletReference, Electricity.V1.GranularCertificateType.Consumption, new SecretCommitmentInfo(500), position++, startDate, endDate);
+        var productionId = await IssueCertificateToEndpoint(endpoint.WalletReference,
+            Electricity.V1.GranularCertificateType.Production, new SecretCommitmentInfo(200), position++, startDate,
+            endDate);
+        var consumptionId = await IssueCertificateToEndpoint(endpoint.WalletReference,
+            Electricity.V1.GranularCertificateType.Consumption, new SecretCommitmentInfo(500), position++, startDate,
+            endDate);
 
         await client.GetCertificatesWithTimeout(2, TimeSpan.FromMinutes(1));
 
@@ -137,13 +190,18 @@ public class ClaimTests : AbstractFlowTests
         var startDate = endDate.AddHours(-1);
 
         var client = WalletTestFixture.ServerFixture.CreateHttpClient();
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", WalletTestFixture.JwtTokenIssuerFixture.GenerateRandomToken());
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer",
+            WalletTestFixture.JwtTokenIssuerFixture.GenerateRandomToken());
 
         var wallet = await client.CreateWallet();
         var endpoint = await client.CreateWalletEndpoint(wallet.WalletId);
 
-        var productionId = await IssueCertificateToEndpoint(endpoint.WalletReference, Electricity.V1.GranularCertificateType.Production, new SecretCommitmentInfo(500), position++, startDate, endDate);
-        var consumptionId = await IssueCertificateToEndpoint(endpoint.WalletReference, Electricity.V1.GranularCertificateType.Consumption, new SecretCommitmentInfo(200), position++, startDate, endDate);
+        var productionId = await IssueCertificateToEndpoint(endpoint.WalletReference,
+            Electricity.V1.GranularCertificateType.Production, new SecretCommitmentInfo(500), position++, startDate,
+            endDate);
+        var consumptionId = await IssueCertificateToEndpoint(endpoint.WalletReference,
+            Electricity.V1.GranularCertificateType.Consumption, new SecretCommitmentInfo(200), position++, startDate,
+            endDate);
 
         await client.GetCertificatesWithTimeout(2, TimeSpan.FromMinutes(1));
 
@@ -166,12 +224,15 @@ public class ClaimTests : AbstractFlowTests
         var startDate = endDate.AddHours(-1);
 
         var client = WalletTestFixture.ServerFixture.CreateHttpClient();
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", WalletTestFixture.JwtTokenIssuerFixture.GenerateRandomToken());
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer",
+            WalletTestFixture.JwtTokenIssuerFixture.GenerateRandomToken());
 
         var wallet = await client.CreateWallet();
         var endpoint = await client.CreateWalletEndpoint(wallet.WalletId);
 
-        var consumptionId = await IssueCertificateToEndpoint(endpoint.WalletReference, Electricity.V1.GranularCertificateType.Consumption, new SecretCommitmentInfo(300), position++, startDate, endDate);
+        var consumptionId = await IssueCertificateToEndpoint(endpoint.WalletReference,
+            Electricity.V1.GranularCertificateType.Consumption, new SecretCommitmentInfo(300), position++, startDate,
+            endDate);
 
         await client.GetCertificatesWithTimeout(1, TimeSpan.FromMinutes(1));
 
