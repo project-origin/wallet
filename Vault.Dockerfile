@@ -18,7 +18,13 @@ RUN dotnet publish src/ProjectOrigin.Vault -c Release -p:CustomAssemblyName=Vaul
 FROM mcr.microsoft.com/dotnet/aspnet:9.0.4-noble AS production
 
 WORKDIR /app
+
+RUN addgroup -S nonroot && adduser -S  nonroot -G nonroot
+
 COPY --from=build /app/publish .
+RUN chown -R nonroot:nonroot /app && chmod -R 755 /app
+
+USER nonroot
 
 EXPOSE 5000
 
