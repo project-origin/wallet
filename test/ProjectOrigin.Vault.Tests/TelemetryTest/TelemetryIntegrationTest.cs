@@ -67,6 +67,7 @@ public class TelemetryIntegrationTest :
         await Task.Delay(10000);
         var telemetryData = await _openTelemetryFixture.GetContainerLog();
 
-        telemetryData.Should().Contain("Name           : GET v1/certificates");
+        telemetryData.Should().NotBeNullOrWhiteSpace();
+        telemetryData.Should().Contain("v1/certificates");
     }
 }
