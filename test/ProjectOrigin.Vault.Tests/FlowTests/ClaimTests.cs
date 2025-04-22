@@ -6,11 +6,14 @@ using FluentAssertions;
 using System.Linq;
 using System.Net;
 using System.Net.Http.Headers;
-using ProjectOrigin.Electricity.V1;
 using ProjectOrigin.Registry.V1;
 using ProjectOrigin.Vault.Services.REST.v1;
 using Claim = ProjectOrigin.Vault.Services.REST.v1.Claim;
 using System.Net.Http.Json;
+using Dapper;
+using Npgsql;
+using ProjectOrigin.Vault.Models;
+using GranularCertificateType = ProjectOrigin.Electricity.V1.GranularCertificateType;
 
 namespace ProjectOrigin.Vault.Tests.FlowTests;
 
@@ -109,44 +112,67 @@ public class ClaimTests : AbstractFlowTests
     [Fact]
     public async Task CanClaim_WhenCertificatesAreMoreThanOneHourApart()
     {
-        //Arrange
         var position = 1;
-        var endDate = DateTimeOffset.UtcNow;
+
+        var endDate   = DateTimeOffset.UtcNow;
         var startDate = endDate.AddHours(-1);
 
         var client = WalletTestFixture.ServerFixture.CreateHttpClient();
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer",
-            WalletTestFixture.JwtTokenIssuerFixture.GenerateRandomToken());
+        client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer",
+                WalletTestFixture.JwtTokenIssuerFixture.GenerateRandomToken());
 
-        var wallet = await client.CreateWallet();
+        var wallet   = await client.CreateWallet();
         var endpoint = await client.CreateWalletEndpoint(wallet.WalletId);
 
-        var productionId = await IssueCertificateToEndpoint(endpoint.WalletReference,
-            Electricity.V1.GranularCertificateType.Production, new SecretCommitmentInfo(200), position++, startDate.AddDays(-10),
+        var productionId = await IssueCertificateToEndpoint(
+            endpoint.WalletReference,
+            Electricity.V1.GranularCertificateType.Production,
+            new SecretCommitmentInfo(200),
+            position++,
+            startDate.AddDays(-10),
             endDate.AddDays(-10));
-        var consumptionId = await IssueCertificateToEndpoint(endpoint.WalletReference,
-            Electricity.V1.GranularCertificateType.Consumption, new SecretCommitmentInfo(300), position++, startDate,
+
+        var consumptionId = await IssueCertificateToEndpoint(
+            endpoint.WalletReference,
+            Electricity.V1.GranularCertificateType.Consumption,
+            new SecretCommitmentInfo(300),
+            position++,
+            startDate,
             endDate);
 
         await client.GetCertificatesWithTimeout(2, TimeSpan.FromMinutes(1));
 
-        //Act
-        var response = await client.CreateClaim(
-            consumptionId,
-            productionId,
-            150u);
+        await client.CreateClaim(consumptionId, productionId, 150u);
 
-        //Assert
-        var queryClaims = await Timeout(async () =>
+        Guid prodCertGuid = productionId.StreamId;
+        Guid consCertGuid = consumptionId.StreamId;
+
+        await Timeout(async () =>
         {
-            var queryClaims = await client.GetAsync("v1/claims").ParseJson<ResultList<Claim, PageInfo>>();
-            queryClaims.Result.Should().NotBeEmpty();
-            return queryClaims;
-        }, TimeSpan.FromMinutes(3));
+            const string sql = """
+                               SELECT c.state
+                               FROM   claims          c
+                               JOIN   wallet_slices   prod ON prod.id = c.production_slice_id
+                               JOIN   wallet_slices   cons ON cons.id = c.consumption_slice_id
+                               WHERE  prod.certificate_id = @prodCert
+                                 AND  cons.certificate_id = @consCert;
+                               """;
 
-        queryClaims.Result.Should().HaveCount(1);
-        queryClaims.Result.Single().ConsumptionCertificate.FederatedStreamId.Should().BeEquivalentTo(consumptionId);
-        queryClaims.Result.Single().ProductionCertificate.FederatedStreamId.Should().BeEquivalentTo(productionId);
+            await using var conn =
+                new NpgsqlConnection(WalletTestFixture.DbFixture.ConnectionString);
+
+            int? dbVal = await conn.ExecuteScalarAsync<int?>(sql,
+                new { prodCert = prodCertGuid, consCert = consCertGuid });
+
+            dbVal.Should().NotBeNull("claim row should exist");
+
+            if (dbVal != null)
+                ((ClaimState)dbVal).Should().Be(ClaimState.Claimed,
+                    "claim must reach Claimed state");
+
+            return true;
+        }, TimeSpan.FromMinutes(3));
     }
 
     [Fact]
