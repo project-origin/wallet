@@ -184,7 +184,7 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
         var endpoint = await _dbFixture.CreateWalletEndpoint(wallet);
         var baseTime = DateTimeOffset.UtcNow.AddMinutes(-10); // recent claims
 
-        // Valid claim: 0-minute diff
+        // Included claim: 0-minute diff
         {
             var prod = await _dbFixture.CreateCertificate(Guid.NewGuid(), _fixture.Create<string>(), Models.GranularCertificateType.Production, baseTime, baseTime.AddHours(1));
             var prodSlice = await _dbFixture.CreateSlice(endpoint, prod, new PedersenCommitment.SecretCommitmentInfo(100));
@@ -193,7 +193,7 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
             await _dbFixture.CreateClaim(prodSlice, consSlice, Models.ClaimState.Claimed);
         }
 
-        // Invalid claim: 70-minute diff
+        // Filtered-out claim: 70-minute diff
         {
             var prod = await _dbFixture.CreateCertificate(Guid.NewGuid(), _fixture.Create<string>(), Models.GranularCertificateType.Production, baseTime.AddHours(-1), baseTime);
             var prodSlice = await _dbFixture.CreateSlice(endpoint, prod, new PedersenCommitment.SecretCommitmentInfo(100));
@@ -312,9 +312,19 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
 
         // Claim 2: Consumption starts 59 minutes after production (within 60 minutes)
         {
+            var consStart = baseTime.AddMinutes(59);
             var prodCert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _fixture.Create<string>(), Models.GranularCertificateType.Production, baseTime, baseTime.AddHours(1));
             var prodSlice = await _dbFixture.CreateSlice(endpoint, prodCert, new PedersenCommitment.SecretCommitmentInfo(100));
-            var consStart = baseTime.AddMinutes(59);
+            var consCert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _fixture.Create<string>(), Models.GranularCertificateType.Consumption, consStart, consStart.AddHours(1));
+            var consSlice = await _dbFixture.CreateSlice(endpoint, consCert, new PedersenCommitment.SecretCommitmentInfo(100));
+            await _dbFixture.CreateClaim(prodSlice, consSlice, Models.ClaimState.Claimed);
+        }
+
+        // Claim 2: Consumption starts 60 minutes after production (should be excluded)
+        {
+            var consStart = baseTime.AddMinutes(60);
+            var prodCert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _fixture.Create<string>(), Models.GranularCertificateType.Production, baseTime, baseTime.AddHours(1));
+            var prodSlice = await _dbFixture.CreateSlice(endpoint, prodCert, new PedersenCommitment.SecretCommitmentInfo(100));
             var consCert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _fixture.Create<string>(), Models.GranularCertificateType.Consumption, consStart, consStart.AddHours(1));
             var consSlice = await _dbFixture.CreateSlice(endpoint, consCert, new PedersenCommitment.SecretCommitmentInfo(100));
             await _dbFixture.CreateClaim(prodSlice, consSlice, Models.ClaimState.Claimed);
@@ -322,9 +332,9 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
 
         // Claim 3: Consumption starts 61 minutes after production (should be excluded)
         {
+            var consStart = baseTime.AddMinutes(61);
             var prodCert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _fixture.Create<string>(), Models.GranularCertificateType.Production, baseTime, baseTime.AddHours(1));
             var prodSlice = await _dbFixture.CreateSlice(endpoint, prodCert, new PedersenCommitment.SecretCommitmentInfo(100));
-            var consStart = baseTime.AddMinutes(61);
             var consCert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _fixture.Create<string>(), Models.GranularCertificateType.Consumption, consStart, consStart.AddHours(1));
             var consSlice = await _dbFixture.CreateSlice(endpoint, consCert, new PedersenCommitment.SecretCommitmentInfo(100));
             await _dbFixture.CreateClaim(prodSlice, consSlice, Models.ClaimState.Claimed);
