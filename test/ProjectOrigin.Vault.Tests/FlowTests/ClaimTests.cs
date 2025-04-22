@@ -109,9 +109,10 @@ public class ClaimTests : AbstractFlowTests
     [Fact]
     public async Task CanClaim_WhenCertificatesAreMoreThanOneHourApart()
     {
-        var oneYearAgo = DateTimeOffset.UtcNow.AddDays(-WalletTestFixture.DaysBeforeCertificatesExpire!.Value);
-        var startDate = oneYearAgo.AddHours(-1);
-        var endDate = oneYearAgo;
+        //Arrange
+        var position = 1;
+        var endDate = DateTimeOffset.UtcNow;
+        var startDate = endDate.AddHours(-1);
 
         var client = WalletTestFixture.ServerFixture.CreateHttpClient();
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer",
@@ -120,32 +121,32 @@ public class ClaimTests : AbstractFlowTests
         var wallet = await client.CreateWallet();
         var endpoint = await client.CreateWalletEndpoint(wallet.WalletId);
 
-        var prodCommitmentInfo = new SecretCommitmentInfo(200);
-        var prodEvent = await WalletTestFixture.StampAndRegistryFixture.IssueCertificate(
-            GranularCertificateType.Production,
-            prodCommitmentInfo,
-            endpoint.WalletReference.PublicKey.Derive(1).GetPublicKey(),
-            startDate,
-            endDate,
-            null);
+        var productionId = await IssueCertificateToEndpoint(endpoint.WalletReference,
+            Electricity.V1.GranularCertificateType.Production, new SecretCommitmentInfo(200), position++, startDate.AddDays(-10),
+            endDate.AddDays(-10));
+        var consumptionId = await IssueCertificateToEndpoint(endpoint.WalletReference,
+            Electricity.V1.GranularCertificateType.Consumption, new SecretCommitmentInfo(300), position++, startDate,
+            endDate);
 
-        var conCommitmentInfo = new SecretCommitmentInfo(200);
-        var conEvent = await WalletTestFixture.StampAndRegistryFixture.IssueCertificate(
-            GranularCertificateType.Consumption,
-            conCommitmentInfo,
-            endpoint.WalletReference.PublicKey.Derive(2).GetPublicKey(),
-            startDate.AddDays(364), // Move Consumption 364 days after production
-            endDate.AddDays(364),
-            null);
+        await client.GetCertificatesWithTimeout(2, TimeSpan.FromMinutes(1));
 
-        var allocateEventStatus = await WalletTestFixture.StampAndRegistryFixture.AllocateEvent(Guid.NewGuid(),
-            prodEvent.CertificateId,
-            conEvent.CertificateId,
-            prodCommitmentInfo,
-            conCommitmentInfo);
+        //Act
+        var response = await client.CreateClaim(
+            consumptionId,
+            productionId,
+            150u);
 
-        allocateEventStatus.Status.Should().Be(TransactionState.Failed);
-        allocateEventStatus.Message.Should().Be("Certificate has expired");
+        //Assert
+        var queryClaims = await Timeout(async () =>
+        {
+            var queryClaims = await client.GetAsync("v1/claims").ParseJson<ResultList<Claim, PageInfo>>();
+            queryClaims.Result.Should().NotBeEmpty();
+            return queryClaims;
+        }, TimeSpan.FromMinutes(3));
+
+        queryClaims.Result.Should().HaveCount(1);
+        queryClaims.Result.Single().ConsumptionCertificate.FederatedStreamId.Should().BeEquivalentTo(consumptionId);
+        queryClaims.Result.Single().ProductionCertificate.FederatedStreamId.Should().BeEquivalentTo(productionId);
     }
 
     [Fact]
