@@ -114,7 +114,7 @@ public class ClaimTests : AbstractFlowTests
     {
         var position = 1;
 
-        var endDate   = DateTimeOffset.UtcNow;
+        var endDate = DateTimeOffset.UtcNow;
         var startDate = endDate.AddHours(-1);
 
         var client = WalletTestFixture.ServerFixture.CreateHttpClient();
@@ -122,7 +122,7 @@ public class ClaimTests : AbstractFlowTests
             new AuthenticationHeaderValue("Bearer",
                 WalletTestFixture.JwtTokenIssuerFixture.GenerateRandomToken());
 
-        var wallet   = await client.CreateWallet();
+        var wallet = await client.CreateWallet();
         var endpoint = await client.CreateWalletEndpoint(wallet.WalletId);
 
         var productionId = await IssueCertificateToEndpoint(
