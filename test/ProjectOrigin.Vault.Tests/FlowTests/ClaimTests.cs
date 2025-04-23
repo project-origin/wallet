@@ -6,11 +6,14 @@ using FluentAssertions;
 using System.Linq;
 using System.Net;
 using System.Net.Http.Headers;
-using ProjectOrigin.Electricity.V1;
 using ProjectOrigin.Registry.V1;
 using ProjectOrigin.Vault.Services.REST.v1;
 using Claim = ProjectOrigin.Vault.Services.REST.v1.Claim;
 using System.Net.Http.Json;
+using Dapper;
+using Npgsql;
+using ProjectOrigin.Vault.Models;
+using GranularCertificateType = ProjectOrigin.Electricity.V1.GranularCertificateType;
 
 namespace ProjectOrigin.Vault.Tests.FlowTests;
 
@@ -19,6 +22,81 @@ public class ClaimTests : AbstractFlowTests
 {
     public ClaimTests(WalletSystemTestFixture walletTestFixture) : base(walletTestFixture)
     {
+    }
+
+    [Fact]
+    public async Task ClaimFailsOnExpiredCertificates_SlicesRemainNonAvailable()
+    {
+        var position = 1;
+        var sixtyDaysAgo = DateTimeOffset.UtcNow.AddDays(
+            -WalletTestFixture.DaysBeforeCertificatesExpire!.Value);
+
+        var startDate = sixtyDaysAgo.AddHours(-1);
+        var endDate = sixtyDaysAgo;
+
+        var client = WalletTestFixture.ServerFixture.CreateHttpClient();
+        client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer",
+                WalletTestFixture.JwtTokenIssuerFixture.GenerateRandomToken());
+
+        var wallet = await client.CreateWallet();
+        var endpoint = await client.CreateWalletEndpoint(wallet.WalletId);
+
+        var productionId = await IssueCertificateToEndpoint(
+            endpoint.WalletReference,
+            Electricity.V1.GranularCertificateType.Production,
+            new SecretCommitmentInfo(200),
+            position++,
+            startDate,
+            endDate);
+
+        var consumptionId = await IssueCertificateToEndpoint(
+            endpoint.WalletReference,
+            Electricity.V1.GranularCertificateType.Consumption,
+            new SecretCommitmentInfo(300),
+            position++,
+            startDate,
+            endDate);
+
+        await client.GetCertificatesWithTimeout(2, TimeSpan.FromMinutes(1));
+
+        await client.CreateClaim(consumptionId, productionId, 150u);
+
+        Guid prodCertGuid = productionId.StreamId;
+        Guid consCertGuid = consumptionId.StreamId;
+
+        await Timeout(async () =>
+        {
+            const string sql = """
+                               SELECT c.state                    AS claim_state,
+                                      prod.state                AS prod_slice_state,
+                                      cons.state               AS cons_slice_state
+                               FROM   claims          c
+                               JOIN wallet_slices prod ON prod.id = c.production_slice_id
+                               JOIN wallet_slices cons ON cons.id = c.consumption_slice_id
+                               WHERE  prod.certificate_id = @prodCert
+                                 AND  cons.certificate_id = @consCert;
+                               """;
+
+            await using var conn =
+                new NpgsqlConnection(WalletTestFixture.DbFixture.ConnectionString);
+
+            var row = await conn.QuerySingleOrDefaultAsync(sql,
+                new { prodCert = prodCertGuid, consCert = consCertGuid });
+
+            if (row == null)
+                return false;
+
+            ((ClaimState)row.claim_state).Should().Be(ClaimState.Rejected,
+                "registry rejects transactions on expired certificates");
+
+            ((WalletSliceState)row.prod_slice_state).Should().Be(WalletSliceState.Available,
+                "production slice was not rolled back to Available");
+            ((WalletSliceState)row.cons_slice_state).Should().Be(WalletSliceState.Available,
+                "consumption slice was not rolled back to Available");
+
+            return true;
+        }, TimeSpan.FromMinutes(3));
     }
 
     [Fact]
