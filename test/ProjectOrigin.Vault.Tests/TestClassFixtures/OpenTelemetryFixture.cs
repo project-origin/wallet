@@ -13,7 +13,7 @@ public class OpenTelemetryFixture : IAsyncLifetime
     public OpenTelemetryFixture()
     {
         _container = new ContainerBuilder()
-            .WithImage("otel/opentelemetry-collector:0.95.0")
+            .WithImage("otel/opentelemetry-collector-contrib:0.120.0")
             .WithPortBinding(OtelPort, true)
             .Build();
     }
