@@ -150,30 +150,9 @@ public class ClaimTests : AbstractFlowTests
 
         await Timeout(async () =>
         {
-            const string sql = """
-                               SELECT c.state
-                               FROM   claims          c
-                               JOIN   wallet_slices   prod ON prod.id = c.production_slice_id
-                               JOIN   wallet_slices   cons ON cons.id = c.consumption_slice_id
-                               WHERE  prod.certificate_id = @prodCert
-                                 AND  cons.certificate_id = @consCert;
-                               """;
-
-            await using var conn =
-                new NpgsqlConnection(WalletTestFixture.DbFixture.ConnectionString);
-
-            int? dbVal = await conn.ExecuteScalarAsync<int?>(sql,
-                new { prodCert = prodCertGuid, consCert = consCertGuid });
-
-            dbVal.Should().NotBeNull("claim row should exist");
-
-            if (dbVal != null)
-                ((ClaimState)dbVal).Should().Be(ClaimState.Claimed,
-                    "claim must reach Claimed state");
-
+            await VerifyClaimStateInDatabase(prodCertGuid, consCertGuid);
             return true;
         }, TimeSpan.FromMinutes(3));
-    }
 
     [Fact]
     public async Task WhenClaimingMoreProductionThanPossible_BadRequest()
@@ -272,5 +251,29 @@ public class ClaimTests : AbstractFlowTests
         var response = await client.PostAsync("v1/claims", JsonContent.Create(request));
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    private async Task VerifyClaimStateInDatabase(Guid prodCertGuid, Guid consCertGuid)
+    {
+        const string sql = """
+                           SELECT c.state
+                           FROM   claims          c
+                           JOIN   wallet_slices   prod ON prod.id = c.production_slice_id
+                           JOIN   wallet_slices   cons ON cons.id = c.consumption_slice_id
+                           WHERE  prod.certificate_id = @prodCert
+                             AND  cons.certificate_id = @consCert;
+                           """;
+
+        await using var conn =
+            new NpgsqlConnection(WalletTestFixture.DbFixture.ConnectionString);
+
+        int? dbVal = await conn.ExecuteScalarAsync<int?>(sql,
+            new { prodCert = prodCertGuid, consCert = consCertGuid });
+
+        dbVal.Should().NotBeNull("claim row should exist");
+
+        if (dbVal != null)
+            ((ClaimState)dbVal).Should().Be(ClaimState.Claimed,
+                "claim must reach Claimed state");
     }
 }
