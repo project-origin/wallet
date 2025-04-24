@@ -153,6 +153,7 @@ public class ClaimTests : AbstractFlowTests
             await VerifyClaimStateInDatabase(prodCertGuid, consCertGuid);
             return true;
         }, TimeSpan.FromMinutes(3));
+    }
 
     [Fact]
     public async Task WhenClaimingMoreProductionThanPossible_BadRequest()
