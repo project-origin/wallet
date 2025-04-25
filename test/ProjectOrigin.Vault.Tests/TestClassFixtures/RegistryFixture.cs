@@ -27,8 +27,8 @@ namespace ProjectOrigin.Vault.Tests.TestClassFixtures;
 
 public class RegistryFixture : IAsyncLifetime
 {
-    private const string RegistryImage = "ghcr.io/project-origin/registry-server:2.2.2";
-    private const string ElectricityVerifierImage = "ghcr.io/project-origin/electricity-server:1.4.0";
+    private const string RegistryImage = "ghcr.io/project-origin/registry-server:3.0.2";
+    private const string ElectricityVerifierImage = "ghcr.io/project-origin/electricity-server:4.0.0-rc.1";
     private const int RabbitMqHttpPort = 15672;
     private const int GrpcPort = 5000;
     private const string RegistryAlias = "registry-container";
@@ -63,7 +63,8 @@ public class RegistryFixture : IAsyncLifetime
           {Area}:
             issuerKeys:
               - publicKey: "{Convert.ToBase64String(Encoding.UTF8.GetBytes(IssuerKey.PublicKey.ExportPkixText()))}"
-        daysBeforeCertificatesExpire: 60
+        daysBeforeCertificatesExpire: 365
+        timeConstraint: Disabled
         """, ".yaml");
 
         Network = new NetworkBuilder()
