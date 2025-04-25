@@ -199,6 +199,9 @@ public class ClaimsController : ControllerBase
             return BadRequest($"Claim is not allowed. Consumption certificate does not have enough quantity to claim requested amount. Consumption certificate amount: {conWillBeAvailable}. Requested claim quantity: {request.Quantity}");
         }
 
+        var reservedConsumptionSlices = await unitOfWork.CertificateRepository.ReserveQuantity(subject, request.ConsumptionCertificateId.Registry, request.ConsumptionCertificateId.StreamId, request.Quantity);
+        var reservedProductionSlices = await unitOfWork.CertificateRepository.ReserveQuantity(subject, request.ProductionCertificateId.Registry, request.ProductionCertificateId.StreamId, request.Quantity);
+
         var command = new ClaimCertificateCommand
         {
             Owner = subject,
@@ -208,6 +211,8 @@ public class ClaimsController : ControllerBase
             ProductionRegistry = request.ProductionCertificateId.Registry,
             ProductionCertificateId = request.ProductionCertificateId.StreamId,
             Quantity = request.Quantity,
+            ReservedConsumptionSlices = reservedConsumptionSlices,
+            ReservedProductionSlices = reservedProductionSlices
         };
 
         await unitOfWork.RequestStatusRepository.InsertRequestStatus(new Models.RequestStatus

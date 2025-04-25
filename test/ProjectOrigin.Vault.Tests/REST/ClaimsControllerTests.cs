@@ -10,7 +10,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
-using NSubstitute.ReceivedExtensions;
 using MsOptions = Microsoft.Extensions.Options;
 using ProjectOrigin.Vault.Tests.TestClassFixtures;
 using ProjectOrigin.Vault.Tests.TestExtensions;
@@ -18,6 +17,7 @@ using ProjectOrigin.Vault.Database;
 using ProjectOrigin.Vault.Metrics;
 using ProjectOrigin.Vault.Options;
 using ProjectOrigin.Vault.Models;
+using ProjectOrigin.Vault.Repositories;
 using ProjectOrigin.Vault.Services.REST.v1;
 using Xunit;
 using TimeAggregate = ProjectOrigin.Vault.Services.REST.v1.TimeAggregate;
@@ -110,6 +110,71 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
         resultList.Should().BeInAscendingOrder(x => x.UpdatedAt);
         var updatedAt = DateTimeOffset.FromUnixTimeSeconds(resultList.Last().UpdatedAt);
         updatedAt.Should().BeOnOrAfter(DateTimeOffset.FromUnixTimeSeconds(queryUpdatedSince));
+    }
+
+    [Fact]
+    public async Task ReserveQuantity_IsCalledForConsumptionAndProduction()
+    {
+        var subject = _fixture.Create<string>();
+        var request = _fixture.Create<ClaimRequest>();
+        var unitOfWorkMock = Substitute.For<IUnitOfWork>();
+        var certificateRepositoryMock = Substitute.For<ICertificateRepository>();
+
+        certificateRepositoryMock.GetRegisteringAndAvailableQuantity(
+                request.ProductionCertificateId.Registry,
+                request.ProductionCertificateId.StreamId,
+                subject)
+            .Returns(request.Quantity + 10);
+
+        certificateRepositoryMock.GetRegisteringAndAvailableQuantity(
+                request.ConsumptionCertificateId.Registry,
+                request.ConsumptionCertificateId.StreamId,
+                subject)
+            .Returns(request.Quantity + 10);
+
+        certificateRepositoryMock.GetCertificate(request.ProductionCertificateId.Registry, request.ProductionCertificateId.StreamId)
+            .Returns(new Certificate
+            {
+                Id = Guid.NewGuid(),
+                RegistryName = request.ProductionCertificateId.Registry,
+                StartDate = DateTimeOffset.UtcNow.AddDays(-1), // Example start date
+                EndDate = DateTimeOffset.UtcNow.AddDays(1),   // Example end date
+                GridArea = "ExampleGridArea",                // Example grid area
+                CertificateType = GranularCertificateType.Production,
+                Withdrawn = false
+            });
+        certificateRepositoryMock.GetCertificate(request.ConsumptionCertificateId.Registry, request.ConsumptionCertificateId.StreamId)
+            .Returns(new Certificate
+            {
+                Id = Guid.NewGuid(),
+                RegistryName = request.ConsumptionCertificateId.Registry,
+                StartDate = DateTimeOffset.UtcNow.AddDays(-1), // Example start date
+                EndDate = DateTimeOffset.UtcNow.AddDays(1),   // Example end date
+                GridArea = "ExampleGridArea",                // Example grid area
+                CertificateType = GranularCertificateType.Consumption,
+                Withdrawn = false
+            });
+
+        unitOfWorkMock.CertificateRepository.Returns(certificateRepositoryMock);
+
+        var controller = new ClaimsController(_claimMetrics)
+        {
+            ControllerContext = CreateContextWithUser(subject)
+        };
+
+        await controller.ClaimCertificate(unitOfWorkMock, _options, request);
+
+        await certificateRepositoryMock.Received(1).ReserveQuantity(
+            subject,
+            request.ConsumptionCertificateId.Registry,
+            request.ConsumptionCertificateId.StreamId,
+            request.Quantity);
+
+        await certificateRepositoryMock.Received(1).ReserveQuantity(
+            subject,
+            request.ProductionCertificateId.Registry,
+            request.ProductionCertificateId.StreamId,
+            request.Quantity);
     }
 
     [Fact]
