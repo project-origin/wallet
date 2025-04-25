@@ -101,6 +101,19 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
         var request = _fixture.Create<ClaimRequest>();
         var unitOfWorkMock = Substitute.For<IUnitOfWork>();
         var certificateRepositoryMock = Substitute.For<ICertificateRepository>();
+
+        certificateRepositoryMock.GetRegisteringAndAvailableQuantity(
+                request.ProductionCertificateId.Registry,
+                request.ProductionCertificateId.StreamId,
+                subject)
+            .Returns(request.Quantity + 10);
+
+        certificateRepositoryMock.GetRegisteringAndAvailableQuantity(
+                request.ConsumptionCertificateId.Registry,
+                request.ConsumptionCertificateId.StreamId,
+                subject)
+            .Returns(request.Quantity + 10);
+
         certificateRepositoryMock.GetCertificate(request.ProductionCertificateId.Registry, request.ProductionCertificateId.StreamId)
             .Returns(new Certificate
             {
@@ -123,6 +136,7 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
                 CertificateType = GranularCertificateType.Consumption,
                 Withdrawn = false
             });
+
         unitOfWorkMock.CertificateRepository.Returns(certificateRepositoryMock);
 
         var controller = new ClaimsController(_claimMetrics)
