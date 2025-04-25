@@ -52,6 +52,54 @@ public class ClaimCertificatesCommandHandlerTests
     }
 
     [Fact]
+    public async Task ReserveQuantity_CalledWhenSlicesAreNull()
+    {
+        var command = new ClaimCertificateCommand
+        {
+            Owner = _owner,
+            ClaimId = Guid.NewGuid(),
+            ConsumptionRegistry = _registryName,
+            ConsumptionCertificateId = Guid.NewGuid(),
+            ProductionRegistry = _registryName,
+            ProductionCertificateId = Guid.NewGuid(),
+            Quantity = 123,
+            ReservedConsumptionSlices = null,
+            ReservedProductionSlices = null
+        };
+        _context.Message.Returns(command);
+
+        await _commandHandler.Consume(_context);
+
+        await _unitOfWork.CertificateRepository.Received(1).ReserveQuantity(
+            command.Owner, command.ConsumptionRegistry, command.ConsumptionCertificateId, command.Quantity);
+        await _unitOfWork.CertificateRepository.Received(1).ReserveQuantity(
+            command.Owner, command.ProductionRegistry, command.ProductionCertificateId, command.Quantity);
+    }
+
+    [Fact]
+    public async Task ReserveQuantity_NotCalledWhenReservedSlicesAreNotNull()
+    {
+        var command = new ClaimCertificateCommand
+        {
+            Owner = _owner,
+            ClaimId = Guid.NewGuid(),
+            ConsumptionRegistry = _registryName,
+            ConsumptionCertificateId = Guid.NewGuid(),
+            ProductionRegistry = _registryName,
+            ProductionCertificateId = Guid.NewGuid(),
+            Quantity = 123,
+            ReservedConsumptionSlices = new List<WalletSlice> { _fixture.Create<WalletSlice>() },
+            ReservedProductionSlices = new List<WalletSlice> { _fixture.Create<WalletSlice>() }
+        };
+        _context.Message.Returns(command);
+
+        await _commandHandler.Consume(_context);
+
+        await _unitOfWork.CertificateRepository.DidNotReceive().ReserveQuantity(
+            Arg.Any<string>(), Arg.Any<string>(), Arg.Any<Guid>(), Arg.Any<uint>());
+    }
+
+    [Fact]
     public async Task MatchingSlices()
     {
         // arrange

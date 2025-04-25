@@ -23,6 +23,8 @@ public record ClaimCertificateCommand
     public required string ProductionRegistry { get; init; }
     public required Guid ProductionCertificateId { get; init; }
     public required uint Quantity { get; init; }
+    public IList<WalletSlice>? ReservedConsumptionSlices { get; init; }
+    public IList<WalletSlice>? ReservedProductionSlices { get; init; }
 }
 
 public class ClaimCertificateCommandHandler : IConsumer<ClaimCertificateCommand>
@@ -52,8 +54,11 @@ public class ClaimCertificateCommandHandler : IConsumer<ClaimCertificateCommand>
         {
             var msg = context.Message;
 
-            var reservedConsumptionSlices = await _unitOfWork.CertificateRepository.ReserveQuantity(msg.Owner, msg.ConsumptionRegistry, msg.ConsumptionCertificateId, msg.Quantity);
-            var reservedProductionSlices = await _unitOfWork.CertificateRepository.ReserveQuantity(msg.Owner, msg.ProductionRegistry, msg.ProductionCertificateId, msg.Quantity);
+            var reservedConsumptionSlices = msg.ReservedConsumptionSlices
+                ?? await _unitOfWork.CertificateRepository.ReserveQuantity(msg.Owner, msg.ConsumptionRegistry, msg.ConsumptionCertificateId, msg.Quantity);
+
+            var reservedProductionSlices = msg.ReservedProductionSlices
+                ?? await _unitOfWork.CertificateRepository.ReserveQuantity(msg.Owner, msg.ProductionRegistry, msg.ProductionCertificateId, msg.Quantity);
 
             var processBuilder = _processBuilderFactory.Create(msg.ClaimId, msg.Owner, _unitOfWork);
 
