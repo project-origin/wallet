@@ -146,8 +146,7 @@ public class ClaimsController : ControllerBase
     {
         if (!User.TryGetSubject(out var subject)) return Unauthorized();
 
-        var reservedConsumptionSlices = await unitOfWork.CertificateRepository.ReserveQuantity(subject, request.ConsumptionCertificateId.Registry, request.ConsumptionCertificateId.StreamId, request.Quantity);
-        var reservedProductionSlices = await unitOfWork.CertificateRepository.ReserveQuantity(subject, request.ProductionCertificateId.Registry, request.ProductionCertificateId.StreamId, request.Quantity);
+
 
         var prodCert = await unitOfWork.CertificateRepository.GetCertificate(request.ProductionCertificateId.Registry, request.ProductionCertificateId.StreamId);
         var conCert = await unitOfWork.CertificateRepository.GetCertificate(request.ConsumptionCertificateId.Registry, request.ConsumptionCertificateId.StreamId);
@@ -160,6 +159,8 @@ public class ClaimsController : ControllerBase
         {
             return BadRequest($"Unknown consumption certificate. Registry {request.ConsumptionCertificateId.Registry} and id {request.ConsumptionCertificateId.StreamId}.");
         }
+        var reservedConsumptionSlices = await unitOfWork.CertificateRepository.ReserveQuantity(subject, request.ConsumptionCertificateId.Registry, request.ConsumptionCertificateId.StreamId, request.Quantity);
+        var reservedProductionSlices = await unitOfWork.CertificateRepository.ReserveQuantity(subject, request.ProductionCertificateId.Registry, request.ProductionCertificateId.StreamId, request.Quantity);
 
         var prodWillBeAvailable = await unitOfWork.CertificateRepository.GetRegisteringAndAvailableQuantity(request.ProductionCertificateId.Registry, request.ProductionCertificateId.StreamId, subject);
         var conWillBeAvailable = await unitOfWork.CertificateRepository.GetRegisteringAndAvailableQuantity(request.ConsumptionCertificateId.Registry, request.ConsumptionCertificateId.StreamId, subject);
