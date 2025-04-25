@@ -80,6 +80,7 @@ public class ClaimRepository : IClaimRepository
                 AND (@end IS NULL OR production_end <= @end)
                 AND (@start IS NULL OR consumption_start >= @start)
                 AND (@end IS NULL OR consumption_end <= @end)
+                AND ABS(EXTRACT(EPOCH FROM (production_start - consumption_start))) < 3600
         );
         SELECT count(*) FROM claims_work_table;
         SELECT * FROM claims_work_table WHERE (@UpdatedSince IS NULL OR updated_at > @UpdatedSince) LIMIT @limit;
@@ -138,6 +139,7 @@ public class ClaimRepository : IClaimRepository
                 AND (@end IS NULL OR production_end <= @end)
                 AND (@start IS NULL OR consumption_start >= @start)
                 AND (@end IS NULL OR consumption_end <= @end)
+                AND ABS(EXTRACT(EPOCH FROM (production_start - consumption_start))) < 3600
         );
 
         SELECT count(*) FROM claims_work_table;
@@ -203,6 +205,7 @@ public class ClaimRepository : IClaimRepository
                         AND (@end IS NULL OR production_end <= @end)
                         AND (@start IS NULL OR consumption_start >= @start)
                         AND (@end IS NULL OR consumption_end <= @end)
+                        AND ABS(EXTRACT(EPOCH FROM (production_start - consumption_start))) < 3600
                     GROUP BY
                         CASE
                             WHEN @timeAggregate = 'total' THEN NULL
