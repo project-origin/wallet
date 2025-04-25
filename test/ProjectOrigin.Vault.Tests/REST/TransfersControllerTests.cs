@@ -120,6 +120,7 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
             ControllerContext = CreateContextWithUser(subject)
         };
 
+        await _dbFixture.CreateWallet(subject);
         var externalEndpoint = await _dbFixture.CreateExternalEndpoint(subject);
 
         for (DateTimeOffset i = issuestartDate; i < issueEndDate; i = i.AddHours(1))
@@ -167,6 +168,7 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
             ControllerContext = CreateContextWithUser(subject)
         };
 
+        await _dbFixture.CreateWallet(subject);
         var externalEndpoint = await _dbFixture.CreateExternalEndpoint(subject);
 
         for (DateTimeOffset i = issuestartDate; i < issueEndDate; i = i.AddHours(1))

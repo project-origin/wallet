@@ -144,10 +144,11 @@ public class TransfersController : ControllerBase
         [FromQuery] AggregateTransfersQueryParameters param)
     {
         if (!User.TryGetSubject(out var subject)) return Unauthorized();
+        if (!param.TimeZone.TryParseTimeZone(out var timeZoneInfo)) return BadRequest("Invalid time zone");
+
         var wallet = await unitOfWork.WalletRepository.GetWallet(subject);
         if (wallet == null) return NotFound("You don't own a wallet. Create a wallet first.");
         if (wallet.IsDisabled()) return BadRequest("Unable to interact with a disabled wallet.");
-        if (!param.TimeZone.TryParseTimeZone(out var timeZoneInfo)) return BadRequest("Invalid time zone");
 
         var transfers = await unitOfWork.TransferRepository.QueryAggregatedTransfers(new QueryAggregatedTransfersFilter
         {
