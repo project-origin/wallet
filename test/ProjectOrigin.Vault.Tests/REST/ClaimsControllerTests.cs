@@ -101,6 +101,28 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
         var request = _fixture.Create<ClaimRequest>();
         var unitOfWorkMock = Substitute.For<IUnitOfWork>();
         var certificateRepositoryMock = Substitute.For<ICertificateRepository>();
+        certificateRepositoryMock.GetCertificate(request.ProductionCertificateId.Registry, request.ProductionCertificateId.StreamId)
+            .Returns(new Certificate
+            {
+                Id = Guid.NewGuid(),
+                RegistryName = request.ProductionCertificateId.Registry,
+                StartDate = DateTimeOffset.UtcNow.AddDays(-1), // Example start date
+                EndDate = DateTimeOffset.UtcNow.AddDays(1),   // Example end date
+                GridArea = "ExampleGridArea",                // Example grid area
+                CertificateType = GranularCertificateType.Production,
+                Withdrawn = false
+            });
+        certificateRepositoryMock.GetCertificate(request.ConsumptionCertificateId.Registry, request.ConsumptionCertificateId.StreamId)
+            .Returns(new Certificate
+            {
+                Id = Guid.NewGuid(),
+                RegistryName = request.ConsumptionCertificateId.Registry,
+                StartDate = DateTimeOffset.UtcNow.AddDays(-1), // Example start date
+                EndDate = DateTimeOffset.UtcNow.AddDays(1),   // Example end date
+                GridArea = "ExampleGridArea",                // Example grid area
+                CertificateType = GranularCertificateType.Consumption,
+                Withdrawn = false
+            });
         unitOfWorkMock.CertificateRepository.Returns(certificateRepositoryMock);
 
         var controller = new ClaimsController(_claimMetrics)
