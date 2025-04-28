@@ -70,6 +70,7 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
         var queryEndDate = new DateTimeOffset(2020, 6, 10, 12, 0, 0, TimeSpan.Zero);
 
         var subject = _fixture.Create<string>();
+        await _dbFixture.CreateWallet(subject);
         var controller = new TransfersController(_transferMetrics)
         {
             ControllerContext = CreateContextWithUser(subject)
@@ -275,6 +276,7 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
         // Arrange
         var subject = _fixture.Create<string>();
         var request = _fixture.Create<TransferRequest>();
+        await _dbFixture.CreateWallet(subject);
 
         await using var provider = new ServiceCollection()
             .AddMassTransitTestHarness(x =>
@@ -313,6 +315,7 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
         // Arrange
         var subject = _fixture.Create<string>();
         var request = _fixture.Create<TransferRequest>();
+        await _dbFixture.CreateWallet(subject);
 
         await using var provider = new ServiceCollection()
             .AddMassTransitTestHarness(x =>

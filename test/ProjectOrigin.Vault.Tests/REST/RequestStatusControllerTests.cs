@@ -44,6 +44,7 @@ public class RequestStatusControllerTests : IClassFixture<PostgresDatabaseFixtur
     public async Task GetRequestStatus_NotFound()
     {
         var subject = _fixture.Create<string>();
+        await _dbFixture.CreateWallet(subject);
         var controller = new RequestStatusController
         {
             ControllerContext = CreateContextWithUser(subject)
@@ -60,6 +61,7 @@ public class RequestStatusControllerTests : IClassFixture<PostgresDatabaseFixtur
     public async Task GetRequestStatus()
     {
         var subject = _fixture.Create<string>();
+        await _dbFixture.CreateWallet(subject);
         var controller = new RequestStatusController
         {
             ControllerContext = CreateContextWithUser(subject)

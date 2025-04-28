@@ -21,6 +21,8 @@ using ProjectOrigin.Vault.Repositories;
 using ProjectOrigin.Vault.Services.REST.v1;
 using Xunit;
 using TimeAggregate = ProjectOrigin.Vault.Services.REST.v1.TimeAggregate;
+using ProjectOrigin.HierarchicalDeterministicKeys.Implementations;
+using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
 
 namespace ProjectOrigin.Vault.Tests;
 
@@ -31,6 +33,7 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
     private readonly IUnitOfWork _unitOfWork;
     private readonly MsOptions.IOptions<ServiceOptions> _options;
     private readonly IClaimMetrics _claimMetrics;
+    private readonly IHDAlgorithm _algorithm;
 
     public ClaimsControllerTests(PostgresDatabaseFixture postgresDatabaseFixture)
     {
@@ -38,6 +41,7 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
         _dbFixture = postgresDatabaseFixture;
         _unitOfWork = _dbFixture.CreateUnitOfWork();
         _claimMetrics = Substitute.For<IClaimMetrics>();
+        _algorithm = new Secp256k1Algorithm();
 
         _options = MsOptions.Options.Create(new ServiceOptions
         {
@@ -119,6 +123,14 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
         var request = _fixture.Create<ClaimRequest>();
         var unitOfWorkMock = Substitute.For<IUnitOfWork>();
         var certificateRepositoryMock = Substitute.For<ICertificateRepository>();
+        var walletRepositoryMock = Substitute.For<IWalletRepository>();
+
+        walletRepositoryMock.GetWallet(Arg.Any<string>()).Returns(new Wallet
+        {
+            Id = Guid.NewGuid(),
+            Owner = subject,
+            PrivateKey = _algorithm.GenerateNewPrivateKey()
+        });
 
         certificateRepositoryMock.GetRegisteringAndAvailableQuantity(
                 request.ProductionCertificateId.Registry,
@@ -156,6 +168,7 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
             });
 
         unitOfWorkMock.CertificateRepository.Returns(certificateRepositoryMock);
+        unitOfWorkMock.WalletRepository.Returns(walletRepositoryMock);
 
         var controller = new ClaimsController(_claimMetrics)
         {
