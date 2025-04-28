@@ -40,6 +40,79 @@ public class WalletControllerTests : IClassFixture<PostgresDatabaseFixture>
     }
 
     [Fact]
+    public async Task DisableWallet_Verify_Unauthorized()
+    {
+        // Arrange
+        var controller = new WalletController();
+
+        // Act
+        var result = await controller.DisableWallet(_unitOfWork, Guid.NewGuid());
+
+        // Assert
+        result.Result.Should().BeOfType<UnauthorizedResult>();
+    }
+
+    [Fact]
+    public async Task DisableWallet_WhenNoWallet_NotFound()
+    {
+        // Arrange
+        var subject = _fixture.Create<string>();
+        var controller = new WalletController()
+        {
+            ControllerContext = CreateContextWithUser(subject)
+        };
+
+        // Act
+        var result = await controller.DisableWallet(_unitOfWork, Guid.NewGuid());
+
+        // Assert
+        result.Result.Should().BeOfType<NotFoundResult>();
+    }
+
+    [Fact]
+    public async Task DisableWallet_WhenWalletIsDisabled_BadRequest()
+    {
+        // Arrange
+        var subject = _fixture.Create<string>();
+        var controller = new WalletController()
+        {
+            ControllerContext = CreateContextWithUser(subject)
+        };
+
+        var wallet = await _dbFixture.CreateWallet(subject);
+        await _dbFixture.DisableWallet(wallet.Id);
+
+        // Act
+        var result = await controller.DisableWallet(_unitOfWork, wallet.Id);
+
+        // Assert
+        result.Result.Should().BeOfType<BadRequestObjectResult>();
+    }
+
+    [Fact]
+    public async Task DisableWallet()
+    {
+        // Arrange
+        var subject = _fixture.Create<string>();
+        var controller = new WalletController()
+        {
+            ControllerContext = CreateContextWithUser(subject)
+        };
+
+        var wallet = await _dbFixture.CreateWallet(subject);
+
+        // Act
+        var result = await controller.DisableWallet(_unitOfWork, wallet.Id);
+
+        // Assert
+        result.Result.Should().BeOfType<OkObjectResult>();
+
+        var walletDb = await _unitOfWork.WalletRepository.GetWallet(wallet.Id);
+        Assert.NotNull(walletDb);
+        Assert.NotNull(walletDb.Disabled);
+    }
+
+    [Fact]
     public async Task Verify_Unauthorized()
     {
         // Arrange
@@ -367,6 +440,30 @@ public class WalletControllerTests : IClassFixture<PostgresDatabaseFixture>
     }
 
     [Fact]
+    public async Task CreateWalletEndpoint_WhenWalletIsDisabled_BadRequest()
+    {
+        // Arrange
+        var subject = _fixture.Create<string>();
+        var controller = new WalletController()
+        {
+            ControllerContext = CreateContextWithUser(subject)
+        };
+
+        var wallet = await _dbFixture.CreateWallet(subject);
+        await _dbFixture.DisableWallet(wallet.Id);
+
+        // Act
+        var result = await controller.CreateWalletEndpoint(
+            _unitOfWork,
+            _options,
+            wallet.Id);
+
+
+        // Assert
+        result.Result.Should().BeOfType<BadRequestObjectResult>();
+    }
+
+    [Fact]
     public async Task Verify_CreateWalletEndpoint_Success()
     {
         // Arrange
@@ -463,6 +560,41 @@ public class WalletControllerTests : IClassFixture<PostgresDatabaseFixture>
     }
 
     [Fact]
+    public async Task CreateExternalEndpoint_WhenKnownWalletAndItIsDisabled_BadRequest()
+    {
+        // Arrange
+        var subject = _fixture.Create<string>();
+        var controller = new WalletController()
+        {
+            ControllerContext = CreateContextWithUser(subject)
+        };
+
+        var wallet = await _dbFixture.CreateWallet(subject);
+        var createEndpointResponse = await controller.CreateWalletEndpoint(
+            _unitOfWork,
+            _options,
+            wallet.Id
+        );
+
+        var endpointCreatedResult = createEndpointResponse.Result.Should().BeOfType<CreatedResult>()
+            .Which.Value.Should().BeOfType<CreateWalletEndpointResponse>().Which;
+
+        await _dbFixture.DisableWallet(wallet.Id);
+
+        // Act
+        var result = await controller.CreateExternalEndpoint(
+            _unitOfWork,
+            new CreateExternalEndpointRequest()
+            {
+                TextReference = _fixture.Create<string>(),
+                WalletReference = endpointCreatedResult.WalletReference
+            });
+
+        // Assert
+        result.Result.Should().BeOfType<BadRequestObjectResult>();
+    }
+
+    [Fact]
     public async Task CreateExternalEndpoint_SelfReference_Invalid()
     {
         // Arrange
@@ -503,7 +635,6 @@ public class WalletControllerTests : IClassFixture<PostgresDatabaseFixture>
         // Assert
         result.Result.Should().BeOfType<BadRequestObjectResult>()
             .Which.Value.Should().Be("Cannot create receiver deposit endpoint to self.");
-
     }
 
     private static ControllerContext CreateContextWithUser(string subject)
