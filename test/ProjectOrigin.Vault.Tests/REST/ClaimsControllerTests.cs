@@ -7,7 +7,6 @@ using FluentAssertions;
 using MassTransit;
 using MassTransit.Testing;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
