@@ -7,6 +7,7 @@ using FluentAssertions;
 using MassTransit;
 using MassTransit.Testing;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
@@ -63,6 +64,22 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
 
         // Assert
         result.Result.Should().BeOfType<UnauthorizedResult>();
+    }
+
+    [Fact]
+    public async Task GetClaims_NoWallet_NotFound()
+    {
+        var subject = _fixture.Create<string>();
+        var controller = new ClaimsController(_claimMetrics)
+        {
+            ControllerContext = CreateContextWithUser(subject)
+        };
+
+        var result = await controller.GetClaims(
+            _unitOfWork,
+            new GetClaimsQueryParameters());
+
+        result.Result.Should().BeOfType<NotFoundObjectResult>();
     }
 
     [Fact]
@@ -314,6 +331,22 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
     }
 
     [Fact]
+    public async Task GetClaimsCursor_NoWallet_NotFound()
+    {
+        var subject = _fixture.Create<string>();
+        var controller = new ClaimsController(_claimMetrics)
+        {
+            ControllerContext = CreateContextWithUser(subject)
+        };
+
+        var result = await controller.GetClaimsCursor(
+            _unitOfWork,
+            new GetClaimsQueryParametersCursor());
+
+        result.Result.Should().BeOfType<NotFoundObjectResult>();
+    }
+
+    [Fact]
     public async Task GetClaimsCursor_DisabledWallet_BadRequest()
     {
         var subject = _fixture.Create<string>();
@@ -494,6 +527,27 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
 
         // Assert
         result.Result.Should().BeOfType<BadRequestObjectResult>();
+    }
+
+    [Fact]
+    public async Task AggregateClaims_NoWallet_NotFound()
+    {
+        var subject = _fixture.Create<string>();
+        var controller = new ClaimsController(_claimMetrics)
+        {
+            ControllerContext = CreateContextWithUser(subject)
+        };
+
+        var result = await controller.AggregateClaims(
+            _unitOfWork,
+            new AggregateClaimsQueryParameters
+            {
+                TimeAggregate = TimeAggregate.Day,
+                TimeZone = "Europe/Copenhagen"
+            });
+
+
+        result.Result.Should().BeOfType<NotFoundObjectResult>();
     }
 
     [Fact]
