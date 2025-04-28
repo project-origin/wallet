@@ -629,14 +629,11 @@
               }
             }
           },
-          "400": {
-            "description": "If the wallet is disabled."
-          },
           "401": {
             "description": "If the user is not authenticated."
           },
           "404": {
-            "description": "If the request specified is not found for the user or if the user does not own a wallet."
+            "description": "If the request specified is not found for the user."
           }
         }
       }
@@ -1087,7 +1084,17 @@
         ],
         "responses": {
           "200": {
-            "description": "The wallet was found and disabled."
+            "description": "The wallet was found and disabled.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DisableWalletResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "If the wallet is disabled."
           },
           "401": {
             "description": "If the user is not authenticated."
@@ -1576,6 +1583,26 @@
         "additionalProperties": false,
         "description": "Response to create a new wallet."
       },
+      "DisableWalletResponse": {
+        "required": [
+          "disabledDate"
+        ],
+        "type": "object",
+        "properties": {
+          "walletId": {
+            "type": "string",
+            "description": "The ID of the wallet.",
+            "format": "uuid"
+          },
+          "disabledDate": {
+            "type": "integer",
+            "description": "Timestamp of when the wallet was disabled in unix time seconds.",
+            "format": "int64"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Response to disable a wallet."
+      },
       "FederatedStreamId": {
         "required": [
           "registry",
@@ -2034,6 +2061,7 @@
           },
           "disabledDate": {
             "type": "integer",
+            "description": "Timestamp of when the wallet was disabled in unix time seconds.",
             "format": "int64",
             "nullable": true
           }
