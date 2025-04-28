@@ -4,6 +4,7 @@ using ProjectOrigin.Vault.Tests.TestClassFixtures;
 using System.Net;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
+using ProjectOrigin.Vault.Tests.TestExtensions;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -68,8 +69,10 @@ public class AuthJwtTests : WalletSystemTestsBase, IClassFixture<InMemoryFixture
     public async Task Verify_Get_Allowed(string scope, string url, HttpStatusCode expected)
     {
         //Arrange
+        var subject = _fixture.Create<string>();
+        await _dbFixture.CreateWallet(subject);
         var httpClient = CreateAuthenticatedHttpClient(
-            _fixture.Create<string>(),
+            subject,
             _fixture.Create<string>(),
             scopes: [scope]);
 
