@@ -41,9 +41,7 @@ public class CertificatesController : ControllerBase
         if (!User.TryGetSubject(out var subject)) return Unauthorized();
 
         var wallet = await unitOfWork.WalletRepository.GetWallet(subject);
-
         if (wallet == null) return NotFound("You don't own a wallet. Create a wallet first.");
-
         if (wallet.IsDisabled()) return BadRequest("Unable to interact with a disabled wallet.");
 
         var certificate = await unitOfWork.CertificateRepository.QueryCertificate(subject, registry, streamId);
@@ -73,9 +71,7 @@ public class CertificatesController : ControllerBase
         if (!User.TryGetSubject(out var subject)) return Unauthorized();
 
         var wallet = await unitOfWork.WalletRepository.GetWallet(subject);
-
         if (wallet == null) return NotFound("You don't own a wallet. Create a wallet first.");
-
         if (wallet.IsDisabled()) return BadRequest("Unable to interact with a disabled wallet.");
 
         var certificates = await unitOfWork.CertificateRepository.QueryCertificates(new QueryCertificatesFilterCursor
@@ -113,9 +109,7 @@ public class CertificatesController : ControllerBase
         if (!User.TryGetSubject(out var subject)) return Unauthorized();
 
         var wallet = await unitOfWork.WalletRepository.GetWallet(subject);
-
         if (wallet == null) return NotFound("You don't own a wallet. Create a wallet first.");
-
         if (wallet.IsDisabled()) return BadRequest("Unable to interact with a disabled wallet.");
 
         var certificates = await unitOfWork.CertificateRepository.QueryAvailableCertificates(new QueryCertificatesFilter
@@ -154,6 +148,7 @@ public class CertificatesController : ControllerBase
     {
         if (!User.TryGetSubject(out var subject)) return Unauthorized();
         if (!param.TimeZone.TryParseTimeZone(out var timeZoneInfo)) return BadRequest("Invalid time zone");
+
         var wallet = await unitOfWork.WalletRepository.GetWallet(subject);
         if (wallet == null) return NotFound("You don't own a wallet. Create a wallet first.");
         if (wallet.IsDisabled()) return BadRequest("Unable to interact with a disabled wallet.");
