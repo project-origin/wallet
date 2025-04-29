@@ -169,7 +169,7 @@ public class WalletController : ControllerBase
     /// <response code="400">If the wallet is disabled.</response>
     /// <response code="401">If the user is not authenticated.</response>
     /// <response code="404">If the wallet specified is not found.</response>
-    [HttpDelete]
+    [HttpPost]
     [Route("v1/wallets/{walletId}/disable")]
     [RequiredScope("po:wallets:delete")]
     [Produces("application/json")]
