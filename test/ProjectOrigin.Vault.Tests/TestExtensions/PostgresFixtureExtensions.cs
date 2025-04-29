@@ -8,6 +8,7 @@ using ProjectOrigin.PedersenCommitment;
 using ProjectOrigin.Vault.Tests.TestClassFixtures;
 using ProjectOrigin.Vault.Database;
 using ProjectOrigin.Vault.Database.Postgres;
+using ProjectOrigin.Vault.Extensions;
 using ProjectOrigin.Vault.Models;
 using ProjectOrigin.Vault.Repositories;
 
@@ -38,6 +39,15 @@ public static class PostgresFixtureExtensions
             await walletRepository.Create(wallet);
 
             return wallet;
+        }
+    }
+
+    public static async Task DisableWallet(this PostgresDatabaseFixture _dbFixture, Guid walletId)
+    {
+        using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
+        {
+            var walletRepository = new WalletRepository(connection);
+            await walletRepository.DisableWallet(walletId, DateTimeOffset.Now.ToUtcTime());
         }
     }
 
