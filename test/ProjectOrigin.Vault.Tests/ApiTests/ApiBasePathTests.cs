@@ -8,6 +8,7 @@ using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using ProjectOrigin.Vault.Tests.TestClassFixtures;
 using ProjectOrigin.Vault.Services.REST.v1;
+using ProjectOrigin.Vault.Tests.TestExtensions;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
@@ -50,7 +51,9 @@ public class ApiBasePathTests : WalletSystemTestsBase, IClassFixture<InMemoryFix
     [Fact]
     public async Task api_returns_ok_when_base_path_is_correct()
     {
-        var httpClient = CreateAuthenticatedHttpClient(_fixture.Create<string>(), _fixture.Create<string>());
+        var subject = _fixture.Create<string>();
+        await _dbFixture.CreateWallet(subject);
+        var httpClient = CreateAuthenticatedHttpClient(subject, _fixture.Create<string>());
 
         var result = await httpClient.GetAsync($"{_basePath}/v1/certificates");
 

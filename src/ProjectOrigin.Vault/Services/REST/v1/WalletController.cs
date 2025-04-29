@@ -39,7 +39,7 @@ public class WalletController : ControllerBase
     [RequiredScope("po:wallets:create")]
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<CreateWalletResponse>> CreateWallet(
         [FromServices] IUnitOfWork unitOfWork,
@@ -110,6 +110,7 @@ public class WalletController : ControllerBase
             {
                 Id = wallet.Id,
                 PublicKey = wallet.PrivateKey.Neuter(),
+                DisabledDate = wallet.Disabled?.ToUnixTimeSeconds()
             });
 
         return Ok(new ResultList<WalletRecord, PageInfo>
@@ -155,6 +156,45 @@ public class WalletController : ControllerBase
         {
             Id = wallet.Id,
             PublicKey = wallet.PrivateKey.Neuter(),
+            DisabledDate = wallet.Disabled?.ToUnixTimeSeconds()
+        });
+    }
+
+    /// <summary>
+    /// Disables a wallet, so that it is not possible to interact with the wallet by transfer, claim, querying, etc.
+    /// </summary>
+    /// <param name="unitOfWork"></param>
+    /// <param name="walletId">The ID of the wallet to disable.</param>
+    /// <response code="200">The wallet was found and disabled.</response>
+    /// <response code="400">If the wallet is disabled.</response>
+    /// <response code="401">If the user is not authenticated.</response>
+    /// <response code="404">If the wallet specified is not found.</response>
+    [HttpDelete]
+    [Route("v1/wallets/{walletId}")]
+    [RequiredScope("po:wallets:delete")]
+    [Produces("application/json")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<DisableWalletResponse>> DisableWallet(
+        [FromServices] IUnitOfWork unitOfWork,
+        [FromRoute] Guid walletId)
+    {
+        if (!User.TryGetSubject(out var subject)) return Unauthorized();
+
+        var wallet = await unitOfWork.WalletRepository.GetWallet(walletId);
+
+        if (wallet is null || wallet.Owner != subject) return NotFound();
+        if (wallet.IsDisabled()) return BadRequest("Unable to interact with a disabled wallet.");
+
+        var disabledTime = DateTimeOffset.Now.ToUtcTime();
+        await unitOfWork.WalletRepository.DisableWallet(walletId, disabledTime);
+
+        return Ok(new DisableWalletResponse
+        {
+            WalletId = wallet.Id,
+            DisabledDate = disabledTime.ToUnixTimeSeconds()
         });
     }
 
@@ -165,6 +205,7 @@ public class WalletController : ControllerBase
     /// <param name = "serviceOptions" ></param>
     /// <param name = "walletId" > The ID of the wallet to create the endpoint on.</param>
     /// <response code="201">The wallet endpoint was created.</response>
+    /// <response code="400">If the wallet is disabled.</response>
     /// <response code="401">If the user is not authenticated.</response>
     /// <response code="404">If the wallet specified is not found for the user.</response>
     [HttpPost]
@@ -172,6 +213,7 @@ public class WalletController : ControllerBase
     [RequiredScope("po:wallet-endpoints:create")]
     [Produces("application/json")]
     [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<CreateWalletEndpointResponse>> CreateWalletEndpoint(
@@ -185,6 +227,7 @@ public class WalletController : ControllerBase
         var wallet = await unitOfWork.WalletRepository.GetWallet(walletId);
 
         if (wallet is null || wallet.Owner != subject) return NotFound();
+        if (wallet.IsDisabled()) return BadRequest("Unable to interact with a disabled wallet.");
 
         var walletEndpoint = await unitOfWork.WalletRepository.CreateWalletEndpoint(wallet.Id);
 
@@ -208,7 +251,7 @@ public class WalletController : ControllerBase
     /// <param name="unitOfWork"></param>
     /// <param name="request">The request to create the external endpoint.</param>
     /// <response code="201">The external endpoint was created.</response>
-    /// <response code="400">If the wallet reference is invalid or if the wallet reference is to the same wallet as the user.</response>
+    /// <response code="400">If the wallet reference is invalid, if the wallet reference is to the same wallet as the user or if wallet is disabled.</response>
     /// <response code="401">If the user is not authenticated.</response>
     [HttpPost]
     [Route("v1/external-endpoints")]
@@ -228,6 +271,9 @@ public class WalletController : ControllerBase
         if (foundEndpoint is not null)
         {
             var wallet = await unitOfWork.WalletRepository.GetWallet(foundEndpoint.WalletId) ?? throw new InvalidOperationException("Wallet not found.");
+
+            if (wallet.IsDisabled()) return BadRequest("Unable to interact with a disabled wallet.");
+
             if (wallet.Owner == subject)
             {
                 return BadRequest("Cannot create receiver deposit endpoint to self.");
@@ -259,6 +305,10 @@ public record WalletRecord()
 {
     public required Guid Id { get; init; }
     public required IHDPublicKey PublicKey { get; init; }
+    /// <summary>
+    /// Timestamp of when the wallet was disabled in unix time seconds.
+    /// </summary>
+    public required long? DisabledDate { get; init; }
 }
 
 /// <summary>
@@ -281,6 +331,21 @@ public record CreateWalletResponse()
     /// The ID of the created wallet.
     /// </summary>
     public Guid WalletId { get; init; }
+}
+
+/// <summary>
+/// Response to disable a wallet.
+/// </summary>
+public record DisableWalletResponse()
+{
+    /// <summary>
+    /// The ID of the wallet.
+    /// </summary>
+    public Guid WalletId { get; init; }
+    /// <summary>
+    /// Timestamp of when the wallet was disabled in unix time seconds.
+    /// </summary>
+    public required long DisabledDate { get; init; }
 }
 
 /// <summary>

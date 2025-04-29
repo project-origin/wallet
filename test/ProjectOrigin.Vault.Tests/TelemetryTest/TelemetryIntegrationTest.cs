@@ -6,6 +6,7 @@ using FluentAssertions;
 using ProjectOrigin.Vault.Options;
 using ProjectOrigin.Vault.Tests.Extensions;
 using ProjectOrigin.Vault.Tests.TestClassFixtures;
+using ProjectOrigin.Vault.Tests.TestExtensions;
 using Xunit;
 
 namespace ProjectOrigin.Vault.Tests.TelemetryTest;
@@ -18,6 +19,7 @@ public class TelemetryIntegrationTest :
     IClassFixture<JwtTokenIssuerFixture>
 {
     private readonly TestServerFixture<Startup> _serverFixture;
+    private readonly PostgresDatabaseFixture _dbFixture;
     private readonly JwtTokenIssuerFixture _jwtTokenIssuerFixture;
     private OpenTelemetryFixture _openTelemetryFixture;
 
@@ -29,6 +31,7 @@ public class TelemetryIntegrationTest :
         JwtTokenIssuerFixture jwtTokenIssuerFixture)
     {
         _serverFixture = serverFixture;
+        _dbFixture = dbFixture;
         _jwtTokenIssuerFixture = jwtTokenIssuerFixture;
         _openTelemetryFixture = openTelemetryFixture;
 
@@ -60,6 +63,7 @@ public class TelemetryIntegrationTest :
         var client = _serverFixture.CreateHttpClient();
         var token = _jwtTokenIssuerFixture.GenerateToken(subject, name);
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        await _dbFixture.CreateWallet(subject);
 
         var getCertResult = await client.GetAsync("v1/certificates");
         getCertResult.EnsureSuccessStatusCode();

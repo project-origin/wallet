@@ -61,6 +61,51 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
     }
 
     [Fact]
+    public async Task GetTransfersCursor_WhenNoWallet_NotFound()
+    {
+        _transferMetrics = Substitute.For<ITransferMetrics>();
+        var subject = _fixture.Create<string>();
+
+        // Arrange
+        var controller = new TransfersController(_transferMetrics)
+        {
+            ControllerContext = CreateContextWithUser(subject)
+        };
+
+        // Act
+        var result = await controller.GetTransfersCursor(
+            _unitOfWork,
+            new GetTransfersQueryParametersCursor());
+
+        // Assert
+        result.Result.Should().BeOfType<NotFoundObjectResult>();
+    }
+
+    [Fact]
+    public async Task GetTransfersCursor_WhenWalletIsDisabled_NotFound()
+    {
+        _transferMetrics = Substitute.For<ITransferMetrics>();
+        var subject = _fixture.Create<string>();
+
+        var wallet = await _dbFixture.CreateWallet(subject);
+        await _dbFixture.DisableWallet(wallet.Id);
+
+        // Arrange
+        var controller = new TransfersController(_transferMetrics)
+        {
+            ControllerContext = CreateContextWithUser(subject)
+        };
+
+        // Act
+        var result = await controller.GetTransfersCursor(
+            _unitOfWork,
+            new GetTransfersQueryParametersCursor());
+
+        // Assert
+        result.Result.Should().BeOfType<BadRequestObjectResult>();
+    }
+
+    [Fact]
     public async Task GetTransfersCursor()
     {
         // Arrange
@@ -70,6 +115,7 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
         var queryEndDate = new DateTimeOffset(2020, 6, 10, 12, 0, 0, TimeSpan.Zero);
 
         var subject = _fixture.Create<string>();
+        await _dbFixture.CreateWallet(subject);
         var controller = new TransfersController(_transferMetrics)
         {
             ControllerContext = CreateContextWithUser(subject)
@@ -106,6 +152,51 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
     }
 
     [Fact]
+    public async Task GetTransfers_WhenNoWallet_NotFound()
+    {
+        _transferMetrics = Substitute.For<ITransferMetrics>();
+        var subject = _fixture.Create<string>();
+
+        // Arrange
+        var controller = new TransfersController(_transferMetrics)
+        {
+            ControllerContext = CreateContextWithUser(subject)
+        };
+
+        // Act
+        var result = await controller.GetTransfers(
+            _unitOfWork,
+            new GetTransfersQueryParameters());
+
+        // Assert
+        result.Result.Should().BeOfType<NotFoundObjectResult>();
+    }
+
+    [Fact]
+    public async Task GetTransfers_WhenWalletIsDisabled_NotFound()
+    {
+        _transferMetrics = Substitute.For<ITransferMetrics>();
+        var subject = _fixture.Create<string>();
+
+        var wallet = await _dbFixture.CreateWallet(subject);
+        await _dbFixture.DisableWallet(wallet.Id);
+
+        // Arrange
+        var controller = new TransfersController(_transferMetrics)
+        {
+            ControllerContext = CreateContextWithUser(subject)
+        };
+
+        // Act
+        var result = await controller.GetTransfers(
+            _unitOfWork,
+            new GetTransfersQueryParameters());
+
+        // Assert
+        result.Result.Should().BeOfType<BadRequestObjectResult>();
+    }
+
+    [Fact]
     public async Task GetTransfers()
     {
         // Arrange
@@ -120,6 +211,7 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
             ControllerContext = CreateContextWithUser(subject)
         };
 
+        await _dbFixture.CreateWallet(subject);
         var externalEndpoint = await _dbFixture.CreateExternalEndpoint(subject);
 
         for (DateTimeOffset i = issuestartDate; i < issueEndDate; i = i.AddHours(1))
@@ -149,6 +241,67 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
         resultList.Should().HaveCount(48);
     }
 
+    [Fact]
+    public async Task AggregateTransfers_WhenNoWallet_NotFound()
+    {
+        _transferMetrics = Substitute.For<ITransferMetrics>();
+        var subject = _fixture.Create<string>();
+
+        // Arrange
+        var controller = new TransfersController(_transferMetrics)
+        {
+            ControllerContext = CreateContextWithUser(subject)
+        };
+
+        // Act
+        var queryStartDate = new DateTimeOffset(2020, 6, 8, 12, 0, 0, TimeSpan.Zero);
+        var queryEndDate = new DateTimeOffset(2020, 6, 10, 12, 0, 0, TimeSpan.Zero);
+        var result = await controller.AggregateTransfers(
+            _unitOfWork,
+            new AggregateTransfersQueryParameters
+            {
+                TimeAggregate = TimeAggregate.Day,
+                TimeZone = "Europe/Copenhagen",
+                Start = queryStartDate.ToUnixTimeSeconds(),
+                End = queryEndDate.ToUnixTimeSeconds(),
+            });
+
+        // Assert
+        result.Result.Should().BeOfType<NotFoundObjectResult>();
+    }
+
+    [Fact]
+    public async Task AggregateTransfers_WhenWalletIsDisabled_NotFound()
+    {
+        _transferMetrics = Substitute.For<ITransferMetrics>();
+        var subject = _fixture.Create<string>();
+
+        var wallet = await _dbFixture.CreateWallet(subject);
+        await _dbFixture.DisableWallet(wallet.Id);
+
+        // Arrange
+        var controller = new TransfersController(_transferMetrics)
+        {
+            ControllerContext = CreateContextWithUser(subject)
+        };
+
+        // Act
+        var queryStartDate = new DateTimeOffset(2020, 6, 8, 12, 0, 0, TimeSpan.Zero);
+        var queryEndDate = new DateTimeOffset(2020, 6, 10, 12, 0, 0, TimeSpan.Zero);
+        var result = await controller.AggregateTransfers(
+            _unitOfWork,
+            new AggregateTransfersQueryParameters
+            {
+                TimeAggregate = TimeAggregate.Day,
+                TimeZone = "Europe/Copenhagen",
+                Start = queryStartDate.ToUnixTimeSeconds(),
+                End = queryEndDate.ToUnixTimeSeconds(),
+            });
+
+        // Assert
+        result.Result.Should().BeOfType<BadRequestObjectResult>();
+    }
+
     [Theory]
     [InlineData("Europe/Copenhagen", new long[] { 1000, 2400, 1400 })]
     [InlineData("Europe/London", new long[] { 1100, 2400, 1300 })]
@@ -167,6 +320,7 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
             ControllerContext = CreateContextWithUser(subject)
         };
 
+        await _dbFixture.CreateWallet(subject);
         var externalEndpoint = await _dbFixture.CreateExternalEndpoint(subject);
 
         for (DateTimeOffset i = issuestartDate; i < issueEndDate; i = i.AddHours(1))
@@ -245,6 +399,60 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
     }
 
     [Fact]
+    public async Task TransferCertificate_WhenNoWallet_NotFound()
+    {
+        // Arrange
+        var subject = _fixture.Create<string>();
+        var controller = new TransfersController(_transferMetrics)
+        {
+            ControllerContext = CreateContextWithUser(subject)
+        };
+
+        await using var provider = new ServiceCollection()
+            .AddMassTransitTestHarness(x =>
+            {
+            })
+            .BuildServiceProvider(true);
+
+        // Act
+        var result = await controller.TransferCertificate(
+            _unitOfWork,
+            _options,
+            _fixture.Create<TransferRequest>());
+
+        // Assert
+        result.Result.Should().BeOfType<NotFoundObjectResult>();
+    }
+
+    [Fact]
+    public async Task TransferCertificate_WhenWalletIsDisabled_BadRequest()
+    {
+        // Arrange
+        var subject = _fixture.Create<string>();
+        var controller = new TransfersController(_transferMetrics)
+        {
+            ControllerContext = CreateContextWithUser(subject)
+        };
+        var wallet = await _dbFixture.CreateWallet(subject);
+        await _dbFixture.DisableWallet(wallet.Id);
+
+        await using var provider = new ServiceCollection()
+            .AddMassTransitTestHarness(x =>
+            {
+            })
+            .BuildServiceProvider(true);
+
+        // Act
+        var result = await controller.TransferCertificate(
+            _unitOfWork,
+            _options,
+            _fixture.Create<TransferRequest>());
+
+        // Assert
+        result.Result.Should().BeOfType<BadRequestObjectResult>();
+    }
+
+    [Fact]
     public async Task IfReceivedTransferRequestButNoSuccessResponse_DoesNotIncrementCounters()
     {
         // Arrange
@@ -273,6 +481,7 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
         // Arrange
         var subject = _fixture.Create<string>();
         var request = _fixture.Create<TransferRequest>();
+        await _dbFixture.CreateWallet(subject);
 
         await using var provider = new ServiceCollection()
             .AddMassTransitTestHarness(x =>
@@ -311,6 +520,7 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
         // Arrange
         var subject = _fixture.Create<string>();
         var request = _fixture.Create<TransferRequest>();
+        await _dbFixture.CreateWallet(subject);
 
         await using var provider = new ServiceCollection()
             .AddMassTransitTestHarness(x =>

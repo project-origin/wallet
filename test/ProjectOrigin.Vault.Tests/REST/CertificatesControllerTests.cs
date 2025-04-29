@@ -42,6 +42,174 @@ public class CertificatesControllerTests : IClassFixture<PostgresDatabaseFixture
         result.Result.Should().BeOfType<UnauthorizedResult>();
     }
 
+    [Fact]
+    public async Task GetCertificate_WhenNoWallet_NotFound()
+    {
+        // Arrange
+        var subject = _fixture.Create<string>();
+        var registry = Guid.NewGuid().ToString();
+        var streamId = Guid.NewGuid();
+        var controller = new CertificatesController
+        {
+            ControllerContext = CreateContextWithUser(subject)
+        };
+
+        // Act
+        var result = await controller.GetCertificate(_unitOfWork, registry, streamId);
+
+        // Assert
+        result.Result.Should().BeOfType<NotFoundObjectResult>();
+    }
+
+    [Fact]
+    public async Task GetCertificate_WhenWalletIsDisabled_BadRequest()
+    {
+        // Arrange
+        var subject = _fixture.Create<string>();
+        var registry = Guid.NewGuid().ToString();
+        var streamId = Guid.NewGuid();
+        var wallet = await _dbFixture.CreateWallet(subject);
+        await _dbFixture.DisableWallet(wallet.Id);
+        var controller = new CertificatesController
+        {
+            ControllerContext = CreateContextWithUser(subject)
+        };
+
+        // Act
+        var result = await controller.GetCertificate(_unitOfWork, registry, streamId);
+
+        // Assert
+        result.Result.Should().BeOfType<BadRequestObjectResult>();
+    }
+
+    [Fact]
+    public async Task GetCertificatesCursor_WhenNoWallet_NotFound()
+    {
+        // Arrange
+        var subject = _fixture.Create<string>();
+        var controller = new CertificatesController
+        {
+            ControllerContext = CreateContextWithUser(subject)
+        };
+
+        // Act
+        var result = await controller.GetCertificatesCursor(_unitOfWork, new GetCertificatesQueryParametersCursor());
+
+        // Assert
+        result.Result.Should().BeOfType<NotFoundObjectResult>();
+    }
+
+    [Fact]
+    public async Task GetCertificatesCursor_WhenWalletIsDisabled_BadRequest()
+    {
+        // Arrange
+        var subject = _fixture.Create<string>();
+        var wallet = await _dbFixture.CreateWallet(subject);
+        await _dbFixture.DisableWallet(wallet.Id);
+        var controller = new CertificatesController
+        {
+            ControllerContext = CreateContextWithUser(subject)
+        };
+
+        // Act
+        var result = await controller.GetCertificatesCursor(_unitOfWork, new GetCertificatesQueryParametersCursor());
+
+        // Assert
+        result.Result.Should().BeOfType<BadRequestObjectResult>();
+    }
+
+    [Fact]
+    public async Task GetCertificates_WhenNoWallet_NotFound()
+    {
+        // Arrange
+        var subject = _fixture.Create<string>();
+        var controller = new CertificatesController
+        {
+            ControllerContext = CreateContextWithUser(subject)
+        };
+
+        // Act
+        var result = await controller.GetCertificates(_unitOfWork, new GetCertificatesQueryParameters());
+
+        // Assert
+        result.Result.Should().BeOfType<NotFoundObjectResult>();
+    }
+
+    [Fact]
+    public async Task GetCertificates_WhenWalletIsDisabled_BadRequest()
+    {
+        // Arrange
+        var subject = _fixture.Create<string>();
+        var wallet = await _dbFixture.CreateWallet(subject);
+        await _dbFixture.DisableWallet(wallet.Id);
+        var controller = new CertificatesController
+        {
+            ControllerContext = CreateContextWithUser(subject)
+        };
+
+        // Act
+        var result = await controller.GetCertificates(_unitOfWork, new GetCertificatesQueryParameters());
+
+        // Assert
+        result.Result.Should().BeOfType<BadRequestObjectResult>();
+    }
+
+    [Fact]
+    public async Task AggregateCertificates_WhenNoWallet_NotFound()
+    {
+        // Arrange
+        var subject = _fixture.Create<string>();
+        var controller = new CertificatesController
+        {
+            ControllerContext = CreateContextWithUser(subject)
+        };
+
+        // Act
+        var queryStartDate = new DateTimeOffset(2020, 6, 8, 12, 0, 0, TimeSpan.Zero);
+        var queryEndDate = new DateTimeOffset(2020, 6, 10, 12, 0, 0, TimeSpan.Zero);
+        var result = await controller.AggregateCertificates(_unitOfWork,
+            new AggregateCertificatesQueryParameters
+            {
+                TimeAggregate = TimeAggregate.Day,
+                TimeZone = "Europe/Copenhagen",
+                Start = queryStartDate.ToUnixTimeSeconds(),
+                End = queryEndDate.ToUnixTimeSeconds(),
+                Type = CertificateType.Production
+            });
+
+        // Assert
+        result.Result.Should().BeOfType<NotFoundObjectResult>();
+    }
+
+    [Fact]
+    public async Task AggregateCertificates_WhenWalletIsDisabled_BadRequest()
+    {
+        // Arrange
+        var subject = _fixture.Create<string>();
+        var wallet = await _dbFixture.CreateWallet(subject);
+        await _dbFixture.DisableWallet(wallet.Id);
+        var controller = new CertificatesController
+        {
+            ControllerContext = CreateContextWithUser(subject)
+        };
+
+        // Act
+        var queryStartDate = new DateTimeOffset(2020, 6, 8, 12, 0, 0, TimeSpan.Zero);
+        var queryEndDate = new DateTimeOffset(2020, 6, 10, 12, 0, 0, TimeSpan.Zero);
+        var result = await controller.AggregateCertificates(_unitOfWork,
+            new AggregateCertificatesQueryParameters
+            {
+                TimeAggregate = TimeAggregate.Day,
+                TimeZone = "Europe/Copenhagen",
+                Start = queryStartDate.ToUnixTimeSeconds(),
+                End = queryEndDate.ToUnixTimeSeconds(),
+                Type = CertificateType.Production
+            });
+
+        // Assert
+        result.Result.Should().BeOfType<BadRequestObjectResult>();
+    }
+
     [Theory]
     [InlineData("Europe/Copenhagen", new long[] { 1000, 2400, 1400 }, CertificateType.Production)]
     [InlineData("Europe/London", new long[] { 110, 240, 130 }, CertificateType.Consumption)]

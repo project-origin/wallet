@@ -10,7 +10,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
-using NSubstitute.ReceivedExtensions;
 using MsOptions = Microsoft.Extensions.Options;
 using ProjectOrigin.Vault.Tests.TestClassFixtures;
 using ProjectOrigin.Vault.Tests.TestExtensions;
@@ -18,9 +17,12 @@ using ProjectOrigin.Vault.Database;
 using ProjectOrigin.Vault.Metrics;
 using ProjectOrigin.Vault.Options;
 using ProjectOrigin.Vault.Models;
+using ProjectOrigin.Vault.Repositories;
 using ProjectOrigin.Vault.Services.REST.v1;
 using Xunit;
 using TimeAggregate = ProjectOrigin.Vault.Services.REST.v1.TimeAggregate;
+using ProjectOrigin.HierarchicalDeterministicKeys.Implementations;
+using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
 
 namespace ProjectOrigin.Vault.Tests;
 
@@ -31,6 +33,7 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
     private readonly IUnitOfWork _unitOfWork;
     private readonly MsOptions.IOptions<ServiceOptions> _options;
     private readonly IClaimMetrics _claimMetrics;
+    private readonly IHDAlgorithm _algorithm;
 
     public ClaimsControllerTests(PostgresDatabaseFixture postgresDatabaseFixture)
     {
@@ -38,6 +41,7 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
         _dbFixture = postgresDatabaseFixture;
         _unitOfWork = _dbFixture.CreateUnitOfWork();
         _claimMetrics = Substitute.For<IClaimMetrics>();
+        _algorithm = new Secp256k1Algorithm();
 
         _options = MsOptions.Options.Create(new ServiceOptions
         {
@@ -59,6 +63,40 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
 
         // Assert
         result.Result.Should().BeOfType<UnauthorizedResult>();
+    }
+
+    [Fact]
+    public async Task GetClaims_NoWallet_NotFound()
+    {
+        var subject = _fixture.Create<string>();
+        var controller = new ClaimsController(_claimMetrics)
+        {
+            ControllerContext = CreateContextWithUser(subject)
+        };
+
+        var result = await controller.GetClaims(
+            _unitOfWork,
+            new GetClaimsQueryParameters());
+
+        result.Result.Should().BeOfType<NotFoundObjectResult>();
+    }
+
+    [Fact]
+    public async Task GetClaims_DisabledWallet_BadRequest()
+    {
+        var subject = _fixture.Create<string>();
+        var controller = new ClaimsController(_claimMetrics)
+        {
+            ControllerContext = CreateContextWithUser(subject)
+        };
+        var wallet = await _dbFixture.CreateWallet(subject);
+        await _dbFixture.DisableWallet(wallet.Id);
+
+        var result = await controller.GetClaims(
+            _unitOfWork,
+            new GetClaimsQueryParameters());
+
+        result.Result.Should().BeOfType<BadRequestObjectResult>();
     }
 
     [Fact]
@@ -92,6 +130,80 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
         resultList.Should().BeInAscendingOrder(x => x.UpdatedAt);
         var updatedAt = DateTimeOffset.FromUnixTimeSeconds(resultList.Last().UpdatedAt);
         updatedAt.Should().BeOnOrAfter(DateTimeOffset.FromUnixTimeSeconds(queryUpdatedSince));
+    }
+
+    [Fact]
+    public async Task ReserveQuantity_IsCalledForConsumptionAndProduction()
+    {
+        var subject = _fixture.Create<string>();
+        var request = _fixture.Create<ClaimRequest>();
+        var unitOfWorkMock = Substitute.For<IUnitOfWork>();
+        var certificateRepositoryMock = Substitute.For<ICertificateRepository>();
+        var walletRepositoryMock = Substitute.For<IWalletRepository>();
+
+        walletRepositoryMock.GetWallet(Arg.Any<string>()).Returns(new Wallet
+        {
+            Id = Guid.NewGuid(),
+            Owner = subject,
+            PrivateKey = _algorithm.GenerateNewPrivateKey()
+        });
+
+        certificateRepositoryMock.GetRegisteringAndAvailableQuantity(
+                request.ProductionCertificateId.Registry,
+                request.ProductionCertificateId.StreamId,
+                subject)
+            .Returns(request.Quantity + 10);
+
+        certificateRepositoryMock.GetRegisteringAndAvailableQuantity(
+                request.ConsumptionCertificateId.Registry,
+                request.ConsumptionCertificateId.StreamId,
+                subject)
+            .Returns(request.Quantity + 10);
+
+        certificateRepositoryMock.GetCertificate(request.ProductionCertificateId.Registry, request.ProductionCertificateId.StreamId)
+            .Returns(new Certificate
+            {
+                Id = Guid.NewGuid(),
+                RegistryName = request.ProductionCertificateId.Registry,
+                StartDate = DateTimeOffset.UtcNow.AddDays(-1), // Example start date
+                EndDate = DateTimeOffset.UtcNow.AddDays(1),   // Example end date
+                GridArea = "ExampleGridArea",                // Example grid area
+                CertificateType = GranularCertificateType.Production,
+                Withdrawn = false
+            });
+        certificateRepositoryMock.GetCertificate(request.ConsumptionCertificateId.Registry, request.ConsumptionCertificateId.StreamId)
+            .Returns(new Certificate
+            {
+                Id = Guid.NewGuid(),
+                RegistryName = request.ConsumptionCertificateId.Registry,
+                StartDate = DateTimeOffset.UtcNow.AddDays(-1), // Example start date
+                EndDate = DateTimeOffset.UtcNow.AddDays(1),   // Example end date
+                GridArea = "ExampleGridArea",                // Example grid area
+                CertificateType = GranularCertificateType.Consumption,
+                Withdrawn = false
+            });
+
+        unitOfWorkMock.CertificateRepository.Returns(certificateRepositoryMock);
+        unitOfWorkMock.WalletRepository.Returns(walletRepositoryMock);
+
+        var controller = new ClaimsController(_claimMetrics)
+        {
+            ControllerContext = CreateContextWithUser(subject)
+        };
+
+        await controller.ClaimCertificate(unitOfWorkMock, _options, request);
+
+        await certificateRepositoryMock.Received(1).ReserveQuantity(
+            subject,
+            request.ConsumptionCertificateId.Registry,
+            request.ConsumptionCertificateId.StreamId,
+            request.Quantity);
+
+        await certificateRepositoryMock.Received(1).ReserveQuantity(
+            subject,
+            request.ProductionCertificateId.Registry,
+            request.ProductionCertificateId.StreamId,
+            request.Quantity);
     }
 
     [Fact]
@@ -215,6 +327,40 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
         // Assert
         result.Value.Should().NotBeNull();
         result.Value!.Result.Should().HaveCount(1); // Only the valid one
+    }
+
+    [Fact]
+    public async Task GetClaimsCursor_NoWallet_NotFound()
+    {
+        var subject = _fixture.Create<string>();
+        var controller = new ClaimsController(_claimMetrics)
+        {
+            ControllerContext = CreateContextWithUser(subject)
+        };
+
+        var result = await controller.GetClaimsCursor(
+            _unitOfWork,
+            new GetClaimsQueryParametersCursor());
+
+        result.Result.Should().BeOfType<NotFoundObjectResult>();
+    }
+
+    [Fact]
+    public async Task GetClaimsCursor_DisabledWallet_BadRequest()
+    {
+        var subject = _fixture.Create<string>();
+        var controller = new ClaimsController(_claimMetrics)
+        {
+            ControllerContext = CreateContextWithUser(subject)
+        };
+        var wallet = await _dbFixture.CreateWallet(subject);
+        await _dbFixture.DisableWallet(wallet.Id);
+
+        var result = await controller.GetClaimsCursor(
+            _unitOfWork,
+            new GetClaimsQueryParametersCursor());
+
+        result.Result.Should().BeOfType<BadRequestObjectResult>();
     }
 
     [Theory]
@@ -383,6 +529,50 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
     }
 
     [Fact]
+    public async Task AggregateClaims_NoWallet_NotFound()
+    {
+        var subject = _fixture.Create<string>();
+        var controller = new ClaimsController(_claimMetrics)
+        {
+            ControllerContext = CreateContextWithUser(subject)
+        };
+
+        var result = await controller.AggregateClaims(
+            _unitOfWork,
+            new AggregateClaimsQueryParameters
+            {
+                TimeAggregate = TimeAggregate.Day,
+                TimeZone = "Europe/Copenhagen"
+            });
+
+
+        result.Result.Should().BeOfType<NotFoundObjectResult>();
+    }
+
+    [Fact]
+    public async Task AggregateClaims_DisabledWallet_BadRequest()
+    {
+        var subject = _fixture.Create<string>();
+        var controller = new ClaimsController(_claimMetrics)
+        {
+            ControllerContext = CreateContextWithUser(subject)
+        };
+        var wallet = await _dbFixture.CreateWallet(subject);
+        await _dbFixture.DisableWallet(wallet.Id);
+
+        var result = await controller.AggregateClaims(
+            _unitOfWork,
+            new AggregateClaimsQueryParameters
+            {
+                TimeAggregate = TimeAggregate.Day,
+                TimeZone = "invalid-time-zone"
+            });
+
+
+        result.Result.Should().BeOfType<BadRequestObjectResult>();
+    }
+
+    [Fact]
     public async Task ClaimCertificate_Unauthorized()
     {
         // Arrange
@@ -424,6 +614,47 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
 
         return (new FederatedStreamId { Registry = prodCert.RegistryName, StreamId = prodCert.Id },
             new FederatedStreamId { Registry = conCert.RegistryName, StreamId = conCert.Id });
+    }
+
+    [Fact]
+    public async Task ClaimCertificate_DisabledWallet_BadRequest()
+    {
+        // Arrange
+        var subject = _fixture.Create<string>();
+        var wallet = await _dbFixture.CreateWallet(subject);
+        await _dbFixture.DisableWallet(wallet.Id);
+        var endpoint = await _dbFixture.CreateWalletEndpoint(wallet);
+        var issuerStartDate = new DateTimeOffset(2020, 6, 1, 12, 0, 0, TimeSpan.Zero);
+
+        var (prodCertId, conCertId) = await CreateCertificates(issuerStartDate, issuerStartDate.AddHours(1), endpoint);
+
+        var request = new ClaimRequest
+        {
+            ConsumptionCertificateId = prodCertId,
+            ProductionCertificateId = conCertId,
+            Quantity = 100
+        };
+
+        await using var provider = new ServiceCollection()
+            .AddMassTransitTestHarness(x => { })
+            .BuildServiceProvider(true);
+
+        var harness = provider.GetRequiredService<ITestHarness>();
+
+        await harness.Start();
+        var controller = new ClaimsController(_claimMetrics)
+        {
+            ControllerContext = CreateContextWithUser(subject)
+        };
+
+        // Act
+        var result = await controller.ClaimCertificate(
+            _unitOfWork,
+            _options,
+            request);
+
+        // Assert
+        result.Result.Should().BeOfType<BadRequestObjectResult>();
     }
 
     [Fact]
