@@ -1064,8 +1064,10 @@
             "description": "If the wallet specified is not found for the user."
           }
         }
-      },
-      "delete": {
+      }
+    },
+    "/v1/wallets/{walletId}/disable": {
+      "post": {
         "tags": [
           "Wallet"
         ],
