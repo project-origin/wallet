@@ -190,6 +190,7 @@ public class WalletController : ControllerBase
 
         var disabledTime = DateTimeOffset.Now.ToUtcTime();
         await unitOfWork.WalletRepository.DisableWallet(walletId, disabledTime);
+        unitOfWork.Commit();
 
         return Ok(new DisableWalletResponse
         {
