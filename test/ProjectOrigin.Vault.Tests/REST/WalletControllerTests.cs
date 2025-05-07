@@ -183,7 +183,7 @@ public class WalletControllerTests : IClassFixture<PostgresDatabaseFixture>
         var result = await controller.EnableWallet(_unitOfWork, wallet.Id);
 
         // Assert
-        result.Result.Should().BeOfType<OkObjectResult>();
+        result.Result.Should().BeOfType<EnableWalletResponse>();
 
         var walletDb = await _unitOfWork.WalletRepository.GetWallet(wallet.Id);
         Assert.NotNull(walletDb);
