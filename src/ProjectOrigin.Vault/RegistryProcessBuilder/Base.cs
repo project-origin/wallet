@@ -21,7 +21,8 @@ public partial class RegistryProcessBuilder : IRegistryProcessBuilder
     private readonly IRoutingSlipBuilder _slipBuilder;
     private readonly IOptions<NetworkOptions> _networkOptions;
 
-    public RegistryProcessBuilder(IUnitOfWork unitOfWork, IEndpointNameFormatter formatter, Guid routingSlipId, IOptions<NetworkOptions> networkOptions, string owner)
+    public RegistryProcessBuilder(IUnitOfWork unitOfWork, IEndpointNameFormatter formatter, Guid routingSlipId,
+        IOptions<NetworkOptions> networkOptions, string owner)
     {
         _unitOfWork = unitOfWork;
         _formatter = formatter;
@@ -37,6 +38,10 @@ public partial class RegistryProcessBuilder : IRegistryProcessBuilder
     {
         var uri = new Uri($"exchange:{_formatter.ExecuteActivity<T, TArguments>()}");
         _slipBuilder.AddActivity(typeof(T).Name, uri, arguments);
+        _slipBuilder.AddSubscription(
+            uri,
+            RoutingSlipEvents.Faulted | RoutingSlipEvents.ActivityCompensationFailed |
+            RoutingSlipEvents.ActivityFaulted | RoutingSlipEvents.CompensationFailed);
     }
 
     public RoutingSlip Build()
@@ -44,22 +49,24 @@ public partial class RegistryProcessBuilder : IRegistryProcessBuilder
         return _slipBuilder.Build();
     }
 
-    private void AddRegistryTransactionActivity(Transaction transaction, Guid sliceId, RequestStatusArgs? requestStatusArgs)
+    private void AddRegistryTransactionActivity(Transaction transaction, Guid sliceId,
+        RequestStatusArgs? requestStatusArgs)
     {
         AddActivity<SendRegistryTransactionActivity, SendRegistryTransactionArguments>(
-        new SendRegistryTransactionArguments()
-        {
-            Transaction = transaction
-        });
+            new SendRegistryTransactionArguments()
+            {
+                Transaction = transaction
+            });
 
-        AddActivity<WaitCommittedRegistryTransactionActivity, WaitCommittedTransactionArguments>(new WaitCommittedTransactionArguments()
-        {
-            RegistryName = transaction.Header.FederatedStreamId.Registry,
-            TransactionId = transaction.ToShaId(),
-            CertificateId = new Guid(transaction.Header.FederatedStreamId.StreamId.Value),
-            SliceId = sliceId,
-            RequestStatusArgs = requestStatusArgs
-        });
+        AddActivity<WaitCommittedRegistryTransactionActivity, WaitCommittedTransactionArguments>(
+            new WaitCommittedTransactionArguments()
+            {
+                RegistryName = transaction.Header.FederatedStreamId.Registry,
+                TransactionId = transaction.ToShaId(),
+                CertificateId = new Guid(transaction.Header.FederatedStreamId.StreamId.Value),
+                SliceId = sliceId,
+                RequestStatusArgs = requestStatusArgs
+            });
     }
 
     public void SetWalletSliceStates(Dictionary<Guid, WalletSliceState> newStates, RequestStatusArgs requestStatusArgs)
