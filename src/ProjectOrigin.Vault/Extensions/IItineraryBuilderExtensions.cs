@@ -13,11 +13,11 @@ public static class IItineraryBuilderExtensions
     {
         var uri = new Uri($"exchange:{formatter.ExecuteActivity<T, TArguments>()}");
 
+        builder.AddActivity(typeof(T).Name, uri, arguments);
+
         builder.AddSubscription(
             uri,
             RoutingSlipEvents.Faulted | RoutingSlipEvents.ActivityCompensationFailed |
             RoutingSlipEvents.ActivityFaulted | RoutingSlipEvents.CompensationFailed);
-
-        builder.AddActivity(typeof(T).Name, uri, arguments);
     }
 }

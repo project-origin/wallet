@@ -38,6 +38,7 @@ public partial class RegistryProcessBuilder : IRegistryProcessBuilder
     {
         var uri = new Uri($"exchange:{_formatter.ExecuteActivity<T, TArguments>()}");
         _slipBuilder.AddActivity(typeof(T).Name, uri, arguments);
+
         _slipBuilder.AddSubscription(
             uri,
             RoutingSlipEvents.Faulted | RoutingSlipEvents.ActivityCompensationFailed |
