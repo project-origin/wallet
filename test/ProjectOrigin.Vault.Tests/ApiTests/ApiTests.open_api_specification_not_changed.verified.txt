@@ -1644,19 +1644,12 @@
         "description": "Response to disable a wallet."
       },
       "EnableWalletResponse": {
-        "required": [
-          "message"
-        ],
         "type": "object",
         "properties": {
           "walletId": {
             "type": "string",
             "description": "The ID of the wallet.",
             "format": "uuid"
-          },
-          "message": {
-            "type": "string",
-            "description": "Message indicating the wallet has been enabled."
           }
         },
         "additionalProperties": false,

@@ -185,28 +185,13 @@ public class WalletControllerTests : IClassFixture<PostgresDatabaseFixture>
         // Assert
         result.Result.Should().BeOfType<OkObjectResult>();
 
+        var response = result.Result.As<OkObjectResult>().Value.As<EnableWalletResponse>();
+        response.Should().NotBeNull();
+        response.WalletId.Should().Be(wallet.Id);
+
         var walletDb = await _unitOfWork.WalletRepository.GetWallet(wallet.Id);
         Assert.NotNull(walletDb);
         Assert.Null(walletDb.Disabled);
-    }
-
-    [Fact]
-    public void EnableWalletResponse_ShouldHaveCorrectProperties()
-    {
-        // Arrange
-        var walletId = Guid.NewGuid();
-        var message = "Wallet is now enabled.";
-
-        // Act
-        var response = new EnableWalletResponse
-        {
-            WalletId = walletId,
-            Message = message
-        };
-
-        // Assert
-        response.WalletId.Should().Be(walletId);
-        response.Message.Should().Be(message);
     }
 
     [Fact]

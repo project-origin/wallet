@@ -230,10 +230,9 @@ public class WalletController : ControllerBase
             unitOfWork.Commit();
         }
 
-        return Ok(new
+        return Ok(new EnableWalletResponse
         {
             WalletId = wallet.Id,
-            Message = "Wallet is now enabled."
         });
     }
 
@@ -396,10 +395,6 @@ public record EnableWalletResponse()
     /// The ID of the wallet.
     /// </summary>
     public Guid WalletId { get; init; }
-    /// <summary>
-    /// Message indicating the wallet has been enabled.
-    /// </summary>
-    public required string Message { get; init; }
 }
 
 /// <summary>
