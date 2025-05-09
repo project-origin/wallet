@@ -48,6 +48,21 @@ public class WalletRepository : IWalletRepository
             });
     }
 
+    public async Task EnableWallet(Guid walletId)
+    {
+        var rowsChanged = await _connection.ExecuteAsync(
+            @"UPDATE wallets
+          SET disabled = NULL
+          WHERE id = @walletId",
+            new
+            {
+                walletId
+            });
+
+        if (rowsChanged != 1)
+            throw new InvalidOperationException($"Wallet with id {walletId} could not be found");
+    }
+
     public async Task DisableWallet(Guid walletId, DateTimeOffset disabledDateUtc)
     {
         var rowsChanged = await _connection.ExecuteAsync(

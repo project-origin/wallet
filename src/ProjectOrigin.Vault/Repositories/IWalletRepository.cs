@@ -22,5 +22,6 @@ public interface IWalletRepository
     Task<ExternalEndpoint> CreateExternalEndpoint(string owner, IHDPublicKey ownerPublicKey, string referenceText, string endpoint);
     Task<ExternalEndpoint> GetExternalEndpoint(Guid endpointId);
 
+    Task EnableWallet(Guid walletId);
     Task DisableWallet(Guid walletId, DateTimeOffset disabledDateUtc);
 }
