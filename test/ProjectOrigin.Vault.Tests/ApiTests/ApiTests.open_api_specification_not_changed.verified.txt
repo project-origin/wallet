@@ -1107,6 +1107,44 @@
         }
       }
     },
+    "/v1/wallets/{walletId}/enable": {
+      "put": {
+        "tags": [
+          "Wallet"
+        ],
+        "summary": "Enables a previously disabled wallet, allowing it to interact with transfers, claims, querying, etc.",
+        "parameters": [
+          {
+            "name": "walletId",
+            "in": "path",
+            "description": "The ID of the wallet to enable.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The wallet was found and is now enabled.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EnableWalletResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "If the user is not authenticated."
+          },
+          "404": {
+            "description": "If the wallet specified is not found."
+          }
+        }
+      }
+    },
     "/v1/wallets/{walletId}/endpoints": {
       "post": {
         "tags": [
@@ -1604,6 +1642,18 @@
         },
         "additionalProperties": false,
         "description": "Response to disable a wallet."
+      },
+      "EnableWalletResponse": {
+        "type": "object",
+        "properties": {
+          "walletId": {
+            "type": "string",
+            "description": "The ID of the wallet.",
+            "format": "uuid"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Response to enable a wallet."
       },
       "FederatedStreamId": {
         "required": [
