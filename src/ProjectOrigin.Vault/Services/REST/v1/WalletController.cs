@@ -200,6 +200,43 @@ public class WalletController : ControllerBase
     }
 
     /// <summary>
+    /// Enables a previously disabled wallet, allowing it to interact with transfers, claims, querying, etc.
+    /// </summary>
+    /// <param name="unitOfWork"></param>
+    /// <param name="walletId">The ID of the wallet to enable.</param>
+    /// <response code="200">The wallet was found and is now enabled.</response>
+    /// <response code="401">If the user is not authenticated.</response>
+    /// <response code="404">If the wallet specified is not found.</response>
+    [HttpPut]
+    [Route("v1/wallets/{walletId}/enable")]
+    [RequiredScope("po:wallets:update")]
+    [Produces("application/json")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<EnableWalletResponse>> EnableWallet(
+        [FromServices] IUnitOfWork unitOfWork,
+        [FromRoute] Guid walletId)
+    {
+        if (!User.TryGetSubject(out var subject)) return Unauthorized();
+
+        var wallet = await unitOfWork.WalletRepository.GetWallet(walletId);
+
+        if (wallet is null || wallet.Owner != subject) return NotFound();
+
+        if (wallet.IsDisabled())
+        {
+            await unitOfWork.WalletRepository.EnableWallet(walletId);
+            unitOfWork.Commit();
+        }
+
+        return Ok(new EnableWalletResponse
+        {
+            WalletId = wallet.Id,
+        });
+    }
+
+    /// <summary>
     /// Creates a new wallet endpoint on the users wallet, which can be sent to other services to receive certificate-slices.
     /// </summary>
     /// <param name = "unitOfWork" ></param>
@@ -347,6 +384,17 @@ public record DisableWalletResponse()
     /// Timestamp of when the wallet was disabled in unix time seconds.
     /// </summary>
     public required long DisabledDate { get; init; }
+}
+
+/// <summary>
+/// Response to enable a wallet.
+/// </summary>
+public record EnableWalletResponse()
+{
+    /// <summary>
+    /// The ID of the wallet.
+    /// </summary>
+    public Guid WalletId { get; init; }
 }
 
 /// <summary>

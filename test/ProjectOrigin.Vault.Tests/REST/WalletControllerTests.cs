@@ -112,6 +112,88 @@ public class WalletControllerTests : IClassFixture<PostgresDatabaseFixture>
         Assert.NotNull(walletDb.Disabled);
     }
 
+    // Tests for EnableWallet endpoint
+    [Fact]
+    public async Task EnableWallet_Verify_Unauthorized()
+    {
+        // Arrange
+        var controller = new WalletController();
+
+        // Act
+        var result = await controller.EnableWallet(_unitOfWork, Guid.NewGuid());
+
+        // Assert
+        result.Result.Should().BeOfType<UnauthorizedResult>();
+    }
+
+    [Fact]
+    public async Task EnableWallet_WhenNoWallet_NotFound()
+    {
+        // Arrange
+        var subject = _fixture.Create<string>();
+        var controller = new WalletController()
+        {
+            ControllerContext = CreateContextWithUser(subject)
+        };
+
+        // Act
+        var result = await controller.EnableWallet(_unitOfWork, Guid.NewGuid());
+
+        // Assert
+        result.Result.Should().BeOfType<NotFoundResult>();
+    }
+
+    [Fact]
+    public async Task EnableWallet_WhenWalletIsAlreadyEnabled()
+    {
+        // Arrange
+        var subject = _fixture.Create<string>();
+        var controller = new WalletController()
+        {
+            ControllerContext = CreateContextWithUser(subject)
+        };
+
+        var wallet = await _dbFixture.CreateWallet(subject);
+
+        // Act
+        var result = await controller.EnableWallet(_unitOfWork, wallet.Id);
+
+        // Assert
+        result.Result.Should().BeOfType<OkObjectResult>();
+
+        var walletDb = await _unitOfWork.WalletRepository.GetWallet(wallet.Id);
+        Assert.NotNull(walletDb);
+        Assert.Null(walletDb.Disabled);
+    }
+
+    [Fact]
+    public async Task EnableWallet()
+    {
+        // Arrange
+        var subject = _fixture.Create<string>();
+        var controller = new WalletController()
+        {
+            ControllerContext = CreateContextWithUser(subject)
+        };
+
+        var wallet = await _dbFixture.CreateWallet(subject);
+        await _dbFixture.DisableWallet(wallet.Id);
+
+        // Act
+        var result = await controller.EnableWallet(_unitOfWork, wallet.Id);
+
+        // Assert
+        result.Result.Should().BeOfType<OkObjectResult>();
+
+        var response = result.Result.As<OkObjectResult>().Value.As<EnableWalletResponse>();
+        response.Should().NotBeNull();
+        response.WalletId.Should().Be(wallet.Id);
+
+        var walletDb = await _unitOfWork.WalletRepository.GetWallet(wallet.Id);
+        Assert.NotNull(walletDb);
+        Assert.Null(walletDb.Disabled);
+    }
+
     [Fact]
     public async Task Verify_Unauthorized()
     {
