@@ -357,6 +357,14 @@
               "format": "int32",
               "default": 0
             }
+          },
+          {
+            "name": "TimeMatch",
+            "in": "query",
+            "description": "Fetch all claims or hourly claims.\r\nValues:\r\nAll\r\nHourly (default)",
+            "schema": {
+              "$ref": "#/components/schemas/TimeMatch"
+            }
           }
         ],
         "responses": {
