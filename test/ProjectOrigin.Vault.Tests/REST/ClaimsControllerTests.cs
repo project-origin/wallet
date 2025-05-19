@@ -282,7 +282,7 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
         resultList.Should().HaveCount(2);
     }
 
-     [Fact]
+    [Fact]
     public async Task QueryClaims_ReturnsAllClaims_WhenTimeMatchIsSetToAll()
     {
         // Arrange
