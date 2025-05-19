@@ -59,6 +59,7 @@ public class ClaimsController : ControllerBase
             End = param.End != null ? DateTimeOffset.FromUnixTimeSeconds(param.End.Value) : null,
             Skip = param.Skip,
             Limit = param.Limit ?? int.MaxValue,
+            TimeMatch = param.TimeMatch,
         });
 
         return claims.ToResultList(c => c.MapToV1());
@@ -295,6 +296,14 @@ public record GetClaimsQueryParameters
     /// </summary>
     [DefaultValue(0)]
     public int Skip { get; init; } = 0;
+
+    /// <summary>
+    /// Fetch all claims or hourly claims.
+    /// Values:
+    /// All
+    /// Hourly (default)
+    /// </summary>
+    public TimeMatch TimeMatch { get; init; } = TimeMatch.Hourly;
 }
 
 public record AggregateClaimsQueryParameters
