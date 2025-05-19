@@ -1958,6 +1958,13 @@
         ],
         "type": "string"
       },
+      "TimeMatch": {
+        "enum": [
+          "hourly",
+          "all"
+        ],
+        "type": "string"
+      },
       "Transfer": {
         "required": [
           "end",
