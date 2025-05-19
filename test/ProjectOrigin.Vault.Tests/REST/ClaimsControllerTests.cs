@@ -283,7 +283,7 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
     }
 
      [Fact]
-    public async Task QueryClaims_ReturnsAllClaims()
+    public async Task QueryClaims_ReturnsAllClaims_WhenTimeMatchIsSetToAll()
     {
         // Arrange
         var subject = _fixture.Create<string>();
