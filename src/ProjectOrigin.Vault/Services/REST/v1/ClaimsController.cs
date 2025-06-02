@@ -146,6 +146,17 @@ public class ClaimsController : ControllerBase
         });
     }
 
+    private bool IsOnlyOneTrial(Certificate prodCert, Certificate conCert)
+    {
+        var prodAttribute = prodCert.Attributes.Find(a => string.Equals(a.Key, "IsTrial", StringComparison.OrdinalIgnoreCase));
+        var prodIsTrial = prodAttribute != null && string.Equals(prodAttribute.Value, "true", StringComparison.OrdinalIgnoreCase);
+
+        var conAttribute = conCert.Attributes.Find(a => string.Equals(a.Key, "IsTrial", StringComparison.OrdinalIgnoreCase));
+        var conIsTrial = conAttribute != null && string.Equals(conAttribute.Value, "true", StringComparison.OrdinalIgnoreCase);
+
+        return prodIsTrial ^ conIsTrial;
+    }
+
     /// <summary>
     /// Queues a request to claim two certificate for a given quantity.
     /// </summary>
@@ -185,6 +196,11 @@ public class ClaimsController : ControllerBase
         if (conCert == null)
         {
             return BadRequest($"Unknown consumption certificate. Registry {request.ConsumptionCertificateId.Registry} and id {request.ConsumptionCertificateId.StreamId}.");
+        }
+
+        if (IsOnlyOneTrial(prodCert, conCert))
+        {
+            return BadRequest("Cannot claim when only one certificate is marked as trial. Both must be trial or neither.");
         }
 
         var prodWillBeAvailable = await unitOfWork.CertificateRepository.GetRegisteringAndAvailableQuantity(request.ProductionCertificateId.Registry, request.ProductionCertificateId.StreamId, subject);
