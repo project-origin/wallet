@@ -146,7 +146,7 @@ public class ClaimsController : ControllerBase
         });
     }
 
-    private bool IsOnlyOneTrial(Certificate prodCert, Certificate conCert)
+    private static bool IsOnlyOneTrial(Certificate prodCert, Certificate conCert)
     {
         var prodAttribute = prodCert.Attributes.Find(a => string.Equals(a.Key, "IsTrial", StringComparison.OrdinalIgnoreCase));
         var prodIsTrial = prodAttribute != null && string.Equals(prodAttribute.Value, "true", StringComparison.OrdinalIgnoreCase);
