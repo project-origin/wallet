@@ -9,6 +9,13 @@ public record QueryClaimsFilter
     public int Limit { get; init; } = int.MaxValue;
     public DateTimeOffset? Start { get; init; }
     public DateTimeOffset? End { get; init; }
+    public TimeMatch TimeMatch { get; init; } = TimeMatch.Hourly;
+}
+
+public enum TimeMatch
+{
+    Hourly,
+    All,
 }
 
 public record QueryClaimsFilterCursor

@@ -128,31 +128,33 @@ public class ClaimRepository : IClaimRepository
     public async Task<PageResult<ClaimViewModel>> QueryClaims(QueryClaimsFilter filter)
     {
         string sql = @"
-        CREATE TEMPORARY TABLE claims_work_table ON COMMIT DROP AS (
-            SELECT
-                *
-            FROM
-                claims_query_model
-            WHERE
-                owner = @owner
-                AND (@start IS NULL OR production_start >= @start)
-                AND (@end IS NULL OR production_end <= @end)
-                AND (@start IS NULL OR consumption_start >= @start)
-                AND (@end IS NULL OR consumption_end <= @end)
-                AND ABS(EXTRACT(EPOCH FROM (production_start - consumption_start))) < 3600
-        );
+            CREATE TEMPORARY TABLE claims_work_table ON COMMIT DROP AS (
+                SELECT *
+                FROM claims_query_model
+                WHERE owner = @owner
+                  AND (@start IS NULL OR production_start >= @start)
+                  AND (@end IS NULL OR production_end <= @end)
+                  AND (@start IS NULL OR consumption_start >= @start)
+                  AND (@end IS NULL OR consumption_end <= @end)
+                  " + (filter.TimeMatch == TimeMatch.Hourly ? "AND ABS(EXTRACT(EPOCH FROM (production_start - consumption_start))) < 3600" : "") + @"
+            );
 
-        SELECT count(*) FROM claims_work_table;
+            SELECT count(*) FROM claims_work_table;
 
-        SELECT * FROM claims_work_table LIMIT @limit OFFSET @skip;
+            SELECT * FROM claims_work_table LIMIT @limit OFFSET @skip;
 
-        SELECT attributes.registry_name, attributes.certificate_id, attributes.attribute_key as key, attributes.attribute_value as value, attributes.attribute_type as type
-        FROM attributes_view attributes
-        WHERE ((registry_name, certificate_id) IN (SELECT consumption_registry_name, consumption_certificate_id FROM claims_work_table)
-		  AND (wallet_id IS NULL OR wallet_id in (SELECT DISTINCT(wallet_id) FROM claims_work_table)))
-          OR ((registry_name, certificate_id) IN (SELECT production_registry_name, production_certificate_id FROM claims_work_table)
-		  AND (wallet_id IS NULL OR wallet_id in (SELECT DISTINCT(wallet_id) FROM claims_work_table)));
-        ";
+            SELECT attributes.registry_name, attributes.certificate_id, attributes.attribute_key as key,
+                   attributes.attribute_value as value, attributes.attribute_type as type
+            FROM attributes_view attributes
+            WHERE ((registry_name, certificate_id) IN
+                    (SELECT consumption_registry_name, consumption_certificate_id FROM claims_work_table)
+                   AND (wallet_id IS NULL OR wallet_id IN
+                        (SELECT DISTINCT(wallet_id) FROM claims_work_table)))
+               OR ((registry_name, certificate_id) IN
+                    (SELECT production_registry_name, production_certificate_id FROM claims_work_table)
+                   AND (wallet_id IS NULL OR wallet_id IN
+                        (SELECT DISTINCT(wallet_id) FROM claims_work_table)));
+            ";
 
         await using var gridReader = await _connection.QueryMultipleAsync(sql, filter);
 
