@@ -121,7 +121,7 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
         // Act
         var result = await controller.GetClaimsCursor(
             _unitOfWork, new GetClaimsQueryParametersCursor()
-                { UpdatedSince = queryUpdatedSince }
+            { UpdatedSince = queryUpdatedSince }
         );
 
         // Assert
@@ -261,7 +261,7 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
         var request = new ClaimRequest
         {
             ConsumptionCertificateId = new FederatedStreamId
-                { Registry = consCert.RegistryName, StreamId = consCert.Id },
+            { Registry = consCert.RegistryName, StreamId = consCert.Id },
             ProductionCertificateId =
                 new FederatedStreamId { Registry = prodCert.RegistryName, StreamId = prodCert.Id },
             Quantity = 100
@@ -281,13 +281,13 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
         switch (expectedStatusCode)
         {
             case HttpStatusCode.BadRequest:
-            {
-                var objectResult = result.Result as BadRequestObjectResult;
-                objectResult.Should().NotBeNull();
-                objectResult!.Value.Should()
-                    .Be("Cannot claim when only one certificate is marked as trial. Both must be trial or neither.");
-                break;
-            }
+                {
+                    var objectResult = result.Result as BadRequestObjectResult;
+                    objectResult.Should().NotBeNull();
+                    objectResult!.Value.Should()
+                        .Be("Cannot claim when only one certificate is marked as trial. Both must be trial or neither.");
+                    break;
+                }
             case HttpStatusCode.Accepted:
                 result.Result.Should().BeOfType<AcceptedResult>();
                 break;
