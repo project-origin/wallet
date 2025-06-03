@@ -103,17 +103,23 @@ public static class PostgresFixtureExtensions
         string registryName,
         GranularCertificateType type,
         DateTimeOffset? start = null,
-        DateTimeOffset? end = null
+        DateTimeOffset? end = null,
+        List<CertificateAttribute>? attributes = null
         )
     {
         using (var connection = new NpgsqlConnection(_dbFixture.ConnectionString))
         {
             var certificateRepository = new CertificateRepository(connection);
-            var attributes = new List<CertificateAttribute>
+            var attr = new List<CertificateAttribute>
             {
                 new () {Key="TechCode", Value= "T070000", Type=CertificateAttributeType.ClearText},
                 new () {Key="FuelCode", Value= "F00000000", Type=CertificateAttributeType.ClearText}
             };
+
+            if (attributes is not null)
+            {
+                attr.AddRange(attributes);
+            }
 
             var cert = new Certificate
             {
@@ -123,7 +129,7 @@ public static class PostgresFixtureExtensions
                 EndDate = end ?? start?.AddDays(1) ?? DateTimeOffset.Now.AddDays(1),
                 GridArea = Area,
                 CertificateType = type,
-                Attributes = attributes,
+                Attributes = attr,
                 Withdrawn = false
             };
             await certificateRepository.InsertCertificate(cert);
