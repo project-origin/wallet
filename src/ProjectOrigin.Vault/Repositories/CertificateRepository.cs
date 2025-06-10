@@ -4,6 +4,7 @@ using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using Dapper;
+using Microsoft.Extensions.Logging;
 using ProjectOrigin.Vault.Exceptions;
 using ProjectOrigin.Vault.Extensions;
 using ProjectOrigin.Vault.Models;
@@ -203,6 +204,9 @@ public class CertificateRepository : ICertificateRepository
 
     public async Task<PageResult<CertificateViewModel>> QueryAvailableCertificates(QueryCertificatesFilter filter)
     {
+        var logger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<CertificateRepository>();
+        var shouldAnalyze = filter.Owner?.Contains("2c8934eb-ff24-402d-ae39-937a80") == true;
+
         string sql = @"
             CREATE TEMPORARY TABLE certificates_work_table ON COMMIT DROP AS (
                 SELECT
@@ -240,8 +244,20 @@ public class CertificateRepository : ICertificateRepository
             WHERE (registry_name, certificate_id) IN (SELECT registry_name, certificate_id FROM certificates_work_table)
 			  AND (wallet_id IS NULL OR wallet_id in (SELECT DISTINCT(wallet_id) FROM certificates_work_table))
             ";
+        if (shouldAnalyze)
+        {
+            var explainSql = "EXPLAIN ANALYZE " + sql;
+            var explainResult = await _connection.QueryAsync<string>(explainSql, filter);
+            logger.LogWarning("Owner: 2c8934eb-ff24-402d-ae39-937a80******, SQL: {Sql}, Params: {Params}, Explain: {Explain}", sql, System.Text.Json.JsonSerializer.Serialize(filter), string.Join("\n", explainResult));
+        }
+        var sw = shouldAnalyze ? System.Diagnostics.Stopwatch.StartNew() : null;
 
         await using var gridReader = await _connection.QueryMultipleAsync(sql, filter);
+        if (shouldAnalyze && sw != null)
+        {
+            sw.Stop();
+            logger.LogWarning("Query took {Elapsed} ms", sw.ElapsedMilliseconds);
+        }
 
         var totalCount = await gridReader.ReadSingleAsync<int>();
         var certificates = (await gridReader.ReadAsync<CertificateViewModel>()).ToArray();
