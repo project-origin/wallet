@@ -167,9 +167,9 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
             {
                 Id = Guid.NewGuid(),
                 RegistryName = request.ProductionCertificateId.Registry,
-                StartDate = DateTimeOffset.UtcNow.AddDays(-1), // Example start date
-                EndDate = DateTimeOffset.UtcNow.AddDays(1), // Example end date
-                GridArea = "ExampleGridArea", // Example grid area
+                StartDate = DateTimeOffset.UtcNow.AddDays(-1),
+                EndDate = DateTimeOffset.UtcNow.AddDays(1),
+                GridArea = "ExampleGridArea",
                 CertificateType = GranularCertificateType.Production,
                 Withdrawn = false
             });
@@ -179,9 +179,9 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
             {
                 Id = Guid.NewGuid(),
                 RegistryName = request.ConsumptionCertificateId.Registry,
-                StartDate = DateTimeOffset.UtcNow.AddDays(-1), // Example start date
-                EndDate = DateTimeOffset.UtcNow.AddDays(1), // Example end date
-                GridArea = "ExampleGridArea", // Example grid area
+                StartDate = DateTimeOffset.UtcNow.AddDays(-1),
+                EndDate = DateTimeOffset.UtcNow.AddDays(1),
+                GridArea = "ExampleGridArea",
                 CertificateType = GranularCertificateType.Consumption,
                 Withdrawn = false
             });
