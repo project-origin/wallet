@@ -10,17 +10,18 @@ spec:
   template:
     spec:
       automountServiceAccountToken: false
-      securityContext:
-        runAsUser: 1654
-        runAsNonRoot: true
       restartPolicy: Never
       containers:
         - name: {{ .Release.Name }}-migrate-job
           image: {{ include "common.image" (dict "root" $ "image" $.Values.image) }}
           {{- include "common.limits" .resources | nindent 10 }}
           securityContext:
-            allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: {{ .Values.job.securityContext.allowPrivilegeEscalation }}
+            readOnlyRootFilesystem: {{ .Values.job.securityContext.readOnlyRootFilesystem }}
+            runAsNonRoot: {{ .Values.job.securityContext.runAsNonRoot }}
+            runAsUser: {{ .Values.job.securityContext.runAsUser }}
+            seccompProfile: {{ .Values.job.securityContext.seccompProfile }}
+            capabilities: {{ .Values.job.securityContext.capabilities }}
           args:
             - "--migrate"
           env:

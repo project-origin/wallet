@@ -24,8 +24,12 @@ spec:
           image: {{ include "common.image" (dict "root" $ "image" $.Values.migrationWaiter.image) }}
           {{- include "common.limits" $.Values.migrationWaiter.resources | nindent 10 }}
           securityContext:
-            allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: {{ .Values.initContainers.securityContext.allowPrivilegeEscalation }}
+            readOnlyRootFilesystem: {{ .Values.initContainers.securityContext.readOnlyRootFilesystem }}
+            runAsNonRoot: {{ .Values.initContainers.securityContext.runAsNonRoot }}
+            runAsUser: {{ .Values.initContainers.securityContext.runAsUser }}
+            seccompProfile: {{ .Values.initContainers.securityContext.seccompProfile }}
+            capabilities: {{ .Values.initContainers.securityContext.capabilities }}
           command:
             - /bin/sh
             - -c
@@ -42,8 +46,12 @@ spec:
           image: {{ include "common.image" (dict "root" $ "image" $.Values.image) }}
           {{- include "common.limits" $.resources | nindent 10 }}
           securityContext:
-            allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: {{ .Values.securityContext.allowPrivilegeEscalation }}
+            readOnlyRootFilesystem: {{ .Values.securityContext.readOnlyRootFilesystem }}
+            runAsNonRoot: {{ .Values.securityContext.runAsNonRoot }}
+            runAsUser: {{ .Values.securityContext.runAsUser }}
+            seccompProfile: {{ .Values.securityContext.seccompProfile }}
+            capabilities: {{ .Values.securityContext.capabilities }}
           args:
             - "--serve"
           readinessProbe:
