@@ -246,7 +246,7 @@ public class CertificateRepository : ICertificateRepository
             ";
         if (shouldAnalyze)
         {
-            var explainSql = "EXPLAIN ANALYZE " + sql;
+            var explainSql = "BEGIN; EXPLAIN ANALYZE " + sql + "; ROLLBACK;";
             var explainResult = await _connection.QueryAsync<string>(explainSql, filter);
             logger.LogWarning("Owner: 2c8934eb-ff24-402d-ae39-937a80******, SQL: {Sql}, Params: {Params}, Explain: {Explain}", sql, System.Text.Json.JsonSerializer.Serialize(filter), string.Join("\n", explainResult));
         }
