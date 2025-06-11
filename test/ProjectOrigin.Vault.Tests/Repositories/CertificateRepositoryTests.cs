@@ -25,6 +25,110 @@ public class CertificateRepositoryTests : AbstractRepositoryTests
     }
 
     [Fact]
+    public async Task optimizeQuery()
+    {
+        var optimizedSql = @"
+            CREATE TEMPORARY TABLE certificates_work_table ON COMMIT DROP AS (
+            SELECT
+                certificate_id,
+                registry_name,
+                certificate_type,
+                grid_area,
+                start_date,
+                end_date,
+                quantity,
+                wallet_id,
+                updated_at,
+                withdrawn
+            FROM
+                certificates_query_model
+            WHERE
+                owner = @owner
+                AND withdrawn = false
+                AND (@start IS NULL OR start_date >= @start)
+                AND (@end IS NULL OR end_date <= @end)
+                AND quantity != 0
+                AND (@type IS NULL OR certificate_type = @type));
+
+            SELECT count(*) FROM certificates_work_table;
+
+            SELECT *
+            FROM certificates_work_table
+            ORDER BY
+                CASE WHEN @SortBy = 'End' AND @Sort = 'ASC' THEN end_date END ASC,
+                CASE WHEN @SortBy = 'End' AND @Sort = 'DESC' THEN end_date END DESC,
+                CASE WHEN @SortBy = 'Quantity' AND @Sort = 'ASC' THEN quantity END ASC,
+                CASE WHEN @SortBy = 'Quantity' AND @Sort = 'DESC' THEN quantity END DESC,
+                CASE WHEN @SortBy = 'Type' AND @Sort = 'ASC' THEN certificate_type END ASC,
+                CASE WHEN @SortBy = 'Type' AND @Sort = 'DESC' THEN certificate_type END DESC
+            LIMIT @limit OFFSET @skip;
+
+            -- Step 4: Attributes join (use JOIN instead of IN for better performance)
+            SELECT
+                a.registry_name,
+                a.certificate_id,
+                a.attribute_key AS key,
+                a.attribute_value AS value,
+                a.attribute_type AS type
+            FROM
+                attributes_view a
+                JOIN certificates_work_table cwt
+                  ON a.registry_name = cwt.registry_name
+                 AND a.certificate_id = cwt.certificate_id
+            WHERE
+                (a.wallet_id IS NULL OR a.wallet_id = cwt.wallet_id);
+            ";
+
+          string sql = @"
+            CREATE TEMPORARY TABLE certificates_work_table ON COMMIT DROP AS (
+                SELECT
+                    certificate_id,
+                    registry_name,
+                    certificate_type,
+                    grid_area,
+                    start_date,
+                    end_date,
+                    quantity,
+                    wallet_id,
+                    updated_at,
+                    withdrawn
+                FROM
+                    certificates_query_model
+                WHERE
+                    owner = @owner
+                    AND withdrawn = false
+                    AND (@start IS NULL OR start_date >= @start)
+                    AND (@end IS NULL OR end_date <= @end)
+                    AND quantity != 0
+                    AND (@type IS NULL OR certificate_type = @type)
+                ORDER BY
+                    CASE WHEN @SortBy = 'End' AND @Sort = 'ASC' THEN end_date END ASC,
+                    CASE WHEN @SortBy = 'End' AND @Sort = 'DESC' THEN end_date END DESC,
+                    CASE WHEN @SortBy = 'Quantity' AND @Sort = 'ASC' THEN quantity END ASC,
+                    CASE WHEN @SortBy = 'Quantity' AND @Sort = 'DESC' THEN quantity END DESC,
+                    CASE WHEN @SortBy = 'Type' AND @Sort = 'ASC' THEN certificate_type END ASC,
+                    CASE WHEN @SortBy = 'Type' AND @Sort = 'DESC' THEN certificate_type END DESC
+            );
+            SELECT count(*) FROM certificates_work_table;
+            SELECT * FROM certificates_work_table LIMIT @limit OFFSET @skip;
+            SELECT attributes.registry_name, attributes.certificate_id, attributes.attribute_key as key, attributes.attribute_value as value, attributes.attribute_type as type
+            FROM attributes_view attributes
+            WHERE (registry_name, certificate_id) IN (SELECT registry_name, certificate_id FROM certificates_work_table)
+			  AND (wallet_id IS NULL OR wallet_id in (SELECT DISTINCT(wallet_id) FROM certificates_work_table))
+            ";
+
+          var filter = new QueryCertificatesFilter
+          {
+              Owner = _fixture.Create<string>(),
+              Limit = 1000
+          };
+          var explainOptimizedSql = "BEGIN; EXPLAIN ANALYZE " + optimizedSql + "; ROLLBACK";
+          var explainSql = "BEGIN; EXPLAIN ANALYZE " + sql + "; ROLLBACK";
+          var explainResult = await _connection.QueryAsync<string>(explainSql, filter);
+          var explainOptimizedResult = await _connection.QueryAsync<string>(explainOptimizedSql, filter);
+    }
+
+    [Fact]
     public async Task InsertCertificate_InsertsCertificate()
     {
         // Arrange

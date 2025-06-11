@@ -1,0 +1,3 @@
+--CREATE INDEX idx_certificates_id_registry_name ON certificates(id, registry_name);
+--CREATE INDEX idx_wallet_slices_certificate_id_state ON public.wallet_slices(certificate_id, state);
+--CREATE INDEX idx_wallets_owner ON public.wallets(owner);
