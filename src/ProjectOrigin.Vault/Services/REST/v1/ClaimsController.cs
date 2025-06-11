@@ -147,15 +147,15 @@ public class ClaimsController : ControllerBase
         });
     }
 
-    private static bool IsOnlyOneTrial(Certificate prodCert, Certificate conCert)
+    private static bool IsOnlyOneTrial(Certificate productionCertificate, Certificate consumptionCertificate)
     {
-        var prodAttribute = prodCert.Attributes.Find(a => string.Equals(a.Key, "IsTrial", StringComparison.OrdinalIgnoreCase));
-        var prodIsTrial = prodAttribute != null && string.Equals(prodAttribute.Value, "true", StringComparison.OrdinalIgnoreCase);
+        var productionAttribute = productionCertificate.Attributes.Find(a => string.Equals(a.Key, "IsTrial", StringComparison.OrdinalIgnoreCase));
+        var productionIsTrial = productionAttribute != null && string.Equals(productionAttribute.Value, "true", StringComparison.OrdinalIgnoreCase);
 
-        var conAttribute = conCert.Attributes.Find(a => string.Equals(a.Key, "IsTrial", StringComparison.OrdinalIgnoreCase));
-        var conIsTrial = conAttribute != null && string.Equals(conAttribute.Value, "true", StringComparison.OrdinalIgnoreCase);
+        var consumptionAttribute = consumptionCertificate.Attributes.Find(a => string.Equals(a.Key, "IsTrial", StringComparison.OrdinalIgnoreCase));
+        var consumptionIsTrial = consumptionAttribute != null && string.Equals(consumptionAttribute.Value, "true", StringComparison.OrdinalIgnoreCase);
 
-        return prodIsTrial ^ conIsTrial;
+        return productionIsTrial ^ consumptionIsTrial;
     }
 
     /// <summary>
