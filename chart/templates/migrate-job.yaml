@@ -15,13 +15,7 @@ spec:
         - name: {{ .Release.Name }}-migrate-job
           image: {{ include "common.image" (dict "root" $ "image" $.Values.image) }}
           {{- include "common.limits" .resources | nindent 10 }}
-          securityContext:
-            allowPrivilegeEscalation: {{ .Values.job.securityContext.allowPrivilegeEscalation }}
-            readOnlyRootFilesystem: {{ .Values.job.securityContext.readOnlyRootFilesystem }}
-            runAsNonRoot: {{ .Values.job.securityContext.runAsNonRoot }}
-            runAsUser: {{ .Values.job.securityContext.runAsUser }}
-            seccompProfile: {{ .Values.job.securityContext.seccompProfile }}
-            capabilities: {{ .Values.job.securityContext.capabilities }}
+          securityContext: {{ toYaml .Values.job.securityContext | nindent 12 }}
           args:
             - "--migrate"
           env:

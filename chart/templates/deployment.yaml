@@ -23,13 +23,7 @@ spec:
         - name: wait-for-migration
           image: {{ include "common.image" (dict "root" $ "image" $.Values.migrationWaiter.image) }}
           {{- include "common.limits" $.Values.migrationWaiter.resources | nindent 10 }}
-          securityContext:
-            allowPrivilegeEscalation: {{ .Values.initContainers.securityContext.allowPrivilegeEscalation }}
-            readOnlyRootFilesystem: {{ .Values.initContainers.securityContext.readOnlyRootFilesystem }}
-            runAsNonRoot: {{ .Values.initContainers.securityContext.runAsNonRoot }}
-            runAsUser: {{ .Values.initContainers.securityContext.runAsUser }}
-            seccompProfile: {{ .Values.initContainers.securityContext.seccompProfile }}
-            capabilities: {{ .Values.initContainers.securityContext.capabilities }}
+          securityContext: {{ toYaml .Values.initContainers.securityContext | nindent 12 }}
           command:
             - /bin/sh
             - -c
@@ -45,13 +39,7 @@ spec:
         - name: vault
           image: {{ include "common.image" (dict "root" $ "image" $.Values.image) }}
           {{- include "common.limits" $.resources | nindent 10 }}
-          securityContext:
-            allowPrivilegeEscalation: {{ .Values.securityContext.allowPrivilegeEscalation }}
-            readOnlyRootFilesystem: {{ .Values.securityContext.readOnlyRootFilesystem }}
-            runAsNonRoot: {{ .Values.securityContext.runAsNonRoot }}
-            runAsUser: {{ .Values.securityContext.runAsUser }}
-            seccompProfile: {{ .Values.securityContext.seccompProfile }}
-            capabilities: {{ .Values.securityContext.capabilities }}
+          securityContext: {{ toYaml .Values.securityContext | nindent 12 }}
           args:
             - "--serve"
           readinessProbe:
