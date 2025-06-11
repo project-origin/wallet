@@ -37,6 +37,39 @@ service:
   # nodePort is the port to expose the service on if type is NodePort
   nodePort:
 
+securityContext:
+  # runAsUser defines the user to run the container as, defaults to 1654
+  runAsUser: 1000
+  # runAsNonRoot defines if the container should be run as a non-root user, defaults to true
+  runAsNonRoot: true
+  # allowPrivilegeEscalation defines if privilege escalation is allowed, defaults to false
+  allowPrivilegeEscalation: false
+  # readOnlyRootFilesystem defines if the root filesystem should be read-only, defaults to true
+  readOnlyRootFilesystem: true
+  # seccompProfile defines the seccomp profile to use, defaults to RuntimeDefault
+  seccompProfile:
+    type: RuntimeDefault
+  # capabilities defines the capabilities to drop from the container, defaults to dropping all capabilities
+  capabilities:
+    drop: ["ALL"]
+
+initContainers:
+  securityContext:
+    # runAsUser defines the user to run the init container as, defaults to 1654
+    runAsUser: 1000
+    # runAsNonRoot defines if the init container should be run as a non-root user, defaults to true
+    runAsNonRoot: true
+    # allowPrivilegeEscalation defines if privilege escalation is allowed, defaults to false
+    allowPrivilegeEscalation: false
+    # readOnlyRootFilesystem defines if the root filesystem should be read-only, defaults to true
+    readOnlyRootFilesystem: true
+    # seccompProfile defines the seccomp profile to use, defaults to RuntimeDefault
+    seccompProfile:
+      type: RuntimeDefault
+    # capabilities defines the capabilities to drop from the init container, defaults to dropping all capabilities
+    capabilities:
+      drop: ["ALL"]
+
 # otlp holds the configuration for the opentelemetry collector
 otlp:
   # enabled determines if the opentelemetry collector is enabled
@@ -293,3 +326,18 @@ job:
   checkForWithdrawnCertificatesIntervalInSeconds: 900
   # expireCertificatesIntervalInSeconds how many seconds between expire job runs
   expireCertificatesIntervalInSeconds: 3600
+  securityContext:
+    # runAsUser defines the user to run the job as, defaults to 1654
+    runAsUser: 1654
+    # runAsNonRoot defines if the job should be run as a non-root user, defaults to true
+    runAsNonRoot: true
+    # allowPrivilegeEscalation defines if privilege escalation is allowed, defaults to false
+    allowPrivilegeEscalation: false
+    # readOnlyRootFilesystem defines if the root filesystem should be read-only, defaults to true
+    readOnlyRootFilesystem: true
+    # seccompProfile defines the seccomp profile to use, defaults to RuntimeDefault
+    seccompProfile:
+      type: RuntimeDefault
+    # capabilities defines the capabilities to drop from the container, defaults to dropping all capabilities
+    capabilities:
+      drop: ["ALL"]
