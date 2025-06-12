@@ -23,9 +23,7 @@ spec:
         - name: wait-for-migration
           image: {{ include "common.image" (dict "root" $ "image" $.Values.migrationWaiter.image) }}
           {{- include "common.limits" $.Values.migrationWaiter.resources | nindent 10 }}
-          securityContext:
-            allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: true
+          securityContext: {{ toYaml .Values.initContainers.securityContext | nindent 12 }}
           command:
             - /bin/sh
             - -c
@@ -41,9 +39,7 @@ spec:
         - name: vault
           image: {{ include "common.image" (dict "root" $ "image" $.Values.image) }}
           {{- include "common.limits" $.resources | nindent 10 }}
-          securityContext:
-            allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: true
+          securityContext: {{ toYaml .Values.securityContext | nindent 12 }}
           args:
             - "--serve"
           readinessProbe:

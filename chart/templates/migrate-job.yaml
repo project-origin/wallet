@@ -10,17 +10,12 @@ spec:
   template:
     spec:
       automountServiceAccountToken: false
-      securityContext:
-        runAsUser: 1654
-        runAsNonRoot: true
       restartPolicy: Never
       containers:
         - name: {{ .Release.Name }}-migrate-job
           image: {{ include "common.image" (dict "root" $ "image" $.Values.image) }}
           {{- include "common.limits" .resources | nindent 10 }}
-          securityContext:
-            allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: true
+          securityContext: {{ toYaml .Values.job.securityContext | nindent 12 }}
           args:
             - "--migrate"
           env:
