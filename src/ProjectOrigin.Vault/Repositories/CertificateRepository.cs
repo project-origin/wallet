@@ -338,16 +338,16 @@ public class CertificateRepository : ICertificateRepository
             ";
 
         using (var gridReader = await _connection.QueryMultipleAsync(sql, new
-               {
-                   filter.Owner,
-                   filter.Start,
-                   filter.End,
-                   filter.Type,
-                   filter.Skip,
-                   filter.Limit,
-                   timeAggregate = filter.TimeAggregate.ToString().ToLower(),
-                   filter.TimeZone
-               }))
+        {
+            filter.Owner,
+            filter.Start,
+            filter.End,
+            filter.Type,
+            filter.Skip,
+            filter.Limit,
+            timeAggregate = filter.TimeAggregate.ToString().ToLower(),
+            filter.TimeZone
+        }))
         {
             var totalCount = await gridReader.ReadSingleAsync<int>();
             var certificates = await gridReader.ReadAsync<AggregatedCertificatesViewModel>();
