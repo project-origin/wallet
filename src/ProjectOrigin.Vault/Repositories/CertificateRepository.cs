@@ -205,9 +205,6 @@ public class CertificateRepository : ICertificateRepository
 
     public async Task<PageResult<CertificateViewModel>> QueryAvailableCertificates(QueryCertificatesFilter filter)
     {
-        var logger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<CertificateRepository>();
-        var shouldAnalyze = filter.Owner?.Contains("2c8934eb-ff24-402d-ae39-937a80") == true;
-
         string sql = @"
             CREATE TEMPORARY TABLE certificates_work_table ON COMMIT DROP AS (
             SELECT
@@ -258,23 +255,12 @@ public class CertificateRepository : ICertificateRepository
             WHERE
                 (a.wallet_id IS NULL OR a.wallet_id = cwt.wallet_id);
             ";
-        if (shouldAnalyze)
-        {
-            var explainSql = "BEGIN; EXPLAIN (FORMAT JSON, ANALYZE, BUFFERS, VERBOSE) " + sql + "; ROLLBACK";
-            var explainResult = await _connection.QueryAsync<string>(explainSql, filter);
-            logger.LogWarning(
-                "Owner: 2c8934eb-ff24-402d-ae39-937a80******, SQL: {Sql}, Params: {Params}, Explain: {Explain}", sql,
-                System.Text.Json.JsonSerializer.Serialize(filter), explainResult.FirstOrDefault());
-        }
 
-        var sw = System.Diagnostics.Stopwatch.StartNew();
         await using var gridReader = await _connection.QueryMultipleAsync(sql, filter);
-        sw.Stop();
 
         var totalCount = await gridReader.ReadSingleAsync<int>();
         var certificates = (await gridReader.ReadAsync<CertificateViewModel>()).ToArray();
         var attributes = await gridReader.ReadAsync<AttributeViewModel>();
-        logger.LogWarning("Query took {Elapsed} ms with {TotalCount}", sw.ElapsedMilliseconds, totalCount);
 
         var attributeMap = attributes
             .GroupBy(attr => (attr.RegistryName, attr.CertificateId))
