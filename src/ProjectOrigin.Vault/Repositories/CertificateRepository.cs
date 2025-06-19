@@ -8,6 +8,8 @@ using ProjectOrigin.Vault.Exceptions;
 using ProjectOrigin.Vault.Extensions;
 using ProjectOrigin.Vault.Models;
 using ProjectOrigin.Vault.ViewModels;
+using Serilog;
+using Serilog.Formatting.Json;
 
 namespace ProjectOrigin.Vault.Repositories;
 
@@ -262,11 +264,18 @@ public class CertificateRepository : ICertificateRepository
                 (a.wallet_id IS NULL OR a.wallet_id = cwt.wallet_id);
             ";
 
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
         await using var gridReader = await _connection.QueryMultipleAsync(sql, filter);
+        stopwatch.Stop();
 
         var totalCount = await gridReader.ReadSingleAsync<int>();
         var certificates = (await gridReader.ReadAsync<CertificateViewModel>()).ToArray();
         var attributes = await gridReader.ReadAsync<AttributeViewModel>();
+
+        new LoggerConfiguration()
+            .WriteTo.Console(new JsonFormatter())
+            .CreateLogger()
+            .Information("QueryCertificates executed in {ElapsedMilliseconds} ms, TotalCount: {TotalCount}", stopwatch.ElapsedMilliseconds, totalCount);
 
         var attributeMap = attributes
             .GroupBy(attr => (attr.RegistryName, attr.CertificateId))
