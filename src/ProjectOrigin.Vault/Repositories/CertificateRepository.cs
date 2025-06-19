@@ -173,7 +173,7 @@ public class CertificateRepository : ICertificateRepository
             SELECT * FROM certificates_work_table_limit;
 
             SELECT attributes.registry_name, attributes.certificate_id, attributes.attribute_key as key, attributes.attribute_value as value, attributes.attribute_type as type
-            FROM attributes_view attributes_limit
+            FROM attributes_view attributes
             WHERE (registry_name, certificate_id) IN (SELECT registry_name, certificate_id FROM certificates_work_table_limit)
 			  AND (wallet_id IS NULL OR wallet_id in (SELECT DISTINCT(wallet_id) FROM certificates_work_table_limit));
 
