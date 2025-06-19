@@ -8,6 +8,8 @@ using ProjectOrigin.Vault.Exceptions;
 using ProjectOrigin.Vault.Extensions;
 using ProjectOrigin.Vault.Models;
 using ProjectOrigin.Vault.ViewModels;
+using Serilog;
+using Serilog.Formatting.Json;
 
 namespace ProjectOrigin.Vault.Repositories;
 
@@ -165,11 +167,15 @@ public class CertificateRepository : ICertificateRepository
                     AND quantity != 0
             );
             SELECT count(*) FROM certificates_work_table;
-            SELECT * FROM certificates_work_table WHERE (@UpdatedSince IS NULL OR updated_at > @UpdatedSince) LIMIT @limit;
+
+            CREATE TEMPORARY TABLE certificates_work_table_limit ON COMMIT DROP AS (
+            SELECT * FROM certificates_work_table WHERE (@UpdatedSince IS NULL OR updated_at > @UpdatedSince) LIMIT @limit);
+            SELECT * FROM certificates_work_table_limit;
+
             SELECT attributes.registry_name, attributes.certificate_id, attributes.attribute_key as key, attributes.attribute_value as value, attributes.attribute_type as type
             FROM attributes_view attributes
-            WHERE (registry_name, certificate_id) IN (SELECT registry_name, certificate_id FROM certificates_work_table)
-			  AND (wallet_id IS NULL OR wallet_id in (SELECT DISTINCT(wallet_id) FROM certificates_work_table))
+            WHERE (registry_name, certificate_id) IN (SELECT registry_name, certificate_id FROM certificates_work_table_limit)
+			  AND (wallet_id IS NULL OR wallet_id in (SELECT DISTINCT(wallet_id) FROM certificates_work_table_limit));
 
             ";
 
@@ -229,6 +235,7 @@ public class CertificateRepository : ICertificateRepository
 
             SELECT count(*) FROM certificates_work_table;
 
+            CREATE TEMPORARY TABLE certificates_work_table_limit ON COMMIT DROP AS (
             SELECT *
             FROM certificates_work_table
             ORDER BY
@@ -238,7 +245,9 @@ public class CertificateRepository : ICertificateRepository
                 CASE WHEN @SortBy = 'Quantity' AND @Sort = 'DESC' THEN quantity END DESC,
                 CASE WHEN @SortBy = 'Type' AND @Sort = 'ASC' THEN certificate_type END ASC,
                 CASE WHEN @SortBy = 'Type' AND @Sort = 'DESC' THEN certificate_type END DESC
-            LIMIT @limit OFFSET @skip;
+            LIMIT @limit OFFSET @skip);
+
+            SELECT * FROM certificates_work_table_limit;
 
             SELECT
                 a.registry_name,
@@ -248,18 +257,25 @@ public class CertificateRepository : ICertificateRepository
                 a.attribute_type AS type
             FROM
                 attributes_view a
-                JOIN certificates_work_table cwt
+                JOIN certificates_work_table_limit cwt
                   ON a.registry_name = cwt.registry_name
                  AND a.certificate_id = cwt.certificate_id
             WHERE
                 (a.wallet_id IS NULL OR a.wallet_id = cwt.wallet_id);
             ";
 
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
         await using var gridReader = await _connection.QueryMultipleAsync(sql, filter);
+        stopwatch.Stop();
 
         var totalCount = await gridReader.ReadSingleAsync<int>();
         var certificates = (await gridReader.ReadAsync<CertificateViewModel>()).ToArray();
         var attributes = await gridReader.ReadAsync<AttributeViewModel>();
+
+        new LoggerConfiguration()
+            .WriteTo.Console(new JsonFormatter())
+            .CreateLogger()
+            .Information("QueryCertificates executed in {ElapsedMilliseconds} ms, TotalCount: {TotalCount}", stopwatch.ElapsedMilliseconds, totalCount);
 
         var attributeMap = attributes
             .GroupBy(attr => (attr.RegistryName, attr.CertificateId))
