@@ -14,7 +14,7 @@
     <PackageReference Include="MassTransit.RabbitMQ" Version="8.4.0" />
     <PackageReference Include="Npgsql" Version="9.0.3" />
     <PackageReference Include="Npgsql.OpenTelemetry" Version="9.0.3" />
-    <PackageReference Include="NSec.Cryptography" Version="24.4.0" />
+    <PackageReference Include="NSec.Cryptography" Version="25.4.0" />
     <PackageReference Include="Microsoft.Identity.Web" Version="3.8.3" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.4" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.4" />
@@ -29,8 +29,8 @@
     <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
     <PackageReference Include="Serilog.Enrichers.Span" Version="3.1.0" />
     <PackageReference Include="Serilog.Expressions" Version="5.0.0" />
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="7.3.1" />
-    <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="7.3.1" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.1" />
+    <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="9.0.1" />
   </ItemGroup>
 
   <ItemGroup>
