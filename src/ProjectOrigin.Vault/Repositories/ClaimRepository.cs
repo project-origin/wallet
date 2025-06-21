@@ -124,43 +124,79 @@ public class ClaimRepository : IClaimRepository
             Limit = filter.Limit
         };
     }
-
     public async Task<PageResult<ClaimViewModel>> QueryClaims(QueryClaimsFilter filter)
     {
-        string sql = @"
-            CREATE TEMPORARY TABLE claims_work_table ON COMMIT DROP AS (
-                SELECT *
-                FROM claims_query_model
-                WHERE owner = @owner
-                  AND (@start IS NULL OR production_start >= @start)
-                  AND (@end IS NULL OR production_end <= @end)
-                  AND (@start IS NULL OR consumption_start >= @start)
-                  AND (@end IS NULL OR consumption_end <= @end)
-                  " + (filter.TimeMatch == TimeMatch.Hourly ? "AND ABS(EXTRACT(EPOCH FROM (production_start - consumption_start))) < 3600" : "") + @"
-            );
+        const string sql = @"
+        CREATE TEMPORARY TABLE claims_work_table ON COMMIT DROP AS
+        SELECT *
+        FROM claims_query_model
+        WHERE owner = @Owner
+          AND (@Start IS NULL OR production_start >= @Start)
+          AND (@End IS NULL OR production_end <= @End)
+          AND (@Start IS NULL OR consumption_start >= @Start)
+          AND (@End IS NULL OR consumption_end <= @End)
+          AND (@IsHourly = FALSE OR
+               ABS(EXTRACT(EPOCH FROM (production_start - consumption_start))) < 3600);
 
-            SELECT count(*) FROM claims_work_table;
+        SELECT COUNT(*)
+        FROM claims_work_table;
 
-            SELECT * FROM claims_work_table LIMIT @limit OFFSET @skip;
+        SELECT *
+        FROM claims_work_table
+        LIMIT @Limit
+        OFFSET @Skip;
 
-            SELECT attributes.registry_name, attributes.certificate_id, attributes.attribute_key as key,
-                   attributes.attribute_value as value, attributes.attribute_type as type
-            FROM attributes_view attributes
-            WHERE ((registry_name, certificate_id) IN
-                    (SELECT consumption_registry_name, consumption_certificate_id FROM claims_work_table)
-                   AND (wallet_id IS NULL OR wallet_id IN
-                        (SELECT DISTINCT(wallet_id) FROM claims_work_table)))
-               OR ((registry_name, certificate_id) IN
-                    (SELECT production_registry_name, production_certificate_id FROM claims_work_table)
-                   AND (wallet_id IS NULL OR wallet_id IN
-                        (SELECT DISTINCT(wallet_id) FROM claims_work_table)));
-            ";
+        SELECT
+            a.registry_name,
+            a.certificate_id,
+            a.attribute_key   AS key,
+            a.attribute_value AS value,
+            a.attribute_type  AS type
+        FROM attributes_view AS a
+        WHERE (
+            (a.registry_name, a.certificate_id) IN (
+                SELECT consumption_registry_name,
+                       consumption_certificate_id
+                FROM claims_work_table
+            )
+            AND (
+                a.wallet_id IS NULL
+                OR a.wallet_id IN (
+                    SELECT DISTINCT wallet_id
+                    FROM claims_work_table
+                )
+            )
+        )
+        OR (
+            (a.registry_name, a.certificate_id) IN (
+                SELECT production_registry_name,
+                       production_certificate_id
+                FROM claims_work_table
+            )
+            AND (
+                a.wallet_id IS NULL
+                OR a.wallet_id IN (
+                    SELECT DISTINCT wallet_id
+                    FROM claims_work_table
+                )
+            ));
+        ";
 
-        await using var gridReader = await _connection.QueryMultipleAsync(sql, filter);
+        var parameters = new
+        {
+            filter.Owner,
+            filter.Start,
+            filter.End,
+            filter.Limit,
+            filter.Skip,
+            IsHourly = filter.TimeMatch == TimeMatch.Hourly
+        };
 
-        var totalCount = await gridReader.ReadSingleAsync<int>();
-        var claims = (await gridReader.ReadAsync<ClaimViewModel>()).ToArray();
-        var attributes = await gridReader.ReadAsync<AttributeViewModel>();
+        await using var grid = await _connection.QueryMultipleAsync(sql, parameters);
+
+        var totalCount = await grid.ReadSingleAsync<int>();
+        var claims = (await grid.ReadAsync<ClaimViewModel>()).ToArray();
+        var attributes = await grid.ReadAsync<AttributeViewModel>();
 
         var attributeMap = attributes
             .GroupBy(attr => (attr.RegistryName, attr.CertificateId))
