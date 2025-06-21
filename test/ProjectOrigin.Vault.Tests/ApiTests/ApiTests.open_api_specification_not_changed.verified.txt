@@ -361,7 +361,7 @@
           {
             "name": "TimeMatch",
             "in": "query",
-            "description": "Fetch all claims or hourly claims.\r\nValues:\r\nAll\r\nHourly (default)",
+            "description": "Fetch all claims or hourly claims. Values: All, Hourly (default)",
             "schema": {
               "$ref": "#/components/schemas/TimeMatch"
             }

@@ -314,10 +314,7 @@ public record GetClaimsQueryParameters
     public int Skip { get; init; } = 0;
 
     /// <summary>
-    /// Fetch all claims or hourly claims.
-    /// Values:
-    /// All
-    /// Hourly (default)
+    /// Fetch all claims or hourly claims. Values: All, Hourly (default)
     /// </summary>
     public TimeMatch TimeMatch { get; init; } = TimeMatch.Hourly;
 }
