@@ -1,7 +1,8 @@
 using System;
-using FluentAssertions;
+using System.Collections.Generic;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Xunit;
 
 namespace ProjectOrigin.Vault.Tests.Extensions;
@@ -9,14 +10,26 @@ namespace ProjectOrigin.Vault.Tests.Extensions;
 public class HealthChecksRegistrationTests
 {
     [Fact]
-    public void AddHealthChecks_ThrowsException_WhenDatabaseConnectionStringIsNull()
+    public void Should_register_health_checks()
     {
         var services = new ServiceCollection();
-        var configuration = new ConfigurationBuilder().Build();
+        services.AddLogging();
 
-        Action act = () => services.AddHealthChecks()
-            .AddNpgSql(configuration.GetConnectionString("Database") ?? throw new InvalidOperationException());
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection([
+                new KeyValuePair<string, string?>("ConnectionStrings:Database", "Host=localhost;Username=postgres;Password=postgres")
+            ])
+            .Build();
 
-        act.Should().Throw<InvalidOperationException>();
+        var healthChecks = services.AddHealthChecks()
+            .AddCheck("self", () => HealthCheckResult.Healthy());
+
+        healthChecks.AddNpgSql(
+            configuration.GetConnectionString("Database") ?? throw new InvalidOperationException(),
+            name: "postgres",
+            tags: ["ready", "db"]);
+
+        var provider = services.BuildServiceProvider();
+        _ = provider.GetRequiredService<HealthCheckService>();
     }
 }
