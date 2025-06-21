@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -73,10 +74,10 @@ public class WalletController : ControllerBase
 
             unitOfWork.Commit();
 
-            return Created(new Uri(serviceOptions.Value.EndpointAddress, Path.Combine(serviceOptions.Value.PathBase, "v1/wallets", newWallet.Id.ToString())), new CreateWalletResponse
-            {
-                WalletId = newWallet.Id
-            });
+            var relative = CombineUrl(serviceOptions.Value.PathBase, "v1/wallets", newWallet.Id.ToString());
+
+            return Created(new Uri(serviceOptions.Value.EndpointAddress, relative),
+                new CreateWalletResponse { WalletId = newWallet.Id });
         }
         catch (Exception ex) when (ex.Message.Contains("duplicate key value violates unique constraint"))
         {
@@ -332,6 +333,12 @@ public class WalletController : ControllerBase
         });
     }
 
+    private static string CombineUrl(params string[] segments)
+    {
+        return string.Join('/', segments
+            .Select(s => s.Trim('/'))
+            .Where(s => s.Length > 0));
+    }
 }
 
 #region Records
