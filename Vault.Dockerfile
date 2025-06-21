@@ -1,6 +1,6 @@
 ARG PROJECT=ProjectOrigin.Vault
 
-FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:9.0.301-noble AS build
+FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:9.0.301 AS build
 ARG PROJECT
 
 WORKDIR /builddir
@@ -15,7 +15,7 @@ RUN dotnet tool restore
 RUN dotnet publish src/ProjectOrigin.Vault -c Release -p:CustomAssemblyName=Vault -o /app/publish
 
 # ------- production image -------
-FROM mcr.microsoft.com/dotnet/aspnet:9.0.6-azurelinux3.0-distroless-extra AS production
+FROM mcr.microsoft.com/dotnet/aspnet:9.0.6-noble-chiseled-extra AS production
 
 WORKDIR /app
 COPY --from=build /app/publish .
