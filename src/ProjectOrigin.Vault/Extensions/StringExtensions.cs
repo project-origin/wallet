@@ -21,8 +21,10 @@ public static class StringExtensions
 
     public static string CombineUrl(params string[] segments)
     {
-        return string.Join('/', segments
-            .Select(s => s.Trim('/'))
-            .Where(s => s.Length > 0));
+        return string.Join('/',
+            segments
+                .Where(s => !string.IsNullOrWhiteSpace(s))
+                .Select(s => s.Replace('\\', '/').Trim('/'))
+        );
     }
 }
