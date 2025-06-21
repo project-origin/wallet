@@ -73,14 +73,10 @@ public class WalletController : ControllerBase
 
             unitOfWork.Commit();
 
-            var relative = StringExtensions.CombineUrl(serviceOptions.Value.PathBase, "v1/wallets", newWallet.Id.ToString());
-
-            var normalizedUri = new Uri(
-                new Uri(serviceOptions.Value.EndpointAddress.ToString().TrimEnd('/') + "/"),
-                relative.Replace('\\', '/')
-            );
-
-            return Created(normalizedUri, new CreateWalletResponse { WalletId = newWallet.Id });
+            return Created(new Uri(serviceOptions.Value.EndpointAddress, Path.Combine(serviceOptions.Value.PathBase, "v1/wallets", newWallet.Id.ToString())), new CreateWalletResponse
+            {
+                WalletId = newWallet.Id
+            });
         }
         catch (Exception ex) when (ex.Message.Contains("duplicate key value violates unique constraint"))
         {

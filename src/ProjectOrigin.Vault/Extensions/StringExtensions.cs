@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 
 namespace ProjectOrigin.Vault.Extensions;
 
@@ -17,14 +16,5 @@ public static class StringExtensions
             timeZoneInfo = null!;
             return false;
         }
-    }
-
-    public static string CombineUrl(params string[] segments)
-    {
-        return string.Join('/',
-            segments
-                .Where(s => !string.IsNullOrWhiteSpace(s))
-                .Select(s => s.Replace('\\', '/').Trim('/'))
-        );
     }
 }

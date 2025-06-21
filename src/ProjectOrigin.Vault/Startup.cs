@@ -146,7 +146,7 @@ public class Startup
             options.IncludeXmlComments(xmlPath);
             options.DocumentFilter<PathBaseDocumentFilter>();
             options.DocumentFilter<AddWalletTagDocumentFilter>();
-            options.DocumentFilter<SwaggerExtensions.NormalizeDescriptions>();
+            options.SwaggerGeneratorOptions.XmlCommentEndOfLine = "\n";
         });
 
         services.AddHttpClient();

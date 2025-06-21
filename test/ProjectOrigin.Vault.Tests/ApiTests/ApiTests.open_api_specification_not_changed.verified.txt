@@ -2066,7 +2066,7 @@
             "items": {
               "type": "string"
             },
-            "description": "List of hashed attributes names to transfer with the certificate.\r\nCan be empty array if no hashed attributes are to be transferred."
+            "description": "List of hashed attributes names to transfer with the certificate.\nCan be empty array if no hashed attributes are to be transferred."
           }
         },
         "additionalProperties": false,
