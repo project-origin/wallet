@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -74,7 +73,7 @@ public class WalletController : ControllerBase
 
             unitOfWork.Commit();
 
-            var relative = CombineUrl(serviceOptions.Value.PathBase, "v1/wallets", newWallet.Id.ToString());
+            var relative = StringExtensions.CombineUrl(serviceOptions.Value.PathBase, "v1/wallets", newWallet.Id.ToString());
 
             return Created(new Uri(serviceOptions.Value.EndpointAddress, relative),
                 new CreateWalletResponse { WalletId = newWallet.Id });
@@ -331,13 +330,6 @@ public class WalletController : ControllerBase
         {
             ReceiverId = externalEndpoint.Id
         });
-    }
-
-    private static string CombineUrl(params string[] segments)
-    {
-        return string.Join('/', segments
-            .Select(s => s.Trim('/'))
-            .Where(s => s.Length > 0));
     }
 }
 
