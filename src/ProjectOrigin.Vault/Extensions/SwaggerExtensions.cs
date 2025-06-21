@@ -18,6 +18,11 @@ public class SwaggerExtensions
         }
 
         private static string? Normalize(string? input) =>
-            input?.Replace("\r\n", "\n").Replace("\r", "\n");
+            input?
+                .Replace("\r\n", " ")
+                .Replace("\r", " ")
+                .Replace("\n", " ")
+                .Replace("  ", " ")
+                .Trim();
     }
 }
