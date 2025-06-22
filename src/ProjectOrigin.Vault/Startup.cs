@@ -94,7 +94,7 @@ public class Startup
             var options = _configuration.GetSection("MessageBroker").GetValid<MessageBrokerOptions>();
             if (options.RabbitMq != null && options.RabbitMq.Quorum)
             {
-                o.AddConfigureEndpointsCallback((_, cfg) =>
+                o.AddConfigureEndpointsCallback((name, cfg) =>
                 {
                     if (cfg is IRabbitMqReceiveEndpointConfigurator rmq)
                         rmq.SetQuorumQueue(options.RabbitMq.Replicas);
