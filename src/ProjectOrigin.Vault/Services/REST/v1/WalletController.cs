@@ -331,7 +331,6 @@ public class WalletController : ControllerBase
             ReceiverId = externalEndpoint.Id
         });
     }
-
 }
 
 #region Records

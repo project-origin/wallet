@@ -24,6 +24,7 @@ using System.IO;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
 using ProjectOrigin.Vault.Exceptions;
 using ProjectOrigin.Vault.Jobs;
@@ -123,7 +124,7 @@ public class Startup
             o.AddExecuteActivity<WaitCommittedRegistryTransactionActivity, WaitCommittedTransactionArguments>((rc, cfg) =>
             {
                 var retryOptions = rc.GetRequiredService<IOptions<RetryOptions>>();
-                cfg.UseRetry(r => r.Incremental(retryOptions!.Value.RegistryTransactionStillProcessingRetryCount,
+                cfg.UseRetry(r => r.Incremental(retryOptions.Value.RegistryTransactionStillProcessingRetryCount,
                         TimeSpan.FromSeconds(retryOptions.Value.RegistryTransactionStillProcessingInitialIntervalSeconds),
                         TimeSpan.FromSeconds(retryOptions.Value.RegistryTransactionStillProcessingIntervalIncrementSeconds))
                     .Handle<RegistryTransactionStillProcessingException>());
@@ -145,6 +146,7 @@ public class Startup
             options.IncludeXmlComments(xmlPath);
             options.DocumentFilter<PathBaseDocumentFilter>();
             options.DocumentFilter<AddWalletTagDocumentFilter>();
+            options.SwaggerGeneratorOptions.XmlCommentEndOfLine = "\n";
         });
 
         services.AddHttpClient();
@@ -173,6 +175,10 @@ public class Startup
         app.UseEndpoints(endpoints =>
         {
             endpoints.MapControllers();
+            endpoints.MapHealthChecks("/health/live",
+                new HealthCheckOptions { Predicate = hc => hc.Name == "self" });
+            endpoints.MapHealthChecks("/health/ready",
+                new HealthCheckOptions { Predicate = _ => true });
         });
 
         app.ConfigureSqlMappers();

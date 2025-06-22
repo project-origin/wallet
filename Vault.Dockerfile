@@ -15,11 +15,12 @@ RUN dotnet tool restore
 RUN dotnet publish src/ProjectOrigin.Vault -c Release -p:CustomAssemblyName=Vault -o /app/publish
 
 # ------- production image -------
-FROM mcr.microsoft.com/dotnet/aspnet:9.0.6-noble AS production
+FROM mcr.microsoft.com/dotnet/aspnet:9.0.6-noble-chiseled-extra AS production
 
 WORKDIR /app
 COPY --from=build /app/publish .
 
 EXPOSE 5000
+EXPOSE 5001
 
 ENTRYPOINT ["dotnet", "Vault.dll"]
