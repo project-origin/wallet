@@ -24,6 +24,8 @@ namespace ProjectOrigin.Vault.Extensions;
 
 public static class IServiceCollectionExtensions
 {
+    private static readonly string[] PostgresHealthCheckTags = ["ready", "db"];
+
     public static void ConfigurePersistance(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddSingleton<IRepositoryUpgrader, PostgresUpgrader>();
@@ -32,9 +34,8 @@ public static class IServiceCollectionExtensions
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
-        var healthChecks = services.AddHealthChecks()
-            .AddCheck("self", () => HealthCheckResult.Healthy());
-        healthChecks.AddNpgSql(configuration.GetConnectionString("Database") ?? throw new InvalidOperationException(), name: "postgres", tags: new[] { "ready", "db" });
+        var healthChecks = services.AddHealthChecks().AddCheck("self", () => HealthCheckResult.Healthy());
+        healthChecks.AddNpgSql(configuration.GetConnectionString("Database") ?? throw new InvalidOperationException(), name: "postgres", tags: PostgresHealthCheckTags);
     }
 
     public static void ConfigureAuthentication(this IServiceCollection services, AuthOptions authOptions)
