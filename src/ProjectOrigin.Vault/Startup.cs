@@ -90,6 +90,7 @@ public class Startup
         {
             // https://masstransit.io/documentation/configuration/usage-telemetry
             o.DisableUsageTelemetry();
+            o.AddHealthChecks();
             o.SetKebabCaseEndpointNameFormatter();
             var options = _configuration.GetSection("MessageBroker").GetValid<MessageBrokerOptions>();
             if (options.RabbitMq != null && options.RabbitMq.Quorum)
