@@ -279,9 +279,6 @@ public class CertificateRepository : ICertificateRepository
             var certificates = (await gridReader.ReadAsync<CertificateViewModel>()).ToArray();
             var attributes = await gridReader.ReadAsync<AttributeViewModel>();
 
-            _logger.LogInformation("Executing QueryCertificates with {ElapsedMilliseconds} ms, TotalCount: {TotalCount}",
-                stopwatch.ElapsedMilliseconds, totalCount);
-
             var attributeMap = attributes
                 .GroupBy(attr => (attr.RegistryName, attr.CertificateId))
                 .ToDictionary(group => group.Key, group => group.ToList());
@@ -304,14 +301,17 @@ public class CertificateRepository : ICertificateRepository
                 Limit = filter.Limit
             };
 
-            _logger.LogInformation("Successfully completed QueryAvailableCertificates in {ElapsedMilliseconds} ms, returning {Count} of {TotalCount} certificates",
+            _logger.LogInformation(
+                "Successfully completed QueryAvailableCertificates in {ElapsedMilliseconds} ms, returning {Count} of {TotalCount} certificates",
                 stopwatch.ElapsedMilliseconds, certificates.Length, totalCount);
 
             return result;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error in QueryAvailableCertificates executed in {ElapsedMilliseconds} ms", stopwatch.ElapsedMilliseconds);
+            _logger.LogError(ex,
+                "Error in QueryAvailableCertificates executed in {ElapsedMilliseconds} ms, with filters: owner: {Owner}, start: {Start}, end: {End}, type: {Type}",
+                stopwatch.ElapsedMilliseconds, filter.Owner, filter.Start, filter.End, filter.Type);
             throw;
         }
         finally
@@ -359,16 +359,16 @@ public class CertificateRepository : ICertificateRepository
             ";
 
         using (var gridReader = await _connection.QueryMultipleAsync(sql, new
-        {
-            filter.Owner,
-            filter.Start,
-            filter.End,
-            filter.Type,
-            filter.Skip,
-            filter.Limit,
-            timeAggregate = filter.TimeAggregate.ToString().ToLower(),
-            filter.TimeZone
-        }))
+               {
+                   filter.Owner,
+                   filter.Start,
+                   filter.End,
+                   filter.Type,
+                   filter.Skip,
+                   filter.Limit,
+                   timeAggregate = filter.TimeAggregate.ToString().ToLower(),
+                   filter.TimeZone
+               }))
         {
             var totalCount = await gridReader.ReadSingleAsync<int>();
             var certificates = await gridReader.ReadAsync<AggregatedCertificatesViewModel>();
