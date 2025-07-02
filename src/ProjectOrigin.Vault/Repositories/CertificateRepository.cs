@@ -4,11 +4,12 @@ using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using Dapper;
-using Microsoft.Extensions.Logging;
 using ProjectOrigin.Vault.Exceptions;
 using ProjectOrigin.Vault.Extensions;
 using ProjectOrigin.Vault.Models;
 using ProjectOrigin.Vault.ViewModels;
+using Serilog;
+using Serilog.Formatting.Json;
 
 namespace ProjectOrigin.Vault.Repositories;
 
@@ -166,11 +167,15 @@ public class CertificateRepository : ICertificateRepository
                     AND quantity != 0
             );
             SELECT count(*) FROM certificates_work_table;
-            SELECT * FROM certificates_work_table WHERE (@UpdatedSince IS NULL OR updated_at > @UpdatedSince) LIMIT @limit;
+
+            CREATE TEMPORARY TABLE certificates_work_table_limit ON COMMIT DROP AS (
+            SELECT * FROM certificates_work_table WHERE (@UpdatedSince IS NULL OR updated_at > @UpdatedSince) LIMIT @limit);
+            SELECT * FROM certificates_work_table_limit;
+
             SELECT attributes.registry_name, attributes.certificate_id, attributes.attribute_key as key, attributes.attribute_value as value, attributes.attribute_type as type
             FROM attributes_view attributes
-            WHERE (registry_name, certificate_id) IN (SELECT registry_name, certificate_id FROM certificates_work_table)
-			  AND (wallet_id IS NULL OR wallet_id in (SELECT DISTINCT(wallet_id) FROM certificates_work_table))
+            WHERE (registry_name, certificate_id) IN (SELECT registry_name, certificate_id FROM certificates_work_table_limit)
+			  AND (wallet_id IS NULL OR wallet_id in (SELECT DISTINCT(wallet_id) FROM certificates_work_table_limit));
 
             ";
 
@@ -186,7 +191,8 @@ public class CertificateRepository : ICertificateRepository
 
         foreach (var certificate in certificates)
         {
-            if (attributeMap.TryGetValue((certificate.RegistryName, certificate.CertificateId), out var certificateAttributes))
+            if (attributeMap.TryGetValue((certificate.RegistryName, certificate.CertificateId),
+                    out var certificateAttributes))
             {
                 certificate.Attributes.AddRange(certificateAttributes);
             }
@@ -204,64 +210,72 @@ public class CertificateRepository : ICertificateRepository
 
     public async Task<PageResult<CertificateViewModel>> QueryAvailableCertificates(QueryCertificatesFilter filter)
     {
-        var logger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<CertificateRepository>();
-        var shouldAnalyze = filter.Owner?.Contains("2c8934eb-ff24-402d-ae39-937a80") == true;
-
         string sql = @"
             CREATE TEMPORARY TABLE certificates_work_table ON COMMIT DROP AS (
-                SELECT
-                    certificate_id,
-                    registry_name,
-                    certificate_type,
-                    grid_area,
-                    start_date,
-                    end_date,
-                    quantity,
-                    wallet_id,
-                    updated_at,
-                    withdrawn
-                FROM
-                    certificates_query_model
-                WHERE
-                    owner = @owner
-                    AND withdrawn = false
-                    AND (@start IS NULL OR start_date >= @start)
-                    AND (@end IS NULL OR end_date <= @end)
-                    AND quantity != 0
-                    AND (@type IS NULL OR certificate_type = @type)
-                ORDER BY
-                    CASE WHEN @SortBy = 'End' AND @Sort = 'ASC' THEN end_date END ASC,
-                    CASE WHEN @SortBy = 'End' AND @Sort = 'DESC' THEN end_date END DESC,
-                    CASE WHEN @SortBy = 'Quantity' AND @Sort = 'ASC' THEN quantity END ASC,
-                    CASE WHEN @SortBy = 'Quantity' AND @Sort = 'DESC' THEN quantity END DESC,
-                    CASE WHEN @SortBy = 'Type' AND @Sort = 'ASC' THEN certificate_type END ASC,
-                    CASE WHEN @SortBy = 'Type' AND @Sort = 'DESC' THEN certificate_type END DESC
-            );
-            SELECT count(*) FROM certificates_work_table;
-            SELECT * FROM certificates_work_table LIMIT @limit OFFSET @skip;
-            SELECT attributes.registry_name, attributes.certificate_id, attributes.attribute_key as key, attributes.attribute_value as value, attributes.attribute_type as type
-            FROM attributes_view attributes
-            WHERE (registry_name, certificate_id) IN (SELECT registry_name, certificate_id FROM certificates_work_table)
-			  AND (wallet_id IS NULL OR wallet_id in (SELECT DISTINCT(wallet_id) FROM certificates_work_table))
-            ";
-        if (shouldAnalyze)
-        {
-            var explainSql = "EXPLAIN ANALYZE " + sql;
-            var explainResult = await _connection.QueryAsync<string>(explainSql, filter);
-            logger.LogWarning("Owner: 2c8934eb-ff24-402d-ae39-937a80******, SQL: {Sql}, Params: {Params}, Explain: {Explain}", sql, System.Text.Json.JsonSerializer.Serialize(filter), string.Join("\n", explainResult));
-        }
-        var sw = shouldAnalyze ? System.Diagnostics.Stopwatch.StartNew() : null;
+            SELECT
+                certificate_id,
+                registry_name,
+                certificate_type,
+                grid_area,
+                start_date,
+                end_date,
+                quantity,
+                wallet_id,
+                updated_at,
+                withdrawn
+            FROM
+                certificates_query_model
+            WHERE
+                owner = @owner
+                AND withdrawn = false
+                AND (@start IS NULL OR start_date >= @start)
+                AND (@end IS NULL OR end_date <= @end)
+                AND quantity != 0
+                AND (@type IS NULL OR certificate_type = @type));
 
+            SELECT count(*) FROM certificates_work_table;
+
+            CREATE TEMPORARY TABLE certificates_work_table_limit ON COMMIT DROP AS (
+            SELECT *
+            FROM certificates_work_table
+            ORDER BY
+                CASE WHEN @SortBy = 'End' AND @Sort = 'ASC' THEN end_date END ASC,
+                CASE WHEN @SortBy = 'End' AND @Sort = 'DESC' THEN end_date END DESC,
+                CASE WHEN @SortBy = 'Quantity' AND @Sort = 'ASC' THEN quantity END ASC,
+                CASE WHEN @SortBy = 'Quantity' AND @Sort = 'DESC' THEN quantity END DESC,
+                CASE WHEN @SortBy = 'Type' AND @Sort = 'ASC' THEN certificate_type END ASC,
+                CASE WHEN @SortBy = 'Type' AND @Sort = 'DESC' THEN certificate_type END DESC
+            LIMIT @limit OFFSET @skip);
+
+            SELECT * FROM certificates_work_table_limit;
+
+            SELECT
+                a.registry_name,
+                a.certificate_id,
+                a.attribute_key AS key,
+                a.attribute_value AS value,
+                a.attribute_type AS type
+            FROM
+                attributes_view a
+                JOIN certificates_work_table_limit cwt
+                  ON a.registry_name = cwt.registry_name
+                 AND a.certificate_id = cwt.certificate_id
+            WHERE
+                (a.wallet_id IS NULL OR a.wallet_id = cwt.wallet_id);
+            ";
+
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
         await using var gridReader = await _connection.QueryMultipleAsync(sql, filter);
-        if (shouldAnalyze && sw != null)
-        {
-            sw.Stop();
-            logger.LogWarning("Query took {Elapsed} ms", sw.ElapsedMilliseconds);
-        }
+        stopwatch.Stop();
 
         var totalCount = await gridReader.ReadSingleAsync<int>();
         var certificates = (await gridReader.ReadAsync<CertificateViewModel>()).ToArray();
         var attributes = await gridReader.ReadAsync<AttributeViewModel>();
+
+        new LoggerConfiguration()
+            .WriteTo.Console(new JsonFormatter())
+            .CreateLogger()
+            .Information("QueryCertificates executed in {ElapsedMilliseconds} ms, TotalCount: {TotalCount}", stopwatch.ElapsedMilliseconds, totalCount);
 
         var attributeMap = attributes
             .GroupBy(attr => (attr.RegistryName, attr.CertificateId))
@@ -269,7 +283,8 @@ public class CertificateRepository : ICertificateRepository
 
         foreach (var certificate in certificates)
         {
-            if (attributeMap.TryGetValue((certificate.RegistryName, certificate.CertificateId), out var certificateAttributes))
+            if (attributeMap.TryGetValue((certificate.RegistryName, certificate.CertificateId),
+                    out var certificateAttributes))
             {
                 certificate.Attributes.AddRange(certificateAttributes);
             }
@@ -440,7 +455,8 @@ public class CertificateRepository : ICertificateRepository
             });
 
         if (rowsChanged != 1)
-            throw new InvalidOperationException($"Rows changed: {rowsChanged}. Certificate with registry {registry} and certificateId {certificateId} could not be found");
+            throw new InvalidOperationException(
+                $"Rows changed: {rowsChanged}. Certificate with registry {registry} and certificateId {certificateId} could not be found");
     }
 
     public async Task<IEnumerable<WalletSlice>> GetClaimedSlicesOfCertificate(string registry, Guid certificateId)
@@ -519,7 +535,8 @@ public class CertificateRepository : ICertificateRepository
                     });
 
                 if (rowsChanged != 1)
-                    throw new InvalidOperationException($"Slice with id {slice.Id} could not be found or was no longer available");
+                    throw new InvalidOperationException(
+                        $"Slice with id {slice.Id} could not be found or was no longer available");
             }
 
             return takenSlices;
@@ -530,7 +547,8 @@ public class CertificateRepository : ICertificateRepository
         }
         else if (willBeAvailable >= reserveQuantity)
         {
-            throw new QuantityNotYetAvailableToReserveException("Owner has enough quantity, but it is not yet available to reserve");
+            throw new QuantityNotYetAvailableToReserveException(
+                "Owner has enough quantity, but it is not yet available to reserve");
         }
         else
         {

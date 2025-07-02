@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Net;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using AutoFixture;
@@ -160,25 +161,27 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
                 subject)
             .Returns(request.Quantity + 10);
 
-        certificateRepositoryMock.GetCertificate(request.ProductionCertificateId.Registry, request.ProductionCertificateId.StreamId)
+        certificateRepositoryMock.GetCertificate(request.ProductionCertificateId.Registry,
+                request.ProductionCertificateId.StreamId)
             .Returns(new Certificate
             {
                 Id = Guid.NewGuid(),
                 RegistryName = request.ProductionCertificateId.Registry,
-                StartDate = DateTimeOffset.UtcNow.AddDays(-1), // Example start date
-                EndDate = DateTimeOffset.UtcNow.AddDays(1),   // Example end date
-                GridArea = "ExampleGridArea",                // Example grid area
+                StartDate = DateTimeOffset.UtcNow.AddDays(-1),
+                EndDate = DateTimeOffset.UtcNow.AddDays(1),
+                GridArea = "ExampleGridArea",
                 CertificateType = GranularCertificateType.Production,
                 Withdrawn = false
             });
-        certificateRepositoryMock.GetCertificate(request.ConsumptionCertificateId.Registry, request.ConsumptionCertificateId.StreamId)
+        certificateRepositoryMock.GetCertificate(request.ConsumptionCertificateId.Registry,
+                request.ConsumptionCertificateId.StreamId)
             .Returns(new Certificate
             {
                 Id = Guid.NewGuid(),
                 RegistryName = request.ConsumptionCertificateId.Registry,
-                StartDate = DateTimeOffset.UtcNow.AddDays(-1), // Example start date
-                EndDate = DateTimeOffset.UtcNow.AddDays(1),   // Example end date
-                GridArea = "ExampleGridArea",                // Example grid area
+                StartDate = DateTimeOffset.UtcNow.AddDays(-1),
+                EndDate = DateTimeOffset.UtcNow.AddDays(1),
+                GridArea = "ExampleGridArea",
                 CertificateType = GranularCertificateType.Consumption,
                 Withdrawn = false
             });
@@ -206,6 +209,92 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
             request.Quantity);
     }
 
+
+    [Theory]
+    [InlineData("true", "false", HttpStatusCode.BadRequest)]
+    [InlineData("false", "true", HttpStatusCode.BadRequest)]
+    [InlineData("true", "true", HttpStatusCode.Accepted)]
+    [InlineData("false", "false", HttpStatusCode.Accepted)]
+    [InlineData(null, null, HttpStatusCode.Accepted)]
+    public async Task ClaimCertificate_IsTrial_ReturnsExpectedStatusCode(string? prodIsTrial, string? consIsTrial,
+        HttpStatusCode expectedStatusCode)
+    {
+        var subject = _fixture.Create<string>();
+        var wallet = await _dbFixture.CreateWallet(subject);
+        var endpoint = await _dbFixture.CreateWalletEndpoint(wallet);
+        var issuerStartDate = new DateTimeOffset(2020, 6, 1, 12, 0, 0, TimeSpan.Zero);
+
+        var prodCert = await _dbFixture.CreateCertificate(
+            Guid.NewGuid(),
+            _fixture.Create<string>(),
+            Models.GranularCertificateType.Production,
+            start: issuerStartDate,
+            end: issuerStartDate.AddHours(1),
+            prodIsTrial != null
+                ?
+                [
+                    new()
+                    {
+                        Key = "IsTrial", Value = prodIsTrial, Type = CertificateAttributeType.ClearText
+                    }
+                ]
+                : null);
+
+        var consCert = await _dbFixture.CreateCertificate(
+            Guid.NewGuid(),
+            _fixture.Create<string>(),
+            Models.GranularCertificateType.Consumption,
+            start: issuerStartDate,
+            end: issuerStartDate.AddHours(1),
+            consIsTrial != null
+                ?
+                [
+                    new()
+                    {
+                        Key = "IsTrial", Value = consIsTrial, Type = CertificateAttributeType.ClearText
+                    }
+                ]
+                : null);
+        await _dbFixture.CreateSlice(endpoint, prodCert, new PedersenCommitment.SecretCommitmentInfo(100));
+        await _dbFixture.CreateSlice(endpoint, consCert, new PedersenCommitment.SecretCommitmentInfo(100));
+
+        var request = new ClaimRequest
+        {
+            ConsumptionCertificateId = new FederatedStreamId
+            { Registry = consCert.RegistryName, StreamId = consCert.Id },
+            ProductionCertificateId =
+                new FederatedStreamId { Registry = prodCert.RegistryName, StreamId = prodCert.Id },
+            Quantity = 100
+        };
+
+        var controller = new ClaimsController(_claimMetrics)
+        {
+            ControllerContext = CreateContextWithUser(subject)
+        };
+
+        var result = await controller.ClaimCertificate(
+            _unitOfWork,
+            _options,
+            request);
+
+
+        switch (expectedStatusCode)
+        {
+            case HttpStatusCode.BadRequest:
+                {
+                    var objectResult = result.Result as BadRequestObjectResult;
+                    objectResult.Should().NotBeNull();
+                    objectResult!.Value.Should()
+                        .Be("Cannot claim when only one certificate is marked as trial. Both must be trial or neither.");
+                    break;
+                }
+            case HttpStatusCode.Accepted:
+                result.Result.Should().BeOfType<AcceptedResult>();
+                break;
+        }
+    }
+
+
     [Fact]
     public async Task QueryClaims_OnlyReturnsClaimsWithinOneHour()
     {
@@ -222,47 +311,63 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
 
         // 0-minute diff — included
         {
-            var prodCert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _fixture.Create<string>(), Models.GranularCertificateType.Production, baseTime, baseTime.AddHours(1));
-            var prodSlice = await _dbFixture.CreateSlice(endpoint, prodCert, new PedersenCommitment.SecretCommitmentInfo(100));
+            var prodCert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _fixture.Create<string>(),
+                Models.GranularCertificateType.Production, baseTime, baseTime.AddHours(1));
+            var prodSlice =
+                await _dbFixture.CreateSlice(endpoint, prodCert, new PedersenCommitment.SecretCommitmentInfo(100));
 
-            var consCert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _fixture.Create<string>(), Models.GranularCertificateType.Consumption, baseTime, baseTime.AddHours(1));
-            var consSlice = await _dbFixture.CreateSlice(endpoint, consCert, new PedersenCommitment.SecretCommitmentInfo(100));
+            var consCert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _fixture.Create<string>(),
+                Models.GranularCertificateType.Consumption, baseTime, baseTime.AddHours(1));
+            var consSlice =
+                await _dbFixture.CreateSlice(endpoint, consCert, new PedersenCommitment.SecretCommitmentInfo(100));
 
             await _dbFixture.CreateClaim(prodSlice, consSlice, Models.ClaimState.Claimed);
         }
 
         // 59-minute diff — included
         {
-            var prodCert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _fixture.Create<string>(), Models.GranularCertificateType.Production, baseTime, baseTime.AddHours(1));
-            var prodSlice = await _dbFixture.CreateSlice(endpoint, prodCert, new PedersenCommitment.SecretCommitmentInfo(100));
+            var prodCert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _fixture.Create<string>(),
+                Models.GranularCertificateType.Production, baseTime, baseTime.AddHours(1));
+            var prodSlice =
+                await _dbFixture.CreateSlice(endpoint, prodCert, new PedersenCommitment.SecretCommitmentInfo(100));
 
             var consStart = baseTime.AddMinutes(59);
-            var consCert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _fixture.Create<string>(), Models.GranularCertificateType.Consumption, consStart, consStart.AddHours(1));
-            var consSlice = await _dbFixture.CreateSlice(endpoint, consCert, new PedersenCommitment.SecretCommitmentInfo(100));
+            var consCert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _fixture.Create<string>(),
+                Models.GranularCertificateType.Consumption, consStart, consStart.AddHours(1));
+            var consSlice =
+                await _dbFixture.CreateSlice(endpoint, consCert, new PedersenCommitment.SecretCommitmentInfo(100));
 
             await _dbFixture.CreateClaim(prodSlice, consSlice, Models.ClaimState.Claimed);
         }
 
         // 60-minute diff — filtered out
         {
-            var prodCert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _fixture.Create<string>(), Models.GranularCertificateType.Production, baseTime, baseTime.AddHours(1));
-            var prodSlice = await _dbFixture.CreateSlice(endpoint, prodCert, new PedersenCommitment.SecretCommitmentInfo(100));
+            var prodCert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _fixture.Create<string>(),
+                Models.GranularCertificateType.Production, baseTime, baseTime.AddHours(1));
+            var prodSlice =
+                await _dbFixture.CreateSlice(endpoint, prodCert, new PedersenCommitment.SecretCommitmentInfo(100));
 
             var consStart = baseTime.AddMinutes(60);
-            var consCert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _fixture.Create<string>(), Models.GranularCertificateType.Consumption, consStart, consStart.AddHours(1));
-            var consSlice = await _dbFixture.CreateSlice(endpoint, consCert, new PedersenCommitment.SecretCommitmentInfo(100));
+            var consCert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _fixture.Create<string>(),
+                Models.GranularCertificateType.Consumption, consStart, consStart.AddHours(1));
+            var consSlice =
+                await _dbFixture.CreateSlice(endpoint, consCert, new PedersenCommitment.SecretCommitmentInfo(100));
 
             await _dbFixture.CreateClaim(prodSlice, consSlice, Models.ClaimState.Claimed);
         }
 
         // 61-minute diff — filtered out
         {
-            var prodCert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _fixture.Create<string>(), Models.GranularCertificateType.Production, baseTime, baseTime.AddHours(1));
-            var prodSlice = await _dbFixture.CreateSlice(endpoint, prodCert, new PedersenCommitment.SecretCommitmentInfo(100));
+            var prodCert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _fixture.Create<string>(),
+                Models.GranularCertificateType.Production, baseTime, baseTime.AddHours(1));
+            var prodSlice =
+                await _dbFixture.CreateSlice(endpoint, prodCert, new PedersenCommitment.SecretCommitmentInfo(100));
 
             var consStart = baseTime.AddMinutes(61);
-            var consCert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _fixture.Create<string>(), Models.GranularCertificateType.Consumption, consStart, consStart.AddHours(1));
-            var consSlice = await _dbFixture.CreateSlice(endpoint, consCert, new PedersenCommitment.SecretCommitmentInfo(100));
+            var consCert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _fixture.Create<string>(),
+                Models.GranularCertificateType.Consumption, consStart, consStart.AddHours(1));
+            var consSlice =
+                await _dbFixture.CreateSlice(endpoint, consCert, new PedersenCommitment.SecretCommitmentInfo(100));
 
             await _dbFixture.CreateClaim(prodSlice, consSlice, Models.ClaimState.Claimed);
         }
@@ -363,20 +468,28 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
 
         // Included claim: 0-minute diff
         {
-            var prod = await _dbFixture.CreateCertificate(Guid.NewGuid(), _fixture.Create<string>(), Models.GranularCertificateType.Production, baseTime, baseTime.AddHours(1));
-            var prodSlice = await _dbFixture.CreateSlice(endpoint, prod, new PedersenCommitment.SecretCommitmentInfo(100));
-            var cons = await _dbFixture.CreateCertificate(Guid.NewGuid(), _fixture.Create<string>(), Models.GranularCertificateType.Consumption, baseTime, baseTime.AddHours(1));
-            var consSlice = await _dbFixture.CreateSlice(endpoint, cons, new PedersenCommitment.SecretCommitmentInfo(100));
+            var prod = await _dbFixture.CreateCertificate(Guid.NewGuid(), _fixture.Create<string>(),
+                Models.GranularCertificateType.Production, baseTime, baseTime.AddHours(1));
+            var prodSlice =
+                await _dbFixture.CreateSlice(endpoint, prod, new PedersenCommitment.SecretCommitmentInfo(100));
+            var cons = await _dbFixture.CreateCertificate(Guid.NewGuid(), _fixture.Create<string>(),
+                Models.GranularCertificateType.Consumption, baseTime, baseTime.AddHours(1));
+            var consSlice =
+                await _dbFixture.CreateSlice(endpoint, cons, new PedersenCommitment.SecretCommitmentInfo(100));
             await _dbFixture.CreateClaim(prodSlice, consSlice, Models.ClaimState.Claimed);
         }
 
         // Filtered-out claim: 70-minute diff
         {
-            var prod = await _dbFixture.CreateCertificate(Guid.NewGuid(), _fixture.Create<string>(), Models.GranularCertificateType.Production, baseTime.AddHours(-1), baseTime);
-            var prodSlice = await _dbFixture.CreateSlice(endpoint, prod, new PedersenCommitment.SecretCommitmentInfo(100));
+            var prod = await _dbFixture.CreateCertificate(Guid.NewGuid(), _fixture.Create<string>(),
+                Models.GranularCertificateType.Production, baseTime.AddHours(-1), baseTime);
+            var prodSlice =
+                await _dbFixture.CreateSlice(endpoint, prod, new PedersenCommitment.SecretCommitmentInfo(100));
             var consStart = baseTime.AddMinutes(10);
-            var cons = await _dbFixture.CreateCertificate(Guid.NewGuid(), _fixture.Create<string>(), Models.GranularCertificateType.Consumption, consStart, consStart.AddHours(1));
-            var consSlice = await _dbFixture.CreateSlice(endpoint, cons, new PedersenCommitment.SecretCommitmentInfo(100));
+            var cons = await _dbFixture.CreateCertificate(Guid.NewGuid(), _fixture.Create<string>(),
+                Models.GranularCertificateType.Consumption, consStart, consStart.AddHours(1));
+            var consSlice =
+                await _dbFixture.CreateSlice(endpoint, cons, new PedersenCommitment.SecretCommitmentInfo(100));
             await _dbFixture.CreateClaim(prodSlice, consSlice, Models.ClaimState.Claimed);
         }
 
@@ -470,7 +583,8 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
         resultList.Select(x => x.Quantity).Should().ContainInOrder(values);
     }
 
-    private async Task CreateClaims(DateTimeOffset issuestartDate, DateTimeOffset issueEndDate, WalletEndpoint endpoint, int delay = 0)
+    private async Task CreateClaims(DateTimeOffset issuestartDate, DateTimeOffset issueEndDate, WalletEndpoint endpoint,
+        int delay = 0)
     {
         for (DateTimeOffset i = issuestartDate; i < issueEndDate; i = i.AddHours(1))
         {
@@ -514,40 +628,56 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
 
         // Claim 1: Production and consumption start at the same time (within 0 minutes)
         {
-            var prodCert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _fixture.Create<string>(), Models.GranularCertificateType.Production, baseTime, baseTime.AddHours(1));
-            var prodSlice = await _dbFixture.CreateSlice(endpoint, prodCert, new PedersenCommitment.SecretCommitmentInfo(100));
-            var consCert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _fixture.Create<string>(), Models.GranularCertificateType.Consumption, baseTime, baseTime.AddHours(1));
-            var consSlice = await _dbFixture.CreateSlice(endpoint, consCert, new PedersenCommitment.SecretCommitmentInfo(100));
+            var prodCert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _fixture.Create<string>(),
+                Models.GranularCertificateType.Production, baseTime, baseTime.AddHours(1));
+            var prodSlice =
+                await _dbFixture.CreateSlice(endpoint, prodCert, new PedersenCommitment.SecretCommitmentInfo(100));
+            var consCert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _fixture.Create<string>(),
+                Models.GranularCertificateType.Consumption, baseTime, baseTime.AddHours(1));
+            var consSlice =
+                await _dbFixture.CreateSlice(endpoint, consCert, new PedersenCommitment.SecretCommitmentInfo(100));
             await _dbFixture.CreateClaim(prodSlice, consSlice, Models.ClaimState.Claimed);
         }
 
         // Claim 2: Consumption starts 59 minutes after production (within 60 minutes)
         {
             var consStart = baseTime.AddMinutes(59);
-            var prodCert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _fixture.Create<string>(), Models.GranularCertificateType.Production, baseTime, baseTime.AddHours(1));
-            var prodSlice = await _dbFixture.CreateSlice(endpoint, prodCert, new PedersenCommitment.SecretCommitmentInfo(100));
-            var consCert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _fixture.Create<string>(), Models.GranularCertificateType.Consumption, consStart, consStart.AddHours(1));
-            var consSlice = await _dbFixture.CreateSlice(endpoint, consCert, new PedersenCommitment.SecretCommitmentInfo(100));
+            var prodCert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _fixture.Create<string>(),
+                Models.GranularCertificateType.Production, baseTime, baseTime.AddHours(1));
+            var prodSlice =
+                await _dbFixture.CreateSlice(endpoint, prodCert, new PedersenCommitment.SecretCommitmentInfo(100));
+            var consCert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _fixture.Create<string>(),
+                Models.GranularCertificateType.Consumption, consStart, consStart.AddHours(1));
+            var consSlice =
+                await _dbFixture.CreateSlice(endpoint, consCert, new PedersenCommitment.SecretCommitmentInfo(100));
             await _dbFixture.CreateClaim(prodSlice, consSlice, Models.ClaimState.Claimed);
         }
 
         // Claim 2: Consumption starts 60 minutes after production (should be excluded)
         {
             var consStart = baseTime.AddMinutes(60);
-            var prodCert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _fixture.Create<string>(), Models.GranularCertificateType.Production, baseTime, baseTime.AddHours(1));
-            var prodSlice = await _dbFixture.CreateSlice(endpoint, prodCert, new PedersenCommitment.SecretCommitmentInfo(100));
-            var consCert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _fixture.Create<string>(), Models.GranularCertificateType.Consumption, consStart, consStart.AddHours(1));
-            var consSlice = await _dbFixture.CreateSlice(endpoint, consCert, new PedersenCommitment.SecretCommitmentInfo(100));
+            var prodCert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _fixture.Create<string>(),
+                Models.GranularCertificateType.Production, baseTime, baseTime.AddHours(1));
+            var prodSlice =
+                await _dbFixture.CreateSlice(endpoint, prodCert, new PedersenCommitment.SecretCommitmentInfo(100));
+            var consCert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _fixture.Create<string>(),
+                Models.GranularCertificateType.Consumption, consStart, consStart.AddHours(1));
+            var consSlice =
+                await _dbFixture.CreateSlice(endpoint, consCert, new PedersenCommitment.SecretCommitmentInfo(100));
             await _dbFixture.CreateClaim(prodSlice, consSlice, Models.ClaimState.Claimed);
         }
 
         // Claim 3: Consumption starts 61 minutes after production (should be excluded)
         {
             var consStart = baseTime.AddMinutes(61);
-            var prodCert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _fixture.Create<string>(), Models.GranularCertificateType.Production, baseTime, baseTime.AddHours(1));
-            var prodSlice = await _dbFixture.CreateSlice(endpoint, prodCert, new PedersenCommitment.SecretCommitmentInfo(100));
-            var consCert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _fixture.Create<string>(), Models.GranularCertificateType.Consumption, consStart, consStart.AddHours(1));
-            var consSlice = await _dbFixture.CreateSlice(endpoint, consCert, new PedersenCommitment.SecretCommitmentInfo(100));
+            var prodCert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _fixture.Create<string>(),
+                Models.GranularCertificateType.Production, baseTime, baseTime.AddHours(1));
+            var prodSlice =
+                await _dbFixture.CreateSlice(endpoint, prodCert, new PedersenCommitment.SecretCommitmentInfo(100));
+            var consCert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _fixture.Create<string>(),
+                Models.GranularCertificateType.Consumption, consStart, consStart.AddHours(1));
+            var consSlice =
+                await _dbFixture.CreateSlice(endpoint, consCert, new PedersenCommitment.SecretCommitmentInfo(100));
             await _dbFixture.CreateClaim(prodSlice, consSlice, Models.ClaimState.Claimed);
         }
 
@@ -657,7 +787,8 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
         result.Result.Should().BeOfType<UnauthorizedResult>();
     }
 
-    private async Task<(FederatedStreamId prodCertId, FederatedStreamId conCertId)> CreateCertificates(DateTimeOffset issuerStartDate, DateTimeOffset issuerEndDate, WalletEndpoint walletEndpoint)
+    private async Task<(FederatedStreamId prodCertId, FederatedStreamId conCertId)> CreateCertificates(
+        DateTimeOffset issuerStartDate, DateTimeOffset issuerEndDate, WalletEndpoint walletEndpoint)
     {
         var prodCert = await _dbFixture.CreateCertificate(
             Guid.NewGuid(),
