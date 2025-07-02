@@ -4,6 +4,7 @@ using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using Dapper;
+using Microsoft.Extensions.Logging;
 using ProjectOrigin.Vault.Exceptions;
 using ProjectOrigin.Vault.Extensions;
 using ProjectOrigin.Vault.Models;
@@ -16,8 +17,13 @@ namespace ProjectOrigin.Vault.Repositories;
 public class CertificateRepository : ICertificateRepository
 {
     private readonly IDbConnection _connection;
+    private readonly ILogger<CertificateRepository> _logger;
 
-    public CertificateRepository(IDbConnection connection) => this._connection = connection;
+    public CertificateRepository(IDbConnection connection, ILogger<CertificateRepository> logger)
+    {
+        _connection = connection;
+        _logger = logger;
+    }
 
     public async Task InsertWalletSlice(WalletSlice newSlice)
     {
@@ -265,39 +271,53 @@ public class CertificateRepository : ICertificateRepository
             ";
 
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-        await using var gridReader = await _connection.QueryMultipleAsync(sql, filter);
-        stopwatch.Stop();
-
-        var totalCount = await gridReader.ReadSingleAsync<int>();
-        var certificates = (await gridReader.ReadAsync<CertificateViewModel>()).ToArray();
-        var attributes = await gridReader.ReadAsync<AttributeViewModel>();
-
-        new LoggerConfiguration()
-            .WriteTo.Console(new JsonFormatter())
-            .CreateLogger()
-            .Information("QueryCertificates executed in {ElapsedMilliseconds} ms, TotalCount: {TotalCount}", stopwatch.ElapsedMilliseconds, totalCount);
-
-        var attributeMap = attributes
-            .GroupBy(attr => (attr.RegistryName, attr.CertificateId))
-            .ToDictionary(group => group.Key, group => group.ToList());
-
-        foreach (var certificate in certificates)
+        try
         {
-            if (attributeMap.TryGetValue((certificate.RegistryName, certificate.CertificateId),
-                    out var certificateAttributes))
+            await using var gridReader = await _connection.QueryMultipleAsync(sql, filter);
+
+            var totalCount = await gridReader.ReadSingleAsync<int>();
+            var certificates = (await gridReader.ReadAsync<CertificateViewModel>()).ToArray();
+            var attributes = await gridReader.ReadAsync<AttributeViewModel>();
+
+            _logger.LogInformation("Executing QueryCertificates with {ElapsedMilliseconds} ms, TotalCount: {TotalCount}",
+                stopwatch.ElapsedMilliseconds, totalCount);
+
+            var attributeMap = attributes
+                .GroupBy(attr => (attr.RegistryName, attr.CertificateId))
+                .ToDictionary(group => group.Key, group => group.ToList());
+
+            foreach (var certificate in certificates)
             {
-                certificate.Attributes.AddRange(certificateAttributes);
+                if (attributeMap.TryGetValue((certificate.RegistryName, certificate.CertificateId),
+                        out var certificateAttributes))
+                {
+                    certificate.Attributes.AddRange(certificateAttributes);
+                }
             }
-        }
 
-        return new PageResult<CertificateViewModel>()
+            var result = new PageResult<CertificateViewModel>()
+            {
+                Items = certificates,
+                TotalCount = totalCount,
+                Count = certificates.Count(),
+                Offset = filter.Skip,
+                Limit = filter.Limit
+            };
+
+            _logger.LogInformation("Successfully completed QueryAvailableCertificates in {ElapsedMilliseconds} ms, returning {Count} of {TotalCount} certificates",
+                stopwatch.ElapsedMilliseconds, certificates.Length, totalCount);
+
+            return result;
+        }
+        catch (Exception ex)
         {
-            Items = certificates,
-            TotalCount = totalCount,
-            Count = certificates.Count(),
-            Offset = filter.Skip,
-            Limit = filter.Limit
-        };
+            _logger.LogError(ex, "Error in QueryAvailableCertificates executed in {ElapsedMilliseconds} ms", stopwatch.ElapsedMilliseconds);
+            throw;
+        }
+        finally
+        {
+            stopwatch.Stop();
+        }
     }
 
     public async Task<PageResult<AggregatedCertificatesViewModel>> QueryAggregatedAvailableCertificates(
