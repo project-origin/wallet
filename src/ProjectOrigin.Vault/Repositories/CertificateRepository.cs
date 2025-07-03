@@ -267,6 +267,7 @@ public class CertificateRepository : ICertificateRepository
         try
         {
             await using var gridReader = await _connection.QueryMultipleAsync(sql, filter);
+            stopwatch.Stop();
 
             var totalCount = await gridReader.ReadSingleAsync<int>();
             var certificates = (await gridReader.ReadAsync<CertificateViewModel>()).ToArray();
@@ -304,6 +305,7 @@ public class CertificateRepository : ICertificateRepository
         }
         catch (Exception ex)
         {
+            stopwatch.Stop();
             new LoggerConfiguration()
                 .WriteTo.Console(new JsonFormatter())
                 .CreateLogger()
@@ -311,10 +313,6 @@ public class CertificateRepository : ICertificateRepository
                     "Error in QueryAvailableCertificates executed in {ElapsedMilliseconds} ms, with filters: owner: {Owner}, start: {Start}, end: {End}, type: {Type}",
                     stopwatch.ElapsedMilliseconds, filter.Owner, filter.Start, filter.End, filter.Type);
             throw;
-        }
-        finally
-        {
-            stopwatch.Stop();
         }
     }
 
