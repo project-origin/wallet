@@ -4,7 +4,6 @@ using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using Dapper;
-using Microsoft.Extensions.Logging;
 using ProjectOrigin.Vault.Exceptions;
 using ProjectOrigin.Vault.Extensions;
 using ProjectOrigin.Vault.Models;
@@ -17,14 +16,8 @@ namespace ProjectOrigin.Vault.Repositories;
 public class CertificateRepository : ICertificateRepository
 {
     private readonly IDbConnection _connection;
-    private readonly ILogger<CertificateRepository> _logger;
 
-    public CertificateRepository(IDbConnection connection, ILogger<CertificateRepository> logger)
-    {
-        _connection = connection;
-        _logger = logger;
-    }
-
+    public CertificateRepository(IDbConnection connection) => this._connection = connection;
     public async Task InsertWalletSlice(WalletSlice newSlice)
     {
         await _connection.ExecuteAsync(
@@ -301,17 +294,22 @@ public class CertificateRepository : ICertificateRepository
                 Limit = filter.Limit
             };
 
-            _logger.LogInformation(
-                "Successfully completed QueryAvailableCertificates in {ElapsedMilliseconds} ms, returning {Count} of {TotalCount} certificates",
-                stopwatch.ElapsedMilliseconds, certificates.Length, totalCount);
+            new LoggerConfiguration()
+                .WriteTo.Console(new JsonFormatter())
+                .CreateLogger()
+                .Information("Successfully completed QueryAvailableCertificates in {ElapsedMilliseconds} ms, returning {Count} of {TotalCount} certificates",
+                    stopwatch.ElapsedMilliseconds, certificates.Length, totalCount);
 
             return result;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex,
-                "Error in QueryAvailableCertificates executed in {ElapsedMilliseconds} ms, with filters: owner: {Owner}, start: {Start}, end: {End}, type: {Type}",
-                stopwatch.ElapsedMilliseconds, filter.Owner, filter.Start, filter.End, filter.Type);
+            new LoggerConfiguration()
+                .WriteTo.Console(new JsonFormatter())
+                .CreateLogger()
+                .Error(ex,
+                    "Error in QueryAvailableCertificates executed in {ElapsedMilliseconds} ms, with filters: owner: {Owner}, start: {Start}, end: {End}, type: {Type}",
+                    stopwatch.ElapsedMilliseconds, filter.Owner, filter.Start, filter.End, filter.Type);
             throw;
         }
         finally
