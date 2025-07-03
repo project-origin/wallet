@@ -298,8 +298,7 @@ public class CertificateRepository : ICertificateRepository
             new LoggerConfiguration()
                 .WriteTo.Console(new JsonFormatter())
                 .CreateLogger()
-                .Information("Successfully completed QueryAvailableCertificates in {ElapsedMilliseconds} ms, returning {Count} of {TotalCount} certificates, with filters: owner: {Owner}, start: {Start}, end: {End}, type: {Type}",
-                    stopwatch.ElapsedMilliseconds, certificates.Length, totalCount, filter.Owner, filter.Start, filter.End, filter.Type);
+                .Information($"Successfully completed QueryAvailableCertificates in {stopwatch.ElapsedMilliseconds} ms, returning {certificates.Length} of {totalCount} certificates, with filters: owner: {filter.Owner}, start: {filter.Start}, end: {filter.End}, type: {filter.Type}");
 
             return result;
         }
@@ -310,8 +309,7 @@ public class CertificateRepository : ICertificateRepository
                 .WriteTo.Console(new JsonFormatter())
                 .CreateLogger()
                 .Error(ex,
-                    "Error in QueryAvailableCertificates executed in {ElapsedMilliseconds} ms, with filters: owner: {Owner}, start: {Start}, end: {End}, type: {Type}",
-                    stopwatch.ElapsedMilliseconds, filter.Owner, filter.Start, filter.End, filter.Type);
+                    $"Error in QueryAvailableCertificates executed in {stopwatch.ElapsedMilliseconds} ms, with filters: owner: {filter.Owner}, start: {filter.Start}, end: {filter.End}, type: {filter.Type}");
             throw;
         }
     }
