@@ -18,7 +18,6 @@ public class CertificateRepository : ICertificateRepository
     private readonly IDbConnection _connection;
 
     public CertificateRepository(IDbConnection connection) => this._connection = connection;
-
     public async Task InsertWalletSlice(WalletSlice newSlice)
     {
         await _connection.ExecuteAsync(
@@ -265,39 +264,58 @@ public class CertificateRepository : ICertificateRepository
             ";
 
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-        await using var gridReader = await _connection.QueryMultipleAsync(sql, filter);
-        stopwatch.Stop();
-
-        var totalCount = await gridReader.ReadSingleAsync<int>();
-        var certificates = (await gridReader.ReadAsync<CertificateViewModel>()).ToArray();
-        var attributes = await gridReader.ReadAsync<AttributeViewModel>();
-
-        new LoggerConfiguration()
-            .WriteTo.Console(new JsonFormatter())
-            .CreateLogger()
-            .Information("QueryCertificates executed in {ElapsedMilliseconds} ms, TotalCount: {TotalCount}", stopwatch.ElapsedMilliseconds, totalCount);
-
-        var attributeMap = attributes
-            .GroupBy(attr => (attr.RegistryName, attr.CertificateId))
-            .ToDictionary(group => group.Key, group => group.ToList());
-
-        foreach (var certificate in certificates)
+        try
         {
-            if (attributeMap.TryGetValue((certificate.RegistryName, certificate.CertificateId),
-                    out var certificateAttributes))
+            await using var gridReader = await _connection.QueryMultipleAsync(sql, filter);
+
+            var totalCount = await gridReader.ReadSingleAsync<int>();
+            var certificates = (await gridReader.ReadAsync<CertificateViewModel>()).ToArray();
+            var attributes = await gridReader.ReadAsync<AttributeViewModel>();
+
+            var attributeMap = attributes
+                .GroupBy(attr => (attr.RegistryName, attr.CertificateId))
+                .ToDictionary(group => group.Key, group => group.ToList());
+
+            foreach (var certificate in certificates)
             {
-                certificate.Attributes.AddRange(certificateAttributes);
+                if (attributeMap.TryGetValue((certificate.RegistryName, certificate.CertificateId),
+                        out var certificateAttributes))
+                {
+                    certificate.Attributes.AddRange(certificateAttributes);
+                }
             }
-        }
 
-        return new PageResult<CertificateViewModel>()
+            var result = new PageResult<CertificateViewModel>()
+            {
+                Items = certificates,
+                TotalCount = totalCount,
+                Count = certificates.Count(),
+                Offset = filter.Skip,
+                Limit = filter.Limit
+            };
+
+            new LoggerConfiguration()
+                .WriteTo.Console(new JsonFormatter())
+                .CreateLogger()
+                .Information("Successfully completed QueryAvailableCertificates in {ElapsedMilliseconds} ms, returning {Count} of {TotalCount} certificates, with filters: owner: {Owner}, start: {Start}, end: {End}, type: {Type}",
+                    stopwatch.ElapsedMilliseconds, certificates.Length, totalCount, filter.Owner, filter.Start, filter.End, filter.Type);
+
+            return result;
+        }
+        catch (Exception ex)
         {
-            Items = certificates,
-            TotalCount = totalCount,
-            Count = certificates.Count(),
-            Offset = filter.Skip,
-            Limit = filter.Limit
-        };
+            new LoggerConfiguration()
+                .WriteTo.Console(new JsonFormatter())
+                .CreateLogger()
+                .Error(ex,
+                    "Error in QueryAvailableCertificates executed in {ElapsedMilliseconds} ms, with filters: owner: {Owner}, start: {Start}, end: {End}, type: {Type}",
+                    stopwatch.ElapsedMilliseconds, filter.Owner, filter.Start, filter.End, filter.Type);
+            throw;
+        }
+        finally
+        {
+            stopwatch.Stop();
+        }
     }
 
     public async Task<PageResult<AggregatedCertificatesViewModel>> QueryAggregatedAvailableCertificates(
