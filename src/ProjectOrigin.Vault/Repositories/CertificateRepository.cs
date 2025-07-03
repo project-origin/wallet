@@ -297,8 +297,8 @@ public class CertificateRepository : ICertificateRepository
             new LoggerConfiguration()
                 .WriteTo.Console(new JsonFormatter())
                 .CreateLogger()
-                .Information("Successfully completed QueryAvailableCertificates in {ElapsedMilliseconds} ms, returning {Count} of {TotalCount} certificates",
-                    stopwatch.ElapsedMilliseconds, certificates.Length, totalCount);
+                .Information("Successfully completed QueryAvailableCertificates in {ElapsedMilliseconds} ms, returning {Count} of {TotalCount} certificates, with filters: owner: {Owner}, start: {Start}, end: {End}, type: {Type}",
+                    stopwatch.ElapsedMilliseconds, certificates.Length, totalCount, filter.Owner, filter.Start, filter.End, filter.Type);
 
             return result;
         }
