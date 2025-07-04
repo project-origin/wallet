@@ -266,7 +266,7 @@ public class CertificateRepository : ICertificateRepository
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
         try
         {
-            await using var gridReader = await _connection.QueryMultipleAsync(sql, filter);
+            await using var gridReader = await _connection.QueryMultipleAsync(sql, filter, commandTimeout: 60);
 
             var totalCount = await gridReader.ReadSingleAsync<int>();
             var certificates = (await gridReader.ReadAsync<CertificateViewModel>()).ToArray();
