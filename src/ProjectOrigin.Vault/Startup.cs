@@ -26,6 +26,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
+using ProjectOrigin.Vault.EventHandlers;
 using ProjectOrigin.Vault.Exceptions;
 using ProjectOrigin.Vault.Jobs;
 using ProjectOrigin.Vault.Metrics;
@@ -117,6 +118,19 @@ public class Startup
             {
                 cfg.UseMessageRetry(r => r.Interval(20, TimeSpan.FromSeconds(5))
                     .Handle<QuantityNotYetAvailableToReserveException>());
+            });
+
+            o.AddConsumer<VaultSendInformationToReceiverWalletConsumer>();
+            o.AddConsumer<VaultSendRegistryTransactionConsumer>();
+            o.AddConsumer<VaultTransferFullSliceConsumer>();
+            o.AddConsumer<VaultTransferPartialSliceConsumer>();
+            o.AddConsumer<VaultWaitCommittedRegistryTransactionConsumer>((rc, cfg) =>
+            {
+                var retryOptions = rc.GetRequiredService<IOptions<RetryOptions>>();
+                cfg.UseMessageRetry(r => r.Incremental(retryOptions.Value.RegistryTransactionStillProcessingRetryCount,
+                        TimeSpan.FromSeconds(retryOptions.Value.RegistryTransactionStillProcessingInitialIntervalSeconds),
+                        TimeSpan.FromSeconds(retryOptions.Value.RegistryTransactionStillProcessingIntervalIncrementSeconds))
+                    .Handle<RegistryTransactionStillProcessingException>());
             });
 
             o.AddConsumer<CheckForWithdrawnCertificatesCommandHandler>();
