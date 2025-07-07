@@ -17,7 +17,7 @@ public record TransferFullSliceRegistryTransactionArguments
     public required string RegistryName { get; set; }
     public required Guid CertificateId { get; set; }
     public required Guid SliceId { get; set; }
-    public required WalletAttribute [] WalletAttributes { get; set; }
+    public required WalletAttribute[] WalletAttributes { get; set; }
     public required Guid ExternalEndpointId { get; set; }
     public RequestStatusArgs? RequestStatusArgs { get; set; }
 }
@@ -89,16 +89,16 @@ public class VaultSendRegistryTransactionConsumer : IConsumer<TransferFullSliceR
 
             await context.Publish<TransferPartialSliceWaitCommittedTransactionArguments>(new TransferPartialSliceWaitCommittedTransactionArguments
             {
-                 CertificateId = msg.CertificateId,
-                 RegistryName = msg.RegistryName,
-                 SourceSliceId = msg.SourceSliceId,
-                 TransferredSliceId = msg.TransferredSliceId,
-                 RemainderSliceId = msg.RemainderSliceId,
-                 TransactionId = msg.Transaction.ToShaId(),
-                 ExternalEndpointId = msg.ExternalEndpointId,
-                 RequestStatusArgs = msg.RequestStatusArgs,
-                 WalletAttributes = msg.WalletAttributes
-             });
+                CertificateId = msg.CertificateId,
+                RegistryName = msg.RegistryName,
+                SourceSliceId = msg.SourceSliceId,
+                TransferredSliceId = msg.TransferredSliceId,
+                RemainderSliceId = msg.RemainderSliceId,
+                TransactionId = msg.Transaction.ToShaId(),
+                ExternalEndpointId = msg.ExternalEndpointId,
+                RequestStatusArgs = msg.RequestStatusArgs,
+                WalletAttributes = msg.WalletAttributes
+            });
 
             _logger.LogInformation("Ending consumer: {Consumer} with arguments {Args}", nameof(VaultSendRegistryTransactionConsumer), nameof(TransferPartialSliceRegistryTransactionArguments));
         }
