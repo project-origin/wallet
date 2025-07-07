@@ -17,6 +17,7 @@ public record TransferFullSliceRegistryTransactionArguments
     public required string RegistryName { get; set; }
     public required Guid CertificateId { get; set; }
     public required Guid SliceId { get; set; }
+    public required Guid TransferredSliceId { get; set; }
     public required WalletAttribute[] WalletAttributes { get; set; }
     public required Guid ExternalEndpointId { get; set; }
     public RequestStatusArgs? RequestStatusArgs { get; set; }
@@ -62,6 +63,7 @@ public class VaultSendRegistryTransactionConsumer : IConsumer<TransferFullSliceR
                 CertificateId = msg.CertificateId,
                 RegistryName = msg.RegistryName,
                 SliceId = msg.SliceId,
+                TransferredSliceId = msg.TransferredSliceId,
                 TransactionId = msg.Transaction.ToShaId(),
                 ExternalEndpointId = msg.ExternalEndpointId,
                 RequestStatusArgs = msg.RequestStatusArgs,

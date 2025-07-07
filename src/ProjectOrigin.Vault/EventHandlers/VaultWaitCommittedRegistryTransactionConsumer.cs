@@ -23,6 +23,7 @@ public record TransferFullSliceWaitCommittedTransactionArguments
     public required string TransactionId { get; set; }
     public required Guid CertificateId { get; set; }
     public required Guid SliceId { get; set; }
+    public required Guid TransferredSliceId { get; set; }
     public required WalletAttribute[] WalletAttributes { get; set; }
     public required Guid ExternalEndpointId { get; set; }
     public RequestStatusArgs? RequestStatusArgs { get; set; }
@@ -78,7 +79,7 @@ public class VaultWaitCommittedRegistryTransactionConsumer : IConsumer<TransferF
                     new SendTransferSliceInformationToReceiverWalletArgument
                     {
                         RequestStatusArgs = msg.RequestStatusArgs!,
-                        SliceId = msg.SliceId,
+                        SliceId = msg.TransferredSliceId,
                         WalletAttributes = msg.WalletAttributes,
                         ExternalEndpointId = msg.ExternalEndpointId
                     })

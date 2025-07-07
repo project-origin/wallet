@@ -89,6 +89,7 @@ public class VaultTransferFullSliceConsumer : IConsumer<TransferFullSliceArgumen
                 CertificateId = sourceSlice.CertificateId,
                 RegistryName = sourceSlice.RegistryName,
                 SliceId = sourceSlice.Id,
+                TransferredSliceId = transferredSlice.Id,
                 RequestStatusArgs = msg.RequestStatusArgs,
                 ExternalEndpointId = externalEndpoint.Id,
                 WalletAttributes = walletAttributes.ToArray()
