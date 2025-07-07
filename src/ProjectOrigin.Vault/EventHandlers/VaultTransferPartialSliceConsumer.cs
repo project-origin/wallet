@@ -30,18 +30,15 @@ public class VaultTransferPartialSliceConsumer : IConsumer<TransferPartialSliceA
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<VaultTransferPartialSliceConsumer> _logger;
-    private readonly IEndpointNameFormatter _formatter;
     private readonly ITransferMetrics _transferMetrics;
 
     public VaultTransferPartialSliceConsumer(
         IUnitOfWork unitOfWork,
         ILogger<VaultTransferPartialSliceConsumer> logger,
-        IEndpointNameFormatter formatter,
         ITransferMetrics transferMetrics)
     {
         _unitOfWork = unitOfWork;
         _logger = logger;
-        _formatter = formatter;
         _transferMetrics = transferMetrics;
     }
 

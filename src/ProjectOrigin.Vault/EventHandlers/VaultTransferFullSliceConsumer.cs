@@ -28,7 +28,6 @@ public class VaultTransferFullSliceConsumer : IConsumer<TransferFullSliceArgumen
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<VaultTransferFullSliceConsumer> _logger;
-    private readonly IEndpointNameFormatter _formatter;
     private readonly ITransferMetrics _transferMetrics;
 
     public VaultTransferFullSliceConsumer(
@@ -39,7 +38,6 @@ public class VaultTransferFullSliceConsumer : IConsumer<TransferFullSliceArgumen
     {
         _unitOfWork = unitOfWork;
         _logger = logger;
-        _formatter = formatter;
         _transferMetrics = transferMetrics;
     }
 
