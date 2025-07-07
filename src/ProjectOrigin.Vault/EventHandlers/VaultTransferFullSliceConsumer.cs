@@ -12,6 +12,7 @@ using ProjectOrigin.Vault.Models;
 using System;
 using System.Linq;
 using System.Security.Cryptography;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace ProjectOrigin.Vault.EventHandlers;
@@ -52,9 +53,7 @@ public class VaultTransferFullSliceConsumer : IConsumer<TransferFullSliceArgumen
             var sourceSlice = await _unitOfWork.CertificateRepository.GetWalletSlice(msg.SourceSliceId);
             var sourceEndpoint = await _unitOfWork.WalletRepository.GetWalletEndpoint(sourceSlice.WalletEndpointId);
             var externalEndpoint = await _unitOfWork.WalletRepository.GetExternalEndpoint(msg.ExternalEndpointId);
-
             var nextReceiverPosition = await _unitOfWork.WalletRepository.GetNextNumberForId(externalEndpoint.Id);
-            var receiverPublicKey = externalEndpoint.PublicKey.Derive(nextReceiverPosition).GetPublicKey();
 
             var transferredSlice = new TransferredSlice
             {
@@ -71,19 +70,10 @@ public class VaultTransferFullSliceConsumer : IConsumer<TransferFullSliceArgumen
 
             _logger.LogInformation($"Registering transfer for certificateId {sourceSlice.CertificateId}");
 
-            var transferredEvent = CreateTransferEvent(sourceSlice, receiverPublicKey);
-
-            var sourceSlicePrivateKey = await _unitOfWork.WalletRepository.GetPrivateKeyForSlice(sourceSlice.Id);
-            var transaction = sourceSlicePrivateKey.SignRegistryTransaction(transferredEvent.CertificateId, transferredEvent);
             var walletAttributes = await _unitOfWork.CertificateRepository.GetWalletAttributes(sourceEndpoint.WalletId, sourceSlice.CertificateId, sourceSlice.RegistryName, msg.HashedAttributes);
 
-            _unitOfWork.Commit();
-
-            _logger.LogInformation("Ending consumer: {Consumer}, RequestId: {RequestId} ", nameof(VaultTransferFullSliceConsumer), msg.RequestStatusArgs.RequestId);
-
-            await context.Publish<TransferFullSliceRegistryTransactionArguments>(new TransferFullSliceRegistryTransactionArguments
+            var full = new TransferFullSliceRegistryTransactionArguments
             {
-                Transaction = transaction,
                 CertificateId = sourceSlice.CertificateId,
                 RegistryName = sourceSlice.RegistryName,
                 SliceId = sourceSlice.Id,
@@ -91,7 +81,18 @@ public class VaultTransferFullSliceConsumer : IConsumer<TransferFullSliceArgumen
                 RequestStatusArgs = msg.RequestStatusArgs,
                 ExternalEndpointId = externalEndpoint.Id,
                 WalletAttributes = walletAttributes.ToArray()
+            };
+
+            await _unitOfWork.OutboxMessageRepository.Create(new OutboxMessage
+            {
+                Created = DateTimeOffset.UtcNow.ToUtcTime(),
+                Id = Guid.NewGuid(),
+                MessageType = typeof(TransferFullSliceRegistryTransactionArguments).ToString(),
+                JsonPayload = JsonSerializer.Serialize(full)
             });
+            _unitOfWork.Commit();
+
+            _logger.LogInformation("Ending consumer: {Consumer}, RequestId: {RequestId} ", nameof(VaultTransferFullSliceConsumer), msg.RequestStatusArgs.RequestId);
         }
         catch (PostgresException ex)
         {

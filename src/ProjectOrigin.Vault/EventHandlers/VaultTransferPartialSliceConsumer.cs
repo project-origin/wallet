@@ -1,9 +1,6 @@
-using Google.Protobuf;
 using MassTransit;
 using Microsoft.Extensions.Logging;
 using Npgsql;
-using ProjectOrigin.Electricity.V1;
-using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
 using ProjectOrigin.PedersenCommitment;
 using ProjectOrigin.Vault.Database;
 using ProjectOrigin.Vault.Exceptions;
@@ -12,7 +9,7 @@ using ProjectOrigin.Vault.Metrics;
 using ProjectOrigin.Vault.Models;
 using System;
 using System.Linq;
-using System.Security.Cryptography;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace ProjectOrigin.Vault.EventHandlers;
@@ -58,7 +55,6 @@ public class VaultTransferPartialSliceConsumer : IConsumer<TransferPartialSliceA
 
             var receiverEndpoints = await _unitOfWork.WalletRepository.GetExternalEndpoint(msg.ExternalEndpointId);
             var receiverPosition = await _unitOfWork.WalletRepository.GetNextNumberForId(receiverEndpoints.Id);
-            var receiverPublicKey = receiverEndpoints.PublicKey.Derive(receiverPosition).GetPublicKey();
             var receiverCommitment = new SecretCommitmentInfo(quantity);
             var transferredSlice = new TransferredSlice
             {
@@ -75,7 +71,6 @@ public class VaultTransferPartialSliceConsumer : IConsumer<TransferPartialSliceA
 
             var remainderEndpoint = await _unitOfWork.WalletRepository.GetWalletRemainderEndpoint(sourceEndpoint.WalletId);
             var remainderPosition = await _unitOfWork.WalletRepository.GetNextNumberForId(remainderEndpoint.Id);
-            var remainderPublicKey = remainderEndpoint.PublicKey.Derive(remainderPosition).GetPublicKey();
             var remainderCommitment = new SecretCommitmentInfo(remainder);
             var remainderSlice = new WalletSlice
             {
@@ -90,27 +85,30 @@ public class VaultTransferPartialSliceConsumer : IConsumer<TransferPartialSliceA
             };
             await _unitOfWork.CertificateRepository.InsertWalletSlice(remainderSlice);
 
-            var slicedEvent = CreateSliceEvent(sourceSlice, new NewSlice(receiverCommitment, receiverPublicKey), new NewSlice(remainderCommitment, remainderPublicKey));
-            var sourceSlicePrivateKey = await _unitOfWork.WalletRepository.GetPrivateKeyForSlice(sourceSlice.Id);
-            var transaction = sourceSlicePrivateKey.SignRegistryTransaction(slicedEvent.CertificateId, slicedEvent);
             var walletAttributes = await _unitOfWork.CertificateRepository.GetWalletAttributes(sourceEndpoint.WalletId, sourceSlice.CertificateId, sourceSlice.RegistryName, msg.HashedAttributes);
 
-            _unitOfWork.Commit();
-
-            _logger.LogInformation("Ending consumer: {Consumer}, RequestId: {RequestId} ", nameof(VaultTransferPartialSliceConsumer), msg.RequestStatusArgs.RequestId);
-
-            await context.Publish<TransferPartialSliceRegistryTransactionArguments>(new TransferPartialSliceRegistryTransactionArguments
+            var partial = new TransferPartialSliceRegistryTransactionArguments
             {
-                Transaction = transaction,
                 WalletAttributes = walletAttributes.ToArray(),
                 ExternalEndpointId = receiverEndpoints.Id,
                 TransferredSliceId = transferredSlice.Id,
                 CertificateId = transferredSlice.CertificateId,
-                RegistryName = transaction.Header.FederatedStreamId.Registry,
+                RegistryName = sourceSlice.RegistryName,
                 RemainderSliceId = remainderSlice.Id,
                 RequestStatusArgs = msg.RequestStatusArgs,
-                SourceSliceId = sourceSlice.Id
+                SourceSliceId = sourceSlice.Id,
+                Quantity = msg.Quantity
+            };
+            await _unitOfWork.OutboxMessageRepository.Create(new OutboxMessage
+            {
+                Created = DateTimeOffset.UtcNow.ToUtcTime(),
+                Id = Guid.NewGuid(),
+                MessageType = typeof(TransferPartialSliceRegistryTransactionArguments).ToString(),
+                JsonPayload = JsonSerializer.Serialize(partial)
             });
+            _unitOfWork.Commit();
+
+            _logger.LogInformation("Ending consumer: {Consumer}, RequestId: {RequestId} ", nameof(VaultTransferPartialSliceConsumer), msg.RequestStatusArgs.RequestId);
         }
         catch (PostgresException ex)
         {
@@ -126,46 +124,5 @@ public class VaultTransferPartialSliceConsumer : IConsumer<TransferPartialSliceA
             _transferMetrics.IncrementFailedTransfers();
             throw;
         }
-    }
-
-    private sealed record NewSlice(SecretCommitmentInfo ci, IPublicKey Key);
-
-    private static SlicedEvent CreateSliceEvent(WalletSlice sourceSlice, params NewSlice[] newSlices)
-    {
-        if (newSlices.Sum(s => s.ci.Message) != sourceSlice.Quantity)
-            throw new InvalidOperationException();
-
-        var certificateId = sourceSlice.GetFederatedStreamId();
-
-        var sourceSliceCommitment = new PedersenCommitment.SecretCommitmentInfo((uint)sourceSlice.Quantity, sourceSlice.RandomR);
-        var sumOfNewSlices = newSlices.Select(newSlice => newSlice.ci).Aggregate((left, right) => left + right);
-        var equalityProof = SecretCommitmentInfo.CreateEqualityProof(sourceSliceCommitment, sumOfNewSlices, certificateId.StreamId.Value);
-
-        var slicedEvent = new SlicedEvent
-        {
-            CertificateId = certificateId,
-            SumProof = ByteString.CopyFrom(equalityProof),
-            SourceSliceHash = ByteString.CopyFrom(SHA256.HashData(sourceSliceCommitment.Commitment.C))
-        };
-
-        foreach (var newSlice in newSlices)
-        {
-            var poSlice = new SlicedEvent.Types.Slice
-            {
-                NewOwner = new PublicKey
-                {
-                    Type = KeyType.Secp256K1,
-                    Content = ByteString.CopyFrom(newSlice.Key.Export())
-                },
-                Quantity = new ProjectOrigin.Electricity.V1.Commitment
-                {
-                    Content = ByteString.CopyFrom(newSlice.ci.Commitment.C),
-                    RangeProof = ByteString.CopyFrom(newSlice.ci.CreateRangeProof(certificateId.StreamId.Value))
-                }
-            };
-            slicedEvent.NewSlices.Add(poSlice);
-        }
-
-        return slicedEvent;
     }
 }

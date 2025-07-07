@@ -1,14 +1,16 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using MassTransit;
 using Microsoft.Extensions.Logging;
 using Npgsql;
 using ProjectOrigin.Vault.Database;
 using ProjectOrigin.Vault.EventHandlers;
 using ProjectOrigin.Vault.Exceptions;
+using ProjectOrigin.Vault.Extensions;
 using ProjectOrigin.Vault.Metrics;
 using ProjectOrigin.Vault.Models;
+using System;
+using System.Collections.Generic;
+using System.Text.Json;
+using System.Threading.Tasks;
 
 namespace ProjectOrigin.Vault.CommandHandlers;
 
@@ -53,7 +55,6 @@ public class TransferCertificateCommandHandler : IConsumer<TransferCertificateCo
             IEnumerable<WalletSlice> reservedSlices = await _unitOfWork.CertificateRepository.ReserveQuantity(msg.Owner, msg.Registry, msg.CertificateId, msg.Quantity);
 
             var remainderToTransfer = msg.Quantity;
-            List<Task> tasks = new();
             foreach (var slice in reservedSlices)
             {
                 if (slice.Quantity <= remainderToTransfer)
@@ -70,8 +71,14 @@ public class TransferCertificateCommandHandler : IConsumer<TransferCertificateCo
                             RequestStatusType = RequestStatusType.Transfer
                         }
                     };
+                    await _unitOfWork.OutboxMessageRepository.Create(new OutboxMessage
+                    {
+                        Created = DateTimeOffset.UtcNow.ToUtcTime(),
+                        Id = Guid.NewGuid(),
+                        MessageType = typeof(TransferFullSliceArguments).ToString(),
+                        JsonPayload = JsonSerializer.Serialize(full)
+                    });
                     remainderToTransfer -= (uint)slice.Quantity;
-                    tasks.Add(context.Publish(full));
                 }
                 else
                 {
@@ -88,11 +95,16 @@ public class TransferCertificateCommandHandler : IConsumer<TransferCertificateCo
                         Quantity = remainderToTransfer,
                         SourceSliceId = slice.Id
                     };
-                    tasks.Add(context.Publish(partial));
+                    await _unitOfWork.OutboxMessageRepository.Create(new OutboxMessage
+                    {
+                        Created = DateTimeOffset.UtcNow.ToUtcTime(),
+                        Id = Guid.NewGuid(),
+                        MessageType = typeof(TransferPartialSliceArguments).ToString(),
+                        JsonPayload = JsonSerializer.Serialize(partial)
+                    });
                 }
             }
 
-            await Task.WhenAll(tasks);
             _unitOfWork.Commit();
 
             _logger.LogDebug("Transfer command complete.");

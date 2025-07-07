@@ -13,7 +13,9 @@ using ProjectOrigin.Vault.Models;
 using ProjectOrigin.Vault.Options;
 using System;
 using System.Collections.Generic;
+using System.Text.Json;
 using System.Threading.Tasks;
+using ProjectOrigin.Vault.Extensions;
 
 namespace ProjectOrigin.Vault.EventHandlers;
 
@@ -75,14 +77,19 @@ public class VaultWaitCommittedRegistryTransactionConsumer : IConsumer<TransferF
             msg.CertificateId,
             msg.RequestStatusArgs,
             async () =>
-                await context.Publish<SendTransferSliceInformationToReceiverWalletArgument>(
-                    new SendTransferSliceInformationToReceiverWalletArgument
+                await _unitOfWork.OutboxMessageRepository.Create(new OutboxMessage
+                {
+                    Created = DateTimeOffset.UtcNow.ToUtcTime(),
+                    Id = Guid.NewGuid(),
+                    MessageType = typeof(SendTransferSliceInformationToReceiverWalletArgument).ToString(),
+                    JsonPayload = JsonSerializer.Serialize(new SendTransferSliceInformationToReceiverWalletArgument
                     {
                         RequestStatusArgs = msg.RequestStatusArgs!,
                         SliceId = msg.TransferredSliceId,
                         WalletAttributes = msg.WalletAttributes,
                         ExternalEndpointId = msg.ExternalEndpointId
                     })
+                })
         );
     }
 
@@ -105,14 +112,19 @@ public class VaultWaitCommittedRegistryTransactionConsumer : IConsumer<TransferF
             msg.CertificateId,
             msg.RequestStatusArgs,
             async () =>
-                await context.Publish<SendTransferSliceInformationToReceiverWalletArgument>(
-                    new SendTransferSliceInformationToReceiverWalletArgument
+                await _unitOfWork.OutboxMessageRepository.Create(new OutboxMessage
+                {
+                    Created = DateTimeOffset.UtcNow.ToUtcTime(),
+                    Id = Guid.NewGuid(),
+                    MessageType = typeof(SendTransferSliceInformationToReceiverWalletArgument).ToString(),
+                    JsonPayload = JsonSerializer.Serialize(new SendTransferSliceInformationToReceiverWalletArgument
                     {
                         RequestStatusArgs = msg.RequestStatusArgs!,
                         SliceId = msg.TransferredSliceId,
                         WalletAttributes = msg.WalletAttributes,
                         ExternalEndpointId = msg.ExternalEndpointId
                     })
+                })
         );
     }
 
