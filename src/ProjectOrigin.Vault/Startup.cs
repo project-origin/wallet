@@ -135,7 +135,7 @@ public class Startup
 
             o.AddConsumer<CheckForWithdrawnCertificatesCommandHandler>();
 
-            o.AddActivitiesFromNamespaceContaining<TransferFullSliceActivity>();
+            o.AddActivitiesFromNamespaceContaining<AllocateActivity>();
             o.AddExecuteActivity<WaitCommittedRegistryTransactionActivity, WaitCommittedTransactionArguments>((rc, cfg) =>
             {
                 var retryOptions = rc.GetRequiredService<IOptions<RetryOptions>>();

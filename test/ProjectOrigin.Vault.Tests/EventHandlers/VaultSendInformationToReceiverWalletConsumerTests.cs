@@ -1,32 +1,32 @@
-using System;
-using System.Text.Json;
-using System.Threading.Tasks;
 using AutoFixture;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
-using MsOptions = Microsoft.Extensions.Options;
 using NSubstitute;
 using ProjectOrigin.HierarchicalDeterministicKeys.Implementations;
-using ProjectOrigin.Vault.Activities;
 using ProjectOrigin.Vault.Database;
+using ProjectOrigin.Vault.EventHandlers;
+using ProjectOrigin.Vault.Exceptions;
 using ProjectOrigin.Vault.Metrics;
 using ProjectOrigin.Vault.Models;
 using ProjectOrigin.Vault.Options;
 using ProjectOrigin.Vault.Repositories;
 using ProjectOrigin.Vault.Serialization;
 using ProjectOrigin.Vault.Services.REST.v1;
+using System;
+using System.Text.Json;
+using System.Threading.Tasks;
 using WireMock.RequestBuilders;
 using WireMock.ResponseBuilders;
 using WireMock.Server;
 using Xunit;
-using ProjectOrigin.Vault.Exceptions;
+using MsOptions = Microsoft.Extensions.Options;
 
-namespace ProjectOrigin.Vault.Tests.ActivityTests;
+namespace ProjectOrigin.Vault.Tests.EventHandlers;
 
-public class SendInformationToReceiverWalletActivityTests
+public class VaultSendInformationToReceiverWalletConsumerTests
 {
-    private readonly SendInformationToReceiverWalletActivity _activity;
-    private readonly MassTransit.ExecuteContext<SendInformationToReceiverWalletArgument> _context;
+    private readonly VaultSendInformationToReceiverWalletConsumer _sut;
+    private readonly MassTransit.ConsumeContext<SendTransferSliceInformationToReceiverWalletArgument> _context;
     private readonly Fixture _fixture;
     private readonly ITransferRepository _transferRepository;
     private readonly IWalletRepository _walletRepository;
@@ -34,7 +34,7 @@ public class SendInformationToReceiverWalletActivityTests
     private readonly string _endpoint = "http://test.com";
     private ITransferMetrics _transferMetrics;
 
-    public SendInformationToReceiverWalletActivityTests()
+    public VaultSendInformationToReceiverWalletConsumerTests()
     {
         _fixture = new Fixture();
         _transferRepository = Substitute.For<ITransferRepository>();
@@ -47,16 +47,16 @@ public class SendInformationToReceiverWalletActivityTests
         unitOfWork.WalletRepository.Returns(_walletRepository);
         unitOfWork.CertificateRepository.Returns(_certificateRepository);
 
-        _activity = new SendInformationToReceiverWalletActivity(
+        _sut = new VaultSendInformationToReceiverWalletConsumer(
             unitOfWork,
             MsOptions.Options.Create(new ServiceOptions
             {
                 EndpointAddress = new Uri(_endpoint)
             }),
-            Substitute.For<ILogger<SendInformationToReceiverWalletActivity>>(),
+            Substitute.For<ILogger<VaultSendInformationToReceiverWalletConsumer>>(),
             _transferMetrics
         );
-        _context = Substitute.For<MassTransit.ExecuteContext<SendInformationToReceiverWalletArgument>>();
+        _context = Substitute.For<MassTransit.ConsumeContext<SendTransferSliceInformationToReceiverWalletArgument>>();
     }
 
     [Fact]
@@ -112,7 +112,7 @@ public class SendInformationToReceiverWalletActivityTests
             Value = _fixture.Create<string>(),
             Salt = _fixture.Create<byte[]>()
         };
-        _context.Arguments.Returns(new SendInformationToReceiverWalletArgument()
+        _context.Message.Returns(new SendTransferSliceInformationToReceiverWalletArgument()
         {
             ExternalEndpointId = endpoint.Id,
             SliceId = transferredSlice.Id,
@@ -129,7 +129,7 @@ public class SendInformationToReceiverWalletActivityTests
         });
 
         // Act
-        await _activity.Execute(_context);
+        await _sut.Consume(_context);
 
         // Assert
         await _transferRepository.Received(1).SetTransferredSliceState(Arg.Any<Guid>(), TransferredSliceState.Transferred);
@@ -218,7 +218,7 @@ public class SendInformationToReceiverWalletActivityTests
             Value = _fixture.Create<string>(),
             Salt = _fixture.Create<byte[]>()
         };
-        _context.Arguments.Returns(new SendInformationToReceiverWalletArgument()
+        _context.Message.Returns(new SendTransferSliceInformationToReceiverWalletArgument()
         {
             ExternalEndpointId = endpoint.Id,
             SliceId = transferredSlice.Id,
@@ -235,7 +235,7 @@ public class SendInformationToReceiverWalletActivityTests
         });
 
         // Act
-        await _activity.Execute(_context);
+        await _sut.Consume(_context);
         await _transferRepository.Received(1).SetTransferredSliceState(Arg.Any<Guid>(), TransferredSliceState.Transferred);
 
         // Assert
@@ -278,7 +278,7 @@ public class SendInformationToReceiverWalletActivityTests
             State = TransferredSliceState.Registering
         };
         _transferRepository.GetTransferredSlice(Arg.Any<Guid>()).Returns(transferredSlice);
-        _context.Arguments.Returns(new SendInformationToReceiverWalletArgument()
+        _context.Message.Returns(new SendTransferSliceInformationToReceiverWalletArgument()
         {
             ExternalEndpointId = endpoint.Id,
             SliceId = transferredSlice.Id,
@@ -292,7 +292,7 @@ public class SendInformationToReceiverWalletActivityTests
         });
 
         // Act
-        Func<Task> act = async () => await _activity.Execute(_context);
+        Func<Task> act = async () => await _sut.Consume(_context);
 
         // Assert
         await act.Should().ThrowAsync<TransientException>();
@@ -359,7 +359,7 @@ public class SendInformationToReceiverWalletActivityTests
             Value = _fixture.Create<string>(),
             Salt = _fixture.Create<byte[]>()
         };
-        _context.Arguments.Returns(new SendInformationToReceiverWalletArgument()
+        _context.Message.Returns(new SendTransferSliceInformationToReceiverWalletArgument()
         {
             ExternalEndpointId = externalEndpoint.Id,
             SliceId = transferredSlice.Id,
@@ -376,7 +376,7 @@ public class SendInformationToReceiverWalletActivityTests
         });
 
         // Act
-        await _activity.Execute(_context);
+        await _sut.Consume(_context);
 
         // Assert
         await _transferRepository.Received(1).SetTransferredSliceState(Arg.Any<Guid>(), TransferredSliceState.Transferred);
@@ -428,7 +428,7 @@ public class SendInformationToReceiverWalletActivityTests
         };
         _transferRepository.GetTransferredSlice(Arg.Any<Guid>()).Returns(transferredSlice);
 
-        _context.Arguments.Returns(new SendInformationToReceiverWalletArgument()
+        _context.Message.Returns(new SendTransferSliceInformationToReceiverWalletArgument()
         {
             ExternalEndpointId = externalEndpoint.Id,
             SliceId = transferredSlice.Id,
@@ -441,16 +441,14 @@ public class SendInformationToReceiverWalletActivityTests
             }
         });
 
-        var fault = Substitute.For<MassTransit.ExecutionResult>();
-
-        _context.Faulted(Arg.Any<Exception>()).Returns(fault);
-
         // Act
-        var result = await _activity.Execute(_context);
+        await Assert.ThrowsAsync<Exception>(async () =>
+        {
+            await _sut.Consume(_context);
+        });
 
         // Assert
         await _transferRepository.Received(0).SetTransferredSliceState(Arg.Any<Guid>(), TransferredSliceState.Transferred);
-        result.Should().Be(fault);
     }
 
     [Fact]
@@ -488,7 +486,7 @@ public class SendInformationToReceiverWalletActivityTests
         };
         _transferRepository.GetTransferredSlice(Arg.Any<Guid>()).Returns(transferredSlice);
 
-        _context.Arguments.Returns(new SendInformationToReceiverWalletArgument()
+        _context.Message.Returns(new SendTransferSliceInformationToReceiverWalletArgument()
         {
             ExternalEndpointId = externalEndpoint.Id,
             SliceId = transferredSlice.Id,
@@ -501,14 +499,13 @@ public class SendInformationToReceiverWalletActivityTests
             }
         });
 
-        var fault = Substitute.For<MassTransit.ExecutionResult>();
-
-        _context.Faulted(Arg.Any<Exception>()).Returns(fault);
-
         // Act
-        var result = await _activity.Execute(_context);
+        await Assert.ThrowsAsync<Exception>(async () =>
+        {
+            await _sut.Consume(_context);
+        });
+
         await _transferRepository.Received(0).SetTransferredSliceState(Arg.Any<Guid>(), TransferredSliceState.Transferred);
-        result.Should().Be(fault);
 
         // Assert
         _transferMetrics.Received(0).IncrementCompleted();
