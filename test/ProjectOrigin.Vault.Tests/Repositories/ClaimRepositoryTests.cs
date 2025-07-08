@@ -237,7 +237,8 @@ public class ClaimRepositoryTests : AbstractRepositoryTests
             Limit = take,
             Skip = skip,
             TimeAggregate = aggregate,
-            TimeZone = timeZone
+            TimeZone = timeZone,
+            TrialFilter = TrialFilter.NonTrial
         });
 
         //assert
@@ -260,13 +261,14 @@ public class ClaimRepositoryTests : AbstractRepositoryTests
         // Create non-trial claims
         await CreateClaimsAndCerts(owner, 5, startDate);
 
-        // Create trial claims
-        await CreateTrialClaimsAndCerts(owner, 5, startDate);
+        // Create trial claims with a different owner to avoid wallet constraint violation
+        var trialOwner = _fixture.Create<string>();
+        await CreateTrialClaimsAndCerts(trialOwner, 5, startDate);
 
         // Act
         var result = await _claimRepository.QueryAggregatedClaims(new QueryAggregatedClaimsFilter()
         {
-            Owner = owner,
+            Owner = trialFilter == TrialFilter.Trial ? trialOwner : owner,
             Start = startDate,
             End = startDate.AddDays(1),
             Limit = 100,
@@ -278,6 +280,34 @@ public class ClaimRepositoryTests : AbstractRepositoryTests
 
         // Assert
         result.Items.Should().HaveCount(expectedCount);
+    }
+
+    [Fact]
+    public async Task QueryAggregatedClaims_NonTrialFilter_ReturnsAllNonTrialClaims()
+    {
+        // Arrange
+        var owner = _fixture.Create<string>();
+        var startDate = new DateTimeOffset(2023, 7, 1, 0, 0, 0, TimeSpan.Zero);
+
+        // Create only non-trial claims
+        await CreateClaimsAndCerts(owner, 10, startDate);
+
+        // Act
+        var result = await _claimRepository.QueryAggregatedClaims(new QueryAggregatedClaimsFilter()
+        {
+            Owner = owner,
+            Start = startDate,
+            End = startDate.AddDays(1),
+            Limit = 100,
+            Skip = 0,
+            TimeAggregate = TimeAggregate.Total,
+            TimeZone = "UTC",
+            TrialFilter = TrialFilter.NonTrial
+        });
+
+        // Assert - should return all claims since they are all non-trial
+        result.Items.Should().HaveCount(1); // Total aggregation should return 1 result
+        result.Items.First().Quantity.Should().BeGreaterThan(0);
     }
 
     public async Task<(Guid, Guid)> CreateClaimAndGetSliceIds(string owner)

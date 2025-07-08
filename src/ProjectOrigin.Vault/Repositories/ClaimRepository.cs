@@ -237,12 +237,6 @@ public class ClaimRepository : IClaimRepository
                         sum(quantity) as quantity
                     FROM
                         claims_query_model cqm
-                    LEFT JOIN attributes_view av_prod ON av_prod.registry_name = cqm.production_registry_name
-                        AND av_prod.certificate_id = cqm.production_certificate_id
-                        AND av_prod.attribute_key = 'IsTrial'
-                    LEFT JOIN attributes_view av_cons ON av_cons.registry_name = cqm.consumption_registry_name
-                        AND av_cons.certificate_id = cqm.consumption_certificate_id
-                        AND av_cons.attribute_key = 'IsTrial'
                     WHERE
                         owner = @owner
                         AND (@start IS NULL OR production_start >= @start)
@@ -251,8 +245,38 @@ public class ClaimRepository : IClaimRepository
                         AND (@end IS NULL OR consumption_end <= @end)
                         AND ABS(EXTRACT(EPOCH FROM (production_start - consumption_start))) < 3600
                         AND (
-                            (@trialFilter = 'nontrial' AND (av_prod.attribute_value IS NULL OR av_prod.attribute_value != 'true') AND (av_cons.attribute_value IS NULL OR av_cons.attribute_value != 'true')) OR
-                            (@trialFilter = 'trial' AND (av_prod.attribute_value = 'true' OR av_cons.attribute_value = 'true'))
+                            (@trialFilter = 'nontrial' AND
+                                NOT EXISTS (
+                                    SELECT 1 FROM attributes_view av
+                                    WHERE av.registry_name = cqm.production_registry_name
+                                    AND av.certificate_id = cqm.production_certificate_id
+                                    AND av.attribute_key = 'IsTrial'
+                                    AND av.attribute_value = 'true'
+                                ) AND
+                                NOT EXISTS (
+                                    SELECT 1 FROM attributes_view av
+                                    WHERE av.registry_name = cqm.consumption_registry_name
+                                    AND av.certificate_id = cqm.consumption_certificate_id
+                                    AND av.attribute_key = 'IsTrial'
+                                    AND av.attribute_value = 'true'
+                                )
+                            ) OR
+                            (@trialFilter = 'trial' AND (
+                                EXISTS (
+                                    SELECT 1 FROM attributes_view av
+                                    WHERE av.registry_name = cqm.production_registry_name
+                                    AND av.certificate_id = cqm.production_certificate_id
+                                    AND av.attribute_key = 'IsTrial'
+                                    AND av.attribute_value = 'true'
+                                ) AND
+                                EXISTS (
+                                    SELECT 1 FROM attributes_view av
+                                    WHERE av.registry_name = cqm.consumption_registry_name
+                                    AND av.certificate_id = cqm.consumption_certificate_id
+                                    AND av.attribute_key = 'IsTrial'
+                                    AND av.attribute_value = 'true'
+                                )
+                            ))
                         )
                     GROUP BY
                         CASE
