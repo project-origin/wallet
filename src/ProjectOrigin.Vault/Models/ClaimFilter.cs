@@ -37,5 +37,5 @@ public record QueryAggregatedClaimsFilter : QueryClaimsFilter
 {
     public required TimeAggregate TimeAggregate { get; init; }
     public required string TimeZone { get; init; }
-    public TrialFilter TrialFilter { get; init; } = TrialFilter.NonTrial;
+    public required TrialFilter TrialFilter { get; init; } = TrialFilter.NonTrial;
 }

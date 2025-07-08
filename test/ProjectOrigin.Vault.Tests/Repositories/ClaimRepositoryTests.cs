@@ -352,7 +352,8 @@ public class ClaimRepositoryTests : AbstractRepositoryTests
             Limit = take,
             Skip = skip,
             TimeAggregate = aggregate,
-            TimeZone = timeZone
+            TimeZone = timeZone,
+            TrialFilter = TrialFilter.NonTrial
         });
 
         //assert
@@ -366,8 +367,7 @@ public class ClaimRepositoryTests : AbstractRepositoryTests
     [Theory]
     [InlineData(TrialFilter.NonTrial, 1)]
     [InlineData(TrialFilter.Trial, 1)]
-    [InlineData(null, 1)]
-    public async Task QueryAggregatedClaims_TrialFilter_ReturnsCorrectClaims(TrialFilter? trialFilter, int expectedCount)
+    public async Task QueryAggregatedClaims_TrialFilter_ReturnsCorrectClaims(TrialFilter trialFilter, int expectedCount)
     {
         var normalOwner = _fixture.Create<string>();
         var startDate = new DateTimeOffset(2023, 7, 1, 0, 0, 0, TimeSpan.Zero);
@@ -386,7 +386,7 @@ public class ClaimRepositoryTests : AbstractRepositoryTests
             Skip = 0,
             TimeAggregate = TimeAggregate.Total,
             TimeZone = "UTC",
-            TrialFilter = trialFilter ??  TrialFilter.NonTrial
+            TrialFilter = trialFilter
         });
 
         result.Items.Should().HaveCount(expectedCount);

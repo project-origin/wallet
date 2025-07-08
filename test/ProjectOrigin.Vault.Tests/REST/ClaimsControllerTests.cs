@@ -24,6 +24,7 @@ using Xunit;
 using TimeAggregate = ProjectOrigin.Vault.Services.REST.v1.TimeAggregate;
 using ProjectOrigin.HierarchicalDeterministicKeys.Implementations;
 using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
+using ProjectOrigin.PedersenCommitment;
 
 namespace ProjectOrigin.Vault.Tests;
 
@@ -961,9 +962,10 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
     }
 
     [Theory]
-    [InlineData(ProjectOrigin.Vault.Models.TrialFilter.NonTrial, 1)]
-    [InlineData(ProjectOrigin.Vault.Models.TrialFilter.Trial, 1)]
-    public async Task AggregateClaims_TrialFilter_ReturnsCorrectClaims(ProjectOrigin.Vault.Models.TrialFilter trialFilter, int expectedCount)
+    [InlineData(TrialFilter.NonTrial, 1)]
+    [InlineData(TrialFilter.Trial, 1)]
+    [InlineData(null, 1)]
+    public async Task AggregateClaims_TrialFilter_ReturnsCorrectClaims(TrialFilter? trialFilter, int expectedCount)
     {
         var subject = _fixture.Create<string>();
         var controller = new ClaimsController(_claimMetrics)
@@ -978,29 +980,29 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
         // Non-trial claim
         {
             var prodCert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _fixture.Create<string>(),
-                Models.GranularCertificateType.Production, baseTime, baseTime.AddHours(1));
+                GranularCertificateType.Production, baseTime, baseTime.AddHours(1));
             var prodSlice =
-                await _dbFixture.CreateSlice(endpoint, prodCert, new PedersenCommitment.SecretCommitmentInfo(100));
+                await _dbFixture.CreateSlice(endpoint, prodCert, new SecretCommitmentInfo(100));
             var consCert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _fixture.Create<string>(),
-                Models.GranularCertificateType.Consumption, baseTime, baseTime.AddHours(1));
+                GranularCertificateType.Consumption, baseTime, baseTime.AddHours(1));
             var consSlice =
-                await _dbFixture.CreateSlice(endpoint, consCert, new PedersenCommitment.SecretCommitmentInfo(100));
-            await _dbFixture.CreateClaim(prodSlice, consSlice, Models.ClaimState.Claimed);
+                await _dbFixture.CreateSlice(endpoint, consCert, new SecretCommitmentInfo(100));
+            await _dbFixture.CreateClaim(prodSlice, consSlice, ClaimState.Claimed);
         }
 
         // Trial claim
         {
             var prodCert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _fixture.Create<string>(),
-                Models.GranularCertificateType.Production, baseTime, baseTime.AddHours(1),
-                [new() { Key = "IsTrial", Value = "true", Type = Models.CertificateAttributeType.ClearText }]);
+                GranularCertificateType.Production, baseTime, baseTime.AddHours(1),
+                [new CertificateAttribute { Key = "IsTrial", Value = "true", Type = CertificateAttributeType.ClearText }]);
             var prodSlice =
-                await _dbFixture.CreateSlice(endpoint, prodCert, new PedersenCommitment.SecretCommitmentInfo(100));
+                await _dbFixture.CreateSlice(endpoint, prodCert, new SecretCommitmentInfo(100));
             var consCert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _fixture.Create<string>(),
-                Models.GranularCertificateType.Consumption, baseTime, baseTime.AddHours(1),
-                [new() { Key = "IsTrial", Value = "true", Type = Models.CertificateAttributeType.ClearText }]);
+                GranularCertificateType.Consumption, baseTime, baseTime.AddHours(1),
+                [new CertificateAttribute { Key = "IsTrial", Value = "true", Type = CertificateAttributeType.ClearText }]);
             var consSlice =
-                await _dbFixture.CreateSlice(endpoint, consCert, new PedersenCommitment.SecretCommitmentInfo(100));
-            await _dbFixture.CreateClaim(prodSlice, consSlice, Models.ClaimState.Claimed);
+                await _dbFixture.CreateSlice(endpoint, consCert, new SecretCommitmentInfo(100));
+            await _dbFixture.CreateClaim(prodSlice, consSlice, ClaimState.Claimed);
         }
 
         var result = await controller.AggregateClaims(

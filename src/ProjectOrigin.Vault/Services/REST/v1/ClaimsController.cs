@@ -137,7 +137,7 @@ public class ClaimsController : ControllerBase
             Limit = param.Limit ?? int.MaxValue,
             TimeAggregate = (Models.TimeAggregate)param.TimeAggregate,
             TimeZone = param.TimeZone,
-            TrialFilter = param.TrialFilter
+            TrialFilter = param.TrialFilter ?? TrialFilter.NonTrial
         });
 
         return result.ToResultList(c => new AggregatedClaims()
@@ -356,8 +356,7 @@ public record AggregateClaimsQueryParameters
     /// <summary>
     /// Filter for trial or non-trial certificates. Values: NonTrial (default), Trial
     /// </summary>
-    [DefaultValue(ProjectOrigin.Vault.Models.TrialFilter.NonTrial)]
-    public ProjectOrigin.Vault.Models.TrialFilter TrialFilter { get; init; } = ProjectOrigin.Vault.Models.TrialFilter.NonTrial;
+    public TrialFilter? TrialFilter { get; init; }
 }
 
 /// <summary>
