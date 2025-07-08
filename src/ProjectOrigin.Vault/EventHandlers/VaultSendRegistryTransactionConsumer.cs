@@ -3,7 +3,6 @@ using MassTransit;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ProjectOrigin.Registry.V1;
-using ProjectOrigin.Vault.CommandHandlers;
 using ProjectOrigin.Vault.Extensions;
 using ProjectOrigin.Vault.Models;
 using ProjectOrigin.Vault.Options;
