@@ -181,7 +181,6 @@ public class VaultWaitCommittedRegistryTransactionConsumer : IConsumer<TransferF
             }
             else
             {
-                _logger.LogDebug("Transaction is still processing on registry.");
                 throw new RegistryTransactionStillProcessingException("Transaction is still processing on registry.");
             }
         }

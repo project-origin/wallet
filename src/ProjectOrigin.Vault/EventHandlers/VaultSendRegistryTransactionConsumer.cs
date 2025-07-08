@@ -208,6 +208,7 @@ public class VaultSendRegistryTransactionConsumer : IConsumer<TransferFullSliceR
         };
         return transferredEvent;
     }
+
     private sealed record NewSlice(SecretCommitmentInfo ci, IPublicKey Key);
 
     private static SlicedEvent CreateSliceEvent(WalletSlice sourceSlice, params NewSlice[] newSlices)

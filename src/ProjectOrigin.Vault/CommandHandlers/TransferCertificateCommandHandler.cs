@@ -78,6 +78,7 @@ public class TransferCertificateCommandHandler : IConsumer<TransferCertificateCo
                         MessageType = typeof(TransferFullSliceArguments).ToString(),
                         JsonPayload = JsonSerializer.Serialize(full)
                     });
+
                     remainderToTransfer -= (uint)slice.Quantity;
                 }
                 else
