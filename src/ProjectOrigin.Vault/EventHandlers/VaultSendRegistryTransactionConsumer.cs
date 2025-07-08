@@ -3,11 +3,14 @@ using MassTransit;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using ProjectOrigin.Registry.V1;
-using ProjectOrigin.Vault.Options;
-using System;
-using System.Threading.Tasks;
+using ProjectOrigin.Vault.CommandHandlers;
 using ProjectOrigin.Vault.Extensions;
 using ProjectOrigin.Vault.Models;
+using ProjectOrigin.Vault.Options;
+using System;
+using System.Text.Json;
+using System.Threading.Tasks;
+using ProjectOrigin.Vault.Database;
 
 namespace ProjectOrigin.Vault.EventHandlers;
 
@@ -40,11 +43,13 @@ public class VaultSendRegistryTransactionConsumer : IConsumer<TransferFullSliceR
     IConsumer<TransferPartialSliceRegistryTransactionArguments>
 {
     private readonly IOptions<NetworkOptions> _networkOptions;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<VaultSendRegistryTransactionConsumer> _logger;
 
-    public VaultSendRegistryTransactionConsumer(IOptions<NetworkOptions> networkOptions, ILogger<VaultSendRegistryTransactionConsumer> logger)
+    public VaultSendRegistryTransactionConsumer(IOptions<NetworkOptions> networkOptions, IUnitOfWork unitOfWork, ILogger<VaultSendRegistryTransactionConsumer> logger)
     {
         _networkOptions = networkOptions;
+        _unitOfWork = unitOfWork;
         _logger = logger;
     }
 
@@ -58,7 +63,7 @@ public class VaultSendRegistryTransactionConsumer : IConsumer<TransferFullSliceR
         {
             await SendTransactionToRegistry(msg.Transaction);
 
-            await context.Publish<TransferFullSliceWaitCommittedTransactionArguments>(new TransferFullSliceWaitCommittedTransactionArguments
+            var full = new TransferFullSliceWaitCommittedTransactionArguments
             {
                 CertificateId = msg.CertificateId,
                 RegistryName = msg.RegistryName,
@@ -68,7 +73,15 @@ public class VaultSendRegistryTransactionConsumer : IConsumer<TransferFullSliceR
                 ExternalEndpointId = msg.ExternalEndpointId,
                 RequestStatusArgs = msg.RequestStatusArgs,
                 WalletAttributes = msg.WalletAttributes
+            };
+            await _unitOfWork.OutboxMessageRepository.Create(new OutboxMessage
+            {
+                Created = DateTimeOffset.UtcNow.ToUtcTime(),
+                Id = Guid.NewGuid(),
+                MessageType = typeof(TransferFullSliceWaitCommittedTransactionArguments).ToString(),
+                JsonPayload = JsonSerializer.Serialize(full)
             });
+            _unitOfWork.Commit();
 
             _logger.LogInformation("Ending consumer: {Consumer} with arguments {Args}", nameof(VaultSendRegistryTransactionConsumer), nameof(TransferFullSliceRegistryTransactionArguments));
         }
@@ -89,7 +102,7 @@ public class VaultSendRegistryTransactionConsumer : IConsumer<TransferFullSliceR
         {
             await SendTransactionToRegistry(msg.Transaction);
 
-            await context.Publish<TransferPartialSliceWaitCommittedTransactionArguments>(new TransferPartialSliceWaitCommittedTransactionArguments
+            var partial = new TransferPartialSliceWaitCommittedTransactionArguments
             {
                 CertificateId = msg.CertificateId,
                 RegistryName = msg.RegistryName,
@@ -100,7 +113,15 @@ public class VaultSendRegistryTransactionConsumer : IConsumer<TransferFullSliceR
                 ExternalEndpointId = msg.ExternalEndpointId,
                 RequestStatusArgs = msg.RequestStatusArgs,
                 WalletAttributes = msg.WalletAttributes
+            };
+            await _unitOfWork.OutboxMessageRepository.Create(new OutboxMessage
+            {
+                Created = DateTimeOffset.UtcNow.ToUtcTime(),
+                Id = Guid.NewGuid(),
+                MessageType = typeof(TransferPartialSliceWaitCommittedTransactionArguments).ToString(),
+                JsonPayload = JsonSerializer.Serialize(partial)
             });
+            _unitOfWork.Commit();
 
             _logger.LogInformation("Ending consumer: {Consumer} with arguments {Args}", nameof(VaultSendRegistryTransactionConsumer), nameof(TransferPartialSliceRegistryTransactionArguments));
         }
