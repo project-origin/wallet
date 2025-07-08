@@ -216,8 +216,123 @@ public class ClaimRepositoryTests : AbstractRepositoryTests
     }
 
     [Theory]
-    [InlineData("2020-06-08T12:00:00Z", "2020-06-10T12:00:00Z", TimeAggregate.Total, "Europe/Copenhagen", 2, 0, 1, 1)]
-    [InlineData("2020-06-08T12:00:00Z", "2020-06-10T12:00:00Z", TimeAggregate.Day, "Europe/Copenhagen", 2, 2, 2, 5)]
+    [InlineData("2020-06-08T12:00:00Z", "2020-06-10T12:00:00Z", 10, 0, 10, 48)]
+    [InlineData("2020-06-08T12:00:00Z", "2020-06-10T12:00:00Z", 10, 20, 10, 48)]
+    [InlineData("2020-06-08T12:00:00Z", "2020-06-10T12:00:00Z", 10, 40, 8, 48)]
+    public async Task QueryClaims_Pagination(string from, string to, int take, int skip, int numberOfResults, int total)
+    {
+        // Arrange
+        var owner = _fixture.Create<string>();
+        var startDate = new DateTimeOffset(2020, 6, 1, 0, 0, 0, TimeSpan.Zero);
+        await CreateClaimsAndCerts(owner, 31 * 24, startDate);
+
+        // Act
+        var result = await _claimRepository.QueryClaims(new QueryClaimsFilter()
+        {
+            Owner = owner,
+            Start = DateTimeOffset.Parse(from),
+            End = DateTimeOffset.Parse(to),
+            Limit = take,
+            Skip = skip,
+        });
+
+        // Assert
+        result.Items.Should().HaveCount(numberOfResults);
+        result.Offset.Should().Be(skip);
+        result.Limit.Should().Be(take);
+        result.Count.Should().Be(numberOfResults);
+        result.TotalCount.Should().Be(total);
+    }
+
+    [Fact]
+    public async Task QueryClaims_UpdateSinceNull()
+    {
+        // Arrange
+        var owner = _fixture.Create<string>();
+        var startDate = new DateTimeOffset(2020, 6, 1, 0, 0, 0, TimeSpan.Zero);
+        await CreateClaimsAndCerts(owner, 1, startDate);
+
+        // Act
+        var result = await _claimRepository.QueryClaimsCursor(new QueryClaimsFilterCursor()
+        {
+            Owner = owner,
+            Start = startDate,
+            End = startDate.AddHours(4),
+            Limit = 3,
+        });
+
+        // Assert
+        result.Items.Should().HaveCount(1);
+        result.Limit.Should().Be(3);
+        result.Count.Should().Be(1);
+        result.TotalCount.Should().Be(1);
+        result.Items.Should().BeInAscendingOrder(x => x.UpdatedAt);
+    }
+
+    [Fact]
+    public async Task QueryClaims_Cursor()
+    {
+        // Arrange
+        var owner = _fixture.Create<string>();
+        var numberOfClaims = 31 * 24;
+        var startDate = new DateTimeOffset(2020, 6, 1, 0, 0, 0, TimeSpan.Zero);
+        await CreateClaimsAndCerts(owner, numberOfClaims, startDate, 10);
+
+        // Act
+        var result = await _claimRepository.QueryClaimsCursor(new QueryClaimsFilterCursor()
+        {
+            Owner = owner,
+            UpdatedSince = startDate,
+            Limit = 3,
+        });
+
+        // Assert
+        result.Items.Should().HaveCount(3);
+        result.Limit.Should().Be(3);
+        result.Count.Should().Be(3);
+        result.TotalCount.Should().Be(numberOfClaims);
+        result.Items.Should().BeInAscendingOrder(x => x.UpdatedAt);
+
+        var cursor = result.Items.Last().UpdatedAt;
+        var result2 = await _claimRepository.QueryClaimsCursor(new QueryClaimsFilterCursor()
+        {
+            Owner = owner,
+            UpdatedSince = cursor,
+            Limit = 3,
+        });
+        result2.Items.First().UpdatedAt.Should().BeAfter(cursor);
+    }
+
+    [Fact]
+    public async Task QueryClaimsCursor_ClaimsHasAttributes_ReturnsCorrectConsumptionAndProductionAttributes()
+    {
+        // Arrange
+        var owner = _fixture.Create<string>();
+        var numberOfClaims = 31 * 24;
+        var startDate = new DateTimeOffset(2020, 6, 1, 0, 0, 0, TimeSpan.Zero);
+        await CreateClaimsAndCerts(owner, numberOfClaims, startDate, 10);
+
+        // Act
+        var result = await _claimRepository.QueryClaimsCursor(new QueryClaimsFilterCursor()
+        {
+            Owner = owner,
+            UpdatedSince = startDate,
+            Limit = 3,
+        });
+
+        // Assert
+        var firstItem = result.Items.First();
+        firstItem.ConsumptionAttributes.Count.Should().Be(2);
+        firstItem.ConsumptionAttributes.Should().Contain(x => x.Key == "TechCode" && x.Value == "T070000");
+        firstItem.ConsumptionAttributes.Should().Contain(x => x.Key == "FuelCode" && x.Value == "F00000000");
+        firstItem.ProductionAttributes.Count.Should().Be(2);
+        firstItem.ProductionAttributes.Should().Contain(x => x.Key == "TechCode" && x.Value == "T070000");
+        firstItem.ProductionAttributes.Should().Contain(x => x.Key == "FuelCode" && x.Value == "F00000000");
+    }
+
+    [Theory]
+    [InlineData("2020-06-08T12:00:00Z", "2020-06-12T12:00:00Z", TimeAggregate.Total, "Europe/Copenhagen", 2, 0, 1, 1)]
+    [InlineData("2020-06-08T12:00:00Z", "2020-06-12T12:00:00Z", TimeAggregate.Day, "Europe/Copenhagen", 2, 2, 2, 5)]
     [InlineData("2020-06-08T00:00:00Z", "2020-06-12T00:00:00Z", TimeAggregate.Day, "Europe/Copenhagen", 2, 4, 1, 5)]
     [InlineData("2020-06-01T00:00:00Z", "2020-06-03T12:00:00Z", TimeAggregate.Day, "Europe/Copenhagen", 2, 0, 2, 3)]
     [InlineData("2020-06-01T00:00:00Z", "2020-06-03T12:00:00Z", TimeAggregate.Day, "America/Toronto", 2, 0, 2, 4)]
@@ -237,8 +352,7 @@ public class ClaimRepositoryTests : AbstractRepositoryTests
             Limit = take,
             Skip = skip,
             TimeAggregate = aggregate,
-            TimeZone = timeZone,
-            TrialFilter = TrialFilter.NonTrial
+            TimeZone = timeZone
         });
 
         //assert
@@ -250,25 +364,21 @@ public class ClaimRepositoryTests : AbstractRepositoryTests
     }
 
     [Theory]
-    [InlineData(TrialFilter.NonTrial, 1)] // Only non-trial claims
-    [InlineData(TrialFilter.Trial, 1)] // Only trial claims
+    [InlineData(TrialFilter.NonTrial, 1)]
+    [InlineData(TrialFilter.Trial, 1)]
     public async Task QueryAggregatedClaims_TrialFilter_ReturnsCorrectClaims(TrialFilter trialFilter, int expectedCount)
     {
-        // Arrange
-        var owner = _fixture.Create<string>();
+        var normalOwner = _fixture.Create<string>();
         var startDate = new DateTimeOffset(2023, 7, 1, 0, 0, 0, TimeSpan.Zero);
 
-        // Create non-trial claims
-        await CreateClaimsAndCerts(owner, 5, startDate);
+        await CreateClaimsAndCerts(normalOwner, 5, startDate);
 
-        // Create trial claims with a different owner to avoid wallet constraint violation
         var trialOwner = _fixture.Create<string>();
         await CreateTrialClaimsAndCerts(trialOwner, 5, startDate);
 
-        // Act
         var result = await _claimRepository.QueryAggregatedClaims(new QueryAggregatedClaimsFilter()
         {
-            Owner = trialFilter == TrialFilter.Trial ? trialOwner : owner,
+            Owner = trialFilter == TrialFilter.Trial ? trialOwner : normalOwner,
             Start = startDate,
             End = startDate.AddDays(1),
             Limit = 100,
@@ -278,36 +388,7 @@ public class ClaimRepositoryTests : AbstractRepositoryTests
             TrialFilter = trialFilter
         });
 
-        // Assert
         result.Items.Should().HaveCount(expectedCount);
-    }
-
-    [Fact]
-    public async Task QueryAggregatedClaims_NonTrialFilter_ReturnsAllNonTrialClaims()
-    {
-        // Arrange
-        var owner = _fixture.Create<string>();
-        var startDate = new DateTimeOffset(2023, 7, 1, 0, 0, 0, TimeSpan.Zero);
-
-        // Create only non-trial claims
-        await CreateClaimsAndCerts(owner, 10, startDate);
-
-        // Act
-        var result = await _claimRepository.QueryAggregatedClaims(new QueryAggregatedClaimsFilter()
-        {
-            Owner = owner,
-            Start = startDate,
-            End = startDate.AddDays(1),
-            Limit = 100,
-            Skip = 0,
-            TimeAggregate = TimeAggregate.Total,
-            TimeZone = "UTC",
-            TrialFilter = TrialFilter.NonTrial
-        });
-
-        // Assert - should return all claims since they are all non-trial
-        result.Items.Should().HaveCount(1); // Total aggregation should return 1 result
-        result.Items.First().Quantity.Should().BeGreaterThan(0);
     }
 
     public async Task<(Guid, Guid)> CreateClaimAndGetSliceIds(string owner)
@@ -448,17 +529,15 @@ public class ClaimRepositoryTests : AbstractRepositoryTests
             };
             await certRepository.InsertWalletSlice(prodSlice);
 
-            // Add IsTrial attribute to production certificate
             await _connection.ExecuteAsync(
-                @"INSERT INTO attributes (certificate_id, registry_name, attribute_key, attribute_value, attribute_type)
-                  VALUES (@certificateId, @registryName, 'IsTrial', 'true', 0)",
-                new { certificateId = prodCert.Id, registryName = registry });
+                @"INSERT INTO attributes (id, certificate_id, registry_name, attribute_key, attribute_value, attribute_type)
+                  VALUES (@id, @certificateId, @registryName, 'IsTrial', 'true', 0)",
+                new { id = Guid.NewGuid(), certificateId = prodCert.Id, registryName = registry });
 
-            // Add IsTrial attribute to consumption certificate
             await _connection.ExecuteAsync(
-                @"INSERT INTO attributes (certificate_id, registry_name, attribute_key, attribute_value, attribute_type)
-                  VALUES (@certificateId, @registryName, 'IsTrial', 'true', 0)",
-                new { certificateId = conCert.Id, registryName = registry });
+                @"INSERT INTO attributes (id, certificate_id, registry_name, attribute_key, attribute_value, attribute_type)
+                  VALUES (@id, @certificateId, @registryName, 'IsTrial', 'true', 0)",
+                new { id = Guid.NewGuid(), certificateId = conCert.Id, registryName = registry });
 
             var claim = new Claim
             {
