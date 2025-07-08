@@ -136,7 +136,8 @@ public class ClaimsController : ControllerBase
             Skip = param.Skip,
             Limit = param.Limit ?? int.MaxValue,
             TimeAggregate = (Models.TimeAggregate)param.TimeAggregate,
-            TimeZone = param.TimeZone
+            TimeZone = param.TimeZone,
+            TrialFilter = param.TrialFilter
         });
 
         return result.ToResultList(c => new AggregatedClaims()
@@ -351,6 +352,12 @@ public record AggregateClaimsQueryParameters
     /// </summary>
     [DefaultValue(0)]
     public int Skip { get; init; } = 0;
+
+    /// <summary>
+    /// Filter for trial or non-trial certificates. Values: NonTrial (default), Trial
+    /// </summary>
+    [DefaultValue(ProjectOrigin.Vault.Models.TrialFilter.NonTrial)]
+    public ProjectOrigin.Vault.Models.TrialFilter TrialFilter { get; init; } = ProjectOrigin.Vault.Models.TrialFilter.NonTrial;
 }
 
 /// <summary>

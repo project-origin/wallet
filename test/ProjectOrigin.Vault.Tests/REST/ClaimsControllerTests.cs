@@ -960,6 +960,64 @@ public class ClaimsControllerTests : IClassFixture<PostgresDatabaseFixture>
         _claimMetrics.Received(0).IncrementClaimIntents();
     }
 
+    [Theory]
+    [InlineData(ProjectOrigin.Vault.Models.TrialFilter.NonTrial, 1)]
+    [InlineData(ProjectOrigin.Vault.Models.TrialFilter.Trial, 1)]
+    public async Task AggregateClaims_TrialFilter_ReturnsCorrectClaims(ProjectOrigin.Vault.Models.TrialFilter trialFilter, int expectedCount)
+    {
+        var subject = _fixture.Create<string>();
+        var controller = new ClaimsController(_claimMetrics)
+        {
+            ControllerContext = CreateContextWithUser(subject)
+        };
+
+        var wallet = await _dbFixture.CreateWallet(subject);
+        var endpoint = await _dbFixture.CreateWalletEndpoint(wallet);
+        var baseTime = new DateTimeOffset(2024, 1, 1, 12, 0, 0, TimeSpan.Zero);
+
+        // Non-trial claim
+        {
+            var prodCert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _fixture.Create<string>(),
+                Models.GranularCertificateType.Production, baseTime, baseTime.AddHours(1));
+            var prodSlice =
+                await _dbFixture.CreateSlice(endpoint, prodCert, new PedersenCommitment.SecretCommitmentInfo(100));
+            var consCert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _fixture.Create<string>(),
+                Models.GranularCertificateType.Consumption, baseTime, baseTime.AddHours(1));
+            var consSlice =
+                await _dbFixture.CreateSlice(endpoint, consCert, new PedersenCommitment.SecretCommitmentInfo(100));
+            await _dbFixture.CreateClaim(prodSlice, consSlice, Models.ClaimState.Claimed);
+        }
+
+        // Trial claim
+        {
+            var prodCert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _fixture.Create<string>(),
+                Models.GranularCertificateType.Production, baseTime, baseTime.AddHours(1),
+                [new() { Key = "IsTrial", Value = "true", Type = Models.CertificateAttributeType.ClearText }]);
+            var prodSlice =
+                await _dbFixture.CreateSlice(endpoint, prodCert, new PedersenCommitment.SecretCommitmentInfo(100));
+            var consCert = await _dbFixture.CreateCertificate(Guid.NewGuid(), _fixture.Create<string>(),
+                Models.GranularCertificateType.Consumption, baseTime, baseTime.AddHours(1),
+                [new() { Key = "IsTrial", Value = "true", Type = Models.CertificateAttributeType.ClearText }]);
+            var consSlice =
+                await _dbFixture.CreateSlice(endpoint, consCert, new PedersenCommitment.SecretCommitmentInfo(100));
+            await _dbFixture.CreateClaim(prodSlice, consSlice, Models.ClaimState.Claimed);
+        }
+
+        var result = await controller.AggregateClaims(
+            _unitOfWork,
+            new AggregateClaimsQueryParameters
+            {
+                TimeAggregate = TimeAggregate.Actual,
+                TimeZone = "UTC",
+                Start = baseTime.AddHours(-1).ToUnixTimeSeconds(),
+                End = baseTime.AddHours(3).ToUnixTimeSeconds(),
+                TrialFilter = trialFilter
+            });
+
+        result.Value.Should().NotBeNull();
+        var resultList = result.Value!.Result;
+        resultList.Should().HaveCount(expectedCount);
+    }
 
     private static ControllerContext CreateContextWithUser(string subject)
     {

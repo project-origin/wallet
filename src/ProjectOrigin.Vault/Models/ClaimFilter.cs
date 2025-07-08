@@ -18,6 +18,12 @@ public enum TimeMatch
     All,
 }
 
+public enum TrialFilter
+{
+    NonTrial,
+    Trial,
+}
+
 public record QueryClaimsFilterCursor
 {
     public required string Owner { get; init; }
@@ -31,4 +37,5 @@ public record QueryAggregatedClaimsFilter : QueryClaimsFilter
 {
     public required TimeAggregate TimeAggregate { get; init; }
     public required string TimeZone { get; init; }
+    public TrialFilter TrialFilter { get; init; } = TrialFilter.NonTrial;
 }
