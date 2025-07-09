@@ -210,27 +210,64 @@ public class CertificateRepository : ICertificateRepository
     public async Task<PageResult<CertificateViewModel>> QueryAvailableCertificates(QueryCertificatesFilter filter)
     {
         string sql = @"
-            CREATE TEMPORARY TABLE certificates_work_table ON COMMIT DROP AS (
-            SELECT
-                certificate_id,
-                registry_name,
-                certificate_type,
-                grid_area,
-                start_date,
-                end_date,
-                quantity,
-                wallet_id,
-                updated_at,
-                withdrawn
-            FROM
-                certificates_query_model
+            CREATE TEMPORARY TABLE certificates_work_table ON COMMIT DROP AS
+            WITH
+            available_slices AS (
+                SELECT wallet_endpoint_id, certificate_id, quantity, updated_at
+                FROM wallet_slices
+                WHERE state = 1 AND quantity != 0
+            ),
+            non_withdrawn_certificates AS (
+                SELECT
+                    id,
+                    registry_name,
+                    certificate_type,
+                    grid_area,
+                    start_date,
+                    end_date,
+                    withdrawn
+                FROM certificates
+                WHERE NOT withdrawn
+            )
+            SELECT * FROM (
+                SELECT
+                    c.id as certificate_id,
+                    c.registry_name,
+                    c.certificate_type,
+                    c.grid_area,
+                    c.start_date,
+                    c.end_date,
+                    w.id as wallet_id,
+                    w.owner,
+                    SUM(ws.quantity) as quantity,
+                    MAX(ws.updated_at) as updated_at,
+                    c.withdrawn
+                FROM wallets w
+                INNER JOIN wallet_endpoints we ON w.id = we.wallet_id
+                INNER JOIN available_slices ws ON we.id = ws.wallet_endpoint_id
+                INNER JOIN non_withdrawn_certificates c ON ws.certificate_id = c.id
+                GROUP BY
+                    c.id,
+                    c.registry_name,
+                    c.certificate_type,
+                    c.grid_area,
+                    c.start_date,
+                    c.end_date,
+                    w.id,
+                    w.owner,
+                    c.withdrawn
+            ) AS certs_aggregated
             WHERE
                 owner = @owner
                 AND withdrawn = false
                 AND (@start IS NULL OR start_date >= @start)
                 AND (@end IS NULL OR end_date <= @end)
                 AND quantity != 0
-                AND (@type IS NULL OR certificate_type = @type));
+                AND (@type IS NULL OR certificate_type = @type)
+            ORDER BY
+                updated_at ASC,
+                start_date ASC,
+                certificate_id ASC;
 
             SELECT count(*) FROM certificates_work_table;
 
