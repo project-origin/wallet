@@ -1,15 +1,16 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using MassTransit;
 using Microsoft.Extensions.Logging;
 using Npgsql;
-using ProjectOrigin.Vault.Activities;
 using ProjectOrigin.Vault.Database;
+using ProjectOrigin.Vault.EventHandlers;
 using ProjectOrigin.Vault.Exceptions;
 using ProjectOrigin.Vault.Extensions;
 using ProjectOrigin.Vault.Metrics;
 using ProjectOrigin.Vault.Models;
+using System;
+using System.Collections.Generic;
+using System.Text.Json;
+using System.Threading.Tasks;
 
 namespace ProjectOrigin.Vault.CommandHandlers;
 
@@ -28,18 +29,15 @@ public class TransferCertificateCommandHandler : IConsumer<TransferCertificateCo
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ILogger<TransferCertificateCommandHandler> _logger;
-    private readonly IEndpointNameFormatter _formatter;
     private readonly ITransferMetrics _transferMetrics;
 
     public TransferCertificateCommandHandler(
         IUnitOfWork unitOfWork,
         ILogger<TransferCertificateCommandHandler> logger,
-        IEndpointNameFormatter formatter,
         ITransferMetrics transferMetrics)
     {
         _unitOfWork = unitOfWork;
         _logger = logger;
-        _formatter = formatter;
         _transferMetrics = transferMetrics;
     }
 
@@ -57,51 +55,57 @@ public class TransferCertificateCommandHandler : IConsumer<TransferCertificateCo
             IEnumerable<WalletSlice> reservedSlices = await _unitOfWork.CertificateRepository.ReserveQuantity(msg.Owner, msg.Registry, msg.CertificateId, msg.Quantity);
 
             var remainderToTransfer = msg.Quantity;
-            List<Task> tasks = new();
             foreach (var slice in reservedSlices)
             {
-                var builder = new RoutingSlipBuilder(msg.TransferRequestId);
-
                 if (slice.Quantity <= remainderToTransfer)
                 {
-                    builder.AddActivity<TransferFullSliceActivity, TransferFullSliceArguments>(_formatter,
-                        new()
+                    var full = new TransferFullSliceArguments
+                    {
+                        SourceSliceId = slice.Id,
+                        ExternalEndpointId = receiverEndpoint.Id,
+                        HashedAttributes = msg.HashedAttributes,
+                        RequestStatusArgs = new RequestStatusArgs
                         {
-                            SourceSliceId = slice.Id,
-                            ExternalEndpointId = receiverEndpoint.Id,
-                            HashedAttributes = msg.HashedAttributes,
-                            RequestStatusArgs = new RequestStatusArgs
-                            {
-                                RequestId = msg.TransferRequestId,
-                                Owner = msg.Owner,
-                                RequestStatusType = RequestStatusType.Transfer
-                            }
-                        });
+                            RequestId = msg.TransferRequestId,
+                            Owner = msg.Owner,
+                            RequestStatusType = RequestStatusType.Transfer
+                        }
+                    };
+                    await _unitOfWork.OutboxMessageRepository.Create(new OutboxMessage
+                    {
+                        Created = DateTimeOffset.UtcNow.ToUtcTime(),
+                        Id = Guid.NewGuid(),
+                        MessageType = typeof(TransferFullSliceArguments).ToString(),
+                        JsonPayload = JsonSerializer.Serialize(full)
+                    });
+
                     remainderToTransfer -= (uint)slice.Quantity;
                 }
                 else
                 {
-                    builder.AddActivity<TransferPartialSliceActivity, TransferPartialSliceArguments>(_formatter,
-                        new()
+                    var partial = new TransferPartialSliceArguments
+                    {
+                        ExternalEndpointId = receiverEndpoint.Id,
+                        HashedAttributes = msg.HashedAttributes,
+                        RequestStatusArgs = new RequestStatusArgs
                         {
-                            SourceSliceId = slice.Id,
-                            ExternalEndpointId = receiverEndpoint.Id,
-                            Quantity = remainderToTransfer,
-                            HashedAttributes = msg.HashedAttributes,
-                            RequestStatusArgs = new RequestStatusArgs
-                            {
-                                RequestId = msg.TransferRequestId,
-                                Owner = msg.Owner,
-                                RequestStatusType = RequestStatusType.Transfer
-                            }
-                        });
+                            RequestId = msg.TransferRequestId,
+                            Owner = msg.Owner,
+                            RequestStatusType = RequestStatusType.Transfer
+                        },
+                        Quantity = remainderToTransfer,
+                        SourceSliceId = slice.Id
+                    };
+                    await _unitOfWork.OutboxMessageRepository.Create(new OutboxMessage
+                    {
+                        Created = DateTimeOffset.UtcNow.ToUtcTime(),
+                        Id = Guid.NewGuid(),
+                        MessageType = typeof(TransferPartialSliceArguments).ToString(),
+                        JsonPayload = JsonSerializer.Serialize(partial)
+                    });
                 }
-
-                var routingSlip = builder.Build();
-                tasks.Add(context.Execute(routingSlip));
             }
 
-            await Task.WhenAll(tasks);
             _unitOfWork.Commit();
 
             _logger.LogDebug("Transfer command complete.");
