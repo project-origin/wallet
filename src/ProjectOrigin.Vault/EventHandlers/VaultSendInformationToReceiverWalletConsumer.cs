@@ -13,6 +13,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
+using ProjectOrigin.Vault.EventHandlers.Exceptions;
 
 namespace ProjectOrigin.Vault.EventHandlers;
 
@@ -134,7 +135,7 @@ public class VaultSendInformationToReceiverWalletConsumer : IConsumer<SendTransf
         if (walletEndpoint is null)
         {
             _logger.LogError("Local receiver wallet could not be found for receiver wallet {ReceiverWalletId}. RequestId {RequestId}", externalEndpoint.Id, msg.RequestStatusArgs.RequestId);
-            throw new Exception($"Local receiver wallet could not be found for receiver wallet {externalEndpoint.Id}");
+            throw new UnknownWalletEndpointException($"Local receiver wallet could not be found for receiver wallet {externalEndpoint.Id}");
         }
 
         var slice = new WalletSlice
