@@ -5,6 +5,7 @@ using NSubstitute;
 using ProjectOrigin.HierarchicalDeterministicKeys.Implementations;
 using ProjectOrigin.Vault.Database;
 using ProjectOrigin.Vault.EventHandlers;
+using ProjectOrigin.Vault.EventHandlers.Exceptions;
 using ProjectOrigin.Vault.Exceptions;
 using ProjectOrigin.Vault.Metrics;
 using ProjectOrigin.Vault.Models;
@@ -442,7 +443,7 @@ public class VaultSendInformationToReceiverWalletConsumerTests
         });
 
         // Act
-        await Assert.ThrowsAsync<Exception>(async () =>
+        await Assert.ThrowsAsync<UnknownWalletEndpointException>(async () =>
         {
             await _sut.Consume(_context);
         });
@@ -500,7 +501,7 @@ public class VaultSendInformationToReceiverWalletConsumerTests
         });
 
         // Act
-        await Assert.ThrowsAsync<Exception>(async () =>
+        await Assert.ThrowsAsync<UnknownWalletEndpointException>(async () =>
         {
             await _sut.Consume(_context);
         });
