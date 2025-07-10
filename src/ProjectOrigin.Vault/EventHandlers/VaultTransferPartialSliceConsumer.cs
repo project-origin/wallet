@@ -1,8 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Cryptography;
-using System.Threading.Tasks;
 using Google.Protobuf;
 using MassTransit;
 using Microsoft.Extensions.Logging;
@@ -10,14 +5,17 @@ using Npgsql;
 using ProjectOrigin.Electricity.V1;
 using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
 using ProjectOrigin.PedersenCommitment;
-using ProjectOrigin.Registry.V1;
 using ProjectOrigin.Vault.Database;
 using ProjectOrigin.Vault.Exceptions;
 using ProjectOrigin.Vault.Extensions;
 using ProjectOrigin.Vault.Metrics;
 using ProjectOrigin.Vault.Models;
+using System;
+using System.Linq;
+using System.Security.Cryptography;
+using System.Threading.Tasks;
 
-namespace ProjectOrigin.Vault.Activities;
+namespace ProjectOrigin.Vault.EventHandlers;
 
 public record TransferPartialSliceArguments
 {
@@ -28,39 +26,37 @@ public record TransferPartialSliceArguments
     public required RequestStatusArgs RequestStatusArgs { get; init; }
 }
 
-public class TransferPartialSliceActivity : IExecuteActivity<TransferPartialSliceArguments>
+public class VaultTransferPartialSliceConsumer : IConsumer<TransferPartialSliceArguments>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly ILogger<TransferPartialSliceActivity> _logger;
-    private readonly IEndpointNameFormatter _formatter;
+    private readonly ILogger<VaultTransferPartialSliceConsumer> _logger;
     private readonly ITransferMetrics _transferMetrics;
 
-    public TransferPartialSliceActivity(
+    public VaultTransferPartialSliceConsumer(
         IUnitOfWork unitOfWork,
-        ILogger<TransferPartialSliceActivity> logger,
-        IEndpointNameFormatter formatter,
+        ILogger<VaultTransferPartialSliceConsumer> logger,
         ITransferMetrics transferMetrics)
     {
         _unitOfWork = unitOfWork;
         _logger = logger;
-        _formatter = formatter;
         _transferMetrics = transferMetrics;
     }
 
-    public async Task<ExecutionResult> Execute(ExecuteContext<TransferPartialSliceArguments> context)
+    public async Task Consume(ConsumeContext<TransferPartialSliceArguments> context)
     {
-        _logger.LogDebug("RoutingSlip {TrackingNumber} - Executing {ActivityName}", context.TrackingNumber, context.ActivityName);
-        _logger.LogInformation("Starting Activity: {Activity}, RequestId: {RequestId} ", nameof(TransferPartialSliceArguments), context.Arguments.RequestStatusArgs.RequestId);
+        var msg = context.Message;
+
+        _logger.LogInformation("Starting consumer: {Consumer}, RequestId: {RequestId} ", nameof(VaultTransferPartialSliceConsumer), msg.RequestStatusArgs.RequestId);
 
         try
         {
-            var sourceSlice = await _unitOfWork.CertificateRepository.GetWalletSlice(context.Arguments.SourceSliceId);
+            var sourceSlice = await _unitOfWork.CertificateRepository.GetWalletSlice(msg.SourceSliceId);
             var sourceEndpoint = await _unitOfWork.WalletRepository.GetWalletEndpoint(sourceSlice.WalletEndpointId);
 
-            var quantity = context.Arguments.Quantity;
+            var quantity = msg.Quantity;
             var remainder = (uint)sourceSlice.Quantity - quantity;
 
-            var receiverEndpoints = await _unitOfWork.WalletRepository.GetExternalEndpoint(context.Arguments.ExternalEndpointId);
+            var receiverEndpoints = await _unitOfWork.WalletRepository.GetExternalEndpoint(msg.ExternalEndpointId);
             var receiverPosition = await _unitOfWork.WalletRepository.GetNextNumberForId(receiverEndpoints.Id);
             var receiverPublicKey = receiverEndpoints.PublicKey.Derive(receiverPosition).GetPublicKey();
             var receiverCommitment = new SecretCommitmentInfo(quantity);
@@ -97,17 +93,24 @@ public class TransferPartialSliceActivity : IExecuteActivity<TransferPartialSlic
             var slicedEvent = CreateSliceEvent(sourceSlice, new NewSlice(receiverCommitment, receiverPublicKey), new NewSlice(remainderCommitment, remainderPublicKey));
             var sourceSlicePrivateKey = await _unitOfWork.WalletRepository.GetPrivateKeyForSlice(sourceSlice.Id);
             var transaction = sourceSlicePrivateKey.SignRegistryTransaction(slicedEvent.CertificateId, slicedEvent);
-            var walletAttributes = await _unitOfWork.CertificateRepository.GetWalletAttributes(sourceEndpoint.WalletId, sourceSlice.CertificateId, sourceSlice.RegistryName, context.Arguments.HashedAttributes);
+            var walletAttributes = await _unitOfWork.CertificateRepository.GetWalletAttributes(sourceEndpoint.WalletId, sourceSlice.CertificateId, sourceSlice.RegistryName, msg.HashedAttributes);
 
             _unitOfWork.Commit();
 
-            var states = new Dictionary<Guid, WalletSliceState>() {
-                { sourceSlice.Id, WalletSliceState.Sliced },
-                { remainderSlice.Id, WalletSliceState.Available }
-            };
-            _logger.LogInformation("Ending Activity: {Activity}, RequestId: {RequestId} ", nameof(TransferPartialSliceArguments), context.Arguments.RequestStatusArgs.RequestId);
+            _logger.LogInformation("Ending consumer: {Consumer}, RequestId: {RequestId} ", nameof(VaultTransferPartialSliceConsumer), msg.RequestStatusArgs.RequestId);
 
-            return AddTransferRequiredActivities(context, receiverEndpoints, transferredSlice, transaction, states, walletAttributes);
+            await context.Publish<TransferPartialSliceRegistryTransactionArguments>(new TransferPartialSliceRegistryTransactionArguments
+            {
+                Transaction = transaction,
+                WalletAttributes = walletAttributes.ToArray(),
+                ExternalEndpointId = receiverEndpoints.Id,
+                TransferredSliceId = transferredSlice.Id,
+                CertificateId = transferredSlice.CertificateId,
+                RegistryName = transaction.Header.FederatedStreamId.Registry,
+                RemainderSliceId = remainderSlice.Id,
+                RequestStatusArgs = msg.RequestStatusArgs,
+                SourceSliceId = sourceSlice.Id
+            });
         }
         catch (PostgresException ex)
         {
@@ -118,51 +121,11 @@ public class TransferPartialSliceActivity : IExecuteActivity<TransferPartialSlic
         {
             _unitOfWork.Rollback();
             _logger.LogError(ex, "Error sending partial slice transfer transactions to registry");
-            await _unitOfWork.RequestStatusRepository.SetRequestStatus(context.Arguments.RequestStatusArgs.RequestId, context.Arguments.RequestStatusArgs.Owner, RequestStatusState.Failed, failedReason: "Error sending partial slice transfer transactions to registry.");
+            await _unitOfWork.RequestStatusRepository.SetRequestStatus(msg.RequestStatusArgs.RequestId, msg.RequestStatusArgs.Owner, RequestStatusState.Failed, failedReason: "Error sending partial slice transfer transactions to registry.");
             _unitOfWork.Commit();
             _transferMetrics.IncrementFailedTransfers();
             throw;
         }
-    }
-
-    private ExecutionResult AddTransferRequiredActivities(ExecuteContext<TransferPartialSliceArguments> context, ExternalEndpoint externalEndpoint, AbstractSlice transferredSlice, Transaction transaction, Dictionary<Guid, WalletSliceState> states, IEnumerable<WalletAttribute> walletAttributes)
-    {
-        return context.ReviseItinerary(builder =>
-        {
-            builder.AddActivity<SendRegistryTransactionActivity, SendRegistryTransactionArguments>(_formatter,
-                new()
-                {
-                    Transaction = transaction
-                });
-
-            builder.AddActivity<WaitCommittedRegistryTransactionActivity, WaitCommittedTransactionArguments>(_formatter,
-                new()
-                {
-                    RegistryName = transaction.Header.FederatedStreamId.Registry,
-                    TransactionId = transaction.ToShaId(),
-                    CertificateId = transferredSlice.CertificateId,
-                    SliceId = transferredSlice.Id,
-                    RequestStatusArgs = context.Arguments.RequestStatusArgs
-                });
-
-            builder.AddActivity<UpdateSliceStateActivity, UpdateSliceStateArguments>(_formatter,
-                new()
-                {
-                    SliceStates = states,
-                    RequestStatusArgs = context.Arguments.RequestStatusArgs
-                });
-
-            builder.AddActivity<SendInformationToReceiverWalletActivity, SendInformationToReceiverWalletArgument>(_formatter,
-                new()
-                {
-                    ExternalEndpointId = externalEndpoint.Id,
-                    SliceId = transferredSlice.Id,
-                    WalletAttributes = walletAttributes.ToArray(),
-                    RequestStatusArgs = context.Arguments.RequestStatusArgs
-                });
-
-            builder.AddActivitiesFromSourceItinerary();
-        });
     }
 
     private sealed record NewSlice(SecretCommitmentInfo ci, IPublicKey Key);
