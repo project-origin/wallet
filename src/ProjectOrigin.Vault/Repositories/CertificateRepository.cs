@@ -334,8 +334,8 @@ public class CertificateRepository : ICertificateRepository
             new LoggerConfiguration()
                 .WriteTo.Console(new JsonFormatter())
                 .CreateLogger()
-                .Information("Successfully completed QueryAvailableCertificates in {ElapsedMilliseconds} ms, returning {Count} of {TotalCount} certificates, with filters: owner: {Owner}, start: {Start}, end: {End}, type: {Type}, skip: {Skip}, limit: {Limit}",
-                    stopwatch.ElapsedMilliseconds, certificates.Length, totalCount, filter.Owner, filter.Start, filter.End, filter.Type, filter.Skip, filter.Limit);
+                .Information("Successfully completed QueryAvailableCertificates in {ElapsedMilliseconds} ms, returning {Count} of {TotalCount} certificates, with filters: start: {Start}, end: {End}, type: {Type}, skip: {Skip}, limit: {Limit}",
+                    stopwatch.ElapsedMilliseconds, certificates.Length, totalCount, filter.Start, filter.End, filter.Type, filter.Skip, filter.Limit);
 
             return result;
         }
@@ -345,8 +345,8 @@ public class CertificateRepository : ICertificateRepository
                 .WriteTo.Console(new JsonFormatter())
                 .CreateLogger()
                 .Error(ex,
-                    "Error in QueryAvailableCertificates executed in {ElapsedMilliseconds} ms, with filters: owner: {Owner}, start: {Start}, end: {End}, type: {Type}, skip: {Skip}, limit: {Limit}",
-                    stopwatch.ElapsedMilliseconds, filter.Owner, filter.Start, filter.End, filter.Type, filter.Skip, filter.Limit);
+                    "Error in QueryAvailableCertificates executed in {ElapsedMilliseconds} ms, with filters: start: {Start}, end: {End}, type: {Type}, skip: {Skip}, limit: {Limit}",
+                    stopwatch.ElapsedMilliseconds, filter.Start, filter.End, filter.Type, filter.Skip, filter.Limit);
             throw;
         }
         finally
