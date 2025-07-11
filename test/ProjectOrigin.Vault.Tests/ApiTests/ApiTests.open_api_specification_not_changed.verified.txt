@@ -573,6 +573,14 @@
               "format": "int32",
               "default": 0
             }
+          },
+          {
+            "name": "TrialFilter",
+            "in": "query",
+            "description": "Filter for trial or non-trial certificates. Values: NonTrial (default), Trial",
+            "schema": {
+              "$ref": "#/components/schemas/TrialFilter"
+            }
           }
         ],
         "responses": {
@@ -2086,6 +2094,13 @@
         },
         "additionalProperties": false,
         "description": "A response to a transfer request."
+      },
+      "TrialFilter": {
+        "enum": [
+          "nonTrial",
+          "trial"
+        ],
+        "type": "string"
       },
       "WalletEndpointReference": {
         "required": [

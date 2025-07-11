@@ -5,6 +5,7 @@ using ProjectOrigin.Vault.Repositories;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Dapper;
 using Xunit;
 using ProjectOrigin.Vault.Tests.TestClassFixtures;
 
@@ -351,7 +352,8 @@ public class ClaimRepositoryTests : AbstractRepositoryTests
             Limit = take,
             Skip = skip,
             TimeAggregate = aggregate,
-            TimeZone = timeZone
+            TimeZone = timeZone,
+            TrialFilter = TrialFilter.NonTrial
         });
 
         //assert
@@ -360,6 +362,34 @@ public class ClaimRepositoryTests : AbstractRepositoryTests
         result.Limit.Should().Be(take);
         result.Count.Should().Be(numberOfResults);
         result.TotalCount.Should().Be(total);
+    }
+
+    [Theory]
+    [InlineData(TrialFilter.NonTrial, 1)]
+    [InlineData(TrialFilter.Trial, 1)]
+    public async Task QueryAggregatedClaims_TrialFilter_ReturnsCorrectClaims(TrialFilter trialFilter, int expectedCount)
+    {
+        var normalOwner = _fixture.Create<string>();
+        var startDate = new DateTimeOffset(2023, 7, 1, 0, 0, 0, TimeSpan.Zero);
+
+        await CreateClaimsAndCerts(normalOwner, 5, startDate);
+
+        var trialOwner = _fixture.Create<string>();
+        await CreateTrialClaimsAndCerts(trialOwner, 5, startDate);
+
+        var result = await _claimRepository.QueryAggregatedClaims(new QueryAggregatedClaimsFilter()
+        {
+            Owner = trialFilter == TrialFilter.Trial ? trialOwner : normalOwner,
+            Start = startDate,
+            End = startDate.AddDays(1),
+            Limit = 100,
+            Skip = 0,
+            TimeAggregate = TimeAggregate.Total,
+            TimeZone = "UTC",
+            TrialFilter = trialFilter
+        });
+
+        result.Items.Should().HaveCount(expectedCount);
     }
 
     public async Task<(Guid, Guid)> CreateClaimAndGetSliceIds(string owner)
@@ -448,6 +478,67 @@ public class ClaimRepositoryTests : AbstractRepositoryTests
                 State = WalletSliceState.Claimed
             };
             await certRepository.InsertWalletSlice(prodSlice);
+
+            var claim = new Claim
+            {
+                Id = Guid.NewGuid(),
+                ConsumptionSliceId = conSlice.Id,
+                ProductionSliceId = prodSlice.Id,
+                State = ClaimState.Claimed
+            };
+            await _claimRepository.InsertClaim(claim);
+            await Task.Delay(delay);
+        }
+    }
+
+    private async Task CreateTrialClaimsAndCerts(string owner, int numberOfClaims, DateTimeOffset startDate, int delay = 0)
+    {
+        var certRepository = new CertificateRepository(_connection);
+
+        var registry = _fixture.Create<string>();
+        var wallet = await CreateWallet(owner);
+        var endpoint = await CreateWalletEndpoint(wallet);
+
+        var position = 1;
+        for (int i = 0; i < numberOfClaims; i++)
+        {
+            var conCert = await CreateCertificate(registry, GranularCertificateType.Consumption, startDate.AddHours(i), endDate: startDate.AddHours(i + 1));
+            var conSlice = new WalletSlice
+            {
+                Id = Guid.NewGuid(),
+                WalletEndpointId = endpoint.Id,
+                WalletEndpointPosition = position++,
+                RegistryName = registry,
+                CertificateId = conCert.Id,
+                Quantity = 150 + 100 * (i % 5),
+                RandomR = _fixture.Create<byte[]>(),
+                State = WalletSliceState.Claimed
+            };
+            await certRepository.InsertWalletSlice(conSlice);
+
+            var prodCert = await CreateCertificate(registry, GranularCertificateType.Production, startDate.AddHours(i), endDate: startDate.AddHours(i + 1));
+            var prodSlice = new WalletSlice
+            {
+                Id = Guid.NewGuid(),
+                WalletEndpointId = endpoint.Id,
+                WalletEndpointPosition = position++,
+                RegistryName = registry,
+                CertificateId = prodCert.Id,
+                Quantity = 150 + 100 * (i % 5),
+                RandomR = _fixture.Create<byte[]>(),
+                State = WalletSliceState.Claimed
+            };
+            await certRepository.InsertWalletSlice(prodSlice);
+
+            await _connection.ExecuteAsync(
+                @"INSERT INTO attributes (id, certificate_id, registry_name, attribute_key, attribute_value, attribute_type)
+                  VALUES (@id, @certificateId, @registryName, 'IsTrial', 'true', 0)",
+                new { id = Guid.NewGuid(), certificateId = prodCert.Id, registryName = registry });
+
+            await _connection.ExecuteAsync(
+                @"INSERT INTO attributes (id, certificate_id, registry_name, attribute_key, attribute_value, attribute_type)
+                  VALUES (@id, @certificateId, @registryName, 'IsTrial', 'true', 0)",
+                new { id = Guid.NewGuid(), certificateId = conCert.Id, registryName = registry });
 
             var claim = new Claim
             {

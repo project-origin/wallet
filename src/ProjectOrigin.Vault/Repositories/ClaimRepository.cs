@@ -236,7 +236,7 @@ public class ClaimRepository : IClaimRepository
                         max(production_end) as end,
                         sum(quantity) as quantity
                     FROM
-                        claims_query_model
+                        claims_query_model cqm
                     WHERE
                         owner = @owner
                         AND (@start IS NULL OR production_start >= @start)
@@ -244,6 +244,40 @@ public class ClaimRepository : IClaimRepository
                         AND (@start IS NULL OR consumption_start >= @start)
                         AND (@end IS NULL OR consumption_end <= @end)
                         AND ABS(EXTRACT(EPOCH FROM (production_start - consumption_start))) < 3600
+                        AND (
+                            (@trialFilter = 'nontrial' AND
+                                NOT EXISTS (
+                                    SELECT 1 FROM attributes_view av
+                                    WHERE av.registry_name = cqm.production_registry_name
+                                    AND av.certificate_id = cqm.production_certificate_id
+                                    AND av.attribute_key = 'IsTrial'
+                                    AND av.attribute_value = 'true'
+                                ) AND
+                                NOT EXISTS (
+                                    SELECT 1 FROM attributes_view av
+                                    WHERE av.registry_name = cqm.consumption_registry_name
+                                    AND av.certificate_id = cqm.consumption_certificate_id
+                                    AND av.attribute_key = 'IsTrial'
+                                    AND av.attribute_value = 'true'
+                                )
+                            ) OR
+                            (@trialFilter = 'trial' AND (
+                                EXISTS (
+                                    SELECT 1 FROM attributes_view av
+                                    WHERE av.registry_name = cqm.production_registry_name
+                                    AND av.certificate_id = cqm.production_certificate_id
+                                    AND av.attribute_key = 'IsTrial'
+                                    AND av.attribute_value = 'true'
+                                ) AND
+                                EXISTS (
+                                    SELECT 1 FROM attributes_view av
+                                    WHERE av.registry_name = cqm.consumption_registry_name
+                                    AND av.certificate_id = cqm.consumption_certificate_id
+                                    AND av.attribute_key = 'IsTrial'
+                                    AND av.attribute_value = 'true'
+                                )
+                            ))
+                        )
                     GROUP BY
                         CASE
                             WHEN @timeAggregate = 'total' THEN NULL
@@ -267,7 +301,8 @@ public class ClaimRepository : IClaimRepository
             filter.Skip,
             filter.Limit,
             timeAggregate = filter.TimeAggregate.ToString().ToLower(),
-            filter.TimeZone
+            filter.TimeZone,
+            trialFilter = filter.TrialFilter.ToString().ToLower()
         }))
         {
             var totalCount = await gridReader.ReadSingleAsync<int>();
