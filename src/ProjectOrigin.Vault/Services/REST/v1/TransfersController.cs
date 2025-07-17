@@ -198,6 +198,18 @@ public class TransfersController : ControllerBase
         if (wallet == null) return NotFound("You don't own a wallet. Create a wallet first.");
         if (wallet.IsDisabled()) return BadRequest("Unable to interact with a disabled wallet.");
 
+        var cert = await unitOfWork.CertificateRepository.GetCertificate(request.CertificateId.Registry, request.CertificateId.StreamId);
+        if (cert == null)
+        {
+            return BadRequest($"Unknown certificate. Registry {request.CertificateId.Registry} and id {request.CertificateId.StreamId}.");
+        }
+
+        var certWillBeAvailable = await unitOfWork.CertificateRepository.GetRegisteringAndAvailableQuantity(request.CertificateId.Registry, request.CertificateId.StreamId, subject);
+        if (certWillBeAvailable < request.Quantity)
+        {
+            return BadRequest($"Transfer is not allowed. Certificate does not have enough quantity to transfer requested amount. Certificate amount: {certWillBeAvailable}. Requested claim quantity: {request.Quantity}");
+        }
+
         var command = new TransferCertificateCommand
         {
             TransferRequestId = Guid.NewGuid(),
