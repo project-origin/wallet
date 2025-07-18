@@ -176,7 +176,7 @@ public class TransfersController : ControllerBase
     /// <param name="serviceOptions"></param>
     /// <param name="request"></param>
     /// <response code="202">Transfer request has been queued for processing.</response>
-    /// <response code="400">If the wallet is disabled, certificate is unknown, you're trying to transfer more than is available on the certificate or if receiver is unknown</response>
+    /// <response code="400">If the wallet is disabled, or if certificate is unknown, or if you're trying to transfer more than is available on the certificate or if receiver is unknown</response>
     /// <response code="401">If the user is not authenticated.</response>
     /// <response code="404">If the user does not own a wallet.</response>
     [HttpPost]
