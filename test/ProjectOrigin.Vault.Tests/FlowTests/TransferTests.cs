@@ -99,6 +99,34 @@ public class TransferTests : AbstractFlowTests
     }
 
     [Fact]
+    public async Task Transfer_UnknownReceiver_BadRequest()
+    {
+        //Arrange
+        var issuedAmount = 250u;
+        var transferredAmount = 150u;
+
+        // Create sender wallet
+        var (senderEndpoint, senderClient) = await CreateWalletEndpointAndHttpClient();
+
+        // Issue certificate to sender
+        var certificateId = await IssueCertificateToEndpoint(senderEndpoint, Electricity.V1.GranularCertificateType.Production, new SecretCommitmentInfo(issuedAmount), 1);
+        await senderClient.GetCertificatesWithTimeout(1, TimeSpan.FromMinutes(1));
+
+        //Act
+        var request = new TransferRequest()
+        {
+            CertificateId = certificateId,
+            Quantity = transferredAmount,
+            ReceiverId = Guid.NewGuid(),
+            HashedAttributes = []
+        };
+        var response = await senderClient.PostAsync("v1/transfers", JsonContent.Create(request));
+
+        //Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
     public async Task Transfer_SingleSlice_LocalWallet()
     {
         //Arrange

@@ -176,7 +176,7 @@ public class TransfersController : ControllerBase
     /// <param name="serviceOptions"></param>
     /// <param name="request"></param>
     /// <response code="202">Transfer request has been queued for processing.</response>
-    /// <response code="400">If the wallet is disabled.</response>
+    /// <response code="400">If the wallet is disabled, certificate is unknown, you're trying to transfer more than is available on the certificate or if receiver is unknown</response>
     /// <response code="401">If the user is not authenticated.</response>
     /// <response code="404">If the user does not own a wallet.</response>
     [HttpPost]
@@ -207,7 +207,13 @@ public class TransfersController : ControllerBase
         var certWillBeAvailable = await unitOfWork.CertificateRepository.GetRegisteringAndAvailableQuantity(request.CertificateId.Registry, request.CertificateId.StreamId, subject);
         if (certWillBeAvailable < request.Quantity)
         {
-            return BadRequest($"Transfer is not allowed. Certificate does not have enough quantity to transfer requested amount. Certificate amount: {certWillBeAvailable}. Requested claim quantity: {request.Quantity}");
+            return BadRequest($"Transfer is not allowed. Certificate does not have enough quantity to transfer requested amount. Certificate amount: {certWillBeAvailable}. Requested claim quantity: {request.Quantity}.");
+        }
+
+        var externalEndpoint =  await unitOfWork.WalletRepository.TryGetExternalEndpoint(request.ReceiverId);
+        if (externalEndpoint == null)
+        {
+            return BadRequest($"Unknown receiver. Receiver with id {request.ReceiverId} does not exist.");
         }
 
         var command = new TransferCertificateCommand

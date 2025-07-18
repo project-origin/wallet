@@ -155,6 +155,18 @@ public class WalletRepository : IWalletRepository
             });
     }
 
+    public Task<ExternalEndpoint?> TryGetExternalEndpoint(Guid endpointId)
+    {
+        return _connection.QuerySingleOrDefaultAsync<ExternalEndpoint>(
+            @"SELECT *
+              FROM external_endpoints
+              WHERE id = @endpointId",
+            new
+            {
+                endpointId
+            });
+    }
+
     public Task<int> GetNextNumberForId(Guid id)
     {
         return _connection.ExecuteScalarAsync<int>(
