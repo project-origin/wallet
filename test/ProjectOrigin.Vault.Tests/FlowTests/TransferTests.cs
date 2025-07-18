@@ -1,12 +1,14 @@
-using System;
-using System.Linq;
-using System.Net.Http;
-using System.Net.Http.Headers;
-using System.Threading.Tasks;
 using AutoFixture;
 using FluentAssertions;
 using ProjectOrigin.PedersenCommitment;
 using ProjectOrigin.Vault.Services.REST.v1;
+using System;
+using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace ProjectOrigin.Vault.Tests.FlowTests;
@@ -19,6 +21,109 @@ public class TransferTests : AbstractFlowTests
     public TransferTests(WalletSystemTestFixture walletTestFixture) : base(walletTestFixture)
     {
         _fixture = new Fixture();
+    }
+
+    [Fact]
+    public async Task Transfer_UnknownCertificate_BadRequest()
+    {
+        //Arrange
+        var transferredAmount = 150u;
+
+        // Create recipient wallet
+        var (recipientEndpoint, recipientClient) = await CreateWalletEndpointAndHttpClient();
+
+        // Create sender wallet
+        var (senderEndpoint, senderClient) = await CreateWalletEndpointAndHttpClient();
+
+        // Create external endpoint
+        var externalEndpoint = await senderClient.CreateExternalEndpoint(new()
+        {
+            TextReference = _fixture.Create<string>(),
+            WalletReference = recipientEndpoint
+        });
+
+        //Act
+        var request = new TransferRequest()
+        {
+            CertificateId = new FederatedStreamId()
+            {
+                Registry = "SomeRegistry",
+                StreamId = Guid.NewGuid()
+            },
+            Quantity = transferredAmount,
+            ReceiverId = externalEndpoint.ReceiverId,
+            HashedAttributes = []
+        };
+        var response = await senderClient.PostAsync("v1/transfers", JsonContent.Create(request));
+
+        //Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Transfer_MoreThanAvailableOnTheCertificate_BadRequest()
+    {
+        //Arrange
+        var issuedAmount = 250u;
+        var transferredAmount = 300u;
+
+        // Create recipient wallet
+        var (recipientEndpoint, recipientClient) = await CreateWalletEndpointAndHttpClient();
+
+        // Create sender wallet
+        var (senderEndpoint, senderClient) = await CreateWalletEndpointAndHttpClient();
+
+        // Issue certificate to sender
+        var certificateId = await IssueCertificateToEndpoint(senderEndpoint, Electricity.V1.GranularCertificateType.Production, new SecretCommitmentInfo(issuedAmount), 1);
+        await senderClient.GetCertificatesWithTimeout(1, TimeSpan.FromMinutes(1));
+
+        // Create external endpoint
+        var externalEndpoint = await senderClient.CreateExternalEndpoint(new()
+        {
+            TextReference = _fixture.Create<string>(),
+            WalletReference = recipientEndpoint
+        });
+
+        //Act
+        var request = new TransferRequest()
+        {
+            CertificateId = certificateId,
+            Quantity = transferredAmount,
+            ReceiverId = externalEndpoint.ReceiverId,
+            HashedAttributes = []
+        };
+        var response = await senderClient.PostAsync("v1/transfers", JsonContent.Create(request));
+
+        //Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Transfer_UnknownReceiver_BadRequest()
+    {
+        //Arrange
+        var issuedAmount = 250u;
+        var transferredAmount = 150u;
+
+        // Create sender wallet
+        var (senderEndpoint, senderClient) = await CreateWalletEndpointAndHttpClient();
+
+        // Issue certificate to sender
+        var certificateId = await IssueCertificateToEndpoint(senderEndpoint, Electricity.V1.GranularCertificateType.Production, new SecretCommitmentInfo(issuedAmount), 1);
+        await senderClient.GetCertificatesWithTimeout(1, TimeSpan.FromMinutes(1));
+
+        //Act
+        var request = new TransferRequest()
+        {
+            CertificateId = certificateId,
+            Quantity = transferredAmount,
+            ReceiverId = Guid.NewGuid(),
+            HashedAttributes = []
+        };
+        var response = await senderClient.PostAsync("v1/transfers", JsonContent.Create(request));
+
+        //Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     [Fact]

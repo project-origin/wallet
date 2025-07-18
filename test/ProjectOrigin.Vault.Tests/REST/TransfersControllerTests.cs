@@ -1,7 +1,3 @@
-using System;
-using System.Linq;
-using System.Security.Claims;
-using System.Threading.Tasks;
 using AutoFixture;
 using FluentAssertions;
 using MassTransit;
@@ -10,14 +6,22 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
-using MsOptions = Microsoft.Extensions.Options;
-using ProjectOrigin.Vault.Tests.TestClassFixtures;
-using ProjectOrigin.Vault.Tests.TestExtensions;
+using NSubstitute.ReceivedExtensions;
+using ProjectOrigin.PedersenCommitment;
 using ProjectOrigin.Vault.Database;
 using ProjectOrigin.Vault.Metrics;
+using ProjectOrigin.Vault.Models;
 using ProjectOrigin.Vault.Options;
 using ProjectOrigin.Vault.Services.REST.v1;
+using ProjectOrigin.Vault.Tests.TestClassFixtures;
+using ProjectOrigin.Vault.Tests.TestExtensions;
+using System;
+using System.Linq;
+using System.Security.Claims;
+using System.Threading.Tasks;
 using Xunit;
+using MsOptions = Microsoft.Extensions.Options;
+using TimeAggregate = ProjectOrigin.Vault.Services.REST.v1.TimeAggregate;
 
 namespace ProjectOrigin.Vault.Tests;
 
@@ -479,9 +483,24 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
     public async Task TransferCertificate_TransferCommand_AcceptedResult()
     {
         // Arrange
+        uint quantity = 150;
         var subject = _fixture.Create<string>();
-        var request = _fixture.Create<TransferRequest>();
-        await _dbFixture.CreateWallet(subject);
+        var endpoint = await _dbFixture.CreateWalletEndpoint(subject);
+        var receiver = await _dbFixture.CreateExternalEndpoint(_fixture.Create<string>());
+        var certificate = await _dbFixture.CreateCertificate(Guid.NewGuid(), "registry1", GranularCertificateType.Production);
+        await _dbFixture.CreateSlice(endpoint, certificate, new SecretCommitmentInfo(quantity));
+
+        var request = new TransferRequest()
+        {
+            Quantity = quantity,
+            CertificateId = new FederatedStreamId()
+            {
+                Registry = certificate.RegistryName,
+                StreamId = certificate.Id
+            },
+            ReceiverId = receiver.Id,
+            HashedAttributes = []
+        };
 
         await using var provider = new ServiceCollection()
             .AddMassTransitTestHarness(x =>
@@ -518,9 +537,24 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
     public async Task SuccessfulTransferIncrementsIntentCounter()
     {
         // Arrange
+        uint quantity = 150;
         var subject = _fixture.Create<string>();
-        var request = _fixture.Create<TransferRequest>();
-        await _dbFixture.CreateWallet(subject);
+        var endpoint = await _dbFixture.CreateWalletEndpoint(subject);
+        var receiver = await _dbFixture.CreateExternalEndpoint(_fixture.Create<string>());
+        var certificate = await _dbFixture.CreateCertificate(Guid.NewGuid(), "registry1", GranularCertificateType.Production);
+        await _dbFixture.CreateSlice(endpoint, certificate, new SecretCommitmentInfo(quantity));
+
+        var request = new TransferRequest()
+        {
+            Quantity = quantity,
+            CertificateId = new FederatedStreamId()
+            {
+                Registry = certificate.RegistryName,
+                StreamId = certificate.Id
+            },
+            ReceiverId = receiver.Id,
+            HashedAttributes = []
+        };
 
         await using var provider = new ServiceCollection()
             .AddMassTransitTestHarness(x =>
