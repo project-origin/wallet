@@ -210,7 +210,7 @@ public class TransfersController : ControllerBase
             return BadRequest($"Transfer is not allowed. Certificate does not have enough quantity to transfer requested amount. Certificate amount: {certWillBeAvailable}. Requested claim quantity: {request.Quantity}.");
         }
 
-        var externalEndpoint =  await unitOfWork.WalletRepository.TryGetExternalEndpoint(request.ReceiverId);
+        var externalEndpoint = await unitOfWork.WalletRepository.TryGetExternalEndpoint(request.ReceiverId);
         if (externalEndpoint == null)
         {
             return BadRequest($"Unknown receiver. Receiver with id {request.ReceiverId} does not exist.");
