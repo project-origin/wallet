@@ -879,7 +879,7 @@
             }
           },
           "400": {
-            "description": "If the wallet is disabled."
+            "description": "If the wallet is disabled, certificate is unknown, you're trying to transfer more than is available on the certificate or if receiver is unknown"
           },
           "401": {
             "description": "If the user is not authenticated."

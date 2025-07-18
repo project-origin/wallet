@@ -539,6 +539,7 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
         uint quantity = 150;
         var subject = _fixture.Create<string>();
         var endpoint = await _dbFixture.CreateWalletEndpoint(subject);
+        var receiverId = await _dbFixture.CreateExternalEndpoint(_fixture.Create<string>());
         var certificate = await _dbFixture.CreateCertificate(Guid.NewGuid(), "registry1", GranularCertificateType.Production);
         await _dbFixture.CreateSlice(endpoint, certificate, new SecretCommitmentInfo(quantity));
 
@@ -550,7 +551,7 @@ public class TransfersControllerTests : IClassFixture<PostgresDatabaseFixture>
                 Registry = certificate.RegistryName,
                 StreamId = certificate.Id
             },
-            ReceiverId = Guid.NewGuid(),
+            ReceiverId = receiverId.Id,
             HashedAttributes = []
         };
 
