@@ -2,7 +2,6 @@ using MassTransit;
 using Microsoft.Extensions.Logging;
 using Npgsql;
 using NSubstitute;
-using NSubstitute.ReceivedExtensions;
 using ProjectOrigin.Vault.Activities;
 using ProjectOrigin.Vault.Database;
 using ProjectOrigin.Vault.Exceptions;
@@ -57,7 +56,8 @@ public class UpdateClaimStateActivityTests
             ConsumptionSliceId = Guid.NewGuid(),
             ProductionSliceId = Guid.NewGuid(),
             Quantity = quantity,
-            State = ClaimState.Claimed
+            State = ClaimState.Claimed,
+            IsTrialClaim = false
         });
 
         // Act
@@ -92,7 +92,8 @@ public class UpdateClaimStateActivityTests
             ConsumptionSliceId = Guid.NewGuid(),
             ProductionSliceId = Guid.NewGuid(),
             Quantity = quantity,
-            State = ClaimState.Claimed
+            State = ClaimState.Claimed,
+            IsTrialClaim = false
         });
 
         // Act
@@ -128,7 +129,8 @@ public class UpdateClaimStateActivityTests
             ConsumptionSliceId = Guid.NewGuid(),
             ProductionSliceId = Guid.NewGuid(),
             Quantity = quantity,
-            State = ClaimState.Claimed
+            State = ClaimState.Claimed,
+            IsTrialClaim = false
         });
 
         // Act
@@ -164,7 +166,8 @@ public class UpdateClaimStateActivityTests
             ConsumptionSliceId = Guid.NewGuid(),
             ProductionSliceId = Guid.NewGuid(),
             Quantity = quantity,
-            State = ClaimState.Unclaimed
+            State = ClaimState.Unclaimed,
+            IsTrialClaim = false
         });
 
         // Act
@@ -175,6 +178,80 @@ public class UpdateClaimStateActivityTests
 
         // Assert
         _claimsMetrics.Received(1).IncrementTotalWattsClaimed(-quantity);
+    }
+
+    [Fact]
+    public async Task Execute_WhenSettingStateToClaimedAndTrialClaim_ExpectIncrementTotalTrailWattsClaimed()
+    {
+        // Arrange
+        var claimId = Guid.NewGuid();
+        var quantity = 150;
+        _context.Arguments.Returns(new UpdateClaimStateArguments()
+        {
+            Id = claimId,
+            State = ClaimState.Claimed,
+            RequestStatusArgs = new RequestStatusArgs
+            {
+                RequestId = claimId,
+                Owner = Guid.NewGuid().ToString(),
+                RequestStatusType = RequestStatusType.Claim
+            }
+        });
+        _unitOfWork.ClaimRepository.GetClaimWithQuantity(Arg.Is(claimId)).Returns(new ClaimWithQuantity
+        {
+            Id = claimId,
+            ConsumptionSliceId = Guid.NewGuid(),
+            ProductionSliceId = Guid.NewGuid(),
+            Quantity = quantity,
+            State = ClaimState.Claimed,
+            IsTrialClaim = true
+        });
+
+        // Act
+        await _activity.Execute(_context);
+        await _unitOfWork.ClaimRepository.Received(1).SetClaimState(Arg.Is(_context.Arguments.Id), Arg.Is(_context.Arguments.State));
+        _unitOfWork.Received(1).Commit();
+        _context.Received(1).Completed();
+
+        // Assert
+        _claimsMetrics.Received(1).IncrementTotalTrialWattsClaimed(quantity);
+    }
+
+    [Fact]
+    public async Task Execute_WhenSettingStateToUnclaimedAndTrialClaim_ExpectDecreaseTotalTrailWattsClaimed()
+    {
+        // Arrange
+        var claimId = Guid.NewGuid();
+        var quantity = 150;
+        _context.Arguments.Returns(new UpdateClaimStateArguments()
+        {
+            Id = claimId,
+            State = ClaimState.Unclaimed,
+            RequestStatusArgs = new RequestStatusArgs
+            {
+                RequestId = claimId,
+                Owner = Guid.NewGuid().ToString(),
+                RequestStatusType = RequestStatusType.Claim
+            }
+        });
+        _unitOfWork.ClaimRepository.GetClaimWithQuantity(Arg.Is(claimId)).Returns(new ClaimWithQuantity
+        {
+            Id = claimId,
+            ConsumptionSliceId = Guid.NewGuid(),
+            ProductionSliceId = Guid.NewGuid(),
+            Quantity = quantity,
+            State = ClaimState.Unclaimed,
+            IsTrialClaim = true
+        });
+
+        // Act
+        await _activity.Execute(_context);
+        await _unitOfWork.ClaimRepository.Received(1).SetClaimState(Arg.Is(_context.Arguments.Id), Arg.Is(_context.Arguments.State));
+        _unitOfWork.Received(1).Commit();
+        _context.Received(1).Completed();
+
+        // Assert
+        _claimsMetrics.Received(1).IncrementTotalTrialWattsClaimed(-quantity);
     }
 
     [Fact]

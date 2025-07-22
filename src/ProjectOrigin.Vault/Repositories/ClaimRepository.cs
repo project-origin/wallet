@@ -29,11 +29,22 @@ public class ClaimRepository : IClaimRepository
     public Task<ClaimWithQuantity> GetClaimWithQuantity(Guid claimId)
     {
         return _connection.QuerySingleAsync<ClaimWithQuantity>(
-            @"SELECT *
-              FROM claims
-              INNER JOIN wallet_slices slice_cons
+            @"SELECT claims.*, slice_cons.quantity,
+                    CASE 
+                        WHEN EXISTS (
+                            SELECT 1 
+                            FROM attributes_view av
+                            WHERE av.registry_name = slice_cons.registry_name
+                              AND av.certificate_id = slice_cons.certificate_id
+                              AND av.attribute_key = 'IsTrial'
+                              AND av.attribute_value = 'true'
+                        ) THEN true
+                        ELSE false
+                    END AS is_trial_claim
+                FROM claims
+                INNER JOIN wallet_slices slice_cons
                     ON claims.consumption_slice_id = slice_cons.id
-              WHERE claims.id = @claimId",
+                WHERE claims.id = @claimId;",
             new
             {
                 claimId

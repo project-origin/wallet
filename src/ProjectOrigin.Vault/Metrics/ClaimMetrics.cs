@@ -8,6 +8,7 @@ public interface IClaimMetrics
     void IncrementClaimIntents();
     void IncrementFailedClaims();
     void IncrementTotalWattsClaimed(long quantity);
+    void IncrementTotalTrialWattsClaimed(long quantity);
 }
 
 public class ClaimMetrics(MeterBase meterBase) : IClaimMetrics
@@ -36,8 +37,15 @@ public class ClaimMetrics(MeterBase meterBase) : IClaimMetrics
             unit: "{Watt hours}",
             description: "The total Watt hours that has been claimed.");
 
+    private readonly Counter<long> _totalTrialWattsClaimedCounter =
+        meterBase.Meter.CreateCounter<long>(
+            name: "po_vault_trial_claim_total_watts_claimed_count",
+            unit: "{Watt hours}",
+            description: "The total trial Watt hours that has been claimed.");
+
     public void IncrementClaimed() => _claimsClaimedCounter.Add(1);
     public void IncrementClaimIntents() => _claimIntentsCounter.Add(1);
     public void IncrementFailedClaims() => _failedClaimsCounter.Add(1);
     public void IncrementTotalWattsClaimed(long quantity) => _totalWattsClaimedCounter.Add(quantity);
+    public void IncrementTotalTrialWattsClaimed(long quantity) => _totalTrialWattsClaimedCounter.Add(quantity);
 }

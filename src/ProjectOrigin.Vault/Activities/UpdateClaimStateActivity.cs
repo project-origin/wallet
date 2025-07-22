@@ -54,13 +54,27 @@ public class UpdateClaimStateActivity : IExecuteActivity<UpdateClaimStateArgumen
 
             var claim = await _unitOfWork.ClaimRepository.GetClaimWithQuantity(context.Arguments.Id);
 
-            if (claim.State == ClaimState.Claimed)
+            if (claim.IsTrialClaim)
             {
-                _claimsMetrics.IncrementTotalWattsClaimed(claim.Quantity);
+                if (claim.State == ClaimState.Claimed)
+                {
+                    _claimsMetrics.IncrementTotalTrialWattsClaimed(claim.Quantity);
+                }
+                else if (claim.State == ClaimState.Unclaimed)
+                {
+                    _claimsMetrics.IncrementTotalTrialWattsClaimed(-claim.Quantity);
+                }
             }
-            else if (claim.State == ClaimState.Unclaimed)
+            else
             {
-                _claimsMetrics.IncrementTotalWattsClaimed(-claim.Quantity);
+                if (claim.State == ClaimState.Claimed)
+                {
+                    _claimsMetrics.IncrementTotalWattsClaimed(claim.Quantity);
+                }
+                else if (claim.State == ClaimState.Unclaimed)
+                {
+                    _claimsMetrics.IncrementTotalWattsClaimed(-claim.Quantity);
+                }
             }
             _claimsMetrics.IncrementClaimed();
             return context.Completed();
