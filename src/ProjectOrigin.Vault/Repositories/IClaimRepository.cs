@@ -8,6 +8,7 @@ namespace ProjectOrigin.Vault.Repositories;
 public interface IClaimRepository
 {
     Task<Claim> GetClaim(Guid claimId);
+    Task<ClaimWithQuantity> GetClaimWithQuantity(Guid claimId);
     Task InsertClaim(Claim newClaim);
     Task SetClaimState(Guid claimId, ClaimState state);
 

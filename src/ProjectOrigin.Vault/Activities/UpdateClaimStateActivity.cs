@@ -41,7 +41,6 @@ public class UpdateClaimStateActivity : IExecuteActivity<UpdateClaimStateArgumen
         try
         {
             await _unitOfWork.ClaimRepository.SetClaimState(context.Arguments.Id, context.Arguments.State);
-
             if (context.Arguments.RequestStatusArgs != null)
             {
                 await _unitOfWork.RequestStatusRepository.SetRequestStatus(context.Arguments.RequestStatusArgs.RequestId, context.Arguments.RequestStatusArgs.Owner, RequestStatusState.Completed);
@@ -51,6 +50,17 @@ public class UpdateClaimStateActivity : IExecuteActivity<UpdateClaimStateArgumen
             if (context.Arguments.RequestStatusArgs != null)
             {
                 _logger.LogInformation("Ending Activity: {Activity}, RequestId: {RequestId} ", nameof(UpdateClaimStateActivity), context.Arguments.RequestStatusArgs.RequestId);
+            }
+
+            var claim = await _unitOfWork.ClaimRepository.GetClaimWithQuantity(context.Arguments.Id);
+
+            if (claim.State == ClaimState.Claimed)
+            {
+                _claimsMetrics.IncrementTotalWattsClaimed(claim.Quantity);
+            }
+            else if (claim.State == ClaimState.Unclaimed)
+            {
+                _claimsMetrics.IncrementTotalWattsClaimed(-claim.Quantity);
             }
             _claimsMetrics.IncrementClaimed();
             return context.Completed();

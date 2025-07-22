@@ -26,6 +26,20 @@ public class ClaimRepository : IClaimRepository
             });
     }
 
+    public Task<ClaimWithQuantity> GetClaimWithQuantity(Guid claimId)
+    {
+        return _connection.QuerySingleAsync<ClaimWithQuantity>(
+            @"SELECT *
+              FROM claims
+              INNER JOIN wallet_slices slice_cons
+                    ON claims.consumption_slice_id = slice_cons.id
+              WHERE claims.id = @claimId",
+            new
+            {
+                claimId
+            });
+    }
+
     public Task<Claim> GetClaimFromSliceId(Guid sliceId)
     {
         return _connection.QuerySingleAsync<Claim>(
