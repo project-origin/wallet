@@ -61,6 +61,177 @@ public class ClaimRepositoryTests : AbstractRepositoryTests
     }
 
     [Fact]
+    public async Task GetClaimWithQuantity_ExpectQuantityToBeConSliceQuantity()
+    {
+        // Arrange
+        var startDate = DateTimeOffset.UtcNow;
+        var certRepository = new CertificateRepository(_connection);
+        var registry = _fixture.Create<string>();
+        var owner = _fixture.Create<string>();
+        var wallet = await CreateWallet(owner);
+        var endpoint = await CreateWalletEndpoint(wallet);
+
+        var conCert = await CreateCertificate(registry, GranularCertificateType.Consumption, startDate, endDate: startDate.AddHours(1));
+        var conSlice = new WalletSlice
+        {
+            Id = Guid.NewGuid(),
+            WalletEndpointId = endpoint.Id,
+            WalletEndpointPosition = 1,
+            RegistryName = registry,
+            CertificateId = conCert.Id,
+            Quantity = 150,
+            RandomR = _fixture.Create<byte[]>(),
+            State = WalletSliceState.Claimed
+        };
+        await certRepository.InsertWalletSlice(conSlice);
+
+        var prodCert = await CreateCertificate(registry, GranularCertificateType.Production, startDate, endDate: startDate.AddHours(1));
+        var prodSlice = new WalletSlice
+        {
+            Id = Guid.NewGuid(),
+            WalletEndpointId = endpoint.Id,
+            WalletEndpointPosition = 2,
+            RegistryName = registry,
+            CertificateId = prodCert.Id,
+            Quantity = 150,
+            RandomR = _fixture.Create<byte[]>(),
+            State = WalletSliceState.Claimed
+        };
+        await certRepository.InsertWalletSlice(prodSlice);
+
+        var claim = new Claim
+        {
+            Id = Guid.NewGuid(),
+            ConsumptionSliceId = conSlice.Id,
+            ProductionSliceId = prodSlice.Id,
+            State = ClaimState.Claimed
+        };
+        await _claimRepository.InsertClaim(claim);
+
+        var insertedClaim = await _claimRepository.GetClaimWithQuantity(claim.Id);
+
+        Assert.Equal(conSlice.Quantity, insertedClaim.Quantity);
+    }
+
+    [Fact]
+    public async Task GetClaimWithQuantity_WhenIsTrialIsSetAsAttribute_ExpectIsTrialClaimSetToTrue()
+    {
+        // Arrange
+        var startDate = DateTimeOffset.UtcNow;
+        var certRepository = new CertificateRepository(_connection);
+        var registry = _fixture.Create<string>();
+        var owner = _fixture.Create<string>();
+        var wallet = await CreateWallet(owner);
+        var endpoint = await CreateWalletEndpoint(wallet);
+
+        var conCert = await CreateCertificate(registry, GranularCertificateType.Consumption, startDate, endDate: startDate.AddHours(1));
+        var conSlice = new WalletSlice
+        {
+            Id = Guid.NewGuid(),
+            WalletEndpointId = endpoint.Id,
+            WalletEndpointPosition = 1,
+            RegistryName = registry,
+            CertificateId = conCert.Id,
+            Quantity = 150,
+            RandomR = _fixture.Create<byte[]>(),
+            State = WalletSliceState.Claimed
+        };
+        await certRepository.InsertWalletSlice(conSlice);
+
+        var prodCert = await CreateCertificate(registry, GranularCertificateType.Production, startDate, endDate: startDate.AddHours(1));
+        var prodSlice = new WalletSlice
+        {
+            Id = Guid.NewGuid(),
+            WalletEndpointId = endpoint.Id,
+            WalletEndpointPosition = 2,
+            RegistryName = registry,
+            CertificateId = prodCert.Id,
+            Quantity = 150,
+            RandomR = _fixture.Create<byte[]>(),
+            State = WalletSliceState.Claimed
+        };
+        await certRepository.InsertWalletSlice(prodSlice);
+
+        await _connection.ExecuteAsync(
+            @"INSERT INTO attributes (id, certificate_id, registry_name, attribute_key, attribute_value, attribute_type)
+                  VALUES (@id, @certificateId, @registryName, 'IsTrial', 'true', 0)",
+            new { id = Guid.NewGuid(), certificateId = prodCert.Id, registryName = registry });
+
+        await _connection.ExecuteAsync(
+            @"INSERT INTO attributes (id, certificate_id, registry_name, attribute_key, attribute_value, attribute_type)
+                  VALUES (@id, @certificateId, @registryName, 'IsTrial', 'true', 0)",
+            new { id = Guid.NewGuid(), certificateId = conCert.Id, registryName = registry });
+
+        var claim = new Claim
+        {
+            Id = Guid.NewGuid(),
+            ConsumptionSliceId = conSlice.Id,
+            ProductionSliceId = prodSlice.Id,
+            State = ClaimState.Claimed
+        };
+        await _claimRepository.InsertClaim(claim);
+
+        var insertedClaim = await _claimRepository.GetClaimWithQuantity(claim.Id);
+
+        Assert.Equal(conSlice.Quantity, insertedClaim.Quantity);
+        Assert.True(insertedClaim.IsTrialClaim);
+    }
+
+    [Fact]
+    public async Task GetClaimWithQuantity_WhenIsTrialIsNotSetAsAttribute_ExpectIsTrialClaimSetToFalse()
+    {
+        // Arrange
+        var startDate = DateTimeOffset.UtcNow;
+        var certRepository = new CertificateRepository(_connection);
+        var registry = _fixture.Create<string>();
+        var owner = _fixture.Create<string>();
+        var wallet = await CreateWallet(owner);
+        var endpoint = await CreateWalletEndpoint(wallet);
+
+        var conCert = await CreateCertificate(registry, GranularCertificateType.Consumption, startDate, endDate: startDate.AddHours(1));
+        var conSlice = new WalletSlice
+        {
+            Id = Guid.NewGuid(),
+            WalletEndpointId = endpoint.Id,
+            WalletEndpointPosition = 1,
+            RegistryName = registry,
+            CertificateId = conCert.Id,
+            Quantity = 150,
+            RandomR = _fixture.Create<byte[]>(),
+            State = WalletSliceState.Claimed
+        };
+        await certRepository.InsertWalletSlice(conSlice);
+
+        var prodCert = await CreateCertificate(registry, GranularCertificateType.Production, startDate, endDate: startDate.AddHours(1));
+        var prodSlice = new WalletSlice
+        {
+            Id = Guid.NewGuid(),
+            WalletEndpointId = endpoint.Id,
+            WalletEndpointPosition = 2,
+            RegistryName = registry,
+            CertificateId = prodCert.Id,
+            Quantity = 150,
+            RandomR = _fixture.Create<byte[]>(),
+            State = WalletSliceState.Claimed
+        };
+        await certRepository.InsertWalletSlice(prodSlice);
+
+        var claim = new Claim
+        {
+            Id = Guid.NewGuid(),
+            ConsumptionSliceId = conSlice.Id,
+            ProductionSliceId = prodSlice.Id,
+            State = ClaimState.Claimed
+        };
+        await _claimRepository.InsertClaim(claim);
+
+        var insertedClaim = await _claimRepository.GetClaimWithQuantity(claim.Id);
+
+        Assert.Equal(conSlice.Quantity, insertedClaim.Quantity);
+        Assert.False(insertedClaim.IsTrialClaim);
+    }
+
+    [Fact]
     public async Task Claims_Query_Empty()
     {
         // Arrange
