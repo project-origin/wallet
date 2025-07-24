@@ -113,8 +113,14 @@ public class ClaimRepositoryTests : AbstractRepositoryTests
         Assert.Equal(conSlice.Quantity, insertedClaim.Quantity);
     }
 
-    [Fact]
-    public async Task GetClaimWithQuantity_WhenIsTrialIsSetAsAttribute_ExpectIsTrialClaimSetToTrue()
+    [Theory]
+    [InlineData("IsTrial", "True")]
+    [InlineData("IsTrial", "true")]
+    [InlineData("isTrial", "True")]
+    [InlineData("isTrial", "true")]
+    [InlineData("istrial", "true")]
+    [InlineData("istrial", "True")]
+    public async Task GetClaimWithQuantity_WhenIsTrialIsSetAsAttribute_ExpectIsTrialClaimSetToTrue(string attributeKey, string attributeValue)
     {
         // Arrange
         var startDate = DateTimeOffset.UtcNow;
@@ -154,13 +160,13 @@ public class ClaimRepositoryTests : AbstractRepositoryTests
 
         await _connection.ExecuteAsync(
             @"INSERT INTO attributes (id, certificate_id, registry_name, attribute_key, attribute_value, attribute_type)
-                  VALUES (@id, @certificateId, @registryName, 'IsTrial', 'true', 0)",
-            new { id = Guid.NewGuid(), certificateId = prodCert.Id, registryName = registry });
+                  VALUES (@id, @certificateId, @registryName, @attributeKey, @attributeValue, 0)",
+            new { id = Guid.NewGuid(), certificateId = prodCert.Id, registryName = registry, attributeKey, attributeValue });
 
         await _connection.ExecuteAsync(
             @"INSERT INTO attributes (id, certificate_id, registry_name, attribute_key, attribute_value, attribute_type)
-                  VALUES (@id, @certificateId, @registryName, 'IsTrial', 'true', 0)",
-            new { id = Guid.NewGuid(), certificateId = conCert.Id, registryName = registry });
+                  VALUES (@id, @certificateId, @registryName, @attributeKey, @attributeValue, 0)",
+            new { id = Guid.NewGuid(), certificateId = conCert.Id, registryName = registry, attributeKey, attributeValue });
 
         var claim = new Claim
         {
