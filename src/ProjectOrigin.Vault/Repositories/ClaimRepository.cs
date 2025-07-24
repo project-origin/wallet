@@ -36,8 +36,8 @@ public class ClaimRepository : IClaimRepository
                             FROM attributes_view av
                             WHERE av.registry_name = slice_cons.registry_name
                               AND av.certificate_id = slice_cons.certificate_id
-                              AND av.attribute_key = 'IsTrial'
-                              AND av.attribute_value = 'true'
+                              AND LOWER(av.attribute_key) = 'istrial'
+                              AND LOWER(av.attribute_value) = 'true'
                         ) THEN true
                         ELSE false
                     END AS is_trial_claim
