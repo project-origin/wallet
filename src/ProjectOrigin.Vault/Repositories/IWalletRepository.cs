@@ -18,11 +18,11 @@ public interface IWalletRepository
 
     Task<int> GetNextNumberForId(Guid id);
     Task<IHDPrivateKey> GetPrivateKeyForSlice(Guid sliceId);
-
     Task<ExternalEndpoint> CreateExternalEndpoint(string owner, IHDPublicKey ownerPublicKey, string referenceText, string endpoint);
     Task<ExternalEndpoint> GetExternalEndpoint(Guid endpointId);
     Task<ExternalEndpoint?> TryGetExternalEndpoint(Guid endpointId);
 
     Task EnableWallet(Guid walletId);
     Task DisableWallet(Guid walletId, DateTimeOffset disabledDateUtc);
+    Task<int> DeleteDisabledWalletsAsync(DateTimeOffset cutoffUtc);
 }

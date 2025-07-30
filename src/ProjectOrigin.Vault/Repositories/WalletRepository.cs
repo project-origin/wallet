@@ -237,4 +237,28 @@ public class WalletRepository : IWalletRepository
               endpoint);
     }
 
+    public async Task<int> DeleteDisabledWalletsAsync(DateTimeOffset cutoffUtc)
+    {
+        const string sql = @"
+        WITH doomed AS (
+            SELECT id FROM wallets
+            WHERE disabled IS NOT NULL AND disabled < @cutoff
+        )
+        DELETE FROM wallet_slices
+        WHERE wallet_endpoint_id IN (
+            SELECT id FROM wallet_endpoints WHERE wallet_id IN (SELECT id FROM doomed)
+        );
+
+        DELETE FROM wallet_endpoints  WHERE wallet_id IN (SELECT id FROM doomed);
+        DELETE FROM wallet_attributes WHERE wallet_id IN (SELECT id FROM doomed);
+        DELETE FROM external_endpoints
+        WHERE owner IN (SELECT owner FROM wallets WHERE id IN (SELECT id FROM doomed));
+
+        DELETE FROM wallets WHERE id IN (SELECT id FROM doomed);
+
+        SELECT COUNT(*) FROM doomed;
+    ";
+
+        return await _connection.ExecuteScalarAsync<int>(sql, new { cutoff = cutoffUtc });
+    }
 }
