@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
 using ProjectOrigin.Vault.Models;
@@ -24,5 +25,5 @@ public interface IWalletRepository
 
     Task EnableWallet(Guid walletId);
     Task DisableWallet(Guid walletId, DateTimeOffset disabledDateUtc);
-    Task<int> DeleteDisabledWalletsAsync(DateTimeOffset cutoffUtc);
+    Task<(int Count, List<(Guid Id, string Owner, DateTimeOffset DisabledDate)> DeletedWallets)> DeleteDisabledWalletsAsync(DateTimeOffset cutoffUtc);
 }

@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Data;
+using System.Linq;
 using System.Threading.Tasks;
 using Dapper;
 using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
@@ -237,28 +239,46 @@ public class WalletRepository : IWalletRepository
               endpoint);
     }
 
-    public async Task<int> DeleteDisabledWalletsAsync(DateTimeOffset cutoffUtc)
+    public async Task<(int Count, List<(Guid Id, string Owner, DateTimeOffset DisabledDate)> DeletedWallets)>
+        DeleteDisabledWalletsAsync(DateTimeOffset cutoffUtc)
     {
         const string sql = @"
-        WITH doomed AS (
-            SELECT id FROM wallets
-            WHERE disabled IS NOT NULL AND disabled < @cutoff
-        )
         DELETE FROM wallet_slices
         WHERE wallet_endpoint_id IN (
-            SELECT id FROM wallet_endpoints WHERE wallet_id IN (SELECT id FROM doomed)
-        );
+            SELECT we.id
+            FROM wallet_endpoints  we
+            JOIN wallets           w ON w.id = we.wallet_id
+            WHERE w.disabled IS NOT NULL
+              AND w.disabled < @cutoff);
 
-        DELETE FROM wallet_endpoints  WHERE wallet_id IN (SELECT id FROM doomed);
-        DELETE FROM wallet_attributes WHERE wallet_id IN (SELECT id FROM doomed);
+        DELETE FROM wallet_endpoints
+        WHERE wallet_id IN (
+            SELECT id FROM wallets
+            WHERE disabled IS NOT NULL
+              AND disabled < @cutoff);
+
+        DELETE FROM wallet_attributes
+        WHERE wallet_id IN (
+            SELECT id FROM wallets
+            WHERE disabled IS NOT NULL
+              AND disabled < @cutoff);
+
         DELETE FROM external_endpoints
-        WHERE owner IN (SELECT owner FROM wallets WHERE id IN (SELECT id FROM doomed));
+        WHERE owner IN (
+            SELECT owner FROM wallets
+            WHERE disabled IS NOT NULL
+              AND disabled < @cutoff);
 
-        DELETE FROM wallets WHERE id IN (SELECT id FROM doomed);
+        DELETE FROM wallets
+        WHERE disabled IS NOT NULL
+          AND disabled < @cutoff
+        RETURNING id, owner, disabled;
+        ";
 
-        SELECT COUNT(*) FROM doomed;
-    ";
+        var deleted = await _connection.QueryAsync<(Guid Id, string Owner, DateTimeOffset DisabledDate)>(
+            sql, new { cutoff = cutoffUtc });
 
-        return await _connection.ExecuteScalarAsync<int>(sql, new { cutoff = cutoffUtc });
+        var list = deleted.ToList();
+        return (list.Count, list);
     }
 }

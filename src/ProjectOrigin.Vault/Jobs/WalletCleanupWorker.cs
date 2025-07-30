@@ -21,6 +21,12 @@ public class WalletCleanupWorker(
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        if (!_options.Enabled)
+        {
+            logger.LogInformation("Wallet cleanup worker is disabled");
+            return;
+        }
+
         var interval = TimeSpan.FromHours(
             _options.IntervalHours > 0 ? _options.IntervalHours : 24);
 
@@ -31,13 +37,21 @@ public class WalletCleanupWorker(
                 using var scope = scopeFactory.CreateScope();
                 var repo = scope.ServiceProvider.GetRequiredService<IWalletRepository>();
 
-                var cutoff = timeProvider.GetUtcNow().AddDays(-Math.Max(_options.RetentionDays, 1));
+                var cutoff = timeProvider.GetUtcNow().AddDays(-_options.RetentionDays);
 
-                var deleted = await repo.DeleteDisabledWalletsAsync(cutoff);
+                var (deletedCount, deletedWallets) = await repo.DeleteDisabledWalletsAsync(cutoff);
 
-                logger.LogInformation(
-                    "GDPR wallet‑cleanup removed {Count} wallets (disabled before {Cutoff:yyyy‑MM‑dd}).",
-                    deleted, cutoff);
+                logger.LogInformation("Wallet cleanup worker completed successfully");
+
+                if (_options.LogDeletedWalletDetails)
+                {
+                    foreach (var (walletId, owner, disabledDate) in deletedWallets)
+                    {
+                        logger.LogInformation(
+                            "Deleted wallet {WalletId} owned by {Owner}",
+                            walletId, owner);
+                    }
+                }
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
