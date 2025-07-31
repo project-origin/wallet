@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
 using ProjectOrigin.Vault.Models;
@@ -18,11 +19,11 @@ public interface IWalletRepository
 
     Task<int> GetNextNumberForId(Guid id);
     Task<IHDPrivateKey> GetPrivateKeyForSlice(Guid sliceId);
-
     Task<ExternalEndpoint> CreateExternalEndpoint(string owner, IHDPublicKey ownerPublicKey, string referenceText, string endpoint);
     Task<ExternalEndpoint> GetExternalEndpoint(Guid endpointId);
     Task<ExternalEndpoint?> TryGetExternalEndpoint(Guid endpointId);
 
     Task EnableWallet(Guid walletId);
     Task DisableWallet(Guid walletId, DateTimeOffset disabledDateUtc);
+    Task<(int Count, List<(Guid Id, string Owner, DateTimeOffset DisabledDate)> DeletedWallets)> DeleteDisabledWalletsAsync(DateTimeOffset cutoffUtc);
 }
