@@ -115,16 +115,6 @@ spec:
               value: {{ .Values.job.checkForWithdrawnCertificatesIntervalInSeconds | quote }}
             - name: Job__ExpireCertificatesIntervalInSeconds
               value: {{ .Values.job.expireCertificatesIntervalInSeconds | quote }}
-
-            # Wallet Cleanup
-            - name: WalletCleanup__Enabled
-              value: {{ .Values.walletCleanup.enabled | quote }}
-            - name: WalletCleanup__IntervalHours
-              value: {{ .Values.walletCleanup.intervalHours | quote }}
-            - name: WalletCleanup__RetentionDays
-              value: {{ .Values.walletCleanup.retentionDays | quote }}
-            - name: WalletCleanup__LogDeletedWalletDetails
-              value: {{ .Values.walletCleanup.logDeletedWalletDetails | quote }}
           volumeMounts:
             {{- include "common.networkConfig.volumeMounts" .Values.networkConfig | nindent 12}}
           {{- with .Values.vault.volumeMounts }}
