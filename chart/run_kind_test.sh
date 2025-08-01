@@ -90,12 +90,6 @@ networkConfig:
       Narnia:
         issuerKeys:
           - publicKey: $PublicKeyBase64
-
-walletCleanup:
-  enabled: false
-  intervalHours: 24
-  retentionDays: 365
-  logDeletedWalletDetails: false
 EOF
 
 # install wallet chart

@@ -341,14 +341,3 @@ job:
     # capabilities defines the capabilities to drop from the container, defaults to dropping all capabilities
     capabilities:
       drop: ["ALL"]
-
-# walletCleanup holds configuration for the wallet cleanup worker
-walletCleanup:
-  # enabled determines if the wallet cleanup worker is enabled, defaults to false for GDPR compliance
-  enabled: false
-  # intervalHours defines the interval in hours between cleanup runs, defaults to 24 hours
-  intervalHours: 24
-  # retentionDays defines the number of days to retain disabled wallets, defaults to 365 days
-  retentionDays: 365
-  # logDeletedWalletDetails determines if detailed information about deleted wallets should be logged, defaults to false for GDPR compliance
-  logDeletedWalletDetails: false
