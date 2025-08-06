@@ -39,13 +39,13 @@ public class WalletCleanupWorker(
 
                 var cutoff = timeProvider.GetUtcNow().AddDays(-_options.RetentionDays);
 
-                var (deletedCount, deletedWallets) = await repo.DeleteDisabledWalletsAsync(cutoff);
+                var (_, deletedWallets) = await repo.DeleteDisabledWalletsAsync(cutoff);
 
                 logger.LogInformation("Wallet cleanup worker completed successfully");
 
                 if (_options.LogDeletedWalletDetails)
                 {
-                    foreach (var (walletId, owner, disabledDate) in deletedWallets)
+                    foreach (var (walletId, owner, _) in deletedWallets)
                     {
                         logger.LogInformation(
                             "Deleted wallet {WalletId} owned by {Owner}",
