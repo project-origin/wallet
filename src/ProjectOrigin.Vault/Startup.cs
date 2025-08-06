@@ -79,6 +79,14 @@ public class Startup
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
+        services.AddOptions<WalletCleanupOptions>()
+            .BindConfiguration("WalletCleanup")
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        services.AddSingleton(TimeProvider.System);
+        services.AddHostedService<WalletCleanupWorker>();
+
         services.ConfigurePersistance(_configuration);
         services.ConfigureAuthentication(_configuration.GetValidSection<AuthOptions>(AuthOptions.Prefix));
         services.AddSingleton<MeterBase>();
