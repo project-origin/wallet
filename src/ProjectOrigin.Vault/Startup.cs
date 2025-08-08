@@ -84,9 +84,6 @@ public class Startup
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
-        services.AddSingleton(TimeProvider.System);
-        services.AddHostedService<WalletCleanupWorker>();
-
         services.ConfigurePersistance(_configuration);
         services.ConfigureAuthentication(_configuration.GetValidSection<AuthOptions>(AuthOptions.Prefix));
         services.AddSingleton<MeterBase>();
@@ -178,6 +175,7 @@ public class Startup
         services.AddHostedService<PublishCheckForWithdrawnCertificatesCommandJob>();
         services.AddHostedService<ExpireCertificatesJob>();
         services.AddHostedService<OutboxPollingWorker>();
+        services.AddHostedService<WalletCleanupJob>();
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

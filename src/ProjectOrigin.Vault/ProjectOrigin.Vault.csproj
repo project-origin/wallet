@@ -60,7 +60,7 @@
       <SourceUrl>https://raw.githubusercontent.com/project-origin/verifier_electricity/v4.0.0/protos/electricity.proto</SourceUrl>
     </Protobuf>
     <Protobuf Include="../../protos/chronicler.proto" Link="protos\chronicler.proto">
-      <SourceUrl>https://raw.githubusercontent.com/project-origin/chronicler/v1.0.0/protos/chronicler.proto</SourceUrl>
+      <SourceUrl>https://raw.githubusercontent.com/project-origin/chronicler/v1.1.3/protos/chronicler.proto</SourceUrl>
     </Protobuf>
   </ItemGroup>
 
