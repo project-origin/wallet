@@ -1,21 +1,26 @@
+using Google.Protobuf;
 using Grpc.Net.Client;
 using MassTransit;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using ProjectOrigin.Electricity.V1;
+using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
+using ProjectOrigin.PedersenCommitment;
 using ProjectOrigin.Registry.V1;
+using ProjectOrigin.Vault.Database;
 using ProjectOrigin.Vault.Extensions;
 using ProjectOrigin.Vault.Models;
 using ProjectOrigin.Vault.Options;
 using System;
+using System.Linq;
+using System.Security.Cryptography;
 using System.Text.Json;
 using System.Threading.Tasks;
-using ProjectOrigin.Vault.Database;
 
 namespace ProjectOrigin.Vault.EventHandlers;
 
 public record TransferFullSliceRegistryTransactionArguments
 {
-    public required Transaction Transaction { get; init; }
     public required string RegistryName { get; set; }
     public required Guid CertificateId { get; set; }
     public required Guid SliceId { get; set; }
@@ -27,7 +32,6 @@ public record TransferFullSliceRegistryTransactionArguments
 
 public record TransferPartialSliceRegistryTransactionArguments
 {
-    public required Transaction Transaction { get; init; }
     public required string RegistryName { get; set; }
     public required Guid CertificateId { get; set; }
     public required Guid TransferredSliceId { get; set; }
@@ -35,6 +39,7 @@ public record TransferPartialSliceRegistryTransactionArguments
     public required Guid SourceSliceId { get; set; }
     public required WalletAttribute[] WalletAttributes { get; set; }
     public required Guid ExternalEndpointId { get; set; }
+    public required uint Quantity { get; set; }
     public RequestStatusArgs? RequestStatusArgs { get; set; }
 }
 
@@ -60,7 +65,16 @@ public class VaultSendRegistryTransactionConsumer : IConsumer<TransferFullSliceR
 
         try
         {
-            await SendTransactionToRegistry(msg.Transaction);
+            var externalEndpoint = await _unitOfWork.WalletRepository.GetExternalEndpoint(msg.ExternalEndpointId);
+            var sourceSlice = await _unitOfWork.CertificateRepository.GetWalletSlice(msg.SliceId);
+            var nextReceiverPosition = await _unitOfWork.WalletRepository.GetNextNumberForId(externalEndpoint.Id);
+            var receiverPublicKey = externalEndpoint.PublicKey.Derive(nextReceiverPosition).GetPublicKey();
+
+            var transferredEvent = CreateTransferEvent(sourceSlice, receiverPublicKey);
+            var sourceSlicePrivateKey = await _unitOfWork.WalletRepository.GetPrivateKeyForSlice(sourceSlice.Id);
+            var transaction = sourceSlicePrivateKey.SignRegistryTransaction(transferredEvent.CertificateId, transferredEvent);
+
+            await SendTransactionToRegistry(transaction);
 
             var full = new TransferFullSliceWaitCommittedTransactionArguments
             {
@@ -68,7 +82,7 @@ public class VaultSendRegistryTransactionConsumer : IConsumer<TransferFullSliceR
                 RegistryName = msg.RegistryName,
                 SliceId = msg.SliceId,
                 TransferredSliceId = msg.TransferredSliceId,
-                TransactionId = msg.Transaction.ToShaId(),
+                TransactionId = transaction.ToShaId(),
                 ExternalEndpointId = msg.ExternalEndpointId,
                 RequestStatusArgs = msg.RequestStatusArgs,
                 WalletAttributes = msg.WalletAttributes
@@ -99,7 +113,20 @@ public class VaultSendRegistryTransactionConsumer : IConsumer<TransferFullSliceR
 
         try
         {
-            await SendTransactionToRegistry(msg.Transaction);
+            var sourceSlice = await _unitOfWork.CertificateRepository.GetWalletSlice(msg.SourceSliceId);
+
+            var quantity = msg.Quantity;
+
+            var receiverEndpoints = await _unitOfWork.WalletRepository.GetExternalEndpoint(msg.ExternalEndpointId);
+            var receiverPosition = await _unitOfWork.WalletRepository.GetNextNumberForId(receiverEndpoints.Id);
+            var receiverPublicKey = receiverEndpoints.PublicKey.Derive(receiverPosition).GetPublicKey();
+            var receiverCommitment = new SecretCommitmentInfo(quantity);
+
+            var slicedEvent = CreateSliceEvent(sourceSlice, new NewSlice(receiverCommitment, receiverPublicKey), new NewSlice(remainderCommitment, remainderPublicKey));
+            var sourceSlicePrivateKey = await _unitOfWork.WalletRepository.GetPrivateKeyForSlice(sourceSlice.Id);
+            var transaction = sourceSlicePrivateKey.SignRegistryTransaction(slicedEvent.CertificateId, slicedEvent);
+
+            await SendTransactionToRegistry(transaction);
 
             var partial = new TransferPartialSliceWaitCommittedTransactionArguments
             {
@@ -108,7 +135,7 @@ public class VaultSendRegistryTransactionConsumer : IConsumer<TransferFullSliceR
                 SourceSliceId = msg.SourceSliceId,
                 TransferredSliceId = msg.TransferredSliceId,
                 RemainderSliceId = msg.RemainderSliceId,
-                TransactionId = msg.Transaction.ToShaId(),
+                TransactionId = transaction.ToShaId(),
                 ExternalEndpointId = msg.ExternalEndpointId,
                 RequestStatusArgs = msg.RequestStatusArgs,
                 WalletAttributes = msg.WalletAttributes
@@ -145,5 +172,63 @@ public class VaultSendRegistryTransactionConsumer : IConsumer<TransferFullSliceR
 
         var client = new RegistryService.RegistryServiceClient(channel);
         await client.SendTransactionsAsync(request);
+    }
+
+    private static TransferredEvent CreateTransferEvent(WalletSlice sourceSlice, IPublicKey receiverPublicKey)
+    {
+        var sliceCommitment = new PedersenCommitment.SecretCommitmentInfo((uint)sourceSlice.Quantity, sourceSlice.RandomR);
+
+        var transferredEvent = new TransferredEvent
+        {
+            CertificateId = sourceSlice.GetFederatedStreamId(),
+            NewOwner = new PublicKey
+            {
+                Content = ByteString.CopyFrom(receiverPublicKey.Export()),
+                Type = KeyType.Secp256K1
+            },
+            SourceSliceHash = ByteString.CopyFrom(SHA256.HashData(sliceCommitment.Commitment.C))
+        };
+        return transferredEvent;
+    }
+
+    private sealed record NewSlice(SecretCommitmentInfo ci, IPublicKey Key);
+
+    private static SlicedEvent CreateSliceEvent(WalletSlice sourceSlice, params NewSlice[] newSlices)
+    {
+        if (newSlices.Sum(s => s.ci.Message) != sourceSlice.Quantity)
+            throw new InvalidOperationException();
+
+        var certificateId = sourceSlice.GetFederatedStreamId();
+
+        var sourceSliceCommitment = new PedersenCommitment.SecretCommitmentInfo((uint)sourceSlice.Quantity, sourceSlice.RandomR);
+        var sumOfNewSlices = newSlices.Select(newSlice => newSlice.ci).Aggregate((left, right) => left + right);
+        var equalityProof = SecretCommitmentInfo.CreateEqualityProof(sourceSliceCommitment, sumOfNewSlices, certificateId.StreamId.Value);
+
+        var slicedEvent = new SlicedEvent
+        {
+            CertificateId = certificateId,
+            SumProof = ByteString.CopyFrom(equalityProof),
+            SourceSliceHash = ByteString.CopyFrom(SHA256.HashData(sourceSliceCommitment.Commitment.C))
+        };
+
+        foreach (var newSlice in newSlices)
+        {
+            var poSlice = new SlicedEvent.Types.Slice
+            {
+                NewOwner = new PublicKey
+                {
+                    Type = KeyType.Secp256K1,
+                    Content = ByteString.CopyFrom(newSlice.Key.Export())
+                },
+                Quantity = new ProjectOrigin.Electricity.V1.Commitment
+                {
+                    Content = ByteString.CopyFrom(newSlice.ci.Commitment.C),
+                    RangeProof = ByteString.CopyFrom(newSlice.ci.CreateRangeProof(certificateId.StreamId.Value))
+                }
+            };
+            slicedEvent.NewSlices.Add(poSlice);
+        }
+
+        return slicedEvent;
     }
 }
