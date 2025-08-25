@@ -116,11 +116,18 @@ public class VaultSendRegistryTransactionConsumer : IConsumer<TransferFullSliceR
             var sourceSlice = await _unitOfWork.CertificateRepository.GetWalletSlice(msg.SourceSliceId);
 
             var quantity = msg.Quantity;
+            var remainder = (uint)sourceSlice.Quantity - quantity;
 
             var receiverEndpoints = await _unitOfWork.WalletRepository.GetExternalEndpoint(msg.ExternalEndpointId);
             var receiverPosition = await _unitOfWork.WalletRepository.GetNextNumberForId(receiverEndpoints.Id);
             var receiverPublicKey = receiverEndpoints.PublicKey.Derive(receiverPosition).GetPublicKey();
             var receiverCommitment = new SecretCommitmentInfo(quantity);
+
+            var sourceEndpoint = await _unitOfWork.WalletRepository.GetWalletEndpoint(sourceSlice.WalletEndpointId);
+            var remainderEndpoint = await _unitOfWork.WalletRepository.GetWalletRemainderEndpoint(sourceEndpoint.WalletId);
+            var remainderPosition = await _unitOfWork.WalletRepository.GetNextNumberForId(remainderEndpoint.Id);
+            var remainderPublicKey = remainderEndpoint.PublicKey.Derive(remainderPosition).GetPublicKey();
+            var remainderCommitment = new SecretCommitmentInfo(remainder);
 
             var slicedEvent = CreateSliceEvent(sourceSlice, new NewSlice(receiverCommitment, receiverPublicKey), new NewSlice(remainderCommitment, remainderPublicKey));
             var sourceSlicePrivateKey = await _unitOfWork.WalletRepository.GetPrivateKeyForSlice(sourceSlice.Id);
