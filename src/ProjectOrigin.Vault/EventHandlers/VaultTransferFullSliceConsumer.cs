@@ -1,9 +1,6 @@
-using Google.Protobuf;
 using MassTransit;
 using Microsoft.Extensions.Logging;
 using Npgsql;
-using ProjectOrigin.Electricity.V1;
-using ProjectOrigin.HierarchicalDeterministicKeys.Interfaces;
 using ProjectOrigin.Vault.Database;
 using ProjectOrigin.Vault.Exceptions;
 using ProjectOrigin.Vault.Extensions;
@@ -11,7 +8,7 @@ using ProjectOrigin.Vault.Metrics;
 using ProjectOrigin.Vault.Models;
 using System;
 using System.Linq;
-using System.Security.Cryptography;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace ProjectOrigin.Vault.EventHandlers;
@@ -33,7 +30,6 @@ public class VaultTransferFullSliceConsumer : IConsumer<TransferFullSliceArgumen
     public VaultTransferFullSliceConsumer(
         IUnitOfWork unitOfWork,
         ILogger<VaultTransferFullSliceConsumer> logger,
-        IEndpointNameFormatter formatter,
         ITransferMetrics transferMetrics)
     {
         _unitOfWork = unitOfWork;
@@ -52,9 +48,7 @@ public class VaultTransferFullSliceConsumer : IConsumer<TransferFullSliceArgumen
             var sourceSlice = await _unitOfWork.CertificateRepository.GetWalletSlice(msg.SourceSliceId);
             var sourceEndpoint = await _unitOfWork.WalletRepository.GetWalletEndpoint(sourceSlice.WalletEndpointId);
             var externalEndpoint = await _unitOfWork.WalletRepository.GetExternalEndpoint(msg.ExternalEndpointId);
-
             var nextReceiverPosition = await _unitOfWork.WalletRepository.GetNextNumberForId(externalEndpoint.Id);
-            var receiverPublicKey = externalEndpoint.PublicKey.Derive(nextReceiverPosition).GetPublicKey();
 
             var transferredSlice = new TransferredSlice
             {
@@ -71,19 +65,12 @@ public class VaultTransferFullSliceConsumer : IConsumer<TransferFullSliceArgumen
 
             _logger.LogInformation($"Registering transfer for certificateId {sourceSlice.CertificateId}");
 
-            var transferredEvent = CreateTransferEvent(sourceSlice, receiverPublicKey);
-
-            var sourceSlicePrivateKey = await _unitOfWork.WalletRepository.GetPrivateKeyForSlice(sourceSlice.Id);
-            var transaction = sourceSlicePrivateKey.SignRegistryTransaction(transferredEvent.CertificateId, transferredEvent);
             var walletAttributes = await _unitOfWork.CertificateRepository.GetWalletAttributes(sourceEndpoint.WalletId, sourceSlice.CertificateId, sourceSlice.RegistryName, msg.HashedAttributes);
-
-            _unitOfWork.Commit();
 
             _logger.LogInformation("Ending consumer: {Consumer}, RequestId: {RequestId} ", nameof(VaultTransferFullSliceConsumer), msg.RequestStatusArgs.RequestId);
 
-            await context.Publish<TransferFullSliceRegistryTransactionArguments>(new TransferFullSliceRegistryTransactionArguments
+            var message = new TransferFullSliceRegistryTransactionArguments
             {
-                Transaction = transaction,
                 CertificateId = sourceSlice.CertificateId,
                 RegistryName = sourceSlice.RegistryName,
                 SliceId = sourceSlice.Id,
@@ -91,7 +78,16 @@ public class VaultTransferFullSliceConsumer : IConsumer<TransferFullSliceArgumen
                 RequestStatusArgs = msg.RequestStatusArgs,
                 ExternalEndpointId = externalEndpoint.Id,
                 WalletAttributes = walletAttributes.ToArray()
+            };
+            await _unitOfWork.OutboxMessageRepository.Create(new OutboxMessage
+            {
+                Created = DateTimeOffset.UtcNow.ToUtcTime(),
+                Id = Guid.NewGuid(),
+                MessageType = typeof(TransferFullSliceRegistryTransactionArguments).ToString(),
+                JsonPayload = JsonSerializer.Serialize(message)
             });
+
+            _unitOfWork.Commit();
         }
         catch (PostgresException ex)
         {
@@ -107,22 +103,5 @@ public class VaultTransferFullSliceConsumer : IConsumer<TransferFullSliceArgumen
             _transferMetrics.IncrementFailedTransfers();
             throw;
         }
-    }
-
-    private static TransferredEvent CreateTransferEvent(WalletSlice sourceSlice, IPublicKey receiverPublicKey)
-    {
-        var sliceCommitment = new PedersenCommitment.SecretCommitmentInfo((uint)sourceSlice.Quantity, sourceSlice.RandomR);
-
-        var transferredEvent = new TransferredEvent
-        {
-            CertificateId = sourceSlice.GetFederatedStreamId(),
-            NewOwner = new PublicKey
-            {
-                Content = ByteString.CopyFrom(receiverPublicKey.Export()),
-                Type = KeyType.Secp256K1
-            },
-            SourceSliceHash = ByteString.CopyFrom(SHA256.HashData(sliceCommitment.Commitment.C))
-        };
-        return transferredEvent;
     }
 }
